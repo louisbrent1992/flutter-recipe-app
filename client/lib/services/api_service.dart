@@ -50,7 +50,7 @@ class ApiService {
   }
 
   static Future<Recipe> generateAIRecipe({
-    required String ingredients,
+    String? ingredients,
     String? dietaryRestrictions,
     String? cuisineType,
   }) async {

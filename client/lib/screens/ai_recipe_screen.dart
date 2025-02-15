@@ -18,19 +18,42 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
   bool _isLoading = false;
 
   void _generateRecipe() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Get user inputs or use default values
+    String? ingredients =
+        _ingredientsController.text.isNotEmpty
+            ? _ingredientsController.text
+            : ""; // Default ingredients
+    String? dietaryRestrictions =
+        _dietController.text.isNotEmpty
+            ? _dietController.text
+            : null; // Default to null if not provided
+    String? cuisineType =
+        _cuisineController.text.isNotEmpty
+            ? _cuisineController.text
+            : null; // Default to null if not provided
+
+    try {
       Recipe recipe = await ApiService.generateAIRecipe(
-        ingredients: _ingredientsController.text,
-        dietaryRestrictions: _dietController.text,
-        cuisineType: _cuisineController.text,
+        ingredients: ingredients,
+        dietaryRestrictions: dietaryRestrictions,
+        cuisineType: cuisineType,
       );
       setState(() {
         _generatedRecipe = recipe;
         _isLoading = false;
       });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      // Handle error (e.g., show a snackbar or dialog)
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to generate recipe: $e')));
     }
   }
 
@@ -62,23 +85,24 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
                               controller: _ingredientsController,
                               decoration: InputDecoration(
                                 labelText: 'Ingredients (comma separated)',
+                                hintText:
+                                    'Enter ingredients or leave blank for defaults',
                               ),
-                              validator:
-                                  (value) =>
-                                      value == null || value.isEmpty
-                                          ? 'Enter ingredients'
-                                          : null,
                             ),
                             TextFormField(
                               controller: _dietController,
                               decoration: InputDecoration(
                                 labelText: 'Dietary Restrictions',
+                                hintText:
+                                    'Enter dietary restrictions or leave blank for defaults',
                               ),
                             ),
                             TextFormField(
                               controller: _cuisineController,
                               decoration: InputDecoration(
                                 labelText: 'Cuisine Type',
+                                hintText:
+                                    'Enter cuisine type or leave blank for defaults',
                               ),
                             ),
                             SizedBox(height: 20),

@@ -19,7 +19,8 @@ A mobile application that allows users to generate unique recipes using AI, mana
 
 ### A. AI-Generated Recipe Creation
 
-- Users can specify ingredients, dietary restrictions, cuisine types, or meal preferences.
+- Users can specify ingredients, dietary restrictions, and cuisine types.
+- If no inputs are provided, the app will use default random values for ingredients, dietary restrictions, and cuisine types.
 - Integration with an AI service to generate recipes based on user inputs.
 - Customization options for cooking time, difficulty level, and nutritional information.
 
@@ -76,6 +77,7 @@ To get started with the Flutter Recipe App, follow these steps:
    ```
 
 5. Start the server:
+
    ```bash
    npm run dev
    ```
