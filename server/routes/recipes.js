@@ -131,10 +131,10 @@ router.post("/generate", async (req, res) => {
 		const foundRecipe = await JSON.parse(generatedContent);
 
 		// Fetch an image based on the recipe description
-		const imageDescription = `A delicious ${
-			cuisineType || "fusion"
-		} dish with ${ingredients}.`;
+		const imageDescription = foundRecipe.title;
 		const imageUrl = await fetchImage(imageDescription);
+
+		console.log(imageUrl);
 
 		const generatedRecipe = {
 			id: uuidv4(),
