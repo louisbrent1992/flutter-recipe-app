@@ -42,6 +42,10 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
         dietaryRestrictions: dietaryRestrictions,
         cuisineType: cuisineType,
       );
+
+      // Log the recipe object to the console
+      print('Generated Recipe: ${recipe.toJson()}');
+
       setState(() {
         _generatedRecipe = recipe;
         _isLoading = false;
