@@ -1,10 +1,22 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/recipe.dart';
+import 'dart:io'; // Import the dart:io library
 
 class ApiService {
-  // Change the baseUrl as needed
-  static const String baseUrl = 'http://localhost:3000';
+  // Change the baseUrl based on the environment
+  static String get baseUrl {
+    // Check for production environment
+    const bool isProduction = bool.fromEnvironment('dart.vm.product');
+
+    if (isProduction) {
+      return 'https://your-production-server.com'; // Use this for production
+    } else if (Platform.isAndroid) {
+      return 'http://10.0.2.2:3000'; // Use this for Android emulator
+    } else {
+      return 'http://localhost:3000'; // Use this for other environments (e.g., iOS, web)
+    }
+  }
 
   static Future<List<Recipe>> fetchRecipes() async {
     final response = await http.get(Uri.parse('$baseUrl/recipes'));
@@ -22,6 +34,7 @@ class ApiService {
       headers: {'Content-Type': 'application/json'},
       body: json.encode(recipe.toJson()),
     );
+
     if (response.statusCode == 201) {
       return Recipe.fromJson(json.decode(response.body));
     } else {
