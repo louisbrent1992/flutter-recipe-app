@@ -7,10 +7,10 @@ class RecipeFormScreen extends StatefulWidget {
   const RecipeFormScreen({super.key, this.recipe});
 
   @override
-  _RecipeFormScreenState createState() => _RecipeFormScreenState();
+  RecipeFormScreenState createState() => RecipeFormScreenState();
 }
 
-class _RecipeFormScreenState extends State<RecipeFormScreen> {
+class RecipeFormScreenState extends State<RecipeFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
   late TextEditingController _ingredientsController;
@@ -44,13 +44,18 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                 .toList(),
         steps: _stepsController.text.split(',').map((e) => e.trim()).toList(),
         description: _descriptionController.text,
+        imageUrl: widget.recipe?.imageUrl ?? '',
+        cookingTime: widget.recipe?.cookingTime ?? '',
+        servings: widget.recipe?.servings ?? '',
       );
       if (widget.recipe == null) {
         await ApiService.createRecipe(newRecipe);
       } else {
         await ApiService.updateRecipe(newRecipe);
       }
-      Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -77,18 +82,18 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: InputDecoration(labelText: 'Recipe Title'),
+                decoration: const InputDecoration(labelText: 'Recipe Title'),
                 validator:
                     (value) =>
                         value == null || value.isEmpty ? 'Enter title' : null,
               ),
               TextFormField(
                 controller: _descriptionController,
-                decoration: InputDecoration(labelText: 'Description'),
+                decoration: const InputDecoration(labelText: 'Description'),
               ),
               TextFormField(
                 controller: _ingredientsController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Ingredients (comma separated)',
                 ),
                 validator:
@@ -99,17 +104,17 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
               ),
               TextFormField(
                 controller: _stepsController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Steps (comma separated)',
                 ),
                 validator:
                     (value) =>
                         value == null || value.isEmpty ? 'Enter steps' : null,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _saveRecipe,
-                child: Text('Save Recipe'),
+                child: const Text('Save Recipe'),
               ),
             ],
           ),

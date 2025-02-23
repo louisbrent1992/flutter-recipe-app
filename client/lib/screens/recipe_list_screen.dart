@@ -6,10 +6,10 @@ class RecipeListScreen extends StatefulWidget {
   const RecipeListScreen({super.key});
 
   @override
-  _RecipeListScreenState createState() => _RecipeListScreenState();
+  RecipeListScreenState createState() => RecipeListScreenState();
 }
 
-class _RecipeListScreenState extends State<RecipeListScreen> {
+class RecipeListScreenState extends State<RecipeListScreen> {
   List<Recipe> _recipes = [];
   bool _isLoading = true;
 
@@ -34,18 +34,51 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('My Recipes')),
+      appBar: AppBar(title: const Text('RecipeEase')),
       body:
           _isLoading
-              ? Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator())
               : ListView.builder(
                 itemCount: _recipes.length,
                 itemBuilder: (context, index) {
                   Recipe recipe = _recipes[index];
-                  return ListTile(
-                    title: Text(recipe.title),
-                    subtitle: Text(recipe.description ?? ''),
-                    onTap: () => _navigateToDetail(recipe),
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Image.network(
+                          recipe.imageUrl,
+                          fit: BoxFit.cover,
+                          height: 200,
+                          width: double.infinity,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                recipe.title,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              ElevatedButton(
+                                onPressed: () => _navigateToDetail(recipe),
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.black,
+                                  backgroundColor: Colors.white,
+                                ),
+                                child: const Text('Recipe Details'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),
@@ -53,7 +86,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
         onPressed: () {
           Navigator.pushNamed(context, '/recipeForm');
         },
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
   }

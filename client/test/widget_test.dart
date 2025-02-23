@@ -7,8 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:client/main.dart';
+import 'package:recipease/main.dart'; // Update this line with the correct project name
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {

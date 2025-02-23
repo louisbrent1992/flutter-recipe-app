@@ -3,12 +3,11 @@ const router = express.Router();
 const axios = require("axios"); // For calling an external AI API if needed
 const { v4: uuidv4 } = require("uuid");
 const OpenAI = require("openai");
-const { json } = require("body-parser");
+const recipeData = require("../data/recipeData");
 
 const client = new OpenAI({
-	api_key:
-		"LA-bca6f725b876458f9aa81f62b4ab45ca4e8f6167b51d42ef9fec41a2792bfc97",
-	base_url: "https://api.llama-api.com",
+	api_key: process.env.Llame_API_KEY,
+	base_url: process.env.LlamaAI_API_URL,
 });
 
 // In-memory recipes database
@@ -19,6 +18,8 @@ const UNSPLASH_API_URL = "https://api.unsplash.com/photos/random";
 
 // Image cache
 const imageCache = {};
+
+let previousIngredients = [];
 
 // GET /recipes - Fetch all recipes
 router.get("/", (req, res) => {
@@ -66,22 +67,26 @@ router.delete("/:id", (req, res) => {
 
 // Function to fetch an image from Unsplash with caching
 const fetchImage = async (query) => {
+	// Normalize the query by trimming and converting to lowercase
+	const normalizedQuery = query.trim().toLowerCase();
+
 	// Check if the image is already cached
-	if (imageCache[query]) {
-		return imageCache[query]; // Return cached image URL
+	if (imageCache[normalizedQuery]) {
+		return imageCache[normalizedQuery]; // Return cached image URL
 	}
 
 	try {
 		const response = await axios.get(UNSPLASH_API_URL, {
 			params: {
-				query: query,
+				query: normalizedQuery,
+				collections: "food",
 				client_id: UNSPLASH_ACCESS_KEY,
 			},
 		});
 		const imageUrl = response.data.urls.regular; // Return the regular size image URL
 
-		// Cache the image URL
-		imageCache[query] = imageUrl;
+		// Cache the image URL using the normalized query
+		imageCache[normalizedQuery] = imageUrl;
 
 		return imageUrl;
 	} catch (error) {
@@ -90,52 +95,64 @@ const fetchImage = async (query) => {
 	}
 };
 
+// Function to get a random ingredient
+const getRandomIngredient = async () => {
+	const availableIngredients = await recipeData.ingredients.filter(
+		(ingredient) => !previousIngredients.includes(ingredient)
+	);
+	if (availableIngredients.length === 0) {
+		// Reset previous ingredients if all have been used
+		previousIngredients = [];
+		return getRandomIngredient(); // Retry
+	}
+	const randomIndex = Math.floor(Math.random() * availableIngredients.length);
+	const selectedIngredient = await availableIngredients[randomIndex];
+	previousIngredients.push(selectedIngredient);
+
+	return selectedIngredient;
+};
+
+const randomIngredient = async () => await getRandomIngredient();
+
 // POST /recipes/generate - AI-generated recipe creation
 router.post("/generate", async (req, res) => {
 	const { ingredients = "", dietaryRestrictions, cuisineType } = req.body;
 
 	try {
-		// Call OpenAI API to generate a recipe
-		const response = await client.chat.completions.create(
-			{
-				model: "gpt-3.5-turbo",
-				messages: [
-					{
-						role: "user",
-						content: `Generate a recipe using the following data: Ingredients: ${ingredients}. Dietary restrictions: ${dietaryRestrictions}. Cuisine type: ${cuisineType}. If there are no dietary restrictions, cuisine type, or ingredients, generate a recipe with default values for these options.`,
-					},
-					{
-						role: "assistant",
-						content: `Provide a recipe in the following json format based on user inputs: {
-							"title": "Recipe Name",
-							"ingredients": ["ingredient 1", "ingredient 2", "ingredient 3"],
-							"steps": ["step 1", "step 2", "step 3"],
-							"description": "This is a description of the recipe.",
-							`,
-					},
-				],
+		let random = false;
+		if (!ingredients && !cuisineType) {
+			random = true;
+		}
 
-				response_format: {
-					type: "json_object",
+		// Call OpenAI API to generate a recipe
+		const response = await client.chat.completions.create({
+			model: "gpt-4o-mini",
+			messages: [
+				{
+					role: "user",
+					content: `Generate a recipe that includes the following:
+					- Ingredients: ${random ? await randomIngredient() : `${ingredients}`}.
+					- Dietary restrictions: ${dietaryRestrictions}.
+					- Cuisine type: ${cuisineType}.
+					- Additional ingredients.
+					The recipe should be in JSON format as follows:
+					{
+						"title": "Recipe Name",
+						"ingredients": ["ingredient 1", "ingredient 2", "ingredient 3"],
+						"steps": ["step 1", "step 2", "step 3"],
+						"description": "A unique dish."
+					}`,
 				},
-				temperature: 0.7,
-			},
-			{
-				headers: {
-					Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-					"Content-Type": "application/json",
-				},
-			}
-		);
+			],
+			response_format: { type: "json_object" },
+			temperature: 0.7,
+		});
 
 		const generatedContent = response.choices[0].message.content;
+		const foundRecipe = JSON.parse(generatedContent);
 
-		// Extract only the JSON portion using regular expressions
-		const foundRecipe = await JSON.parse(generatedContent);
-
-		// Fetch an image based on the recipe description
-		const imageDescription = foundRecipe.title;
-		const imageUrl = await fetchImage(imageDescription);
+		// Fetch an image based on the recipe title
+		const imageUrl = await fetchImage(foundRecipe.title);
 
 		const generatedRecipe = {
 			id: uuidv4(),
@@ -146,7 +163,7 @@ router.post("/generate", async (req, res) => {
 			imageUrl: imageUrl,
 		};
 
-		// Optionally, store the generated recipe
+		// Store the generated recipe
 		recipes.push(generatedRecipe);
 
 		res.json(generatedRecipe);

@@ -6,10 +6,10 @@ class AIRecipeScreen extends StatefulWidget {
   const AIRecipeScreen({super.key});
 
   @override
-  _AIRecipeScreenState createState() => _AIRecipeScreenState();
+  AIRecipeScreenState createState() => AIRecipeScreenState();
 }
 
-class _AIRecipeScreenState extends State<AIRecipeScreen> {
+class AIRecipeScreenState extends State<AIRecipeScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _ingredientsController = TextEditingController();
   final TextEditingController _dietController = TextEditingController();
@@ -43,21 +43,21 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
         cuisineType: cuisineType,
       );
 
-      // Log the recipe object to the console
-      print('Generated Recipe: ${recipe.toJson()}');
-
-      setState(() {
-        _generatedRecipe = recipe;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _generatedRecipe = recipe;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      // Handle error (e.g., show a snackbar or dialog)
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to generate recipe: $e')));
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to generate recipe: $e')),
+        );
+      }
     }
   }
 
@@ -72,70 +72,64 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Generate AI Recipe')),
+      appBar: AppBar(title: const Text('Generate AI Recipe')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child:
-            _isLoading
-                ? Center(child: CircularProgressIndicator())
-                : SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            TextFormField(
-                              controller: _ingredientsController,
-                              decoration: InputDecoration(
-                                labelText: 'Ingredients (comma separated)',
-                                hintText:
-                                    'Enter ingredients or leave blank for defaults',
-                              ),
-                            ),
-                            TextFormField(
-                              controller: _dietController,
-                              decoration: InputDecoration(
-                                labelText: 'Dietary Restrictions',
-                                hintText:
-                                    'Enter dietary restrictions or leave blank for defaults',
-                              ),
-                            ),
-                            TextFormField(
-                              controller: _cuisineController,
-                              decoration: InputDecoration(
-                                labelText: 'Cuisine Type',
-                                hintText:
-                                    'Enter cuisine type or leave blank for defaults',
-                              ),
-                            ),
-                            SizedBox(height: 20),
-                            ElevatedButton(
-                              onPressed: _generateRecipe,
-                              child: Text('Generate Recipe'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (_generatedRecipe != null) ...[
-                        SizedBox(height: 20),
-                        Text(
-                          _generatedRecipe!.title,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Ingredients: ${_generatedRecipe!.ingredients.join(", ")}',
-                        ),
-                        SizedBox(height: 10),
-                        Text('Steps: ${_generatedRecipe!.steps.join(" -> ")}'),
-                      ],
-                    ],
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _ingredientsController,
+                  decoration: const InputDecoration(labelText: 'Ingredients'),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _dietController,
+                  decoration: const InputDecoration(
+                    labelText: 'Dietary Restrictions',
                   ),
                 ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _cuisineController,
+                  decoration: const InputDecoration(labelText: 'Cuisine Type'),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _generateRecipe,
+                  child: const Text('Generate Recipe'),
+                ),
+                if (_isLoading) ...[
+                  const SizedBox(height: 20),
+                  const CircularProgressIndicator(),
+                ],
+                if (_generatedRecipe != null) ...[
+                  const SizedBox(height: 20),
+                  Text(
+                    _generatedRecipe!.title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    _generatedRecipe!.description,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Ingredients: ${_generatedRecipe!.ingredients.join(", ")}',
+                  ),
+                  const SizedBox(height: 10),
+                  Text('Steps: ${_generatedRecipe!.steps.join(" -> ")}'),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -2,8 +2,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/recipe.dart';
 import 'dart:io'; // Import the dart:io library
+import 'package:logger/logger.dart'; // Import the logger package
 
 class ApiService {
+  static final Logger logger = Logger(); // Create a logger instance
+
   // Change the baseUrl based on the environment
   static String get baseUrl {
     // Check for production environment
@@ -22,8 +25,10 @@ class ApiService {
     final response = await http.get(Uri.parse('$baseUrl/recipes'));
     if (response.statusCode == 200) {
       List<dynamic> data = json.decode(response.body);
+      logger.i(data); // Use logger instead of print
       return data.map((json) => Recipe.fromJson(json)).toList();
     } else {
+      logger.e('Failed to load recipes: ${response.statusCode}'); // Log error
       throw Exception('Failed to load recipes');
     }
   }

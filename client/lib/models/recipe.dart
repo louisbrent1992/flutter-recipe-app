@@ -3,14 +3,20 @@ class Recipe {
   final String title;
   final List<String> ingredients;
   final List<String> steps;
-  final String? description;
+  final String description;
+  final String imageUrl;
+  final String cookingTime;
+  final String? servings;
 
   Recipe({
-    this.id,
+    required this.id,
     required this.title,
     required this.ingredients,
     required this.steps,
-    this.description,
+    required this.description,
+    required this.imageUrl,
+    required this.cookingTime,
+    required this.servings,
   });
 
   // Convert from JSON
@@ -21,6 +27,9 @@ class Recipe {
       ingredients: List<String>.from(json['ingredients']),
       steps: List<String>.from(json['steps']),
       description: json['description'],
+      imageUrl: json['imageUrl'],
+      cookingTime: json['cookingTime'],
+      servings: json['servings'],
     );
   }
 
@@ -32,6 +41,8 @@ class Recipe {
       'ingredients': ingredients,
       'steps': steps,
       'description': description,
+      'imageUrl': imageUrl,
+      'cookingTime': cookingTime,
     };
   }
 }
