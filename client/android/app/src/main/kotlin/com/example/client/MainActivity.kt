@@ -1,4 +1,4 @@
-package com.example.client
+package com.example.recipease
 
 import io.flutter.embedding.android.FlutterActivity
 
