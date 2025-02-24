@@ -7,34 +7,32 @@ class LandingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
+        leading: Stack(
+          alignment: Alignment.center,
           children: [
-            Stack(
-              children: [
-                Container(
-                  width: 60,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
-                ),
-                const Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: Icon(Icons.restaurant_outlined, color: Colors.white),
-                  ),
-                ),
-              ],
+            Container(
+              decoration: const BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+              ),
+              margin: const EdgeInsetsDirectional.fromSTEB(15, 15, 0, 10),
+
+              child: IconButton(
+                icon: const Icon(Icons.restaurant_outlined),
+                color: Colors.white,
+                onPressed: () {
+                  Navigator.pushNamed(context, '/home');
+                },
+                iconSize: 16,
+              ),
             ),
-            const SizedBox(
-              width: 8,
-            ), // Add some spacing between the icon and the title
-            const Text('Explore'),
           ],
+        ),
+        titleSpacing: 8,
+
+        title: const Text(
+          'Explore',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
       ),
       body: Center(
@@ -48,22 +46,30 @@ class LandingScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Image.network(
-                    'https://res.cloudinary.com/client-images/image/upload/v1695070874/eCommerce%20Site%20Images/about-image_sasb2y.png', // Updated URL
-                    fit:
-                        BoxFit
-                            .cover, // Adjust the image to cover the available space
-                    width: 400, // Set a specific width for the image
-                    height: 400, // Set a specific height for the image
-                    errorBuilder: (
-                      BuildContext context,
-                      Object error,
-                      StackTrace? stackTrace,
-                    ) {
-                      return const Text('Image failed to load');
-                    },
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(
+                      10,
+                    ), // Set the desired border radius
+                    child: Image.network(
+                      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80', // Updated URL
+                      fit:
+                          BoxFit
+                              .cover, // Adjust the image to cover the available space
+                      width: 400, // Set a specific width for the image
+                      height: 400, // Set a specific height for the image
+                      errorBuilder: (
+                        BuildContext context,
+                        Object error,
+                        StackTrace? stackTrace,
+                      ) {
+                        return const Text('Image failed to load');
+                      },
+                    ),
                   ),
-                  const SizedBox(height: 20), // Add spacing between image and text
+
+                  const SizedBox(
+                    height: 20,
+                  ), // Add spacing between image and text
                   const Text(
                     'Discover delicious recipes!',
                     style: TextStyle(
@@ -71,14 +77,18 @@ class LandingScreen extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ), // Style the text for better visibility
                   ),
-                  const SizedBox(height: 10), // Add spacing between text and button
+                  const SizedBox(
+                    height: 10,
+                  ), // Add spacing between text and button
                   const Text(
                     'Explore a variety of recipes, find new dishes to try, and connect with a community of food enthusiasts!',
                   ),
-                  const SizedBox(height: 20), // Add spacing between text and button
+                  const SizedBox(
+                    height: 20,
+                  ), // Add spacing between text and button
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.pushNamed(context, '/home');
+                      Navigator.pushNamed(context, '/login');
                     },
                     style: ButtonStyle(
                       backgroundColor: WidgetStateProperty.all<Color>(
@@ -90,8 +100,16 @@ class LandingScreen extends StatelessWidget {
                       minimumSize: WidgetStateProperty.all<Size>(
                         const Size(double.maxFinite, 50),
                       ), // Use MaterialStateProperty
+                      shape: WidgetStateProperty.all<OutlinedBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ), // Use MaterialStateProperty
+                      ),
                     ),
-                    child: const Text('Start Cooking'),
+                    child: const Text(
+                      'Start Cooking',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),

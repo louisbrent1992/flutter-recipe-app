@@ -29,6 +29,7 @@ class MyApp extends StatelessWidget {
   /// ****  0847eaad-f93c-48a5-8490-417a7812b8f2  ******
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'AI Recipe App',
       theme: ThemeData(primarySwatch: Colors.deepOrange),
       initialRoute: '/',
