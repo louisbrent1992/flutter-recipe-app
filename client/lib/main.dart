@@ -10,6 +10,7 @@ import 'screens/new_home_screen.dart';
 import 'screens/recipe_search.dart';
 import 'screens/discover_recipe.dart';
 import 'screens/settings_screen.dart';
+import 'models/recipe.dart';
 
 void main() {
   runApp(const MyApp());
@@ -31,14 +32,19 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'AI Recipe App',
-      theme: ThemeData(primarySwatch: Colors.deepOrange),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.orangeAccent),
+        useMaterial3: true,
+      ),
       initialRoute: '/',
       routes: {
         '/': (context) => const LandingScreen(),
         '/home': (context) => const NewHomeScreen(),
         '/aiRecipe': (context) => const AIRecipeScreen(),
         '/recipeList': (context) => const RecipeListScreen(),
-        '/recipeDetail': (context) => const RecipeDetailScreen(),
+        '/recipeDetail': (context) {
+          return RecipeDetailScreen(recipe: Recipe());
+        },
         '/recipeForm': (context) => const RecipeFormScreen(),
         '/socialImport': (context) => const SocialImportScreen(),
         '/login': (context) => const LoginScreen(),

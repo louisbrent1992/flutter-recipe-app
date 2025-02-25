@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:recipease/components/bottom_nav_bar.dart';
 
@@ -118,7 +116,7 @@ class RecipeSearchScreenState extends State<RecipeSearchScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: const TransparentBtmNavBarCurvedFb1(),
+      bottomNavigationBar: const BottomNavBar(),
     );
   }
 
@@ -182,6 +180,7 @@ class RecipeSearchScreenState extends State<RecipeSearchScreen> {
               trailing: const Icon(Icons.restaurant_menu_outlined),
               onTap: () {
                 // Navigate to recipe detail or perform an action
+                Navigator.pushNamed(context, '/recipeDetail');
               },
             ),
           ),

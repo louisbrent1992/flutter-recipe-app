@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class TransparentBtmNavBarCurvedFb1 extends StatelessWidget {
-  const TransparentBtmNavBarCurvedFb1({super.key});
+class BottomNavBar extends StatelessWidget {
+  const BottomNavBar({super.key});
 
   @override
   Widget build(BuildContext context) {

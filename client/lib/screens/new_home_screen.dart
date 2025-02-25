@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:recipease/components/bottom_nav_bar.dart';
 // Removed the import for bottom_nav_bar since it doesn't exist
 
-class NewHomeScreen extends StatelessWidget {
-  const NewHomeScreen({Key? key})
-    : super(key: key); // Updated constructor for clarity
+class NewHomeScreen extends StatefulWidget {
+  const NewHomeScreen({Key? key}) : super(key: key);
+  @override
+  State<NewHomeScreen> createState() => _NewHomeScreenState();
+}
 
+class _NewHomeScreenState extends State<NewHomeScreen> {
+  // Updated constructor for clarity
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -146,7 +150,7 @@ class NewHomeScreen extends StatelessWidget {
         ),
       ),
       extendBody: true,
-      bottomNavigationBar: const TransparentBtmNavBarCurvedFb1(),
+      bottomNavigationBar: const BottomNavBar(),
     );
   }
 
@@ -210,7 +214,8 @@ class NewHomeScreen extends StatelessWidget {
               subtitle: Text(author),
               trailing: const Icon(Icons.restaurant_menu_outlined),
               onTap: () {
-                // Navigate to recipe detail or perform an action
+                // Navigate to the respective recipe details
+                Navigator.pushNamed(context, '/recipeDetail');
               },
             ),
           ),
