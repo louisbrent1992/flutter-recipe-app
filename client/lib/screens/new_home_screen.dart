@@ -37,10 +37,26 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
               border: Border.all(color: Colors.black, width: 1),
             ),
 
-            child: Image.network(
-              'https://img.icons8.com/?size=100&id=nSR7D8Yb2tjC&format=png&color=000000',
-              fit: BoxFit.cover,
+            child: Container(
               height: 30,
+              width: 30,
+
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.black, width: 0.5),
+                image: const DecorationImage(
+                  image: NetworkImage(
+                    'https://img.icons8.com/?size=100&id=nSR7D8Yb2tjC&format=png&color=000000',
+                  ),
+                  fit: BoxFit.cover,
+                ),
+              ),
+              child: InkWell(
+                onTap: () {
+                  // Handle profile picture tap event
+                  Navigator.pushNamed(context, '/settings');
+                },
+              ),
 
               // Updated link for profile pic
             ),

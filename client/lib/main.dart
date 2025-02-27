@@ -10,6 +10,7 @@ import 'screens/new_home_screen.dart';
 import 'screens/recipe_search.dart';
 import 'screens/discover_recipe.dart';
 import 'screens/settings_screen.dart';
+import 'screens/favorite_recipes.dart';
 import 'models/recipe.dart';
 
 void main() {
@@ -33,7 +34,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'AI Recipe App',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.orangeAccent),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal[50]!),
         useMaterial3: true,
       ),
       initialRoute: '/',
@@ -41,6 +42,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const LandingScreen(),
         '/home': (context) => const NewHomeScreen(),
         '/aiRecipe': (context) => const AIRecipeScreen(),
+        '/favorites': (context) => const FavoriteRecipesScreen(),
         '/recipeList': (context) => const RecipeListScreen(),
         '/recipeDetail': (context) {
           return RecipeDetailScreen(recipe: Recipe());

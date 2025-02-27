@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:recipease/components/bottom_nav_bar.dart';
 import 'package:recipease/models/recipe.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
@@ -34,7 +33,7 @@ class RecipeDetailScreenState extends State<RecipeDetailScreen> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,53 +96,57 @@ class RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 (entry) => Text('${entry.key + 1}. ${entry.value}'),
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black, width: 1),
-                      borderRadius: BorderRadius.circular(10),
-                      color: Colors.black,
-                    ),
-                    child: const Row(
-                      spacing: 6,
-                      children: [
-                        Icon(Icons.favorite, size: 18, color: Colors.white),
-
-                        Text('Favorite', style: TextStyle(color: Colors.white)),
-                      ],
-                    ),
-                  ),
-
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black, width: 1),
-                      borderRadius: BorderRadius.circular(10),
-                      color: Colors.white,
-                    ),
-                    child: const Row(
-                      spacing: 6,
-                      children: [
-                        Icon(
-                          Icons.share_rounded,
-                          size: 18,
-                          color: Colors.black,
-                        ),
-                        Text('Share', style: TextStyle(color: Colors.black)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
       ),
 
-      bottomNavigationBar: const BottomNavBar(),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Color.fromARGB(10, 0, 0, 0),
+          // Set the background color to transparent (255, 0, 0, 0)
+        ),
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black, width: 1),
+                borderRadius: BorderRadius.circular(10),
+                color: Colors.black,
+              ),
+              child: const Row(
+                spacing: 6,
+                children: [
+                  Icon(Icons.favorite, size: 18, color: Colors.white),
+
+                  Text('Favorite', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+
+            Container(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black, width: 1),
+                borderRadius: BorderRadius.circular(10),
+                color: Colors.white,
+              ),
+              child: const Row(
+                spacing: 6,
+                children: [
+                  Icon(Icons.share_rounded, size: 18, color: Colors.black),
+                  Text('Share', style: TextStyle(color: Colors.black)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -39,7 +39,7 @@ class BottomNavBar extends StatelessWidget {
             icon: const Icon(Icons.person, color: Colors.white),
             onPressed: () {
               // Navigate to profile
-              Navigator.pushNamed(context, '/profile');
+              Navigator.pushNamed(context, '/settings');
             },
           ),
         ],
