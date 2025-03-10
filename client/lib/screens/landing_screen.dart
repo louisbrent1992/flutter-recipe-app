@@ -11,9 +11,9 @@ class LandingScreen extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             Container(
-              decoration: const BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.all(Radius.circular(10)),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                borderRadius: const BorderRadius.all(Radius.circular(10)),
               ),
               margin: const EdgeInsetsDirectional.fromSTEB(15, 15, 0, 10),
 
@@ -55,8 +55,8 @@ class LandingScreen extends StatelessWidget {
                       fit:
                           BoxFit
                               .cover, // Adjust the image to cover the available space
-                      width: 400, // Set a specific width for the image
-                      height: 400, // Set a specific height for the image
+                      width: 300, // Set a specific width for the image
+                      height: 300, // Set a specific height for the image
                       errorBuilder: (
                         BuildContext context,
                         Object error,
@@ -92,10 +92,10 @@ class LandingScreen extends StatelessWidget {
                     },
                     style: ButtonStyle(
                       backgroundColor: WidgetStateProperty.all<Color>(
-                        Colors.black,
+                        Theme.of(context).colorScheme.secondary,
                       ), // Use MaterialStateProperty
                       foregroundColor: WidgetStateProperty.all<Color>(
-                        Colors.white,
+                        Theme.of(context).colorScheme.onPrimary,
                       ), // Use MaterialStateProperty
                       minimumSize: WidgetStateProperty.all<Size>(
                         const Size(double.maxFinite, 50),

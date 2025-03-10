@@ -17,15 +17,24 @@ class RecipeFormScreenState extends State<RecipeFormScreen> {
   late TextEditingController _stepsController;
   late TextEditingController _descriptionController;
 
+  static const String titleLabel = 'Recipe Title';
+  static const String descriptionLabel = 'Description';
+  static const String ingredientsLabel = 'Ingredients (comma separated)';
+  static const String stepsLabel = 'Steps (comma separated)';
+
   @override
   void initState() {
     super.initState();
+    _initializeControllers();
+  }
+
+  void _initializeControllers() {
     _titleController = TextEditingController(text: widget.recipe?.title ?? '');
     _ingredientsController = TextEditingController(
       text: widget.recipe?.ingredients.join(", ") ?? '',
     );
     _stepsController = TextEditingController(
-      text: widget.recipe?.steps.join(", ") ?? '',
+      text: widget.recipe?.instructions.join(", ") ?? '',
     );
     _descriptionController = TextEditingController(
       text: widget.recipe?.description ?? '',
@@ -42,7 +51,8 @@ class RecipeFormScreenState extends State<RecipeFormScreen> {
                 .split(',')
                 .map((e) => e.trim())
                 .toList(),
-        steps: _stepsController.text.split(',').map((e) => e.trim()).toList(),
+        instructions:
+            _stepsController.text.split(',').map((e) => e.trim()).toList(),
         description: _descriptionController.text,
         imageUrl: widget.recipe?.imageUrl ?? '',
         cookingTime: widget.recipe?.cookingTime ?? '',
@@ -73,6 +83,16 @@ class RecipeFormScreenState extends State<RecipeFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.recipe == null ? 'Add Recipe' : 'Edit Recipe'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.favorite_border),
+            color: Theme.of(context).colorScheme.onPrimary,
+            onPressed: () {
+              // Handle favorite action
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -82,20 +102,18 @@ class RecipeFormScreenState extends State<RecipeFormScreen> {
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Recipe Title'),
+                decoration: const InputDecoration(labelText: titleLabel),
                 validator:
                     (value) =>
                         value == null || value.isEmpty ? 'Enter title' : null,
               ),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
+                decoration: const InputDecoration(labelText: descriptionLabel),
               ),
               TextFormField(
                 controller: _ingredientsController,
-                decoration: const InputDecoration(
-                  labelText: 'Ingredients (comma separated)',
-                ),
+                decoration: const InputDecoration(labelText: ingredientsLabel),
                 validator:
                     (value) =>
                         value == null || value.isEmpty
@@ -104,9 +122,7 @@ class RecipeFormScreenState extends State<RecipeFormScreen> {
               ),
               TextFormField(
                 controller: _stepsController,
-                decoration: const InputDecoration(
-                  labelText: 'Steps (comma separated)',
-                ),
+                decoration: const InputDecoration(labelText: stepsLabel),
                 validator:
                     (value) =>
                         value == null || value.isEmpty ? 'Enter steps' : null,
@@ -114,6 +130,10 @@ class RecipeFormScreenState extends State<RecipeFormScreen> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _saveRecipe,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                ),
                 child: const Text('Save Recipe'),
               ),
             ],

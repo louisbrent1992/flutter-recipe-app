@@ -9,7 +9,19 @@ class LoginScreen extends StatelessWidget {
     final TextEditingController passwordController = TextEditingController();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(
+        title: const Text('Login'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.favorite_border),
+            color: Theme.of(context).colorScheme.onPrimary,
+            onPressed: () {
+              // Handle favorite action
+            },
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -58,6 +70,10 @@ class LoginScreen extends StatelessWidget {
                 // Implement login logic here
                 Navigator.pushNamed(context, '/home');
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.secondary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              ),
               child: const Text('Login'),
             ),
             const SizedBox(height: 10),
@@ -65,6 +81,10 @@ class LoginScreen extends StatelessWidget {
               onPressed: () {
                 print("sign up");
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.secondary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              ),
               child: const Text('Sign Up'),
             ),
             const SizedBox(height: 10),

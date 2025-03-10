@@ -4,7 +4,7 @@ import 'package:recipease/models/recipe.dart';
 class RecipeDetailScreen extends StatefulWidget {
   const RecipeDetailScreen({Key? key, required this.recipe}) : super(key: key);
 
-  final Recipe recipe;
+  final Recipe? recipe;
 
   @override
   RecipeDetailScreenState createState() => RecipeDetailScreenState();
@@ -15,17 +15,22 @@ class RecipeDetailScreenState extends State<RecipeDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.recipe.title),
-
+        title: Text(
+          widget.recipe?.title ?? 'Recipe Detail',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         actions: [
           IconButton(
             icon: const Icon(Icons.favorite_border),
+            color: Theme.of(context).colorScheme.onPrimary,
             onPressed: () {
               // Handle favorite action
             },
           ),
           IconButton(
             icon: const Icon(Icons.share),
+            color: Theme.of(context).colorScheme.onPrimary,
             onPressed: () {
               // Handle share action
             },
@@ -42,20 +47,20 @@ class RecipeDetailScreenState extends State<RecipeDetailScreen> {
               SizedBox(
                 height: 300,
                 width: double.infinity,
-                child: Image.network(widget.recipe.imageUrl, fit: BoxFit.cover),
+                child: Image.network(
+                  widget.recipe?.imageUrl ?? '',
+                  fit: BoxFit.cover,
+                ),
               ),
               const SizedBox(height: 10),
               SelectableText(
-                widget.recipe.title,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                widget.recipe?.title ?? 'No Title',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
               Text(
-                widget.recipe.description,
-                style: const TextStyle(fontSize: 16),
+                widget.recipe?.description ?? 'No Description',
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 8),
               Row(
@@ -65,14 +70,14 @@ class RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     children: [
                       const Icon(Icons.timer, size: 18),
                       const SizedBox(width: 8),
-                      Text(widget.recipe.cookingTime),
+                      Text(widget.recipe?.cookingTime ?? 'No Cooking Time'),
                     ],
                   ),
                   Row(
                     children: [
                       const Icon(Icons.people, size: 18),
                       const SizedBox(width: 8),
-                      Text('Serves ${widget.recipe.servings}'),
+                      Text('Serves ${widget.recipe?.servings ?? 0}'),
                     ],
                   ),
                 ],
@@ -83,18 +88,20 @@ class RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              ...widget.recipe.ingredients.map(
-                (ingredient) => Text('- $ingredient'),
-              ),
+              ...widget.recipe?.ingredients.map(
+                    (ingredient) => Text('- $ingredient'),
+                  ) ??
+                  [],
               const SizedBox(height: 16),
               const Text(
                 'Instructions:',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              ...widget.recipe.steps.asMap().entries.map(
-                (entry) => Text('${entry.key + 1}. ${entry.value}'),
-              ),
+              ...widget.recipe?.instructions.asMap().entries.map(
+                    (entry) => Text('${entry.key + 1}. ${entry.value}'),
+                  ) ??
+                  [],
               const SizedBox(height: 16),
             ],
           ),
@@ -102,10 +109,7 @@ class RecipeDetailScreenState extends State<RecipeDetailScreen> {
       ),
 
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Color.fromARGB(10, 0, 0, 0),
-          // Set the background color to transparent (255, 0, 0, 0)
-        ),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 20.0),
         child: Row(
@@ -115,16 +119,26 @@ class RecipeDetailScreenState extends State<RecipeDetailScreen> {
             Container(
               padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.black, width: 1),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  width: 1,
+                ),
                 borderRadius: BorderRadius.circular(10),
-                color: Colors.black,
+                color: Theme.of(context).colorScheme.primary,
               ),
-              child: const Row(
-                spacing: 6,
+              child: Row(
                 children: [
-                  Icon(Icons.favorite, size: 18, color: Colors.white),
-
-                  Text('Favorite', style: TextStyle(color: Colors.white)),
+                  Icon(
+                    Icons.favorite,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                  Text(
+                    'Favorite',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -132,15 +146,26 @@ class RecipeDetailScreenState extends State<RecipeDetailScreen> {
             Container(
               padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.black, width: 1),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  width: 1,
+                ),
                 borderRadius: BorderRadius.circular(10),
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
               ),
-              child: const Row(
-                spacing: 6,
+              child: Row(
                 children: [
-                  Icon(Icons.share_rounded, size: 18, color: Colors.black),
-                  Text('Share', style: TextStyle(color: Colors.black)),
+                  Icon(
+                    Icons.share_rounded,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  Text(
+                    'Share',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -11,23 +11,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-
+      appBar: AppBar(
+        title: const Text('Settings', style: TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
+      body: SafeArea(
         child: ListView(
           children: [
             Container(
+              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 shape: BoxShape.rectangle,
-                color: Colors.teal[100],
+                color: Theme.of(context).colorScheme.surface,
               ),
               width: double.infinity,
               child: Column(
                 children: [
                   _buildSettingsItem('Account', Icons.person, '/profile'),
-                  const Divider(color: Color.fromARGB(14, 0, 0, 0)),
+                  const Divider(color: Color.fromARGB(16, 0, 0, 0)),
                   _buildSettingsItem(
                     'My subscription',
                     Icons.subscriptions,
@@ -37,12 +39,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const Divider(color: Color.fromARGB(16, 0, 0, 0)),
             Container(
+              padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 0),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 shape: BoxShape.rectangle,
-                color: Colors.teal[100],
+                color: Theme.of(context).colorScheme.surface,
               ),
 
               width: double.infinity,
@@ -53,25 +56,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Icons.settings,
                     '/general_settings',
                   ),
-                  const Divider(color: Color.fromARGB(14, 0, 0, 0)),
+                  const Divider(color: Color.fromARGB(16, 0, 0, 0)),
                   _buildSettingsItem(
                     'Privacy settings',
                     Icons.privacy_tip,
                     '/privacy_settings',
                   ),
-                  const Divider(color: Color.fromARGB(14, 0, 0, 0)),
+                  const Divider(color: Color.fromARGB(16, 0, 0, 0)),
                   _buildSettingsItem(
                     'Notification settings',
                     Icons.notifications,
                     '/notification_settings',
                   ),
-                  const Divider(color: Color.fromARGB(14, 0, 0, 0)),
+                  const Divider(color: Color.fromARGB(16, 0, 0, 0)),
                   _buildSettingsItem(
                     'Appearance settings',
                     Icons.color_lens,
                     '/appearance_settings',
                   ),
-                  const Divider(color: Color.fromARGB(14, 0, 0, 0)),
+                  const Divider(color: Color.fromARGB(16, 0, 0, 0)),
                   _buildSettingsItem(
                     'Advanced settings',
                     Icons.build,
@@ -80,12 +83,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const Divider(color: Color.fromARGB(16, 0, 0, 0)),
             Container(
+              padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 shape: BoxShape.rectangle,
-                color: Colors.teal[100],
+                color: Theme.of(context).colorScheme.surface,
               ),
 
               width: double.infinity,
@@ -97,7 +101,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Icons.help,
                     '/help_support',
                   ),
-                  const Divider(color: Color.fromARGB(14, 0, 0, 0)),
+                  const Divider(color: Color.fromARGB(16, 0, 0, 0)),
                   _buildSettingsItem('Sign out', Icons.logout, '/sign_out'),
                 ],
               ),

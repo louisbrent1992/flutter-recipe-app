@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
-import 'screens/ai_recipe_screen.dart';
-import 'screens/recipe_list_screen.dart';
-import 'screens/recipe_detail_screen.dart';
-import 'screens/recipe_form_screen.dart';
-import 'screens/social_import_screen.dart';
-import 'screens/landing_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/new_home_screen.dart';
-import 'screens/recipe_search.dart';
-import 'screens/discover_recipe.dart';
-import 'screens/settings_screen.dart';
-import 'screens/favorite_recipes.dart';
-import 'models/recipe.dart';
+import 'package:recipease/misc/share_intent.dart';
+import 'package:recipease/models/recipe.dart';
+import 'package:recipease/screens/discover_recipes.dart';
+import 'package:recipease/screens/favorite_recipes.dart';
+import 'package:recipease/screens/generate_recipe_screen.dart';
+import 'package:recipease/screens/home_screen.dart';
+import 'package:recipease/screens/import_details_screen.dart';
+import 'package:recipease/screens/recipe_detail_screen.dart';
+import 'package:recipease/screens/settings_screen.dart';
+import 'package:recipease/theme/theme.dart';
+import 'components/bottom_nav_bar.dart'; // Import the BottomNavBar
 
 void main() {
   runApp(const MyApp());
@@ -19,42 +17,27 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
-  /*************  ✨ Codeium Command ⭐  *************/
-  /// Builds the main application widget.
-  ///
-  /// Returns a [MaterialApp] widget configured with the application's title,
-  /// theme, and routes. The initial route is set to the landing screen. It
-  /// includes multiple routes for different screens such as home, AI recipe,
-  /// recipe list, recipe detail, and others.
-  /// ****  0847eaad-f93c-48a5-8490-417a7812b8f2  ******
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'AI Recipe App',
+      title: 'Recipe App',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal[50]!),
         useMaterial3: true,
+        colorScheme: appThemeData.colorScheme,
       ),
-      initialRoute: '/',
+      debugShowCheckedModeBanner: false,
+
+      home: const BottomNavBar(), // Use BottomNavBar as the home widget
       routes: {
-        '/': (context) => const LandingScreen(),
-        '/home': (context) => const NewHomeScreen(),
-        '/aiRecipe': (context) => const AIRecipeScreen(),
-        '/favorites': (context) => const FavoriteRecipesScreen(),
-        '/recipeList': (context) => const RecipeListScreen(),
-        '/recipeDetail': (context) {
-          return RecipeDetailScreen(recipe: Recipe());
-        },
-        '/recipeForm': (context) => const RecipeFormScreen(),
-        '/socialImport': (context) => const SocialImportScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/newHome': (context) => const NewHomeScreen(),
-        '/search': (context) => const RecipeSearchScreen(),
-        '/recipeSearch': (context) => const RecipeSearchScreen(),
-        '/discoverRecipe': (context) => const DiscoverRecipeScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/generate': (context) => const GenerateRecipeScreen(),
+        '/import': (context) => ImportDetailsScreen(recipe: Recipe()),
+        '/favorite': (context) => const FavoriteRecipesScreen(),
         '/settings': (context) => const SettingsScreen(),
+
+        // '/notifications': (context) => const NotificationsScreen(),
+        '/recipe': (context) => const RecipeDetailScreen(recipe: null),
+        '/discover': (context) => const DiscoverRecipesScreen(),
       },
     );
   }

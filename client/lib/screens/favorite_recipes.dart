@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:recipease/components/bottom_nav_bar.dart';
+import 'package:recipease/components/app_bar.dart';
 import 'package:recipease/models/recipe.dart';
 
 // Assuming the path is correct based on the context provided
@@ -30,7 +30,7 @@ class FavoriteRecipesScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Favorite Recipes')),
+      appBar: const CustomAppBar(title: 'Favorite Recipes'),
       body: ListView.builder(
         itemCount: favoriteRecipes.length,
         itemBuilder: (context, index) {
@@ -67,8 +67,8 @@ class FavoriteRecipesScreen extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -87,6 +87,7 @@ class FavoriteRecipesScreen extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 18,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -97,7 +98,6 @@ class FavoriteRecipesScreen extends StatelessWidget {
           );
         },
       ),
-      bottomNavigationBar: const BottomNavBar(),
     );
   }
 }

@@ -34,7 +34,19 @@ class RecipeListScreenState extends State<RecipeListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('RecipeEase')),
+      appBar: AppBar(
+        title: const Text('RecipeEase'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.favorite_border),
+            color: Theme.of(context).colorScheme.onPrimary,
+            onPressed: () {
+              // Handle favorite action
+            },
+          ),
+        ],
+      ),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -43,7 +55,10 @@ class RecipeListScreenState extends State<RecipeListScreen> {
                 itemBuilder: (context, index) {
                   Recipe recipe = _recipes[index];
                   return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                    margin: const EdgeInsets.symmetric(
+                      vertical: 10,
+                      horizontal: 16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -69,8 +84,10 @@ class RecipeListScreenState extends State<RecipeListScreen> {
                               ElevatedButton(
                                 onPressed: () => _navigateToDetail(recipe),
                                 style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.black,
-                                  backgroundColor: Colors.white,
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.primary,
+                                  foregroundColor:
+                                      Theme.of(context).colorScheme.onPrimary,
                                 ),
                                 child: const Text('Recipe Details'),
                               ),
