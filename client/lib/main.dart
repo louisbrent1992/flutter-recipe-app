@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/misc/share_intent.dart';
-import 'package:recipease/models/recipe.dart';
 import 'package:recipease/screens/discover_recipes.dart';
 import 'package:recipease/screens/favorite_recipes.dart';
 import 'package:recipease/screens/generate_recipe_screen.dart';
@@ -31,9 +30,10 @@ class MyApp extends StatelessWidget {
       routes: {
         '/home': (context) => const HomeScreen(),
         '/generate': (context) => const GenerateRecipeScreen(),
-        '/import': (context) => ImportDetailsScreen(recipe: Recipe()),
+        '/import': (context) => const ImportDetailsScreen(),
         '/favorite': (context) => const FavoriteRecipesScreen(),
         '/settings': (context) => const SettingsScreen(),
+        '/intent': (context) => const SharingIntent(),
 
         // '/notifications': (context) => const NotificationsScreen(),
         '/recipe': (context) => const RecipeDetailScreen(recipe: null),

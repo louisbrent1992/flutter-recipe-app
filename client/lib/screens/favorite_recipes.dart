@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/app_bar.dart';
+import 'package:recipease/components/nav_drawer.dart';
 import 'package:recipease/models/recipe.dart';
 
 // Assuming the path is correct based on the context provided
@@ -31,72 +32,79 @@ class FavoriteRecipesScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: const CustomAppBar(title: 'Favorite Recipes'),
-      body: ListView.builder(
-        itemCount: favoriteRecipes.length,
-        itemBuilder: (context, index) {
-          final recipe = favoriteRecipes[index];
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(40.0, 10.0, 40.0, 10.0),
+      drawer: const NavDrawer(),
+      body: Scrollbar(
+        thumbVisibility: true,
+        thickness: 10,
+        child: ListView.builder(
+          itemCount: favoriteRecipes.length,
+          itemBuilder: (context, index) {
+            final recipe = favoriteRecipes[index];
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(40.0, 10.0, 40.0, 10.0),
 
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.rectangle,
-                    borderRadius: const BorderRadius.all(Radius.circular(10)),
-                    color: Colors.black,
-                    image: DecorationImage(
-                      image: Image.network(recipe.imageUrl).image,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  height: 180,
-                  width: double.infinity,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  recipe.title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.rectangle,
+                      borderRadius: const BorderRadius.all(Radius.circular(10)),
+                      color: Colors.black,
+                      image: DecorationImage(
+                        image: Image.network(recipe.imageUrl).image,
+                        fit: BoxFit.cover,
                       ),
                     ),
+                    height: 180,
+                    width: double.infinity,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    recipe.title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).colorScheme.secondary,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
 
-                    onPressed: () {
-                      Navigator.pushNamed(
-                        context,
-                        '/recipeDetail',
-                        arguments: recipe,
-                      );
-                    },
+                      onPressed: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/recipeDetail',
+                          arguments: recipe,
+                        );
+                      },
 
-                    child: const Text(
-                      'Recipe Details',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18,
-                        color: Colors.white,
+                      child: const Text(
+                        'Recipe Details',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          );
-        },
+                  const SizedBox(height: 8),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

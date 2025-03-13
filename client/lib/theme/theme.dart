@@ -5,12 +5,14 @@ const Color secondaryColor = Color(0xFF3D405B); // Deep Navy
 const Color backgroundColor = Color(0xFFF7EDF0); // Soft Blush
 const Color accentColor = Color(0xFFA5FFD6); // Mint Green
 const Color neutralColor = Color(0xFFF2CC8F); // Muted Peach
+const Color purpleColor = Color(0xFF6A0572); // Rich Purple
 
 final ThemeData appThemeData = ThemeData(
   colorScheme: const ColorScheme(
     primary: primaryColor,
     secondary: secondaryColor,
     tertiary: accentColor,
+    onTertiary: purpleColor,
     surface: backgroundColor,
     error: Colors.red, // Default error color
     onPrimary: Colors.white, // Text/icons on primary color

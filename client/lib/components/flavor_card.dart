@@ -43,16 +43,16 @@ class FlavorCard extends StatelessWidget {
                           foreground:
                               Paint()
                                 ..style = PaintingStyle.stroke
-                                ..strokeWidth = 1.2
+                                ..strokeWidth = 1.5
                                 ..color =
                                     Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       ),
                     ],
@@ -67,7 +67,7 @@ class FlavorCard extends StatelessWidget {
                             foreground:
                                 Paint()
                                   ..style = PaintingStyle.stroke
-                                  ..strokeWidth = 1
+                                  ..strokeWidth = 1.5
                                   ..color =
                                       Theme.of(context).colorScheme.secondary,
                           ),

@@ -37,13 +37,13 @@ class DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
           controller: _searchController,
           decoration: const InputDecoration(
             border: InputBorder.none,
-            alignLabelWithHint: true,
             hintText: 'Search for recipes...',
             hintStyle: TextStyle(color: Colors.white),
             prefixIcon: Icon(Icons.search, color: Colors.white),
           ),
           cursorColor: Theme.of(context).colorScheme.secondary,
           cursorHeight: 18,
+          textInputAction: TextInputAction.search,
           onChanged: (value) {
             // Implement search functionality
           },
@@ -53,7 +53,7 @@ class DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
           IconButton(
             icon: Icon(
               Icons.person,
-              color: Theme.of(context).colorScheme.onTertiary,
+              color: Theme.of(context).colorScheme.onPrimary,
             ),
             onPressed: () => Navigator.pushNamed(context, '/profile'),
           ),
@@ -79,6 +79,7 @@ class DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
               const Expanded(
                 child: Scrollbar(
                   thumbVisibility: true,
+                  thickness: 5,
                   child: SingleChildScrollView(
                     child: Column(
                       children: [

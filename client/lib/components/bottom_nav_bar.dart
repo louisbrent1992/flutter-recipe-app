@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:recipease/models/recipe.dart';
 import 'package:recipease/screens/generate_recipe_screen.dart';
 import 'package:recipease/screens/import_details_screen.dart';
 import '../screens/home_screen.dart';
@@ -22,7 +21,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
     const HomeScreen(),
     const FavoriteRecipesScreen(),
     const GenerateRecipeScreen(),
-    ImportDetailsScreen(recipe: Recipe()),
+    const ImportDetailsScreen(),
     const SettingsScreen(),
   ];
 
@@ -51,35 +50,43 @@ class _BottomNavBarState extends State<BottomNavBar> {
             label: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(
-              _currentIndex == 1
-                  ? Icons.favorite
-                  : Icons.favorite_border_outlined,
-              color: Colors.white,
-            ),
+            icon:
+                _currentIndex == 1
+                    ? Icon(Icons.favorite, color: Colors.red[900])
+                    : const Icon(Icons.favorite_border, color: Colors.white),
             label: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(
-              _currentIndex == 2
-                  ? Icons.auto_awesome_rounded
-                  : Icons.auto_awesome_outlined,
-              color: Colors.white,
-            ),
+            icon:
+                _currentIndex == 2
+                    ? Icon(
+                      Icons.auto_awesome,
+                      color: Colors.purple[900],
+                    ) // Add icon for the GenerateRecipeScreen
+                    : const Icon(
+                      Icons.auto_awesome_outlined,
+                      color: Colors.white,
+                    ),
             label: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(
-              _currentIndex == 3 ? Icons.add_box : Icons.add_box_outlined,
-              color: Colors.white,
-            ),
+            icon:
+                _currentIndex == 3
+                    ? Icon(
+                      Icons.add_box,
+                      color: Colors.green[900],
+                    ) // Add icon for the GenerateRecipeScreen
+                    : const Icon(Icons.add_box_outlined, color: Colors.white),
             label: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(
-              _currentIndex == 4 ? Icons.settings : Icons.settings_outlined,
-              color: Colors.white,
-            ),
+            icon:
+                _currentIndex == 4
+                    ? Icon(
+                      Icons.settings,
+                      color: Theme.of(context).colorScheme.secondary,
+                    )
+                    : const Icon(Icons.settings_outlined, color: Colors.white),
             label: '',
           ),
         ],

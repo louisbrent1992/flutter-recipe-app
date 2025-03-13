@@ -18,13 +18,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.primary,
       elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.menu, color: Colors.white),
-        onPressed: () {
-          // Handle menu action
-          return Scaffold.of(context).openDrawer();
-        },
-      ),
+      iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onPrimary),
       title: Text(
         widget.title ?? '',
         style: const TextStyle(color: Colors.white),

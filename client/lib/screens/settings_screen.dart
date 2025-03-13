@@ -16,97 +16,101 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: SafeArea(
-        child: ListView(
-          children: [
-            Container(
-              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                shape: BoxShape.rectangle,
-                color: Theme.of(context).colorScheme.surface,
-              ),
-              width: double.infinity,
-              child: Column(
-                children: [
-                  _buildSettingsItem('Account', Icons.person, '/profile'),
-                  const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-                  _buildSettingsItem(
-                    'My subscription',
-                    Icons.subscriptions,
-                    '/subscription',
-                  ),
-                ],
-              ),
-            ),
-
-            const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-            Container(
-              padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                shape: BoxShape.rectangle,
-                color: Theme.of(context).colorScheme.surface,
+        child: Scrollbar(
+          thumbVisibility: true,
+          thickness: 10,
+          child: ListView(
+            children: [
+              Container(
+                padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  shape: BoxShape.rectangle,
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+                width: double.infinity,
+                child: Column(
+                  children: [
+                    _buildSettingsItem('Account', Icons.person, '/profile'),
+                    const Divider(color: Color.fromARGB(16, 0, 0, 0)),
+                    _buildSettingsItem(
+                      'My subscription',
+                      Icons.subscriptions,
+                      '/subscription',
+                    ),
+                  ],
+                ),
               ),
 
-              width: double.infinity,
-              child: Column(
-                children: [
-                  _buildSettingsItem(
-                    'General settings',
-                    Icons.settings,
-                    '/general_settings',
-                  ),
-                  const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-                  _buildSettingsItem(
-                    'Privacy settings',
-                    Icons.privacy_tip,
-                    '/privacy_settings',
-                  ),
-                  const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-                  _buildSettingsItem(
-                    'Notification settings',
-                    Icons.notifications,
-                    '/notification_settings',
-                  ),
-                  const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-                  _buildSettingsItem(
-                    'Appearance settings',
-                    Icons.color_lens,
-                    '/appearance_settings',
-                  ),
-                  const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-                  _buildSettingsItem(
-                    'Advanced settings',
-                    Icons.build,
-                    '/advanced_settings',
-                  ),
-                ],
-              ),
-            ),
-            const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-            Container(
-              padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                shape: BoxShape.rectangle,
-                color: Theme.of(context).colorScheme.surface,
-              ),
+              const Divider(color: Color.fromARGB(16, 0, 0, 0)),
+              Container(
+                padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  shape: BoxShape.rectangle,
+                  color: Theme.of(context).colorScheme.surface,
+                ),
 
-              width: double.infinity,
-
-              child: Column(
-                children: [
-                  _buildSettingsItem(
-                    'Help & Support',
-                    Icons.help,
-                    '/help_support',
-                  ),
-                  const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-                  _buildSettingsItem('Sign out', Icons.logout, '/sign_out'),
-                ],
+                width: double.infinity,
+                child: Column(
+                  children: [
+                    _buildSettingsItem(
+                      'General settings',
+                      Icons.settings,
+                      '/general_settings',
+                    ),
+                    const Divider(color: Color.fromARGB(16, 0, 0, 0)),
+                    _buildSettingsItem(
+                      'Privacy settings',
+                      Icons.privacy_tip,
+                      '/privacy_settings',
+                    ),
+                    const Divider(color: Color.fromARGB(16, 0, 0, 0)),
+                    _buildSettingsItem(
+                      'Notification settings',
+                      Icons.notifications,
+                      '/notification_settings',
+                    ),
+                    const Divider(color: Color.fromARGB(16, 0, 0, 0)),
+                    _buildSettingsItem(
+                      'Appearance settings',
+                      Icons.color_lens,
+                      '/appearance_settings',
+                    ),
+                    const Divider(color: Color.fromARGB(16, 0, 0, 0)),
+                    _buildSettingsItem(
+                      'Advanced settings',
+                      Icons.build,
+                      '/advanced_settings',
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              const Divider(color: Color.fromARGB(16, 0, 0, 0)),
+              Container(
+                padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  shape: BoxShape.rectangle,
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+
+                width: double.infinity,
+
+                child: Column(
+                  children: [
+                    _buildSettingsItem(
+                      'Help & Support',
+                      Icons.help,
+                      '/help_support',
+                    ),
+                    const Divider(color: Color.fromARGB(16, 0, 0, 0)),
+                    _buildSettingsItem('Sign out', Icons.logout, '/sign_out'),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
