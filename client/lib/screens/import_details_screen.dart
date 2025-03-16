@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/app_bar.dart';
 import 'package:recipease/components/nav_drawer.dart';
+import 'package:recipease/components/editable_recipe_field.dart';
+import 'package:recipease/components/recipe_tags.dart';
+import 'package:recipease/models/recipe.dart';
+import 'package:recipease/services/api_service.dart';
 
 class ImportDetailsScreen extends StatefulWidget {
   const ImportDetailsScreen({super.key});
@@ -10,6 +14,72 @@ class ImportDetailsScreen extends StatefulWidget {
 }
 
 class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
+  late Recipe currentRecipe;
+  final TextEditingController _titleController = TextEditingController();
+  bool _isEditingTitle = false;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!mounted) return;
+    currentRecipe = ModalRoute.of(context)!.settings.arguments as Recipe;
+    _titleController.text = currentRecipe.title;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  void _updateRecipe({
+    String? title,
+    String? description,
+    List<String>? ingredients,
+    List<String>? instructions,
+    String? cookingTime,
+    String? servings,
+    List<String>? tags,
+  }) {
+    setState(() {
+      currentRecipe = Recipe(
+        id: currentRecipe.id,
+        title: title ?? currentRecipe.title,
+        ingredients: ingredients ?? currentRecipe.ingredients,
+        instructions: instructions ?? currentRecipe.instructions,
+        description: description ?? currentRecipe.description,
+        imageUrl: currentRecipe.imageUrl,
+        cookingTime: cookingTime ?? currentRecipe.cookingTime,
+        difficulty: currentRecipe.difficulty,
+        servings: servings ?? currentRecipe.servings,
+        source: currentRecipe.source,
+        tags: tags ?? currentRecipe.tags,
+      );
+    });
+  }
+
+  void _saveRecipe(Recipe currentRecipe) async {
+    Recipe recipe = await ApiService.createRecipe(currentRecipe);
+    setState(() {
+      this.currentRecipe = recipe;
+    });
+    if (mounted) {
+      Navigator.pushNamed(context, '/importList', arguments: currentRecipe);
+    }
+  }
+
+  void _autoFillRecipe(Recipe currentRecipe) async {
+    Recipe recipe = await ApiService.fillSocialRecipe(currentRecipe);
+    setState(() {
+      this.currentRecipe = recipe;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,6 +95,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Recipe Header with Image
                   Card(
                     color: Theme.of(context).colorScheme.surface,
                     child: Padding(
@@ -36,204 +107,194 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                             width: double.infinity,
                             height: 250,
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                10,
-                              ), // Rounded corners
-                              child: Image.network('', fit: BoxFit.cover),
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.network(
+                                currentRecipe.imageUrl,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                '',
-                                style: Theme.of(context).textTheme.titleLarge,
+                              Expanded(
+                                child:
+                                    _isEditingTitle
+                                        ? TextFormField(
+                                          controller: _titleController,
+
+                                          style:
+                                              Theme.of(
+                                                context,
+                                              ).textTheme.titleLarge,
+                                          autofocus: true,
+                                          onFieldSubmitted: (value) {
+                                            setState(() {
+                                              _isEditingTitle = false;
+                                              _updateRecipe(title: value);
+                                            });
+                                          },
+                                        )
+                                        : Text(
+                                          currentRecipe.title,
+                                          style:
+                                              Theme.of(
+                                                context,
+                                              ).textTheme.titleLarge,
+                                        ),
                               ),
-                              const Icon(Icons.edit_note_outlined),
+                              IconButton(
+                                icon: Icon(
+                                  _isEditingTitle
+                                      ? Icons.check
+                                      : Icons.edit_note_outlined,
+                                ),
+                                onPressed: () {
+                                  if (_isEditingTitle) {
+                                    setState(() {
+                                      _isEditingTitle = false;
+                                      _updateRecipe(
+                                        title: _titleController.text,
+                                      );
+                                    });
+                                  } else {
+                                    setState(() {
+                                      _isEditingTitle = true;
+                                    });
+                                  }
+                                },
+                              ),
                             ],
                           ),
-                          const Text('Shared from '),
+                          Text('Shared from ${currentRecipe.source}'),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 10),
 
-                  // Additional input fields
-                  const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Description:',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Icon(Icons.edit_note_outlined),
-                            ],
-                          ),
-                          SizedBox(height: 10),
-                          Text(''),
-                        ],
-                      ),
-                    ),
+                  // Description
+                  EditableRecipeField(
+                    label: 'Description',
+                    value: currentRecipe.description,
+                    hintText: 'Enter recipe description',
+                    isMultiline: true,
+                    onSave: (value) => _updateRecipe(description: value),
                   ),
                   const SizedBox(height: 15),
-                  const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Ingredients:',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Icon(Icons.edit_note_outlined),
-                              ],
-                            ),
-                            SizedBox(height: 10),
-                            Text(''),
-                          ],
+
+                  // Ingredients
+                  EditableRecipeField(
+                    label: 'Ingredients',
+                    value: currentRecipe.ingredients.join('\n'),
+                    hintText: 'Enter ingredients (one per line)',
+                    isMultiline: true,
+                    onSave:
+                        (value) => _updateRecipe(
+                          ingredients:
+                              value
+                                  .split('\n')
+                                  .map((e) => e.trim())
+                                  .where((e) => e.isNotEmpty)
+                                  .toList(),
+                        ),
+                    customDisplay: Text(currentRecipe.ingredients.join(', ')),
+                  ),
+                  const SizedBox(height: 15),
+
+                  // Instructions
+                  EditableRecipeField(
+                    label: 'Instructions',
+                    value: currentRecipe.instructions.join('\n'),
+                    hintText: 'Enter instructions (one per line)',
+                    isMultiline: true,
+                    onSave:
+                        (value) => _updateRecipe(
+                          instructions:
+                              value
+                                  .split('\n')
+                                  .map((e) => e.trim())
+                                  .where((e) => e.isNotEmpty)
+                                  .toList(),
+                        ),
+                    customDisplay: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: List.generate(
+                        currentRecipe.instructions.length,
+                        (index) => Text(
+                          '${index + 1}. ${currentRecipe.instructions[index]}',
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 15),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Instructions:',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Icon(Icons.edit_note_outlined),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              "Shared files:",
-                              style: Theme.of(context).textTheme.labelLarge,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  Column(
+
+                  // Cooking Details
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Card(
+                      Expanded(
+                        child: GestureDetector(
+                          onTap:
+                              () => _updateRecipe(
+                                cookingTime: currentRecipe.cookingTime,
+                              ),
+                          child: Card(
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
-                                'Cooking Time:  minutes',
+                                'Cooking Time: ${currentRecipe.cookingTime} minutes',
                                 style: Theme.of(context).textTheme.labelLarge,
                               ),
                             ),
                           ),
-                          SizedBox(
-                            child: Card(
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  'Servings: ',
-                                  style: Theme.of(context).textTheme.labelLarge,
-                                ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap:
+                              () => _updateRecipe(
+                                servings: currentRecipe.servings,
+                              ),
+                          child: Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                'Servings: ${currentRecipe.servings}',
+                                style: Theme.of(context).textTheme.labelLarge,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 15),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(4.0),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Category Tags:',
-                                    style:
-                                        Theme.of(context).textTheme.labelLarge,
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.edit_note_outlined),
-                                    onPressed: () {
-                                      // Add your edit functionality here
-                                    },
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 15),
-                              // Wrap(
-                              //   spacing: 8.0, // gap between adjacent chips
-                              //   runSpacing: 4.0, // gap between lines
-                              //   children:
-                              //       List<Widget>.generate(recipe.tags.length, (
-                              //         int index,
-                              //       ) {
-                              //         return Chip(
-                              //           label: Text(recipe.tags[index]),
-                              //           onDeleted: () {
-                              //             setState(() {
-                              //               recipe.tags.removeAt(index);
-                              //             });
-                              //           },
-                              //         );
-                              //       }).toList(),
-                              // ),
-                            ],
                           ),
                         ),
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 15),
 
-                  // Action buttons
+                  // Tags
+                  RecipeTags(
+                    tags: currentRecipe.tags,
+                    onAddTag: (tag) {
+                      if (!currentRecipe.tags.contains(tag)) {
+                        _updateRecipe(tags: [...currentRecipe.tags, tag]);
+                      }
+                    },
+                    onDeleteTag: (index) {
+                      final newTags = List<String>.from(currentRecipe.tags)
+                        ..removeAt(index);
+                      _updateRecipe(tags: newTags);
+                    },
+                  ),
+                  const SizedBox(height: 15),
+
+                  // Action Buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       ElevatedButton(
-                        onPressed: () {
-                          // Handle import action
-                          Navigator.pop(context);
-                        },
+                        onPressed: () => Navigator.pop(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               Theme.of(context).colorScheme.secondary,
@@ -244,15 +305,11 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: () {
-                          // Handle import action
-                          Navigator.pop(context);
-                        },
+                        onPressed: () => _autoFillRecipe(currentRecipe),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.deepPurple,
                         ),
                         child: const Row(
-                          spacing: 5,
                           children: [
                             Icon(Icons.auto_awesome, color: Colors.white),
                             Text(
@@ -263,9 +320,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: () {
-                          // Handle another action (e.g., Save)
-                        },
+                        onPressed: () => _saveRecipe(currentRecipe),
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               Theme.of(context).colorScheme.tertiary,

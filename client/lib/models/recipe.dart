@@ -13,7 +13,7 @@ class Recipe {
 
   Recipe({
     this.id,
-    this.title = 'Classic Tomato Spaghetti',
+    this.title = 'Sample Recipe',
     this.ingredients = const [
       'Spaghetti',
       'Fresh tomatoes',

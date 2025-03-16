@@ -71,6 +71,7 @@ class ApiService {
     String? ingredients,
     String? dietaryRestrictions,
     String? cuisineType,
+    String? cookingTime,
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/recipes/generate'),
@@ -79,6 +80,7 @@ class ApiService {
         'ingredients': ingredients,
         'dietaryRestrictions': dietaryRestrictions,
         'cuisineType': cuisineType,
+        'cookingTime': cookingTime,
       }),
     );
     if (response.statusCode == 200) {
@@ -98,6 +100,19 @@ class ApiService {
       return Recipe.fromJson(json.decode(response.body));
     } else {
       throw Exception('Failed to import recipe');
+    }
+  }
+
+  static Future<Recipe> fillSocialRecipe(Recipe recipeDetails) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/recipes/fill'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'recipe': recipeDetails.toJson()}),
+    );
+    if (response.statusCode == 200) {
+      return Recipe.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to fill recipe');
     }
   }
 }

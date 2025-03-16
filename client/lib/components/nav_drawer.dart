@@ -40,16 +40,6 @@ class NavDrawer extends StatelessWidget {
             onTap: () {},
           ),
           ListTile(
-            leading: const Icon(Icons.message),
-            title: const Text('Example Share'),
-            onTap: () {
-              // Update the state of the app
-              // ...
-              // Then close the drawer
-              Navigator.pushNamed(context, '/intent');
-            },
-          ),
-          ListTile(
             leading: const Icon(Icons.account_box),
             title: const Text('Item 2'),
             onTap: () {

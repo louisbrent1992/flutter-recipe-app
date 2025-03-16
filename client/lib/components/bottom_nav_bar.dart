@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/screens/generate_recipe_screen.dart';
-import 'package:recipease/screens/import_details_screen.dart';
+import 'package:recipease/screens/import_recipe_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/favorite_recipes.dart';
 import '../screens/settings_screen.dart';
@@ -21,7 +21,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
     const HomeScreen(),
     const FavoriteRecipesScreen(),
     const GenerateRecipeScreen(),
-    const ImportDetailsScreen(),
+    const ImportRecipeScreen(),
     const SettingsScreen(),
   ];
 
