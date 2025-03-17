@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
-import 'package:recipease/misc/share_intent.dart';
 import 'package:recipease/screens/discover_recipes.dart';
 import 'package:recipease/screens/favorite_recipes.dart';
 import 'package:recipease/screens/generate_recipe_screen.dart';
@@ -49,7 +48,7 @@ class _MyAppState extends State<MyApp> {
         // navigate to share_intent screen with data
         if (_sharedFiles.isNotEmpty) {
           navigatorKey.currentState?.pushNamed(
-            '/import',
+            '/importDetails',
             arguments: _sharedFiles,
           );
         }
@@ -71,7 +70,7 @@ class _MyAppState extends State<MyApp> {
       // navigate to share_intent screen with data
       if (_sharedFiles.isNotEmpty) {
         navigatorKey.currentState?.pushNamed(
-          '/import',
+          '/importDetails',
           arguments: _sharedFiles,
         );
       }

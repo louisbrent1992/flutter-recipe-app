@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-class EditableRecipeField extends StatelessWidget {
+class EditableRecipeField extends StatefulWidget {
   final String label;
   final String value;
+  final TextEditingController controller;
   final String hintText;
   final bool isMultiline;
   final Function(String) onSave;
@@ -11,7 +12,8 @@ class EditableRecipeField extends StatelessWidget {
 
   const EditableRecipeField({
     super.key,
-    required this.label,
+    this.label = '',
+    required this.controller,
     required this.value,
     required this.hintText,
     required this.onSave,
@@ -20,35 +22,52 @@ class EditableRecipeField extends StatelessWidget {
     this.icon = Icons.edit_note_outlined,
   });
 
-  Future<void> _showEditDialog(BuildContext context) async {
-    final TextEditingController controller = TextEditingController(text: value);
+  @override
+  State<EditableRecipeField> createState() => _EditableRecipeFieldState();
+}
 
-    return showDialog(
+class _EditableRecipeFieldState extends State<EditableRecipeField> {
+  Future<void> _showEditDialog(BuildContext context) async {
+    print(widget.controller.value);
+    return showDialog<void>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Edit $label'),
-            content: TextField(
-              controller: controller,
-              decoration: InputDecoration(hintText: hintText),
-              maxLines: isMultiline ? null : 1,
-              keyboardType:
-                  isMultiline ? TextInputType.multiline : TextInputType.text,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  onSave(controller.text);
-                  Navigator.pop(context);
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit ${widget.label}'),
+          content: TextFormField(
+            controller: widget.controller,
+            decoration: InputDecoration(hintText: widget.hintText),
+            maxLines: widget.isMultiline ? null : 1,
+
+            keyboardType:
+                widget.isMultiline
+                    ? TextInputType.multiline
+                    : TextInputType.text,
+            autofocus: true,
+            onFieldSubmitted:
+                (value) => {
+                  setState(() {
+                    widget.controller.text = value;
+                  }),
+                  widget.onSave(widget.controller.text),
                 },
-                child: const Text('Save'),
-              ),
-            ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                widget.onSave(widget.controller.text);
+                Navigator.pop(context);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -60,25 +79,27 @@ class EditableRecipeField extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
               children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.label,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(widget.icon),
+                      onPressed: () => _showEditDialog(context),
+                    ),
+                  ],
                 ),
-                if (icon != null)
-                  IconButton(
-                    icon: Icon(icon),
-                    onPressed: () => _showEditDialog(context),
-                  ),
               ],
             ),
+
             const SizedBox(height: 10),
-            customDisplay ?? Text(value),
+            widget.customDisplay ?? Text(widget.controller.text),
           ],
         ),
       ),
