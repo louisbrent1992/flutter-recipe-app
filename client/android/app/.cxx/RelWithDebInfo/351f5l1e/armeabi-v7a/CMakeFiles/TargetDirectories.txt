@@ -1,2 +1,0 @@
-C:/Users/lbren/GitHub Repos/Personal/recipe-app-flutter/client/android/app/.cxx/RelWithDebInfo/351f5l1e/armeabi-v7a/CMakeFiles/edit_cache.dir
-C:/Users/lbren/GitHub Repos/Personal/recipe-app-flutter/client/android/app/.cxx/RelWithDebInfo/351f5l1e/armeabi-v7a/CMakeFiles/rebuild_cache.dir

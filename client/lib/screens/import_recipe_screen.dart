@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/app_bar.dart';
 import 'package:recipease/components/nav_drawer.dart';
-import 'package:recipease/models/recipe.dart';
 
 class ImportRecipeScreen extends StatelessWidget {
   const ImportRecipeScreen({super.key});
@@ -18,13 +17,8 @@ class ImportRecipeScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 // Create a sample recipe for testing
-                final recipe = Recipe();
 
-                Navigator.pushNamed(
-                  context,
-                  '/importDetails',
-                  arguments: recipe,
-                );
+                Navigator.pushNamed(context, '/importDetails');
               },
               child: const Text('Import New Recipe'),
             ),

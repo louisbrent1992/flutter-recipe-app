@@ -38,16 +38,18 @@ dependencies:
   leak_tracker: ^10.0.8
   material_color_utilities: ^0.11.1
   vm_service: ^14.3.1
-  logger: ^1.0.0 # Check for the latest version on pub.dev
-  flutter_svg: ^1.0.3 # Check for the latest version on pub.dev
+  logger: ^1.4.0 # Check for the latest version on pub.dev
+  flutter_svg: ^1.1.6 # Check for the latest version on pub.dev
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   app_links: ^6.3.3
-
   flutter_cache_manager: ^3.4.1
-  receive_sharing_intent: ^1.8.1
+  receive_sharing_intent:
+    git:
+      url: https://github.com/KasemJaffer/receive_sharing_intent
+      ref: 2cea396843cd3ab1b5ec4334be4233864637874e
 
   # share_plus: ^10.1.4
 
@@ -55,7 +57,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: ^0.13.1
-  flutter_lints: ^2.0.0 # Check for the latest version on pub.dev
+  flutter_lints: ^2.0.3 # Check for the latest version on pub.dev
 flutter_icons:
   image_path: "icons/logo.png"
   android: true
@@ -66,7 +68,6 @@ flutter_icons:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

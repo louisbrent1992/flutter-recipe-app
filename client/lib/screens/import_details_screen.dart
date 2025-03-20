@@ -90,6 +90,9 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final arguments =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    print('Arguments passed from parent screen: $arguments');
     return Scaffold(
       appBar: const CustomAppBar(title: 'Import Recipe'),
       drawer: const NavDrawer(),
