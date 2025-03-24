@@ -8,7 +8,7 @@ import 'package:recipease/models/recipe.dart';
 import 'package:recipease/services/api_service.dart';
 
 class GenerateRecipeScreen extends StatefulWidget {
-  const GenerateRecipeScreen({Key? key}) : super(key: key);
+  const GenerateRecipeScreen({super.key});
 
   @override
   GenerateRecipeScreenState createState() => GenerateRecipeScreenState();
@@ -17,6 +17,7 @@ class GenerateRecipeScreen extends StatefulWidget {
 class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
   final TextEditingController _ingredientController = TextEditingController();
   final List<String> _ingredients = [];
+  final List<String> _dietaryRestrictions = [];
   String _cuisineType = 'Italian';
   double _cookingTime = 30;
   bool _isLoading = false;
@@ -41,12 +42,36 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
     });
   }
 
+  void _handleDietaryPreferences(String dietaryPreference) {
+    setState(() {
+      if (_dietaryRestrictions.contains(dietaryPreference)) {
+        _dietaryRestrictions.remove(dietaryPreference);
+      } else {
+        _dietaryRestrictions.add(dietaryPreference);
+      }
+    });
+  }
+
   void _loadRecipes() async {
-    List<Recipe> recipes = await ApiService.fetchRecipes();
+    setState(() {
+      _isLoading = true;
+    });
+    List<Recipe> recipes = await ApiService.generateAIRecipe(
+      ingredients: _ingredients.join(', '),
+      dietaryRestrictions: _dietaryRestrictions.join(', '),
+      cuisineType: _cuisineType,
+      cookingTime: _cookingTime.toString(),
+    );
     setState(() {
       _recipes = recipes;
       _isLoading = false;
     });
+  }
+
+  @override
+  void dispose() {
+    _ingredientController.dispose();
+    super.dispose();
   }
 
   @override
@@ -132,6 +157,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                         false, // Initial value, you might want to manage this state
                     onChanged: (bool? value) {
                       // Handle change
+                      _handleDietaryPreferences(value.toString());
                     },
                   ),
                   const SizedBox(height: 24),
@@ -233,11 +259,14 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                   ),
                   const SizedBox(height: 16),
                   if (_recipes.isNotEmpty)
-                    ListView.builder(
-                      itemBuilder:
-                          (context, index) =>
-                              RecipeCard(recipe: _recipes[index]),
-                      itemCount: _recipes.length,
+                    SizedBox(
+                      height: 200,
+                      child: ListView.builder(
+                        itemBuilder:
+                            (context, index) =>
+                                RecipeCard(recipe: _recipes[index]),
+                        itemCount: _recipes.length,
+                      ),
                     ),
 
                   if (_isLoading)

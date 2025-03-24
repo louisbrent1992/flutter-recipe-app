@@ -6,11 +6,11 @@ class FlavorCard extends StatelessWidget {
   final String imageUrl;
 
   const FlavorCard({
-    Key? key,
+    super.key,
     required this.title,
     this.subtitle,
     required this.imageUrl,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -6,11 +6,11 @@ class ScreenDescriptionCard extends StatelessWidget {
   final String description;
 
   const ScreenDescriptionCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.description,
     required this.imageUrl,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

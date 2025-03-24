@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:recipease/models/recipe.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
-  const RecipeDetailScreen({Key? key, required this.recipe}) : super(key: key);
+  const RecipeDetailScreen({super.key, required this.recipe});
 
   final Recipe? recipe;
 

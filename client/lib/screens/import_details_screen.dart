@@ -14,7 +14,7 @@ class ImportDetailsScreen extends StatefulWidget {
 }
 
 class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
-  Recipe? currentRecipe;
+  Recipe currentRecipe = Recipe();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _sourceController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -43,17 +43,17 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
   }) {
     setState(() {
       currentRecipe = Recipe(
-        id: currentRecipe!.id,
-        title: title ?? currentRecipe!.title,
-        ingredients: ingredients ?? currentRecipe!.ingredients,
-        instructions: instructions ?? currentRecipe!.instructions,
-        description: description ?? currentRecipe!.description,
-        imageUrl: imageUrl ?? currentRecipe!.imageUrl,
-        cookingTime: cookingTime ?? currentRecipe!.cookingTime,
-        difficulty: difficulty ?? currentRecipe!.difficulty,
-        servings: servings ?? currentRecipe!.servings,
-        source: source ?? currentRecipe!.source,
-        tags: tags ?? currentRecipe!.tags,
+        id: currentRecipe.id,
+        title: title ?? currentRecipe.title,
+        ingredients: ingredients ?? currentRecipe.ingredients,
+        instructions: instructions ?? currentRecipe.instructions,
+        description: description ?? currentRecipe.description,
+        imageUrl: imageUrl ?? currentRecipe.imageUrl,
+        cookingTime: cookingTime ?? currentRecipe.cookingTime,
+        difficulty: difficulty ?? currentRecipe.difficulty,
+        servings: servings ?? currentRecipe.servings,
+        source: source ?? currentRecipe.source,
+        tags: tags ?? currentRecipe.tags,
       );
     });
   }
@@ -90,8 +90,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final arguments =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final arguments = ModalRoute.of(context)?.settings.arguments;
     print('Arguments passed from parent screen: $arguments');
     return Scaffold(
       appBar: const CustomAppBar(title: 'Import Recipe'),
@@ -116,7 +115,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
                           child: Image.network(
-                            currentRecipe!.imageUrl,
+                            currentRecipe.imageUrl,
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -125,7 +124,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                       EditableRecipeField(
                         label: 'Title',
                         controller: _titleController,
-                        value: currentRecipe!.title,
+                        value: currentRecipe.title,
                         hintText: 'Enter recipe title',
                         onSave: (value) {
                           setState(() {
@@ -133,21 +132,25 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                             _titleController.text = value;
                           });
                         },
+                        customDisplay: Text(
+                          '${currentRecipe.title}',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
                       ),
                       const SizedBox(height: 10),
                       EditableRecipeField(
                         label: 'Source',
                         controller: _sourceController,
-                        value: currentRecipe!.source,
+                        value: currentRecipe.source,
                         hintText: 'Enter recipe source',
                         onSave: (value) {
                           setState(() {
-                            _updateRecipe(source: value);
+                            _updateRecipe(source: _sourceController.text);
                             _sourceController.text = value;
                           });
                         },
                         customDisplay: Text(
-                          'Source: ${currentRecipe!.source}',
+                          ' ${currentRecipe.source}',
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       ),
@@ -159,7 +162,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                   EditableRecipeField(
                     label: 'Description',
                     controller: _descriptionController,
-                    value: currentRecipe!.description,
+                    value: currentRecipe.description,
                     hintText: 'Enter recipe description',
                     isMultiline: true,
                     onSave: (value) {
@@ -168,6 +171,10 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                         _descriptionController.text = value;
                       });
                     },
+                    customDisplay: Text(
+                      ' ${currentRecipe.description}',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
                   ),
                   const SizedBox(height: 15),
 
@@ -175,7 +182,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                   EditableRecipeField(
                     label: 'Ingredients',
                     controller: _ingredientsController,
-                    value: currentRecipe!.ingredients.join('\n'),
+                    value: currentRecipe.ingredients.join('\n'),
                     hintText: 'Enter ingredients (one per line)',
                     isMultiline: true,
                     onSave: (value) {
@@ -190,14 +197,14 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                         _ingredientsController.text = value;
                       });
                     },
-                    customDisplay: Text(_ingredientsController.text),
+                    customDisplay: Text(currentRecipe.ingredients.join('\n')),
                   ),
                   const SizedBox(height: 15),
 
                   // Instructions
                   EditableRecipeField(
                     label: 'Instructions',
-                    value: currentRecipe!.instructions.join('\n'),
+                    value: currentRecipe.instructions.join('\n'),
                     controller: _instructionsController,
                     hintText: 'Enter instructions (one per line)',
                     isMultiline: true,
@@ -213,7 +220,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                         _instructionsController.text = value;
                       });
                     },
-                    customDisplay: Text(_instructionsController.text),
+                    customDisplay: Text(currentRecipe.instructions.join('\n')),
                   ),
                   const SizedBox(height: 15),
 
@@ -225,7 +232,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                         child: EditableRecipeField(
                           label: 'Cooking Time',
                           controller: _cookingTimeController,
-                          value: '${currentRecipe!.cookingTime} minutes',
+                          value: '${currentRecipe.cookingTime} minutes',
                           hintText: 'Enter cooking time in minutes',
                           onSave: (value) {
                             setState(() {
@@ -233,6 +240,10 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                               _cookingTimeController.text = value;
                             });
                           },
+                          customDisplay: Text(
+                            ' ${currentRecipe.cookingTime} minutes',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -240,7 +251,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                         child: EditableRecipeField(
                           label: 'Servings',
                           controller: _servingsController,
-                          value: currentRecipe!.servings,
+                          value: currentRecipe.servings,
                           hintText: 'Enter number of servings',
                           onSave: (value) {
                             setState(() {
@@ -248,6 +259,10 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                               _servingsController.text = value;
                             });
                           },
+                          customDisplay: Text(
+                            ' ${currentRecipe.servings}',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
                         ),
                       ),
                     ],
@@ -256,14 +271,14 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
 
                   // Tags
                   RecipeTags(
-                    tags: currentRecipe?.tags ?? [],
+                    tags: currentRecipe.tags,
                     onAddTag: (tag) {
-                      if (!currentRecipe!.tags.contains(tag)) {
-                        _updateRecipe(tags: [...currentRecipe!.tags, tag]);
+                      if (currentRecipe.tags.contains(tag)) {
+                        _updateRecipe(tags: [...currentRecipe.tags, tag]);
                       }
                     },
                     onDeleteTag: (index) {
-                      final newTags = List<String>.from(currentRecipe!.tags)
+                      final newTags = List<String>.from(currentRecipe.tags)
                         ..removeAt(index);
                       _updateRecipe(tags: newTags);
                     },
@@ -286,7 +301,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: () => _autoFillRecipe(currentRecipe!),
+                        onPressed: () => _autoFillRecipe(currentRecipe),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.deepPurple,
                         ),
@@ -301,7 +316,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: () => _saveRecipe(currentRecipe!),
+                        onPressed: () => _saveRecipe(currentRecipe),
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               Theme.of(context).colorScheme.tertiary,

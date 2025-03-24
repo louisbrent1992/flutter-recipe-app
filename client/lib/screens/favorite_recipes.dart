@@ -6,7 +6,7 @@ import 'package:recipease/models/recipe.dart';
 // Assuming the path is correct based on the context provided
 
 class FavoriteRecipesScreen extends StatelessWidget {
-  const FavoriteRecipesScreen({Key? key}) : super(key: key);
+  const FavoriteRecipesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +52,12 @@ class FavoriteRecipesScreen extends StatelessWidget {
                       borderRadius: const BorderRadius.all(Radius.circular(10)),
                       color: Colors.black,
                       image: DecorationImage(
-                        image: Image.network(recipe.imageUrl).image,
+                        image:
+                            Image.network(
+                              recipe.imageUrl != null
+                                  ? recipe.imageUrl!
+                                  : 'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8Zm9vZHxlbnwwfHwwfHx8MA%3D%3D',
+                            ).image,
                         fit: BoxFit.cover,
                       ),
                     ),

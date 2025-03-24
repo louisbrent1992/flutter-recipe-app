@@ -6,7 +6,7 @@ import 'package:recipease/components/trending_recipe_card.dart';
 // Removed the import for bottom_nav_bar since it doesn't exist
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }

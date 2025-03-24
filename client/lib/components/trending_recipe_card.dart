@@ -6,11 +6,11 @@ class TrendingRecipeCard extends StatelessWidget {
   final String? imageUrl;
 
   const TrendingRecipeCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.author,
     this.imageUrl,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

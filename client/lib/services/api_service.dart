@@ -67,7 +67,7 @@ class ApiService {
     }
   }
 
-  static Future<Recipe> generateAIRecipe({
+  static Future<List<Recipe>> generateAIRecipe({
     String? ingredients,
     String? dietaryRestrictions,
     String? cuisineType,
@@ -83,8 +83,11 @@ class ApiService {
         'cookingTime': cookingTime,
       }),
     );
+    logger.i("Recipes: ${response.body}");
     if (response.statusCode == 200) {
-      return Recipe.fromJson(json.decode(response.body));
+      return List<Recipe>.from(
+        json.decode(response.body).map((x) => Recipe.fromJson(x)),
+      );
     } else {
       throw Exception('Failed to generate recipe');
     }

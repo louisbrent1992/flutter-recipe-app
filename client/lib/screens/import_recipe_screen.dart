@@ -1,9 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/app_bar.dart';
 import 'package:recipease/components/nav_drawer.dart';
+import 'package:recipease/models/recipe.dart';
+import 'package:recipease/services/api_service.dart';
 
-class ImportRecipeScreen extends StatelessWidget {
+class ImportRecipeScreen extends StatefulWidget {
   const ImportRecipeScreen({super.key});
+
+  @override
+  State<ImportRecipeScreen> createState() => _ImportRecipeScreenState();
+}
+
+class _ImportRecipeScreenState extends State<ImportRecipeScreen> {
+  void _importRecipe(String url) async {
+    // import recipe function
+    Recipe recipe = await ApiService.importSocialRecipe(url);
+    // then navigate to import details
+    if (mounted) {
+      Navigator.pushNamed(context, '/importDetails', arguments: recipe);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +49,9 @@ class ImportRecipeScreen extends StatelessWidget {
                   border: OutlineInputBorder(),
                 ),
                 onSubmitted: (url) {
-                  // TODO: Implement URL import logic
+                  // Handle URL submission
+
+                  _importRecipe(url);
                 },
               ),
             ),
