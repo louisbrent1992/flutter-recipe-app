@@ -9,7 +9,10 @@ const app = express();
 const port = 3000;
 
 app.use(cors());
-app.use(bodyParser.json()); // Ensure you are using body-parser middleware
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Middleware to parse JSON data
+app.use(bodyParser.json());
 
 app.use("/recipes", recipesRouter);
 

@@ -1,13 +1,31 @@
 const express = require("express");
 const router = express.Router();
-const axios = require("axios"); // For calling an external AI API if needed
+const axios = require("axios");
+// For calling an external AI API if needed
+const cheerio = require("cheerio");
 const { v4: uuidv4 } = require("uuid");
 const OpenAI = require("openai");
+const { z } = require("zod");
+const { zodResponseFormat } = require("openai/helpers/zod");
 const recipeData = require("../data/recipeData");
+const puppeteer = require("puppeteer"); // Add Puppeteer
 
 const client = new OpenAI({
-	api_key: process.env.Llame_API_KEY,
+	api_key: process.env.LlamaAI_API_KEY,
 	base_url: process.env.LlamaAI_API_URL,
+});
+
+const recipeSchema = z.object({
+	name: z.string(),
+	image: z.string(),
+	ingredients: z.array(z.string()),
+	instructions: z.array(z.string()),
+});
+
+const recipesSchema = z.array({
+	id: z.array(recipeSchema),
+	id: z.array(recipeSchema),
+	id: z.array(recipeSchema),
 });
 
 // In-memory recipes database
@@ -20,50 +38,6 @@ const UNSPLASH_API_URL = "https://api.unsplash.com/photos/random";
 const imageCache = {};
 
 let previousIngredients = [];
-
-// GET /recipes - Fetch all recipes
-router.get("/", (req, res) => {
-	res.json(recipes);
-});
-
-// GET /recipes/:id - Get a specific recipe
-router.get("/:id", (req, res) => {
-	const recipe = recipes.find((r) => r.id === req.params.id);
-	if (recipe) {
-		res.json(recipe);
-	} else {
-		res.status(404).json({ error: "Recipe not found" });
-	}
-});
-
-// POST /recipes - Create a new recipe
-router.post("/", (req, res) => {
-	const newRecipe = { id: uuidv4(), ...req.body };
-	recipes.push(newRecipe);
-	res.status(201).json(newRecipe);
-});
-
-// PUT /recipes/:id - Update an existing recipe
-router.put("/:id", (req, res) => {
-	const index = recipes.findIndex((r) => r.id === req.params.id);
-	if (index !== -1) {
-		recipes[index] = { ...recipes[index], ...req.body };
-		res.json(recipes[index]);
-	} else {
-		res.status(404).json({ error: "Recipe not found" });
-	}
-});
-
-// DELETE /recipes/:id - Delete a recipe
-router.delete("/:id", (req, res) => {
-	const index = recipes.findIndex((r) => r.id === req.params.id);
-	if (index !== -1) {
-		const deleted = recipes.splice(index, 1);
-		res.json(deleted[0]);
-	} else {
-		res.status(404).json({ error: "Recipe not found" });
-	}
-});
 
 // Function to fetch an image from Unsplash with caching
 const fetchImage = async (query) => {
@@ -116,60 +90,73 @@ const randomIngredient = async () => await getRandomIngredient();
 
 // POST /recipes/generate - AI-generated recipe creation
 router.post("/generate", async (req, res) => {
-	const { ingredients = "", dietaryRestrictions, cuisineType } = req.body;
+	let {
+		ingredients = "",
+		dietaryRestrictions,
+		cuisineType,
+		autoFill = false,
+		random = false,
+	} = req.body;
 
 	try {
-		let random = false;
+		// If no ingredients or cuisine type is provided, generate a random recipe
 		if (!ingredients && !cuisineType) {
 			random = true;
 		}
 
-		// Call OpenAI API to generate a recipe
-		const response = await client.chat.completions.create({
-			model: "gpt-4o-mini",
-			messages: [
-				{
-					role: "user",
-					content: `Generate a recipe that includes the following:
-					- Ingredients: ${random ? await randomIngredient() : `${ingredients}`}.
+		let recipesData = [];
+
+		if (!autoFill) {
+			// Call OpenAI API to generate multiple recipes
+			const response = await client.beta.chat.completions.parse({
+				model: "gpt-4o-mini",
+				messages: [
+					{
+						role: "user",
+						content: `Generate three recipes that include the following:
+					- Ingredients: ${
+						random ? await randomIngredient() : `${ingredients}`
+					} (for each recipe).
 					- Dietary restrictions: ${dietaryRestrictions}.
 					- Cuisine type: ${cuisineType}.
-					- Additional ingredients.
-					The recipe should be in JSON format as follows:
-					{
-						"title": "Recipe Name",
-						"ingredients": ["ingredient 1", "ingredient 2", "ingredient 3"],
-						"steps": ["step 1", "step 2", "step 3"],
-						"description": "A unique dish."
-					}`,
-				},
-			],
-			response_format: { type: "json_object" },
-			temperature: 0.7,
-		});
+					- Additional ingredients if needed.
+					`,
+					},
+				],
+				response_format: zodResponseFormat(
+					z.array(recipesSchema),
+					"recipesData"
+				),
+			});
 
-		const generatedContent = response.choices[0].message.content;
-		const foundRecipe = JSON.parse(generatedContent);
+			recipesData = response.choices[0].message.parsed;
+		} else {
+			// Similar logic for autoFill if needed
+		}
 
-		// Fetch an image based on the recipe title
-		const imageUrl = await fetchImage(foundRecipe.title);
+		const generatedRecipes = await Promise.all(
+			recipesData.map(async (recipeData) => {
+				// Fetch an image based on the recipe title
+				const imageUrl = await fetchImage(recipeData.name);
 
-		const generatedRecipe = {
-			id: uuidv4(),
-			title: foundRecipe.title || "Generated Recipe",
-			ingredients: foundRecipe.ingredients || [],
-			steps: foundRecipe.steps || [],
-			description: foundRecipe.description || "Enjoy your generated recipe!",
-			imageUrl: imageUrl,
-		};
+				return {
+					id: uuidv4(),
+					title: recipeData.name || "Generated Recipe",
+					ingredients: recipeData.ingredients || [],
+					steps: recipeData.instructions || [],
+					description: recipeData.description || "Enjoy your generated recipe!",
+					imageUrl: imageUrl,
+				};
+			})
+		);
 
-		// Store the generated recipe
-		recipes.push(generatedRecipe);
+		// Store the generated recipes
+		recipes.push(...generatedRecipes);
 
-		res.json(generatedRecipe);
+		res.json(generatedRecipes);
 	} catch (error) {
-		console.error("Error generating recipe:", error);
-		res.status(500).json({ error: "Failed to generate recipe" });
+		console.error("Error generating recipes:", error);
+		res.status(500).json({ error: "Failed to generate recipes" });
 	}
 });
 
@@ -177,20 +164,63 @@ router.post("/generate", async (req, res) => {
 router.post("/import", async (req, res) => {
 	const { url } = req.body;
 
-	// Dummy parsing logic: In a real scenario, perform web scraping or use an API
-	const importedRecipe = {
-		id: uuidv4(),
-		title: "Imported Recipe from Social Media",
-		ingredients: ["1 cup flour", "2 eggs", "1/2 cup milk"],
-		steps: ["Mix ingredients", "Cook on a skillet", "Serve warm"],
-		description:
-			"This recipe was imported and parsed from a social media post.",
-		imageUrl: await fetchImage("recipe"), // Fetch an image for the imported recipe
-	};
+	try {
+		// Launch Puppeteer browser
+		const browser = await puppeteer.launch();
+		const page = await browser.newPage();
 
-	recipes.push(importedRecipe);
+		// Block images and stylesheets to speed up page loading
+		await page.setRequestInterception(true);
+		page.on("request", (request) => {
+			if (["image", "stylesheet", "font"].includes(request.resourceType())) {
+				request.abort();
+			} else {
+				request.continue();
+			}
+		});
 
-	res.json(importedRecipe);
+		// Navigate to the URL
+		await page.goto(url, { waitUntil: "domcontentloaded" });
+
+		// Get the HTML content of the page
+		const html = await page.content();
+
+		// Close the browser
+		await browser.close();
+
+		// Load the HTML into cheerio
+		const $ = cheerio.load(html);
+
+		// Extract recipe data using selectors
+		const title =
+			$('meta[property="og:title"]').attr("content") || $("title").text();
+		const ingredients = [];
+		$("ul.ingredients li, .ingredient").each((i, elem) => {
+			ingredients.push($(elem).text().trim());
+		});
+		const steps = [];
+		$("ol.steps li, .step").each((i, elem) => {
+			steps.push($(elem).text().trim());
+		});
+		const description = $('meta[name="description"]').attr("content") || "";
+		const imageUrl = $('meta[property="og:image"]').attr("content") || "";
+
+		const importedRecipe = {
+			id: uuidv4(),
+			title: title || "Imported Recipe",
+			ingredients: ingredients,
+			steps: steps,
+			description: description || "Enjoy your imported recipe!",
+			imageUrl: imageUrl,
+		};
+
+		recipes.push(importedRecipe);
+
+		res.json(importedRecipe);
+	} catch (error) {
+		console.error("Error importing recipe:", error);
+		res.status(500).json({ error: "Failed to import recipe" });
+	}
 });
 
 module.exports = router;
