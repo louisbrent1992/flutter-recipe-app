@@ -15,17 +15,17 @@ const client = new OpenAI({
 	base_url: process.env.LlamaAI_API_URL,
 });
 
-const recipeSchema = z.object({
+const recipeObjSchema = z.object({
+	id: z.string(),
 	name: z.string(),
+	description: z.string(),
 	image: z.string(),
 	ingredients: z.array(z.string()),
 	instructions: z.array(z.string()),
 });
 
-const recipesSchema = z.array({
-	id: z.array(recipeSchema),
-	id: z.array(recipeSchema),
-	id: z.array(recipeSchema),
+const recipesArrSchema = z.object({
+	recipes: z.array(recipeObjSchema),
 });
 
 // In-memory recipes database
@@ -91,7 +91,7 @@ const randomIngredient = async () => await getRandomIngredient();
 // POST /recipes/generate - AI-generated recipe creation
 router.post("/generate", async (req, res) => {
 	let {
-		ingredients = "",
+		ingredients,
 		dietaryRestrictions,
 		cuisineType,
 		autoFill = false,
@@ -123,15 +123,13 @@ router.post("/generate", async (req, res) => {
 					`,
 					},
 				],
-				response_format: zodResponseFormat(
-					z.array(recipesSchema),
-					"recipesData"
-				),
+				response_format: zodResponseFormat(recipesArrSchema, "recipesData"),
 			});
 
-			recipesData = response.choices[0].message.parsed;
+			recipesData = response.choices[0].message.parsed.recipes;
 		} else {
 			// Similar logic for autoFill if needed
+			console.log("Auto-fill not implemented yet");
 		}
 
 		const generatedRecipes = await Promise.all(
@@ -141,10 +139,10 @@ router.post("/generate", async (req, res) => {
 
 				return {
 					id: uuidv4(),
-					title: recipeData.name || "Generated Recipe",
+					title: recipeData.name,
 					ingredients: recipeData.ingredients || [],
 					steps: recipeData.instructions || [],
-					description: recipeData.description || "Enjoy your generated recipe!",
+					description: recipeData.description,
 					imageUrl: imageUrl,
 				};
 			})
