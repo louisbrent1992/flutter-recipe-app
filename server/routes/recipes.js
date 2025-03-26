@@ -22,6 +22,7 @@ const recipeObjSchema = z.object({
 	image: z.string(),
 	ingredients: z.array(z.string()),
 	instructions: z.array(z.string()),
+	tags: z.array(z.string()),
 });
 
 const recipesArrSchema = z.object({
@@ -31,41 +32,54 @@ const recipesArrSchema = z.object({
 // In-memory recipes database
 let recipes = [];
 
-const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY; // Use environment variable
-const UNSPLASH_API_URL = "https://api.unsplash.com/photos/random";
+const PEXELS_API_KEY = process.env.PEXELS_API_KEY; // Add this to your .env file
 
 // Image cache
 const imageCache = {};
 
 let previousIngredients = [];
 
-// Function to fetch an image from Unsplash with caching
+// Add recipe URL cache at the top with your other cache
+const recipeCache = new Map();
+
+// Function to fetch an image from Pexels with caching
 const fetchImage = async (query) => {
+	// Handle undefined or null query
+	if (!query) {
+		console.log("No query provided for image search");
+		return null;
+	}
+
 	// Normalize the query by trimming and converting to lowercase
 	const normalizedQuery = query.trim().toLowerCase();
 
 	// Check if the image is already cached
 	if (imageCache[normalizedQuery]) {
-		return imageCache[normalizedQuery]; // Return cached image URL
+		return imageCache[normalizedQuery];
 	}
 
 	try {
-		const response = await axios.get(UNSPLASH_API_URL, {
-			params: {
-				query: normalizedQuery,
-				collections: "food",
-				client_id: UNSPLASH_ACCESS_KEY,
-			},
-		});
-		const imageUrl = response.data.urls.regular; // Return the regular size image URL
+		const response = await axios.get(
+			`https://api.pexels.com/v1/search?query=${normalizedQuery}&per_page=1`,
+			{
+				headers: {
+					Authorization: PEXELS_API_KEY,
+				},
+			}
+		);
 
-		// Cache the image URL using the normalized query
+		// Check if photos array exists and has items
+		if (!response.data.photos || response.data.photos.length === 0) {
+			console.log("No images found for query:", normalizedQuery);
+			return null;
+		}
+
+		const imageUrl = response.data.photos[0].src.medium;
 		imageCache[normalizedQuery] = imageUrl;
-
 		return imageUrl;
 	} catch (error) {
-		console.error("Error fetching image from Unsplash:", error);
-		return null; // Return null if there's an error
+		console.error("Error fetching image from Pexels:", error);
+		return null;
 	}
 };
 
@@ -144,6 +158,7 @@ router.post("/generate", async (req, res) => {
 					steps: recipeData.instructions || [],
 					description: recipeData.description,
 					imageUrl: imageUrl,
+					tags: recipeData.tags || [],
 				};
 			})
 		);
@@ -158,67 +173,226 @@ router.post("/generate", async (req, res) => {
 	}
 });
 
-// POST /recipes/import - Social media recipe import parser
+// Function to extract structured data (Schema.org/Recipe)
+const extractStructuredData = ($) => {
+	const jsonLd = $('script[type="application/ld+json"]')
+		.contents()
+		.first()
+		.text();
+	try {
+		const data = JSON.parse(jsonLd);
+		// Handle both single recipe and array of items
+		const recipe = Array.isArray(data)
+			? data.find((item) => item["@type"] === "Recipe")
+			: data["@type"] === "Recipe"
+			? data
+			: null;
+
+		if (recipe) {
+			return {
+				title: recipe.name,
+				ingredients: recipe.recipeIngredient || [],
+				instructions: recipe.recipeInstructions.map((step) =>
+					typeof step === "string" ? step : step.text
+				),
+				description: recipe.description,
+				image: recipe.image?.[0] || recipe.image,
+				tags: recipe.keywords,
+			};
+		}
+	} catch (e) {
+		console.error("Error parsing structured data:", e);
+	}
+	return null;
+};
+
+// Function to clean HTML before sending to AI
+const cleanHtmlForAI = (html) => {
+	const $ = cheerio.load(html);
+
+	// Remove unnecessary elements
+	$("script").remove();
+	$("style").remove();
+	$("head").remove();
+	$("nav").remove();
+	$("footer").remove();
+	$("header").remove();
+	$("aside").remove();
+	$(".sidebar").remove();
+	$(".advertisement").remove();
+	$(".comments").remove();
+
+	// Get only the main content area
+	const mainContent = $(
+		"main, article, .content, .recipe-content, .post-content"
+	).first();
+	return mainContent.length ? mainContent.html() : $.html();
+};
+
+// Updated parseWithAI function
+const parseWithAI = async (html) => {
+	try {
+		// Clean and trim HTML before sending to AI
+		const cleanedHtml = cleanHtmlForAI(html);
+
+		const response = await client.beta.chat.completions.parse({
+			model: "gpt-4o-mini",
+			messages: [
+				{
+					role: "system",
+					content:
+						"Extract recipe details from the HTML. Return title, ingredients (array), instructions (array), description, and tags (array).",
+				},
+				{
+					role: "user",
+					content: cleanedHtml,
+				},
+			],
+			response_format: zodResponseFormat(recipeObjSchema, "recipe"),
+		});
+
+		return response.choices[0].message.parsed;
+	} catch (error) {
+		console.error("Error parsing with AI:", error);
+		return null;
+	}
+};
+
+// Add this helper function
+const getPageText = async (page) => {
+	// Get all text content from the page
+	const text = await page.evaluate(() => {
+		// Remove scripts and styles first
+		const scripts = document.getElementsByTagName("script");
+		const styles = document.getElementsByTagName("style");
+		Array.from(scripts).forEach((script) => script.remove());
+		Array.from(styles).forEach((style) => style.remove());
+
+		// Get main content if it exists
+		const main = document.querySelector(
+			"main, article, .content, .recipe-content, .post-content"
+		);
+		if (main) {
+			return main.innerText;
+		}
+		// Fallback to body text
+		return document.body.innerText;
+	});
+	return text;
+};
+
+// Helper function to parse recipe data
+const parseRecipeData = async (html, pageText) => {
+	const $ = cheerio.load(html);
+
+	// Try structured data first
+	const structuredData = extractStructuredData($);
+	if (structuredData) return structuredData;
+
+	// Fallback to AI parsing with page text
+	const response = await client.beta.chat.completions.parse({
+		model: "gpt-4o-mini",
+		messages: [
+			{
+				role: "system",
+				content:
+					"Extract recipe details from this text. Return title (string), ingredients (array), instructions (array), description (string), and tags (array).",
+			},
+			{
+				role: "user",
+				content: pageText,
+			},
+		],
+		response_format: zodResponseFormat(recipeObjSchema, "recipe"),
+	});
+
+	return response.choices[0].message.parsed;
+};
+
+// Simplified import endpoint
 router.post("/import", async (req, res) => {
 	const { url } = req.body;
 
 	try {
-		// Launch Puppeteer browser
-		const browser = await puppeteer.launch();
-		const page = await browser.newPage();
+		// Check cache first
+		if (recipeCache.has(url)) {
+			console.log("Recipe found in cache");
+			return res.json(recipeCache.get(url));
+		}
 
-		// Block images and stylesheets to speed up page loading
+		// Launch and configure browser
+		const browser = await puppeteer.launch({
+			headless: "new",
+			args: ["--no-sandbox"],
+		});
+		const page = await browser.newPage();
+		page.setDefaultNavigationTimeout(15000);
+
+		// Block unnecessary resources
 		await page.setRequestInterception(true);
 		page.on("request", (request) => {
-			if (["image", "stylesheet", "font"].includes(request.resourceType())) {
+			if (
+				["image", "stylesheet", "font", "media", "other"].includes(
+					request.resourceType()
+				)
+			) {
 				request.abort();
 			} else {
 				request.continue();
 			}
 		});
 
-		// Navigate to the URL
+		// Get page content
 		await page.goto(url, { waitUntil: "domcontentloaded" });
-
-		// Get the HTML content of the page
-		const html = await page.content();
-
-		// Close the browser
+		const [html, pageText] = await Promise.all([
+			page.content(),
+			getPageText(page),
+		]);
 		await browser.close();
 
-		// Load the HTML into cheerio
-		const $ = cheerio.load(html);
+		// Parse recipe data
+		const recipeData = await parseRecipeData(html, pageText);
+		if (!recipeData) {
+			throw new Error("Unable to parse recipe from URL");
+		}
 
-		// Extract recipe data using selectors
-		const title =
-			$('meta[property="og:title"]').attr("content") || $("title").text();
-		const ingredients = [];
-		$("ul.ingredients li, .ingredient").each((i, elem) => {
-			ingredients.push($(elem).text().trim());
-		});
-		const steps = [];
-		$("ol.steps li, .step").each((i, elem) => {
-			steps.push($(elem).text().trim());
-		});
-		const description = $('meta[name="description"]').attr("content") || "";
-		const imageUrl = $('meta[property="og:image"]').attr("content") || "";
-
+		// Format and cache recipe
 		const importedRecipe = {
 			id: uuidv4(),
-			title: title || "Imported Recipe",
-			ingredients: ingredients,
-			steps: steps,
-			description: description || "Enjoy your imported recipe!",
-			imageUrl: imageUrl,
+			title: recipeData.title || recipeData.name || "Imported Recipe",
+			ingredients: Array.isArray(recipeData.ingredients)
+				? recipeData.ingredients
+				: [],
+			instructions: Array.isArray(recipeData.instructions)
+				? recipeData.instructions
+				: [],
+			description: recipeData.description || "Imported recipe",
+			imageUrl:
+				recipeData.image ||
+				(await fetchImage(recipeData.title || recipeData.name || "recipe")) ||
+				null,
+			sourceUrl: url,
+			tags: recipeData.tags || [],
 		};
 
+		recipeCache.set(url, importedRecipe);
 		recipes.push(importedRecipe);
 
 		res.json(importedRecipe);
 	} catch (error) {
 		console.error("Error importing recipe:", error);
-		res.status(500).json({ error: "Failed to import recipe" });
+		res.status(500).json({
+			error: "Failed to import recipe",
+			details: error.message,
+		});
 	}
+});
+
+// Optional: Add cache management endpoints
+router.post("/cache/clear", (req, res) => {
+	recipeCache.clear();
+	imageCache = {};
+	res.json({ message: "Cache cleared successfully" });
 });
 
 module.exports = router;
