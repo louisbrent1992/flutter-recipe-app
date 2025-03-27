@@ -32,7 +32,10 @@ const recipesArrSchema = z.object({
 // In-memory recipes database
 let recipes = [];
 
-const PEXELS_API_KEY = process.env.PEXELS_API_KEY; // Add this to your .env file
+// Replace BING constants with GOOGLE
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY; // Add this to your .env file
+const GOOGLE_CX = process.env.GOOGLE_CX; // Add Custom Search Engine ID
+const GOOGLE_SEARCH_URL = "https://www.googleapis.com/customsearch/v1";
 
 // Image cache
 const imageCache = {};
@@ -42,7 +45,7 @@ let previousIngredients = [];
 // Add recipe URL cache at the top with your other cache
 const recipeCache = new Map();
 
-// Function to fetch an image from Pexels with caching
+// Function to fetch an image from Google with caching
 const fetchImage = async (query) => {
 	// Handle undefined or null query
 	if (!query) {
@@ -59,26 +62,31 @@ const fetchImage = async (query) => {
 	}
 
 	try {
-		const response = await axios.get(
-			`https://api.pexels.com/v1/search?query=${normalizedQuery}&per_page=1`,
-			{
-				headers: {
-					Authorization: PEXELS_API_KEY,
-				},
-			}
-		);
+		const response = await axios.get(GOOGLE_SEARCH_URL, {
+			params: {
+				key: GOOGLE_API_KEY,
+				cx: GOOGLE_CX,
+				q: `${normalizedQuery}`,
+				searchType: "image",
+				num: 1,
+				safe: "active",
+			},
+		});
 
-		// Check if photos array exists and has items
-		if (!response.data.photos || response.data.photos.length === 0) {
+		console.log(response.data.items[0].link);
+
+		// Check if images exist in response
+		if (!response.data.items || response.data.items.length === 0) {
 			console.log("No images found for query:", normalizedQuery);
 			return null;
 		}
 
-		const imageUrl = response.data.photos[0].src.medium;
+		const imageUrl = response.data.items[0].link;
+
 		imageCache[normalizedQuery] = imageUrl;
 		return imageUrl;
 	} catch (error) {
-		console.error("Error fetching image from Pexels:", error);
+		console.error("Error fetching image from Google:", error);
 		return null;
 	}
 };
@@ -368,9 +376,13 @@ router.post("/import", async (req, res) => {
 				: [],
 			description: recipeData.description || "Imported recipe",
 			imageUrl:
-				recipeData.image ||
-				(await fetchImage(recipeData.title || recipeData.name || "recipe")) ||
-				null,
+				typeof recipeData.image === "object"
+					? recipeData.image.url
+					: recipeData.image ||
+					  (await fetchImage(
+							recipeData.title || recipeData.name || "recipe"
+					  )) ||
+					  null,
 			sourceUrl: url,
 			tags: recipeData.tags || [],
 		};
