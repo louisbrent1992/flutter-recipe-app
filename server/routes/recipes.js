@@ -1,15 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
-// For calling an external AI API if needed
-const cheerio = require("cheerio");
 const { v4: uuidv4 } = require("uuid");
 const OpenAI = require("openai");
 const { z } = require("zod");
 const { zodResponseFormat } = require("openai/helpers/zod");
 const recipeData = require("../data/recipeData");
-const puppeteer = require("puppeteer"); // Add Puppeteer
-
 const client = new OpenAI({
 	api_key: process.env.LlamaAI_API_KEY,
 	base_url: process.env.LlamaAI_API_URL,
@@ -17,11 +13,15 @@ const client = new OpenAI({
 
 const recipeObjSchema = z.object({
 	id: z.string(),
-	name: z.string(),
+	title: z.string(),
+	cuisineType: z.string(),
 	description: z.string(),
 	image: z.string(),
 	ingredients: z.array(z.string()),
 	instructions: z.array(z.string()),
+	cookingTime: z.string(),
+	difficulty: z.string(),
+	servings: z.string(),
 	tags: z.array(z.string()),
 });
 
@@ -44,6 +44,13 @@ let previousIngredients = [];
 
 // Add recipe URL cache at the top with your other cache
 const recipeCache = new Map();
+
+// Add at the top with other caches
+const aiResponseCache = new Map();
+const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
+// Add at the top with other constants
+const MAX_CACHE_SIZE = 1000; // Maximum number of entries in each cache
 
 // Function to fetch an image from Google with caching
 const fetchImage = async (query) => {
@@ -72,8 +79,6 @@ const fetchImage = async (query) => {
 				safe: "active",
 			},
 		});
-
-		console.log(response.data.items[0].link);
 
 		// Check if images exist in response
 		if (!response.data.items || response.data.items.length === 0) {
@@ -113,67 +118,108 @@ const randomIngredient = async () => await getRandomIngredient();
 // POST /recipes/generate - AI-generated recipe creation
 router.post("/generate", async (req, res) => {
 	let {
-		ingredients,
-		dietaryRestrictions,
-		cuisineType,
+		ingredients = [],
+		dietaryRestrictions = [],
+		cuisineType = "",
 		autoFill = false,
 		random = false,
 	} = req.body;
 
 	try {
-		// If no ingredients or cuisine type is provided, generate a random recipe
-		if (!ingredients && !cuisineType) {
+		// Check AI cache first
+		const cacheKey = JSON.stringify({
+			ingredients,
+			dietaryRestrictions,
+			cuisineType,
+			autoFill,
+			random,
+		});
+
+		const cachedResponse = aiResponseCache.get(cacheKey);
+		if (
+			cachedResponse &&
+			Date.now() - cachedResponse.timestamp < CACHE_DURATION
+		) {
+			console.log("Recipe found in AI cache");
+			return res.json(cachedResponse.data);
+		}
+
+		if (!ingredients.length && !cuisineType) {
 			random = true;
 		}
 
 		let recipesData = [];
 
 		if (!autoFill) {
-			// Call OpenAI API to generate multiple recipes
 			const response = await client.beta.chat.completions.parse({
 				model: "gpt-4o-mini",
 				messages: [
 					{
 						role: "user",
 						content: `Generate three recipes that include the following:
-					- Ingredients: ${
-						random ? await randomIngredient() : `${ingredients}`
-					} (for each recipe).
-					- Dietary restrictions: ${dietaryRestrictions}.
-					- Cuisine type: ${cuisineType}.
-					- Additional ingredients if needed.
-					`,
+							- Ingredients: ${random ? await randomIngredient() : ingredients.join(", ")}
+							- Dietary restrictions: ${dietaryRestrictions.join(", ")}
+							- Cuisine type: ${cuisineType}
+							- Include cooking time, difficulty level, and number of servings
+							- Additional ingredients if needed
+						`,
 					},
 				],
-				response_format: zodResponseFormat(recipesArrSchema, "recipesData"),
+				response_format: zodResponseFormat(recipesArrSchema, "recipes"),
 			});
 
 			recipesData = response.choices[0].message.parsed.recipes;
 		} else {
-			// Similar logic for autoFill if needed
-			console.log("Auto-fill not implemented yet");
+			const response = await client.beta.chat.completions.parse({
+				model: "gpt-4o-mini",
+				messages: [
+					{
+						role: "user",
+						content: `Complete this recipe with any missing details except for imageUrl: ${JSON.stringify(
+							req.body
+						)}`,
+					},
+				],
+				response_format: zodResponseFormat(recipeObjSchema, "recipe"),
+			});
+
+			recipesData = [response.choices[0].message.parsed];
 		}
 
 		const generatedRecipes = await Promise.all(
-			recipesData.map(async (recipeData) => {
-				// Fetch an image based on the recipe title
-				const imageUrl = await fetchImage(recipeData.name);
-
-				return {
+			(Array.isArray(recipesData) ? recipesData : [recipesData]).map(
+				async (recipeData) => ({
 					id: uuidv4(),
-					title: recipeData.name,
-					ingredients: recipeData.ingredients || [],
-					steps: recipeData.instructions || [],
-					description: recipeData.description,
-					imageUrl: imageUrl,
+					title: recipeData.title || "Generated Recipe",
+					cuisineType: recipeData.cuisineType || cuisineType,
+					description: recipeData.description || "Enjoy your generated recipe!",
+					ingredients: Array.isArray(recipeData.ingredients)
+						? recipeData.ingredients
+						: [],
+					instructions: Array.isArray(recipeData.instructions)
+						? recipeData.instructions
+						: [],
+					imageUrl:
+						typeof recipeData.image === "object"
+							? recipeData.image.url
+							: recipeData.image ||
+							  (await fetchImage(recipeData.title)) ||
+							  null,
+					cookingTime: recipeData.cookingTime || "30 minutes",
+					difficulty: recipeData.difficulty || "medium",
+					servings: recipeData.servings || "4",
 					tags: recipeData.tags || [],
-				};
-			})
+				})
+			)
 		);
 
-		// Store the generated recipes
-		recipes.push(...generatedRecipes);
+		// Cache the AI response
+		aiResponseCache.set(cacheKey, {
+			data: generatedRecipes,
+			timestamp: Date.now(),
+		});
 
+		recipes.push(...generatedRecipes);
 		res.json(generatedRecipes);
 	} catch (error) {
 		console.error("Error generating recipes:", error);
@@ -181,193 +227,70 @@ router.post("/generate", async (req, res) => {
 	}
 });
 
-// Function to extract structured data (Schema.org/Recipe)
-const extractStructuredData = ($) => {
-	const jsonLd = $('script[type="application/ld+json"]')
-		.contents()
-		.first()
-		.text();
-	try {
-		const data = JSON.parse(jsonLd);
-		// Handle both single recipe and array of items
-		const recipe = Array.isArray(data)
-			? data.find((item) => item["@type"] === "Recipe")
-			: data["@type"] === "Recipe"
-			? data
-			: null;
+// Simplified import endpoint
+router.post("/import", async (req, res) => {
+	const { url } = req.body;
 
-		if (recipe) {
-			return {
-				title: recipe.name,
-				ingredients: recipe.recipeIngredient || [],
-				instructions: recipe.recipeInstructions.map((step) =>
-					typeof step === "string" ? step : step.text
-				),
-				description: recipe.description,
-				image: recipe.image?.[0] || recipe.image,
-				tags: recipe.keywords,
-			};
+	try {
+		// Check recipe cache first
+		if (recipeCache.has(url)) {
+			console.log("Recipe found in cache");
+			return res.json(recipeCache.get(url));
 		}
-	} catch (e) {
-		console.error("Error parsing structured data:", e);
-	}
-	return null;
-};
 
-// Function to clean HTML before sending to AI
-const cleanHtmlForAI = (html) => {
-	const $ = cheerio.load(html);
+		const textUrl = `https://textfrom.website/${url}`;
+		const { data: pageText } = await axios.get(textUrl);
 
-	// Remove unnecessary elements
-	$("script").remove();
-	$("style").remove();
-	$("head").remove();
-	$("nav").remove();
-	$("footer").remove();
-	$("header").remove();
-	$("aside").remove();
-	$(".sidebar").remove();
-	$(".advertisement").remove();
-	$(".comments").remove();
+		// Check AI cache for this text content
+		const textCacheKey = pageText.slice(0, 100); // Use first 100 chars as key
+		const cachedAIResponse = aiResponseCache.get(textCacheKey);
+		if (
+			cachedAIResponse &&
+			Date.now() - cachedAIResponse.timestamp < CACHE_DURATION
+		) {
+			console.log("Recipe parsing found in AI cache");
+			const importedRecipe = {
+				...cachedAIResponse.data,
+				id: uuidv4(),
+				imageUrl: await fetchImage(cachedAIResponse.data.title || "recipe"),
+				sourceUrl: url,
+			};
+			recipeCache.set(url, importedRecipe);
+			return res.json(importedRecipe);
+		}
 
-	// Get only the main content area
-	const mainContent = $(
-		"main, article, .content, .recipe-content, .post-content"
-	).first();
-	return mainContent.length ? mainContent.html() : $.html();
-};
-
-// Updated parseWithAI function
-const parseWithAI = async (html) => {
-	try {
-		// Clean and trim HTML before sending to AI
-		const cleanedHtml = cleanHtmlForAI(html);
-
+		// Parse recipe data using AI
 		const response = await client.beta.chat.completions.parse({
 			model: "gpt-4o-mini",
 			messages: [
 				{
 					role: "system",
 					content:
-						"Extract recipe details from the HTML. Return title, ingredients (array), instructions (array), description, and tags (array).",
+						"Extract recipe details from this text. Return title, ingredients (array), instructions (array), description, and tags (array).",
 				},
 				{
 					role: "user",
-					content: cleanedHtml,
+					content: pageText,
 				},
 			],
 			response_format: zodResponseFormat(recipeObjSchema, "recipe"),
 		});
 
-		return response.choices[0].message.parsed;
-	} catch (error) {
-		console.error("Error parsing with AI:", error);
-		return null;
-	}
-};
-
-// Add this helper function
-const getPageText = async (page) => {
-	// Get all text content from the page
-	const text = await page.evaluate(() => {
-		// Remove scripts and styles first
-		const scripts = document.getElementsByTagName("script");
-		const styles = document.getElementsByTagName("style");
-		Array.from(scripts).forEach((script) => script.remove());
-		Array.from(styles).forEach((style) => style.remove());
-
-		// Get main content if it exists
-		const main = document.querySelector(
-			"main, article, .content, .recipe-content, .post-content"
-		);
-		if (main) {
-			return main.innerText;
-		}
-		// Fallback to body text
-		return document.body.innerText;
-	});
-	return text;
-};
-
-// Helper function to parse recipe data
-const parseRecipeData = async (html, pageText) => {
-	const $ = cheerio.load(html);
-
-	// Try structured data first
-	const structuredData = extractStructuredData($);
-	if (structuredData) return structuredData;
-
-	// Fallback to AI parsing with page text
-	const response = await client.beta.chat.completions.parse({
-		model: "gpt-4o-mini",
-		messages: [
-			{
-				role: "system",
-				content:
-					"Extract recipe details from this text. Return title (string), ingredients (array), instructions (array), description (string), and tags (array).",
-			},
-			{
-				role: "user",
-				content: pageText,
-			},
-		],
-		response_format: zodResponseFormat(recipeObjSchema, "recipe"),
-	});
-
-	return response.choices[0].message.parsed;
-};
-
-// Simplified import endpoint
-router.post("/import", async (req, res) => {
-	const { url } = req.body;
-
-	try {
-		// Check cache first
-		if (recipeCache.has(url)) {
-			console.log("Recipe found in cache");
-			return res.json(recipeCache.get(url));
-		}
-
-		// Launch and configure browser
-		const browser = await puppeteer.launch({
-			headless: "new",
-			args: ["--no-sandbox"],
-		});
-		const page = await browser.newPage();
-		page.setDefaultNavigationTimeout(15000);
-
-		// Block unnecessary resources
-		await page.setRequestInterception(true);
-		page.on("request", (request) => {
-			if (
-				["image", "stylesheet", "font", "media", "other"].includes(
-					request.resourceType()
-				)
-			) {
-				request.abort();
-			} else {
-				request.continue();
-			}
-		});
-
-		// Get page content
-		await page.goto(url, { waitUntil: "domcontentloaded" });
-		const [html, pageText] = await Promise.all([
-			page.content(),
-			getPageText(page),
-		]);
-		await browser.close();
-
-		// Parse recipe data
-		const recipeData = await parseRecipeData(html, pageText);
+		const recipeData = response.choices[0].message.parsed;
 		if (!recipeData) {
 			throw new Error("Unable to parse recipe from URL");
 		}
 
+		// Cache the AI parsing result
+		aiResponseCache.set(textCacheKey, {
+			data: recipeData,
+			timestamp: Date.now(),
+		});
+
 		// Format and cache recipe
 		const importedRecipe = {
 			id: uuidv4(),
-			title: recipeData.title || recipeData.name || "Imported Recipe",
+			title: recipeData.title || "Imported Recipe",
 			ingredients: Array.isArray(recipeData.ingredients)
 				? recipeData.ingredients
 				: [],
@@ -375,14 +298,7 @@ router.post("/import", async (req, res) => {
 				? recipeData.instructions
 				: [],
 			description: recipeData.description || "Imported recipe",
-			imageUrl:
-				typeof recipeData.image === "object"
-					? recipeData.image.url
-					: recipeData.image ||
-					  (await fetchImage(
-							recipeData.title || recipeData.name || "recipe"
-					  )) ||
-					  null,
+			imageUrl: await fetchImage(recipeData.title || "recipe"),
 			sourceUrl: url,
 			tags: recipeData.tags || [],
 		};
@@ -404,7 +320,75 @@ router.post("/import", async (req, res) => {
 router.post("/cache/clear", (req, res) => {
 	recipeCache.clear();
 	imageCache = {};
+	aiResponseCache.clear();
 	res.json({ message: "Cache cleared successfully" });
+});
+
+// Update the cleanup function
+const cleanupCaches = () => {
+	const now = Date.now();
+
+	// Clean up by age
+	for (const [key, value] of aiResponseCache.entries()) {
+		if (now - value.timestamp > CACHE_DURATION) {
+			aiResponseCache.delete(key);
+		}
+	}
+
+	// Clean up by size
+	if (aiResponseCache.size > MAX_CACHE_SIZE) {
+		// Convert to array to sort by timestamp
+		const entries = Array.from(aiResponseCache.entries());
+		entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+
+		// Delete oldest entries until we're under the limit
+		while (aiResponseCache.size > MAX_CACHE_SIZE) {
+			const [oldestKey] = entries.shift();
+			aiResponseCache.delete(oldestKey);
+		}
+	}
+
+	// Do the same for recipe cache
+	if (recipeCache.size > MAX_CACHE_SIZE) {
+		const entries = Array.from(recipeCache.entries());
+		entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+		while (recipeCache.size > MAX_CACHE_SIZE) {
+			const [oldestKey] = entries.shift();
+			recipeCache.delete(oldestKey);
+		}
+	}
+
+	// Clean up image cache
+	const imageEntries = Object.entries(imageCache);
+	if (imageEntries.length > MAX_CACHE_SIZE) {
+		const newImageCache = {};
+		imageEntries
+			.slice(-MAX_CACHE_SIZE) // Keep most recent entries
+			.forEach(([key, value]) => {
+				newImageCache[key] = value;
+			});
+		imageCache = newImageCache;
+	}
+};
+
+// Run cleanup more frequently
+setInterval(cleanupCaches, 6 * 60 * 60 * 1000); // Every 6 hours
+
+router.get("/cache/status", (req, res) => {
+	res.json({
+		aiCache: {
+			size: aiResponseCache.size,
+			maxSize: MAX_CACHE_SIZE,
+		},
+		recipeCache: {
+			size: recipeCache.size,
+			maxSize: MAX_CACHE_SIZE,
+		},
+		imageCache: {
+			size: Object.keys(imageCache).length,
+			maxSize: MAX_CACHE_SIZE,
+		},
+	});
 });
 
 module.exports = router;
