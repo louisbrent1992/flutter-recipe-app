@@ -15,6 +15,7 @@ class ImportDetailsScreen extends StatefulWidget {
 
 class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
   Recipe currentRecipe = Recipe();
+  final TextEditingController _imageController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _sourceController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -23,10 +24,32 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
   final TextEditingController _cookingTimeController = TextEditingController();
   final TextEditingController _servingsController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+
+    // We need to use addPostFrameCallback because we can't access context in initState directly
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final arguments = ModalRoute.of(context)?.settings.arguments;
+      if (arguments != null) {
+        if (arguments is Recipe) {
+          setState(() {
+            currentRecipe = arguments;
+            // Also update all the controllers with the new values
+            _imageController.text = arguments.imageUrl;
+            _titleController.text = arguments.title;
+            _sourceController.text = arguments.source!;
+            _descriptionController.text = arguments.description;
+            _ingredientsController.text = arguments.ingredients.join('\n');
+            _instructionsController.text = arguments.instructions.join('\n');
+            _cookingTimeController.text = arguments.cookingTime;
+            _servingsController.text = arguments.servings;
+          });
+        }
+      }
+    });
   }
 
   void _updateRecipe({
@@ -85,13 +108,12 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
     _cookingTimeController.dispose();
     _servingsController.dispose();
     _tagsController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings.arguments;
-    print('Arguments passed from parent screen: $arguments');
     return Scaffold(
       appBar: const CustomAppBar(title: 'Import Recipe'),
       drawer: const NavDrawer(),
@@ -99,7 +121,9 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
         child: Scrollbar(
           thumbVisibility: true,
           thickness: 10,
+          controller: _scrollController,
           child: SingleChildScrollView(
+            controller: _scrollController,
             child: Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
@@ -117,6 +141,48 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                           child: Image.network(
                             currentRecipe.imageUrl,
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: double.infinity,
+                                height: 250,
+                                color: Colors.grey[300],
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.broken_image,
+                                      size: 64,
+                                      color: Colors.grey,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Failed to load image',
+                                      style: TextStyle(color: Colors.grey[600]),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                width: double.infinity,
+                                height: 250,
+                                color: Colors.grey[200],
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value:
+                                        loadingProgress.expectedTotalBytes !=
+                                                null
+                                            ? loadingProgress
+                                                    .cumulativeBytesLoaded /
+                                                loadingProgress
+                                                    .expectedTotalBytes!
+                                            : null,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
@@ -133,7 +199,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                           });
                         },
                         customDisplay: Text(
-                          '${currentRecipe.title}',
+                          currentRecipe.title,
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       ),
@@ -141,7 +207,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                       EditableRecipeField(
                         label: 'Source',
                         controller: _sourceController,
-                        value: currentRecipe.source,
+                        value: currentRecipe.source!,
                         hintText: 'Enter recipe source',
                         onSave: (value) {
                           setState(() {
@@ -150,7 +216,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                           });
                         },
                         customDisplay: Text(
-                          ' ${currentRecipe.source}',
+                          currentRecipe.source!,
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       ),
@@ -172,7 +238,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                       });
                     },
                     customDisplay: Text(
-                      ' ${currentRecipe.description}',
+                      currentRecipe.description,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ),
@@ -204,7 +270,11 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                   // Instructions
                   EditableRecipeField(
                     label: 'Instructions',
-                    value: currentRecipe.instructions.join('\n'),
+                    value: currentRecipe.instructions
+                        .asMap()
+                        .entries
+                        .map((entry) => '${entry.key + 1}. ${entry.value}')
+                        .join('\n'),
                     controller: _instructionsController,
                     hintText: 'Enter instructions (one per line)',
                     isMultiline: true,
@@ -212,7 +282,12 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                       final instructions =
                           value
                               .split('\n')
-                              .map((e) => e.trim())
+                              .map(
+                                (e) =>
+                                    e
+                                        .replaceFirst(RegExp(r'^\d+\.\s*'), '')
+                                        .trim(),
+                              )
                               .where((e) => e.isNotEmpty)
                               .toList();
                       setState(() {
@@ -220,7 +295,13 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                         _instructionsController.text = value;
                       });
                     },
-                    customDisplay: Text(currentRecipe.instructions.join('\n')),
+                    customDisplay: Text(
+                      currentRecipe.instructions
+                          .asMap()
+                          .entries
+                          .map((entry) => '${entry.key + 1}. ${entry.value}')
+                          .join('\n'),
+                    ),
                   ),
                   const SizedBox(height: 15),
 
@@ -241,7 +322,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                             });
                           },
                           customDisplay: Text(
-                            ' ${currentRecipe.cookingTime} minutes',
+                            '${currentRecipe.cookingTime} minutes',
                             style: Theme.of(context).textTheme.bodyLarge,
                           ),
                         ),

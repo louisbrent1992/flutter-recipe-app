@@ -12,7 +12,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Updated constructor for clarity
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,7 +29,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Scrollbar(
           thumbVisibility: true,
           thickness: 10,
+          controller: _scrollController,
           child: SingleChildScrollView(
+            controller: _scrollController,
             // Make the screen scrollable
             child: Padding(
               padding: const EdgeInsets.all(16.0),

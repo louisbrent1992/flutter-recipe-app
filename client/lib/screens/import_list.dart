@@ -1,7 +1,20 @@
 import 'package:flutter/material.dart';
 
-class ImportListScreen extends StatelessWidget {
+class ImportListScreen extends StatefulWidget {
   const ImportListScreen({super.key});
+
+  @override
+  State<ImportListScreen> createState() => _ImportListScreenState();
+}
+
+class _ImportListScreenState extends State<ImportListScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,36 +37,42 @@ class ImportListScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: const [
-          _RecipeCard(
-            title: 'Spaghetti Carbonara',
-            ingredients: 'Pasta, Eggs, Cheese...',
-            source: 'Instagram',
-            timeAgo: '2 hours ago',
-            imageUrl:
-                'https://plus.unsplash.com/premium_photo-1691948106030-d5e76d461b14?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8c3BhZ2hldHRpJTIwY2FyYm9uYXJhfGVufDB8fDB8fHww',
-          ),
-          SizedBox(height: 16),
-          _RecipeCard(
-            title: 'Fresh Garden Salad',
-            ingredients: 'Lettuce, Tomato, Cucumber...',
-            source: 'YouTube',
-            timeAgo: '1 day ago',
-            imageUrl:
-                'https://images.unsplash.com/photo-1574031491550-35f444917508?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8ZnJlc2glMjBnYXJkZW4lMjBzYWxhZHxlbnwwfHwwfHx8MA%3D%3D',
-          ),
-          SizedBox(height: 16),
-          _RecipeCard(
-            title: 'Chocolate Cake',
-            ingredients: 'Chocolate, Flour, Sugar...',
-            source: 'Website',
-            timeAgo: '1 week ago',
-            imageUrl:
-                'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8Y2hvY29sYXRlJTIwY2FrZXxlbnwwfHwwfHx8MA%3D%3D',
-          ),
-        ],
+      body: Scrollbar(
+        thumbVisibility: true,
+        thickness: 10,
+        controller: _scrollController,
+        child: ListView(
+          controller: _scrollController,
+          padding: const EdgeInsets.all(16),
+          children: const [
+            _RecipeCard(
+              title: 'Spaghetti Carbonara',
+              ingredients: 'Pasta, Eggs, Cheese...',
+              source: 'Instagram',
+              timeAgo: '2 hours ago',
+              imageUrl:
+                  'https://plus.unsplash.com/premium_photo-1691948106030-d5e76d461b14?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8c3BhZ2hldHRpJTIwY2FyYm9uYXJhfGVufDB8fDB8fHww',
+            ),
+            SizedBox(height: 16),
+            _RecipeCard(
+              title: 'Fresh Garden Salad',
+              ingredients: 'Lettuce, Tomato, Cucumber...',
+              source: 'YouTube',
+              timeAgo: '1 day ago',
+              imageUrl:
+                  'https://images.unsplash.com/photo-1574031491550-35f444917508?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8ZnJlc2glMjBnYXJkZW4lMjBzYWxhZHxlbnwwfHwwfHx8MA%3D%3D',
+            ),
+            SizedBox(height: 16),
+            _RecipeCard(
+              title: 'Chocolate Cake',
+              ingredients: 'Chocolate, Flour, Sugar...',
+              source: 'Website',
+              timeAgo: '1 week ago',
+              imageUrl:
+                  'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8Y2hvY29sYXRlJTIwY2FrZXxlbnwwfHwwfHx8MA%3D%3D',
+            ),
+          ],
+        ),
       ),
     );
   }

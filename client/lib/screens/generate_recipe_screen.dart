@@ -55,17 +55,50 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
   void _loadRecipes() async {
     setState(() {
       _isLoading = true;
+      _recipes = [];
     });
-    List<Recipe> recipes = await ApiService.generateAIRecipe(
-      ingredients: _ingredients.join(', '),
-      dietaryRestrictions: _dietaryRestrictions.join(', '),
-      cuisineType: _cuisineType,
-      cookingTime: _cookingTime.toString(),
-    );
-    setState(() {
-      _recipes = recipes;
-      _isLoading = false;
-    });
+
+    try {
+      List<Recipe> recipes = await ApiService.generateAIRecipe(
+        ingredients: _ingredients.join(','),
+        dietaryRestrictions: _dietaryRestrictions.join(','),
+        cuisineType: _cuisineType,
+        cookingTime: _cookingTime.toString(),
+      );
+
+      if (mounted) {
+        setState(() {
+          _recipes = recipes;
+        });
+      }
+
+      print(_recipes);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.toString().contains('Connection error')
+                  ? 'Unable to connect to server. Please check your internet connection.'
+                  : 'Error generating recipes: ${e.toString()}',
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Dismiss',
+              onPressed: () {},
+              textColor: Colors.white,
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -76,6 +109,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var scrollController = ScrollController();
     return Scaffold(
       appBar: const CustomAppBar(title: 'AI Recipe Generator'),
       drawer: const NavDrawer(),
@@ -83,7 +117,9 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
         child: Scrollbar(
           thumbVisibility: true,
           thickness: 10,
+          controller: scrollController, // Attach ScrollController here
           child: SingleChildScrollView(
+            controller: scrollController, // Attach ScrollController here
             child: Container(
               padding: const EdgeInsets.all(20.0),
               child: Column(

@@ -157,8 +157,8 @@ router.post("/generate", async (req, res) => {
 					{
 						role: "user",
 						content: `Generate three recipes that include the following:
-							- Ingredients: ${random ? await randomIngredient() : ingredients.join(", ")}
-							- Dietary restrictions: ${dietaryRestrictions.join(", ")}
+							- Ingredients: ${random ? await randomIngredient() : ingredients}
+							- Dietary restrictions: ${dietaryRestrictions}
 							- Cuisine type: ${cuisineType}
 							- Include cooking time, difficulty level, and number of servings
 							- Additional ingredients if needed
@@ -208,6 +208,7 @@ router.post("/generate", async (req, res) => {
 					cookingTime: recipeData.cookingTime || "30 minutes",
 					difficulty: recipeData.difficulty || "medium",
 					servings: recipeData.servings || "4",
+
 					tags: recipeData.tags || [],
 				})
 			)
@@ -299,7 +300,10 @@ router.post("/import", async (req, res) => {
 				: [],
 			description: recipeData.description || "Imported recipe",
 			imageUrl: await fetchImage(recipeData.title || "recipe"),
-			sourceUrl: url,
+			cookingTime: recipeData.cookingTime || "30 minutes",
+			difficulty: recipeData.difficulty || "medium",
+			servings: recipeData.servings || "4",
+			source: url,
 			tags: recipeData.tags || [],
 		};
 

@@ -12,10 +12,12 @@ import 'package:recipease/screens/recipe_detail_screen.dart';
 import 'package:recipease/screens/settings_screen.dart';
 import 'package:recipease/theme/theme.dart';
 import 'components/bottom_nav_bar.dart'; // Import the BottomNavBar
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -34,14 +36,38 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
 
-    // Listen to media sharing coming from outside the app while the app is in the memory.
-    _intentSub = ReceiveSharingIntent.instance.getMediaStream().listen(
-      (value) {
+    // Only initialize sharing intent on mobile platforms
+    if (!kIsWeb) {
+      // Listen to media sharing coming from outside the app while the app is in the memory
+      _intentSub = ReceiveSharingIntent.instance.getMediaStream().listen(
+        (value) {
+          if (!mounted) return;
+          setState(() {
+            _sharedFiles.clear();
+            _sharedFiles.addAll(value);
+
+            print(value);
+          });
+
+          // navigate to share_intent screen with data
+          if (_sharedFiles.isNotEmpty) {
+            navigatorKey.currentState?.pushNamed(
+              '/importDetails',
+              arguments: _sharedFiles,
+            );
+          }
+        },
+        onError: (err) {
+          print("getIntentDataStream error: $err");
+        },
+      );
+
+      // Get the media sharing coming from outside the app while the app is closed
+      ReceiveSharingIntent.instance.getInitialMedia().then((value) {
         if (!mounted) return;
         setState(() {
           _sharedFiles.clear();
           _sharedFiles.addAll(value);
-
           print(value);
         });
 
@@ -52,36 +78,17 @@ class _MyAppState extends State<MyApp> {
             arguments: _sharedFiles,
           );
         }
-      },
-      onError: (err) {
-        print("getIntentDataStream error: $err");
-      },
-    );
-
-    // Get the media sharing coming from outside the app while the app is closed.
-    ReceiveSharingIntent.instance.getInitialMedia().then((value) {
-      if (!mounted) return;
-      setState(() {
-        _sharedFiles.clear();
-        _sharedFiles.addAll(value);
-        print(value);
+        // Tell the library that we are done processing the intent.
+        ReceiveSharingIntent.instance.reset();
       });
-
-      // navigate to share_intent screen with data
-      if (_sharedFiles.isNotEmpty) {
-        navigatorKey.currentState?.pushNamed(
-          '/importDetails',
-          arguments: _sharedFiles,
-        );
-      }
-      // Tell the library that we are done processing the intent.
-      ReceiveSharingIntent.instance.reset();
-    });
+    }
   }
 
   @override
   void dispose() {
-    _intentSub.cancel();
+    if (!kIsWeb) {
+      _intentSub.cancel();
+    }
     super.dispose();
   }
 

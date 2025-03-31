@@ -12,12 +12,62 @@ class ImportRecipeScreen extends StatefulWidget {
 }
 
 class _ImportRecipeScreenState extends State<ImportRecipeScreen> {
-  void _importRecipe(String url) async {
-    // import recipe function
-    Recipe recipe = await ApiService.importSocialRecipe(url);
-    // then navigate to import details
-    if (mounted) {
-      Navigator.pushNamed(context, '/importDetails', arguments: recipe);
+  final TextEditingController _urlController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _importRecipe(String url) async {
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid URL'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      Recipe recipe = await ApiService.importSocialRecipe(url);
+
+      if (mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Recipe imported successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to details screen
+        Navigator.pushNamed(context, '/importDetails', arguments: recipe);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Dismiss',
+              onPressed: () {},
+              textColor: Colors.white,
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -26,34 +76,45 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen> {
     return Scaffold(
       appBar: const CustomAppBar(title: 'Import Recipe'),
       drawer: const NavDrawer(),
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ElevatedButton(
-              onPressed: () {
-                // Create a sample recipe for testing
-
-                Navigator.pushNamed(context, '/importDetails');
-              },
-              child: const Text('Import New Recipe'),
+            const Text(
+              'Import a Recipe',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            const Text('Or paste a recipe URL to import'),
+            const Text(
+              'Paste a recipe URL below to import',
+              style: TextStyle(fontSize: 16),
+            ),
             const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0),
-              child: TextField(
-                decoration: const InputDecoration(
-                  hintText: 'Paste recipe URL here',
-                  border: OutlineInputBorder(),
-                ),
-                onSubmitted: (url) {
-                  // Handle URL submission
-
-                  _importRecipe(url);
-                },
+            TextField(
+              controller: _urlController,
+              decoration: const InputDecoration(
+                hintText: 'https://www.example.com/recipe',
+                labelText: 'Recipe URL',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.link),
               ),
+              onSubmitted: _importRecipe,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed:
+                  _isLoading ? null : () => _importRecipe(_urlController.text),
+              icon:
+                  _isLoading
+                      ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : const Icon(Icons.download),
+              label: Text(_isLoading ? 'Importing...' : 'Import Recipe'),
+              style: ElevatedButton.styleFrom(minimumSize: const Size(200, 50)),
             ),
           ],
         ),

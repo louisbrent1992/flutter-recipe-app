@@ -47,7 +47,7 @@ class RecipeTags extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(4.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
             Row(
@@ -55,7 +55,11 @@ class RecipeTags extends StatelessWidget {
               children: [
                 Text(
                   'Category Tags:',
-                  style: Theme.of(context).textTheme.labelLarge,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.add),

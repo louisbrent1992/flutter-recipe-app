@@ -8,6 +8,14 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -19,7 +27,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Scrollbar(
           thumbVisibility: true,
           thickness: 10,
+          controller: _scrollController,
           child: ListView(
+            controller: _scrollController,
             children: [
               Container(
                 padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),

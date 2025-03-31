@@ -44,7 +44,7 @@ class RecipeFormScreenState extends State<RecipeFormScreen> {
   void _saveRecipe() async {
     if (_formKey.currentState!.validate()) {
       Recipe newRecipe = Recipe(
-        id: widget.recipe?.id,
+        id: widget.recipe!.id,
         title: _titleController.text,
         ingredients:
             _ingredientsController.text

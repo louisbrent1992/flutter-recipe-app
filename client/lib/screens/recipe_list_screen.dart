@@ -12,6 +12,13 @@ class RecipeListScreen extends StatefulWidget {
 class RecipeListScreenState extends State<RecipeListScreen> {
   List<Recipe> _recipes = [];
   bool _isLoading = true;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -50,54 +57,60 @@ class RecipeListScreenState extends State<RecipeListScreen> {
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                itemCount: _recipes.length,
-                itemBuilder: (context, index) {
-                  Recipe recipe = _recipes[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
-                      vertical: 10,
-                      horizontal: 16,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Image.network(
-                          recipe.imageUrl,
-                          fit: BoxFit.cover,
-                          height: 200,
-                          width: double.infinity,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                recipe.title,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              ElevatedButton(
-                                onPressed: () => _navigateToDetail(recipe),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      Theme.of(context).colorScheme.primary,
-                                  foregroundColor:
-                                      Theme.of(context).colorScheme.onPrimary,
-                                ),
-                                child: const Text('Recipe Details'),
-                              ),
-                            ],
+              : Scrollbar(
+                thumbVisibility: true,
+                thickness: 10,
+                controller: _scrollController,
+                child: ListView.builder(
+                  controller: _scrollController,
+                  itemCount: _recipes.length,
+                  itemBuilder: (context, index) {
+                    Recipe recipe = _recipes[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 16,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Image.network(
+                            recipe.imageUrl,
+                            fit: BoxFit.cover,
+                            height: 200,
+                            width: double.infinity,
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  recipe.title,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: () => _navigateToDetail(recipe),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        Theme.of(context).colorScheme.primary,
+                                    foregroundColor:
+                                        Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                  child: const Text('Recipe Details'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

@@ -11,6 +11,14 @@ class RecipeDetailScreen extends StatefulWidget {
 }
 
 class RecipeDetailScreenState extends State<RecipeDetailScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,71 +47,77 @@ class RecipeDetailScreenState extends State<RecipeDetailScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 0.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: Scrollbar(
+          thumbVisibility: true,
+          thickness: 10,
+          controller: _scrollController,
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
 
-            children: [
-              SizedBox(
-                height: 300,
-                width: double.infinity,
-                child: Image.network(
-                  widget.recipe?.imageUrl ?? '',
-                  fit: BoxFit.cover,
+              children: [
+                SizedBox(
+                  height: 300,
+                  width: double.infinity,
+                  child: Image.network(
+                    widget.recipe?.imageUrl ?? '',
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              SelectableText(
-                widget.recipe?.title ?? 'No Title',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.recipe?.description ?? 'No Description',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.timer, size: 18),
-                      const SizedBox(width: 8),
-                      Text(widget.recipe?.cookingTime ?? 'No Cooking Time'),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      const Icon(Icons.people, size: 18),
-                      const SizedBox(width: 8),
-                      Text('Serves ${widget.recipe?.servings ?? 0}'),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Ingredients:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              ...widget.recipe?.ingredients.map(
-                    (ingredient) => Text('- $ingredient'),
-                  ) ??
-                  [],
-              const SizedBox(height: 16),
-              const Text(
-                'Instructions:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              ...widget.recipe?.instructions.asMap().entries.map(
-                    (entry) => Text('${entry.key + 1}. ${entry.value}'),
-                  ) ??
-                  [],
-              const SizedBox(height: 16),
-            ],
+                const SizedBox(height: 10),
+                SelectableText(
+                  widget.recipe?.title ?? 'No Title',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.recipe?.description ?? 'No Description',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.timer, size: 18),
+                        const SizedBox(width: 8),
+                        Text(widget.recipe?.cookingTime ?? 'No Cooking Time'),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Icon(Icons.people, size: 18),
+                        const SizedBox(width: 8),
+                        Text('Serves ${widget.recipe?.servings ?? 0}'),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Ingredients:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                ...widget.recipe?.ingredients.map(
+                      (ingredient) => Text('- $ingredient'),
+                    ) ??
+                    [],
+                const SizedBox(height: 16),
+                const Text(
+                  'Instructions:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                ...widget.recipe?.instructions.asMap().entries.map(
+                      (entry) => Text('${entry.key + 1}. ${entry.value}'),
+                    ) ??
+                    [],
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),

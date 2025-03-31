@@ -5,8 +5,21 @@ import 'package:recipease/models/recipe.dart';
 
 // Assuming the path is correct based on the context provided
 
-class FavoriteRecipesScreen extends StatelessWidget {
+class FavoriteRecipesScreen extends StatefulWidget {
   const FavoriteRecipesScreen({super.key});
+
+  @override
+  State<FavoriteRecipesScreen> createState() => _FavoriteRecipesScreenState();
+}
+
+class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +49,9 @@ class FavoriteRecipesScreen extends StatelessWidget {
       body: Scrollbar(
         thumbVisibility: true,
         thickness: 10,
+        controller: _scrollController,
         child: ListView.builder(
+          controller: _scrollController,
           itemCount: favoriteRecipes.length,
           itemBuilder: (context, index) {
             final recipe = favoriteRecipes[index];
@@ -52,12 +67,7 @@ class FavoriteRecipesScreen extends StatelessWidget {
                       borderRadius: const BorderRadius.all(Radius.circular(10)),
                       color: Colors.black,
                       image: DecorationImage(
-                        image:
-                            Image.network(
-                              recipe.imageUrl != null
-                                  ? recipe.imageUrl!
-                                  : 'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8Zm9vZHxlbnwwfHwwfHx8MA%3D%3D',
-                            ).image,
+                        image: Image.network(recipe.imageUrl).image,
                         fit: BoxFit.cover,
                       ),
                     ),

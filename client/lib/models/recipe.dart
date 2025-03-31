@@ -1,5 +1,5 @@
 class Recipe {
-  final String? id;
+  final String id;
   final String title;
   final List<String> ingredients;
   final List<String> instructions;
@@ -8,11 +8,11 @@ class Recipe {
   final String cookingTime;
   final String difficulty;
   final String servings;
-  final String source;
+  final String? source;
   final List<String> tags;
 
   Recipe({
-    this.id,
+    this.id = '',
     this.title = 'Recipe Title',
     this.ingredients = const ['Ingredient 1', 'Ingredient 2', 'Ingredient 3'],
     this.instructions = const ['Step 1', 'Step 2', 'Step 3'],
