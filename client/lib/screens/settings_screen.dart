@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:recipease/providers/auth_provider.dart';
+import '../providers/user_profile_provider.dart';
+import '../providers/theme_provider.dart';
+import '../providers/notification_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -8,134 +14,241 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final ScrollController _scrollController = ScrollController();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  bool _isEditing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadProfile() async {
+    final profile = context.read<UserProfileProvider>();
+    await profile.loadProfile();
+    if (mounted) {
+      setState(() {
+        _nameController.text = profile.profile['displayName'] ?? '';
+        _emailController.text = profile.profile['email'] ?? '';
+      });
+    }
+  }
+
+  Future<void> _updateProfile() async {
+    final profile = context.read<UserProfileProvider>();
+    try {
+      await profile.updateProfile(
+        displayName: _nameController.text,
+        email: _emailController.text,
+      );
+      if (mounted) {
+        setState(() => _isEditing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error updating profile: $e')));
+      }
+    }
+  }
+
+  Future<void> _uploadProfilePicture() async {
+    final profile = context.read<UserProfileProvider>();
+    try {
+      await profile.uploadProfilePicture();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile picture updated successfully')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading profile picture: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _signOut() async {
+    final auth = context.read<AuthService>();
+    try {
+      await auth.signOut();
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/login');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error signing out: $e')));
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings', style: TextStyle(color: Colors.white)),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        title: const Text('Settings'),
+        actions: [
+          if (_isEditing)
+            IconButton(icon: const Icon(Icons.save), onPressed: _updateProfile)
+          else
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () => setState(() => _isEditing = true),
+            ),
+        ],
       ),
-      body: SafeArea(
-        child: Scrollbar(
-          thumbVisibility: true,
-          thickness: 10,
-          controller: _scrollController,
-          child: ListView(
-            controller: _scrollController,
+      body: Consumer<UserProfileProvider>(
+        builder: (context, profile, _) {
+          if (profile.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return ListView(
+            padding: const EdgeInsets.all(16),
             children: [
-              Container(
-                padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  shape: BoxShape.rectangle,
-                  color: Theme.of(context).colorScheme.surface,
-                ),
-                width: double.infinity,
-                child: Column(
+              Center(
+                child: Stack(
                   children: [
-                    _buildSettingsItem('Account', Icons.person, '/profile'),
-                    const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-                    _buildSettingsItem(
-                      'My subscription',
-                      Icons.subscriptions,
-                      '/subscription',
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundImage:
+                          profile.profile['photoURL'] != null
+                              ? CachedNetworkImageProvider(
+                                profile.profile['photoURL'],
+                              )
+                              : null,
+                      child:
+                          profile.profile['photoURL'] == null
+                              ? const Icon(Icons.person, size: 50)
+                              : null,
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.camera_alt, size: 20),
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          onPressed: _uploadProfilePicture,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-
-              const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-              Container(
-                padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  shape: BoxShape.rectangle,
-                  color: Theme.of(context).colorScheme.surface,
-                ),
-
-                width: double.infinity,
-                child: Column(
-                  children: [
-                    _buildSettingsItem(
-                      'General settings',
-                      Icons.settings,
-                      '/general_settings',
-                    ),
-                    const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-                    _buildSettingsItem(
-                      'Privacy settings',
-                      Icons.privacy_tip,
-                      '/privacy_settings',
-                    ),
-                    const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-                    _buildSettingsItem(
-                      'Notification settings',
-                      Icons.notifications,
-                      '/notification_settings',
-                    ),
-                    const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-                    _buildSettingsItem(
-                      'Appearance settings',
-                      Icons.color_lens,
-                      '/appearance_settings',
-                    ),
-                    const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-                    _buildSettingsItem(
-                      'Advanced settings',
-                      Icons.build,
-                      '/advanced_settings',
-                    ),
-                  ],
+              const SizedBox(height: 24),
+              TextField(
+                controller: _nameController,
+                enabled: _isEditing,
+                decoration: const InputDecoration(
+                  labelText: 'Display Name',
+                  prefixIcon: Icon(Icons.person),
                 ),
               ),
-              const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-              Container(
-                padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  shape: BoxShape.rectangle,
-                  color: Theme.of(context).colorScheme.surface,
+              const SizedBox(height: 16),
+              TextField(
+                controller: _emailController,
+                enabled: _isEditing,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email),
                 ),
-
-                width: double.infinity,
-
-                child: Column(
-                  children: [
-                    _buildSettingsItem(
-                      'Help & Support',
-                      Icons.help,
-                      '/help_support',
-                    ),
-                    const Divider(color: Color.fromARGB(16, 0, 0, 0)),
-                    _buildSettingsItem('Sign out', Icons.logout, '/sign_out'),
-                  ],
-                ),
+              ),
+              const SizedBox(height: 32),
+              const Divider(),
+              const SizedBox(height: 16),
+              Text('Appearance', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 16),
+              Consumer<ThemeProvider>(
+                builder: (context, themeProvider, _) {
+                  return SwitchListTile(
+                    title: const Text('Dark Mode'),
+                    value: themeProvider.isDarkMode,
+                    onChanged: (value) => themeProvider.toggleTheme(),
+                  );
+                },
+              ),
+              const Divider(),
+              const SizedBox(height: 16),
+              Text(
+                'Notifications',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              Consumer<NotificationProvider>(
+                builder: (context, notificationProvider, _) {
+                  return Column(
+                    children: [
+                      SwitchListTile(
+                        title: const Text('Daily Recipe Reminder'),
+                        subtitle: const Text(
+                          'Get a recipe suggestion every day',
+                        ),
+                        value: notificationProvider.dailyRecipeReminder,
+                        onChanged:
+                            (value) => notificationProvider
+                                .setDailyRecipeReminder(value),
+                      ),
+                      SwitchListTile(
+                        title: const Text('Weekly Digest'),
+                        subtitle: const Text(
+                          'Receive a weekly summary of new recipes',
+                        ),
+                        value: notificationProvider.weeklyDigest,
+                        onChanged:
+                            (value) =>
+                                notificationProvider.setWeeklyDigest(value),
+                      ),
+                      SwitchListTile(
+                        title: const Text('New Recipes'),
+                        subtitle: const Text('Get notified about new recipes'),
+                        value: notificationProvider.newRecipesNotification,
+                        onChanged:
+                            (value) => notificationProvider
+                                .setNewRecipesNotification(value),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const Divider(),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.favorite),
+                title: const Text('Favorite Recipes'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.pushNamed(context, '/favorites'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Sign Out'),
+                onTap: _signOut,
               ),
             ],
-          ),
-        ),
+          );
+        },
       ),
-    );
-  }
-
-  Widget _buildSettingsItem(String title, IconData icon, String routeName) {
-    return ListTile(
-      title: Text(title),
-      leading: Icon(icon),
-      trailing: const Icon(Icons.arrow_forward),
-
-      onTap: () {
-        Navigator.pushNamed(context, routeName);
-        // Handle navigation or action
-      },
     );
   }
 }

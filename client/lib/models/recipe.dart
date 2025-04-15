@@ -1,3 +1,5 @@
+import 'package:share_plus/share_plus.dart';
+
 class Recipe {
   final String id;
   final String title;
@@ -10,6 +12,7 @@ class Recipe {
   final String servings;
   final String? source;
   final List<String> tags;
+  final DateTime createdAt;
 
   Recipe({
     this.id = '',
@@ -25,7 +28,8 @@ class Recipe {
     this.servings = '4',
     this.source = 'Instagram',
     this.tags = const ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert'],
-  });
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
 
   // Convert from JSON
   factory Recipe.fromJson(Map<String, dynamic> json) {
@@ -41,6 +45,7 @@ class Recipe {
       servings: json['servings'],
       source: json['source'],
       tags: json['tags']?.cast<String>(),
+      createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
 
@@ -57,5 +62,31 @@ class Recipe {
     'servings': servings,
     'source': source,
     'tags': tags,
+    'createdAt': createdAt.toIso8601String(),
   };
+
+  Future<void> share() async {
+    final recipeText = '''
+🍳 $title
+
+$description
+
+⏱️ Cooking Time: $cookingTime
+👥 Servings: $servings
+📊 Difficulty: $difficulty
+
+🛒 Ingredients:
+${ingredients.map((i) => '• $i').join('\n')}
+
+📝 Instructions:
+${instructions.map((i) => '${instructions.indexOf(i) + 1}. $i').join('\n')}
+
+🏷️ Tags: ${tags.join(', ')}
+${source != null ? '\nSource: $source' : ''}
+
+Shared via recipease
+''';
+
+    await Share.share(recipeText, subject: title);
+  }
 }

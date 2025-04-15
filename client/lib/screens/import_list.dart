@@ -150,7 +150,7 @@ class _RecipeCard extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // TODO: Implement view full recipe functionality
+                  Navigator.pushNamed(context, '/recipeDetail');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.secondary,
@@ -171,9 +171,7 @@ class _RecipeCard extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.favorite_border),
-                  onPressed: () {
-                    // TODO: Implement favorite functionality
-                  },
+                  onPressed: () {},
                 ),
                 IconButton(
                   icon: const Icon(Icons.edit),

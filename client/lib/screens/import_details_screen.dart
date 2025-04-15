@@ -82,10 +82,15 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
   }
 
   void _saveRecipe(Recipe currentRecipe) async {
-    Recipe recipe = await ApiService.createRecipe(currentRecipe);
-    setState(() {
-      this.currentRecipe = recipe;
-    });
+    try {
+      Recipe recipe = await ApiService.createRecipe(currentRecipe);
+      setState(() {
+        this.currentRecipe = recipe;
+      });
+    } catch (e) {
+      print(e);
+    }
+
     if (mounted) {
       Navigator.pushNamed(context, '/importList', arguments: currentRecipe);
     }

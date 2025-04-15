@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:recipease/components/app_bar.dart';
-import 'package:recipease/components/flavor_card.dart';
-import 'package:recipease/components/nav_drawer.dart';
-import 'package:recipease/components/trending_recipe_card.dart';
-// Removed the import for bottom_nav_bar since it doesn't exist
+import 'package:provider/provider.dart';
+import 'package:recipease/providers/auth_provider.dart';
+import '../providers/user_profile_provider.dart';
+import '../components/custom_app_bar.dart';
+import '../components/nav_drawer.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -15,187 +17,97 @@ class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
 
   @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    final User? userData = ModalRoute.of(context)!.settings.arguments as User?;
+
+    // Check if userData is null and navigate to login if necessary
+    if (context.read<AuthService>().user == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacementNamed(context, '/login');
+      });
+      return Container(); // Return an empty container while redirecting
+    }
+
+    print('User ID: ${userData?.uid}');
+
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Recipease'),
+      appBar: const CustomAppBar(title: 'recipease'),
       drawer: const NavDrawer(),
       body: SafeArea(
-        child: Scrollbar(
-          thumbVisibility: true,
-          thickness: 10,
-          controller: _scrollController,
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            // Make the screen scrollable
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Discover new flavors',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
+        child: Consumer<UserProfileProvider>(
+          builder: (context, profile, _) {
+            if (profile.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-                      ElevatedButton(
-                        onPressed: () {
-                          // Navigate to the "See all" screen
-                          Navigator.pushNamed(context, '/discoverRecipes');
-                        },
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.all<Color>(
-                            Theme.of(context).colorScheme.secondary,
-                          ),
-                          shape:
-                              WidgetStateProperty.all<RoundedRectangleBorder>(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                              ),
-                        ),
-                        child: Text(
-                          'Discover',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-
-                    children: [
-                      FlavorCard(
-                        title: 'Quick Cooking',
-                        subtitle: null,
-                        imageUrl:
-                            'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8Zm9vZHxlbnwwfHwwfHx8MA%3D%3D',
-                      ),
-                      FlavorCard(
-                        title: 'Soothing Morning brew',
-                        subtitle: null,
-                        imageUrl:
-                            'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8Zm9vZHxlbnwwfHwwfHx8MA%3D%3D',
-                      ),
-                      FlavorCard(
-                        title: 'Weekend Kitchen vibes',
-                        subtitle: null,
-                        imageUrl:
-                            'https://plus.unsplash.com/premium_photo-1673108852141-e8c3c22a4a22?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8Zm9vZHxlbnwwfHwwfHx8MA%3D%3D',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Personalized picks',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Navigate to the "See all" screen
-                        },
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.all<Color>(
-                            Theme.of(context).colorScheme.secondary,
-                          ),
-                          shape:
-                              WidgetStateProperty.all<RoundedRectangleBorder>(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                              ),
-                        ),
-                        child: Text(
-                          'Explore',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      FlavorCard(
-                        title: 'Your favorites',
-                        subtitle: 'Culinary inspirations',
-                        imageUrl:
-                            'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Zm9vZHxlbnwwfHwwfHx8MA%3D%3D',
-                      ),
-                      FlavorCard(
-                        title: 'Top picks',
-                        subtitle: "Chef's selection",
-                        imageUrl:
-                            'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 15),
-                  const Text(
-                    'Trending recipes',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const TrendingRecipeCard(
-                    title: 'Healthy treats',
-                    author: 'Samantha',
-                  ),
-                  const TrendingRecipeCard(
-                    title: 'All-time favorites',
-                    author: 'Ethan',
-                  ),
-                  const TrendingRecipeCard(
-                    title: 'Cooking together',
-                    author: 'Family recipes',
-                  ),
-                  const TrendingRecipeCard(
-                    title: 'Healthy treats',
-                    author: 'Samantha',
-                  ),
-                  const TrendingRecipeCard(
-                    title: 'All-time favorites',
-                    author: 'Ethan',
-                  ),
-                  const TrendingRecipeCard(
-                    title: 'Cooking together',
-                    author: 'Family recipes',
-                  ),
-                  const TrendingRecipeCard(
-                    title: 'Healthy treats',
-                    author: 'Samantha',
-                  ),
-                  const TrendingRecipeCard(
-                    title: 'All-time favorites',
-                    author: 'Ethan',
-                  ),
-                  const TrendingRecipeCard(
-                    title: 'Cooking together',
-                    author: 'Family recipes',
-                  ),
-                ],
-              ),
-            ),
-          ),
+            return ListView(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              children: [
+                Text(
+                  'Welcome, ${userData?.displayName ?? 'User'}!',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 24),
+                _buildSection(
+                  context,
+                  'My Recipes',
+                  Icons.restaurant_menu,
+                  () => Navigator.pushNamed(context, '/myRecipes'),
+                ),
+                const SizedBox(height: 16),
+                _buildSection(
+                  context,
+                  'Discover Recipes',
+                  Icons.explore,
+                  () => Navigator.pushNamed(context, '/discover'),
+                ),
+                const SizedBox(height: 16),
+                _buildSection(
+                  context,
+                  'Favorite Recipes',
+                  Icons.favorite,
+                  () => Navigator.pushNamed(context, '/favorites'),
+                ),
+                const SizedBox(height: 16),
+                _buildSection(
+                  context,
+                  'Import Recipe',
+                  Icons.add_circle_outline,
+                  () => Navigator.pushNamed(context, '/import'),
+                ),
+                const SizedBox(height: 16),
+                _buildSection(
+                  context,
+                  'Generate Recipe',
+                  Icons.auto_awesome,
+                  () => Navigator.pushNamed(context, '/generate'),
+                ),
+              ],
+            );
+          },
         ),
+      ),
+    );
+  }
+
+  Widget _buildSection(
+    BuildContext context,
+    String title,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return Card(
+      child: ListTile(
+        leading: Icon(icon, size: 32),
+        title: Text(title, style: Theme.of(context).textTheme.titleLarge),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
     );
   }

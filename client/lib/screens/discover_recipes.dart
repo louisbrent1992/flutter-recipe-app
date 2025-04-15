@@ -1,135 +1,283 @@
 import 'package:flutter/material.dart';
-import 'package:recipease/components/flavor_card.dart';
-import 'package:recipease/components/trending_recipe_card.dart';
+import 'package:provider/provider.dart';
+import '../models/recipe.dart';
+import '../providers/user_profile_provider.dart';
 
 class DiscoverRecipesScreen extends StatefulWidget {
   const DiscoverRecipesScreen({super.key});
 
   @override
-  DiscoverRecipesScreenState createState() => DiscoverRecipesScreenState();
+  State<DiscoverRecipesScreen> createState() => _DiscoverRecipesScreenState();
 }
 
-class DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  List<String> recipes = [
-    "Pasta with Pesto",
-    "Grilled Salmon",
-    "Homemade Bread",
-    "Sushi Platter",
-  ];
-  List<String> recommendedCategories = [
-    "Vegetarian",
-    "Healthy Eats",
-    "Sweet Treats",
-    "Relaxing",
-  ];
+class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedDifficulty = 'All';
+  String _selectedTag = 'All';
+  List<String> _availableTags = [];
+  bool _isLoading = false;
+
+  final List<String> _difficulties = ['All', 'Easy', 'Medium', 'Hard'];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecipes();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadRecipes() async {
+    setState(() => _isLoading = true);
+    try {
+      final profile = context.read<UserProfileProvider>();
+      await profile.getFavoriteRecipes();
+      // Extract unique tags from recipes
+      _availableTags = [
+        'All',
+        ...profile.favoriteRecipes.expand((recipe) => recipe.tags).toSet(),
+      ];
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  List<Recipe> _filterRecipes(List<Recipe> recipes) {
+    return recipes.where((recipe) {
+      final matchesSearch =
+          _searchQuery.isEmpty ||
+          recipe.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          (recipe.description.toLowerCase().contains(
+            _searchQuery.toLowerCase(),
+          ));
+
+      final matchesDifficulty =
+          _selectedDifficulty == 'All' ||
+          recipe.difficulty == _selectedDifficulty;
+
+      final matchesTag =
+          _selectedTag == 'All' || recipe.tags.contains(_selectedTag);
+
+      return matchesSearch && matchesDifficulty && matchesTag;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: TextField(
-          textAlignVertical: TextAlignVertical.center,
-          controller: _searchController,
-          decoration: const InputDecoration(
-            border: InputBorder.none,
-            hintText: 'Search for recipes...',
-            hintStyle: TextStyle(color: Colors.white),
-            prefixIcon: Icon(Icons.search, color: Colors.white),
-          ),
-          cursorColor: Theme.of(context).colorScheme.secondary,
-          cursorHeight: 18,
-          textInputAction: TextInputAction.search,
-          onChanged: (value) {
-            // Implement search functionality
-          },
-          style: const TextStyle(color: Colors.white),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.person,
-              color: Theme.of(context).colorScheme.onPrimary,
-            ),
-            onPressed: () => Navigator.pushNamed(context, '/profile'),
-          ),
-        ],
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Discover Recipes',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(context).colorScheme.secondary,
+      appBar: AppBar(title: const Text('Discover Recipes')),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search recipes...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    suffixIcon:
+                        _searchQuery.isNotEmpty
+                            ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                            : null,
+                  ),
+                  onChanged: (value) {
+                    setState(() => _searchQuery = value);
+                  },
                 ),
-              ),
-              const SizedBox(height: 10),
-              const Expanded(
-                child: Scrollbar(
-                  thumbVisibility: true,
-                  thickness: 5,
-                  child: SingleChildScrollView(
+                const SizedBox(height: 16),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      const Text('Difficulty: '),
+                      ..._difficulties.map(
+                        (difficulty) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: FilterChip(
+                            label: Text(difficulty),
+                            selected: _selectedDifficulty == difficulty,
+                            onSelected: (selected) {
+                              setState(() => _selectedDifficulty = difficulty);
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      const Text('Tags: '),
+                      ..._availableTags.map(
+                        (tag) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: FilterChip(
+                            label: Text(tag),
+                            selected: _selectedTag == tag,
+                            onSelected: (selected) {
+                              setState(() => _selectedTag = tag);
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Consumer<UserProfileProvider>(
+              builder: (context, profile, _) {
+                if (_isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final filteredRecipes = _filterRecipes(profile.favoriteRecipes);
+
+                if (filteredRecipes.isEmpty) {
+                  return Center(
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        TrendingRecipeCard(
-                          title: 'Pasta with Pesto',
-                          author: 'John Doe',
+                        Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: (0.5)),
                         ),
-                        TrendingRecipeCard(
-                          title: 'Grilled Salmon',
-                          author: 'Jane Smith',
+                        const SizedBox(height: 16),
+                        Text(
+                          'No recipes found',
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
-                        TrendingRecipeCard(
-                          title: 'Homemade Bread',
-                          author: 'Alice Johnson',
-                        ),
-                        TrendingRecipeCard(
-                          title: 'Sushi Platter',
-                          author: 'Bob Williams',
+                        const SizedBox(height: 8),
+                        Text(
+                          'Try adjusting your search or filters',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: (0.7)),
+                          ),
                         ),
                       ],
                     ),
+                  );
+                }
+
+                return GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.75,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
                   ),
-                ),
-              ),
+                  itemCount: filteredRecipes.length,
+                  itemBuilder: (context, index) {
+                    final recipe = filteredRecipes[index];
+                    return _buildRecipeCard(context, recipe);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-              const SizedBox(height: 16),
-              const Text(
-                'Recommended for you',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+  Widget _buildRecipeCard(BuildContext context, Recipe recipe) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          Navigator.pushNamed(context, '/recipeDetail', arguments: recipe);
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Image.network(
+                recipe.imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: Icon(
+                      Icons.restaurant,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  );
+                },
               ),
-
-              const SizedBox(height: 8),
-              const Row(
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  FlavorCard(
-                    title: 'Sweet Treats',
-                    subtitle: null,
-                    imageUrl:
-                        'https://images.unsplash.com/photo-1534119428213-bd2626145164?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHN3ZWV0JTIwdHJlYXRzfGVufDB8fDB8fHww',
+                  Text(
+                    recipe.title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  FlavorCard(
-                    title: 'Relaxing',
-                    subtitle: null,
-                    imageUrl:
-                        'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8aGVhbHRoeXxlbnwwfHwwfHx8MA%3D%3D',
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.timer,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${recipe.cookingTime} min',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.people,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${recipe.servings} servings',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

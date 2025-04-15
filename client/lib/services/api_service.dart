@@ -1,12 +1,21 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/recipe.dart';
 import 'package:logger/logger.dart';
 
 class ApiService {
   static final Logger logger = Logger();
-  static const String baseUrl = 'http://localhost:3000';
+  // Start of Selection
+  static String get baseUrl {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8000'; // Default Android mobile IP address for testing using Android emulator
+    } else if (kIsWeb) {
+      return 'https://your-web-server.com';
+    }
+    return 'https://your-web-server.com'; // Fallback for other platforms
+  }
 
   static Future<List<Recipe>> fetchRecipes() async {
     final response = await http.get(Uri.parse('$baseUrl/recipes'));

@@ -7,55 +7,112 @@ const Color accentColor = Color(0xFFA5FFD6); // Mint Green
 const Color neutralColor = Color(0xFFF2CC8F); // Muted Peach
 const Color purpleColor = Color(0xFF6A0572); // Rich Purple
 
-final ThemeData appThemeData = ThemeData(
-  colorScheme: const ColorScheme(
-    primary: primaryColor,
-    secondary: secondaryColor,
-    tertiary: accentColor,
-    onTertiary: purpleColor,
-    surface: backgroundColor,
-    error: Colors.red, // Default error color
-    onPrimary: Colors.white, // Text/icons on primary color
-    onSecondary: Colors.white, // Text/icons on secondary color
-    onSurface: Colors.black, // Text/icons on white surfaces
-    onError: Colors.white, // Text/icons on error color
-    brightness: Brightness.light, // Light theme
-  ),
-  scaffoldBackgroundColor: backgroundColor,
-  textTheme: const TextTheme(
-    headlineLarge: TextStyle(
-      color: secondaryColor, // Deep navy for emphasis
-      fontSize: 24,
-      fontWeight: FontWeight.bold,
+// Dark theme colors
+const Color darkPrimaryColor = Color(0xFFE07A5F); // Keep primary color
+const Color darkSecondaryColor = Color(0xFFA5B4D9); // Lighter navy
+const Color darkBackgroundColor = Color(0xFF1A1A1A); // Dark background
+const Color darkAccentColor = Color(0xFF4AFFB3); // Brighter mint
+const Color darkNeutralColor = Color(0xFFD4B17A); // Brighter peach
+const Color darkPurpleColor = Color(0xFF9A0AA2); // Brighter purple
+
+class AppTheme {
+  static final ThemeData lightTheme = ThemeData(
+    colorScheme: const ColorScheme(
+      primary: primaryColor,
+      secondary: secondaryColor,
+      tertiary: accentColor,
+      onTertiary: purpleColor,
+      surface: backgroundColor,
+      error: Colors.red,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onSurface: Colors.black,
+      onError: Colors.white,
+      brightness: Brightness.light,
     ),
-    titleLarge: TextStyle(
-      color: secondaryColor, // Deep navy for emphasis
-      fontSize: 20,
-      fontWeight: FontWeight.bold,
+    scaffoldBackgroundColor: backgroundColor,
+    textTheme: const TextTheme(
+      headlineLarge: TextStyle(
+        color: secondaryColor,
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+      ),
+      titleLarge: TextStyle(
+        color: secondaryColor,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
+      bodyMedium: TextStyle(color: Colors.black, fontSize: 14),
+      bodySmall: TextStyle(color: Colors.black, fontSize: 12),
+      labelLarge: TextStyle(
+        color: Colors.black,
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+      ),
+      labelMedium: TextStyle(
+        color: secondaryColor,
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+      ),
+      labelSmall: TextStyle(color: secondaryColor, fontSize: 12),
     ),
-    bodyMedium: TextStyle(
-      color: Colors.black, // Keeping body text readable
-      fontSize: 14,
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
     ),
-    bodySmall: TextStyle(color: Colors.black, fontSize: 12),
-    labelLarge: TextStyle(
-      color: Colors.black, // Warm terracotta for standout labels
-      fontSize: 16,
-      fontWeight: FontWeight.bold,
+    useMaterial3: true,
+  );
+
+  static final ThemeData darkTheme = ThemeData(
+    colorScheme: const ColorScheme(
+      primary: darkPrimaryColor,
+      secondary: darkSecondaryColor,
+      tertiary: darkAccentColor,
+      onTertiary: darkPurpleColor,
+      surface: darkBackgroundColor,
+      error: Colors.red,
+      onPrimary: Colors.white,
+      onSecondary: Colors.black,
+      onSurface: Colors.white,
+      onError: Colors.white,
+      brightness: Brightness.dark,
     ),
-    labelMedium: TextStyle(
-      color: secondaryColor,
-      fontSize: 14,
-      fontWeight: FontWeight.bold,
+    scaffoldBackgroundColor: darkBackgroundColor,
+    textTheme: const TextTheme(
+      headlineLarge: TextStyle(
+        color: darkSecondaryColor,
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+      ),
+      titleLarge: TextStyle(
+        color: darkSecondaryColor,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
+      bodyMedium: TextStyle(color: Colors.white, fontSize: 14),
+      bodySmall: TextStyle(color: Colors.white, fontSize: 12),
+      labelLarge: TextStyle(
+        color: Colors.white,
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+      ),
+      labelMedium: TextStyle(
+        color: darkSecondaryColor,
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+      ),
+      labelSmall: TextStyle(color: darkSecondaryColor, fontSize: 12),
     ),
-    labelSmall: TextStyle(color: secondaryColor, fontSize: 12),
-  ),
-  elevatedButtonTheme: ElevatedButtonThemeData(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: primaryColor,
-      foregroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: darkPrimaryColor,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
     ),
-  ),
-  useMaterial3: true,
-);
+    useMaterial3: true,
+  );
+}
