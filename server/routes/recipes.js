@@ -202,9 +202,7 @@ router.post("/generate", async (req, res) => {
 					imageUrl:
 						typeof recipeData.image === "object"
 							? recipeData.image.url
-							: recipeData.image ||
-							  (await fetchImage(recipeData.title)) ||
-							  null,
+							: await fetchImage(recipeData.title),
 					cookingTime: recipeData.cookingTime || "30 minutes",
 					difficulty: recipeData.difficulty || "medium",
 					servings: recipeData.servings || "4",
