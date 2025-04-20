@@ -6,6 +6,11 @@ const OpenAI = require("openai");
 const { z } = require("zod");
 const { zodResponseFormat } = require("openai/helpers/zod");
 const recipeData = require("../data/recipeData");
+const {
+	extractInstagramShortcode,
+	getInstagramMediaFromUrl,
+} = require("../utils/instagramAPI");
+
 const client = new OpenAI({
 	api_key: process.env.LlamaAI_API_KEY,
 	base_url: process.env.LlamaAI_API_URL,
@@ -226,9 +231,13 @@ router.post("/generate", async (req, res) => {
 	}
 });
 
-// Simplified import endpoint
+// Import endpoint with Instagram caption support
 router.post("/import", async (req, res) => {
 	const { url } = req.body;
+
+	if (!url) {
+		return res.status(400).json({ error: "URL is required" });
+	}
 
 	try {
 		// Check recipe cache first
@@ -237,12 +246,51 @@ router.post("/import", async (req, res) => {
 			return res.json(recipeCache.get(url));
 		}
 
-		const textUrl = `https://textfrom.website/${url}`;
-		const { data: pageText } = await axios.get(textUrl);
+		// Check if this is an Instagram URL
+		const isInstagram =
+			url.includes("instagram.com/p/") || url.includes("instagram.com/reel/");
+		let pageContent = "";
+		let instagramData = null;
 
-		// Check AI cache for this text content
-		const textCacheKey = pageText.slice(0, 100); // Use first 100 chars as key
-		const cachedAIResponse = aiResponseCache.get(textCacheKey);
+		// Handle Instagram URLs with the API
+		if (isInstagram) {
+			try {
+				console.log("Processing Instagram URL:", url);
+				instagramData = await getInstagramMediaFromUrl(url);
+				pageContent = instagramData.caption || "";
+				console.log("Instagram caption retrieved successfully");
+			} catch (instagramError) {
+				console.error("Error processing Instagram URL:", instagramError);
+				// Fall back to textfrom.website
+				const textUrl = `https://textfrom.website/${url}`;
+				const { data } = await axios.get(textUrl);
+				pageContent = data;
+				console.log("Fallback to textfrom.website");
+			}
+		} else {
+			// Handle non-Instagram URLs
+			const textUrl = `https://textfrom.website/${url}`;
+			const { data } = await axios.get(textUrl);
+			pageContent = data;
+		}
+
+		// Create prompt for AI
+		let aiPrompt = pageContent;
+		if (isInstagram && instagramData) {
+			aiPrompt = `
+Instagram Post by ${instagramData.username}:
+
+CAPTION:
+${instagramData.caption}
+
+Please extract any recipe information from this Instagram post. 
+If it's a partial recipe or just mentions ingredients, please try to infer the missing parts.
+`;
+		}
+
+		// Check AI cache for this content
+		const contentKey = pageContent.slice(0, 100); // Use first 100 chars as key
+		const cachedAIResponse = aiResponseCache.get(contentKey);
 		if (
 			cachedAIResponse &&
 			Date.now() - cachedAIResponse.timestamp < CACHE_DURATION
@@ -251,8 +299,12 @@ router.post("/import", async (req, res) => {
 			const importedRecipe = {
 				...cachedAIResponse.data,
 				id: uuidv4(),
-				imageUrl: await fetchImage(cachedAIResponse.data.title || "recipe"),
+				imageUrl:
+					instagramData?.imageUrl ||
+					(await fetchImage(cachedAIResponse.data.title || "recipe")),
 				sourceUrl: url,
+				sourcePlatform: isInstagram ? "instagram" : "web",
+				author: instagramData?.username,
 			};
 			recipeCache.set(url, importedRecipe);
 			return res.json(importedRecipe);
@@ -264,12 +316,13 @@ router.post("/import", async (req, res) => {
 			messages: [
 				{
 					role: "system",
-					content:
-						"Extract recipe details from this text. Return title, ingredients (array), instructions (array), description, and tags (array).",
+					content: isInstagram
+						? "Extract recipe details from this Instagram post. Return title, ingredients (array), instructions (array), description, cookingTime, difficulty, servings, and tags (array)."
+						: "Extract recipe details from this text. Return title, ingredients (array), instructions (array), description, cookingTime, difficulty, servings, and tags (array).",
 				},
 				{
 					role: "user",
-					content: pageText,
+					content: aiPrompt,
 				},
 			],
 			response_format: zodResponseFormat(recipeObjSchema, "recipe"),
@@ -281,7 +334,7 @@ router.post("/import", async (req, res) => {
 		}
 
 		// Cache the AI parsing result
-		aiResponseCache.set(textCacheKey, {
+		aiResponseCache.set(contentKey, {
 			data: recipeData,
 			timestamp: Date.now(),
 		});
@@ -297,12 +350,22 @@ router.post("/import", async (req, res) => {
 				? recipeData.instructions
 				: [],
 			description: recipeData.description || "Imported recipe",
-			imageUrl: await fetchImage(recipeData.title || "recipe"),
+			imageUrl:
+				instagramData?.imageUrl ||
+				(await fetchImage(recipeData.title || "recipe")),
 			cookingTime: recipeData.cookingTime || "30 minutes",
 			difficulty: recipeData.difficulty || "medium",
 			servings: recipeData.servings || "4",
 			source: url,
+			sourcePlatform: isInstagram ? "instagram" : "web",
+			author: instagramData?.username,
 			tags: recipeData.tags || [],
+			...(isInstagram && {
+				instagram: {
+					shortcode: instagramData?.shortcode,
+					username: instagramData?.username,
+				},
+			}),
 		};
 
 		recipeCache.set(url, importedRecipe);
