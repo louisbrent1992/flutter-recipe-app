@@ -17,7 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
-  User? _user;
+  final User? user = FirebaseAuth.instance.currentUser;
 
   @override
   void dispose() {

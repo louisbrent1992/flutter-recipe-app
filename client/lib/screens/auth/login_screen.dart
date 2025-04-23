@@ -34,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       // After signing in, retrieve the user data
-      final userData = context.read<AuthService>();
+      final userData = mounted ? context.read<AuthService>() : null;
 
       if (mounted) {
         Navigator.pushNamed(context, '/home', arguments: userData);

@@ -11,8 +11,16 @@ class Recipe {
   final String difficulty;
   final String servings;
   final String? source;
+  final String? sourcePlatform;
+  final String? sourceUrl;
+  final String? author;
   final List<String> tags;
   final DateTime createdAt;
+  final DateTime? updatedAt;
+  final bool isFavorite;
+  final String? userId;
+  final String? cuisineType;
+  final InstagramData? instagram;
 
   Recipe({
     this.id = '',
@@ -26,26 +34,57 @@ class Recipe {
     this.cookingTime = '45',
     this.difficulty = 'Easy',
     this.servings = '4',
-    this.source = 'Instagram',
+    this.source,
+    this.sourcePlatform,
+    this.sourceUrl,
+    this.author,
     this.tags = const ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert'],
     DateTime? createdAt,
+    this.updatedAt,
+    this.isFavorite = false,
+    this.userId,
+    this.cuisineType,
+    this.instagram,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Convert from JSON
   factory Recipe.fromJson(Map<String, dynamic> json) {
     return Recipe(
-      id: json['id'],
-      title: json['title'],
-      ingredients: json['ingredients']?.cast<String>(),
-      instructions: json['instructions']?.cast<String>(),
-      description: json['description'],
-      imageUrl: json['imageUrl'],
-      cookingTime: json['cookingTime'],
-      difficulty: json['difficulty'],
-      servings: json['servings'],
+      id: json['id'] ?? '',
+      title: json['title'] ?? 'Untitled Recipe',
+      ingredients:
+          json['ingredients'] != null
+              ? List<String>.from(json['ingredients'])
+              : [],
+      instructions:
+          json['instructions'] != null
+              ? List<String>.from(json['instructions'])
+              : [],
+      description: json['description'] ?? '',
+      imageUrl: json['imageUrl'] ?? '',
+      cookingTime: json['cookingTime']?.toString() ?? '0',
+      difficulty: json['difficulty'] ?? 'Medium',
+      servings: json['servings']?.toString() ?? '0',
       source: json['source'],
-      tags: json['tags']?.cast<String>(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      sourcePlatform: json['sourcePlatform'],
+      sourceUrl: json['sourceUrl'],
+      author: json['author'],
+      tags: json['tags'] != null ? List<String>.from(json['tags']) : [],
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'] as String)
+              : DateTime.now(),
+      updatedAt:
+          json['updatedAt'] != null
+              ? DateTime.parse(json['updatedAt'] as String)
+              : null,
+      isFavorite: json['isFavorite'] ?? false,
+      userId: json['userId'],
+      cuisineType: json['cuisineType'],
+      instagram:
+          json['instagram'] != null
+              ? InstagramData.fromJson(json['instagram'])
+              : null,
     );
   }
 
@@ -61,9 +100,64 @@ class Recipe {
     'difficulty': difficulty,
     'servings': servings,
     'source': source,
+    'sourcePlatform': sourcePlatform,
+    'sourceUrl': sourceUrl,
+    'author': author,
     'tags': tags,
     'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt?.toIso8601String(),
+    'isFavorite': isFavorite,
+    'userId': userId,
+    'cuisineType': cuisineType,
+    'instagram': instagram?.toJson(),
   };
+
+  // Create a copy of the recipe with updated values
+  Recipe copyWith({
+    String? id,
+    String? title,
+    List<String>? ingredients,
+    List<String>? instructions,
+    String? description,
+    String? imageUrl,
+    String? cookingTime,
+    String? difficulty,
+    String? servings,
+    String? source,
+    String? sourcePlatform,
+    String? sourceUrl,
+    String? author,
+    List<String>? tags,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? isFavorite,
+    String? userId,
+    String? cuisineType,
+    InstagramData? instagram,
+  }) {
+    return Recipe(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      ingredients: ingredients ?? this.ingredients,
+      instructions: instructions ?? this.instructions,
+      description: description ?? this.description,
+      imageUrl: imageUrl ?? this.imageUrl,
+      cookingTime: cookingTime ?? this.cookingTime,
+      difficulty: difficulty ?? this.difficulty,
+      servings: servings ?? this.servings,
+      source: source ?? this.source,
+      sourcePlatform: sourcePlatform ?? this.sourcePlatform,
+      sourceUrl: sourceUrl ?? this.sourceUrl,
+      author: author ?? this.author,
+      tags: tags ?? this.tags,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isFavorite: isFavorite ?? this.isFavorite,
+      userId: userId ?? this.userId,
+      cuisineType: cuisineType ?? this.cuisineType,
+      instagram: instagram ?? this.instagram,
+    );
+  }
 
   Future<void> share() async {
     final recipeText = '''
@@ -74,6 +168,7 @@ $description
 ⏱️ Cooking Time: $cookingTime
 👥 Servings: $servings
 📊 Difficulty: $difficulty
+${cuisineType != null && cuisineType!.isNotEmpty ? '🌎 Cuisine: $cuisineType' : ''}
 
 🛒 Ingredients:
 ${ingredients.map((i) => '• $i').join('\n')}
@@ -83,10 +178,31 @@ ${instructions.map((i) => '${instructions.indexOf(i) + 1}. $i').join('\n')}
 
 🏷️ Tags: ${tags.join(', ')}
 ${source != null ? '\nSource: $source' : ''}
+${author != null ? 'By: $author' : ''}
 
 Shared via recipease
 ''';
 
     await Share.share(recipeText, subject: title);
   }
+}
+
+// Class to store Instagram specific data
+class InstagramData {
+  final String? shortcode;
+  final String? username;
+
+  InstagramData({this.shortcode, this.username});
+
+  factory InstagramData.fromJson(Map<String, dynamic> json) {
+    return InstagramData(
+      shortcode: json['shortcode'],
+      username: json['username'],
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'shortcode': shortcode,
+    'username': username,
+  };
 }

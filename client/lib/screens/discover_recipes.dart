@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:recipease/components/custom_app_bar.dart';
 import '../models/recipe.dart';
-import '../providers/user_profile_provider.dart';
+import '../providers/recipe_provider.dart';
+import '../components/recipe_card.dart';
 
 class DiscoverRecipesScreen extends StatefulWidget {
   const DiscoverRecipesScreen({super.key});
@@ -35,13 +37,23 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
   Future<void> _loadRecipes() async {
     setState(() => _isLoading = true);
     try {
-      final profile = context.read<UserProfileProvider>();
-      await profile.getFavoriteRecipes();
+      final recipeProvider = context.read<RecipeProvider>();
+      await recipeProvider.loadUserRecipes();
+
       // Extract unique tags from recipes
       _availableTags = [
         'All',
-        ...profile.favoriteRecipes.expand((recipe) => recipe.tags).toSet(),
+        ...recipeProvider.userRecipes.expand((recipe) => recipe.tags).toSet(),
       ];
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading recipes: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -70,7 +82,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Discover Recipes')),
+      appBar: const CustomAppBar(title: 'Discover Recipes'),
       body: Column(
         children: [
           Padding(
@@ -146,13 +158,15 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
             ),
           ),
           Expanded(
-            child: Consumer<UserProfileProvider>(
-              builder: (context, profile, _) {
+            child: Consumer<RecipeProvider>(
+              builder: (context, recipeProvider, _) {
                 if (_isLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final filteredRecipes = _filterRecipes(profile.favoriteRecipes);
+                final filteredRecipes = _filterRecipes(
+                  recipeProvider.userRecipes,
+                );
 
                 if (filteredRecipes.isEmpty) {
                   return Center(
@@ -164,7 +178,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
                           size: 64,
                           color: Theme.of(
                             context,
-                          ).colorScheme.primary.withValues(alpha: (0.5)),
+                          ).colorScheme.primary.withValues(alpha: 0.5),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -179,7 +193,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
                           ).textTheme.bodyMedium?.copyWith(
                             color: Theme.of(
                               context,
-                            ).colorScheme.onSurface.withValues(alpha: (0.7)),
+                            ).colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -198,87 +212,21 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
                   itemCount: filteredRecipes.length,
                   itemBuilder: (context, index) {
                     final recipe = filteredRecipes[index];
-                    return _buildRecipeCard(context, recipe);
+                    return RecipeCard(
+                      recipe: recipe,
+                      onTap:
+                          () => Navigator.pushNamed(
+                            context,
+                            '/recipeDetail',
+                            arguments: recipe,
+                          ),
+                    );
                   },
                 );
               },
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildRecipeCard(BuildContext context, Recipe recipe) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          Navigator.pushNamed(context, '/recipeDetail', arguments: recipe);
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Image.network(
-                recipe.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: Icon(
-                      Icons.restaurant,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  );
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    recipe.title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.timer,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${recipe.cookingTime} min',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.people,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${recipe.servings} servings',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

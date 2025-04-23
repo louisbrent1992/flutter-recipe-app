@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:recipease/services/recipe_service.dart';
 import '../models/recipe.dart';
-import '../services/api_service.dart';
 
 class RecipeListScreen extends StatefulWidget {
   const RecipeListScreen({super.key});
@@ -27,11 +27,13 @@ class RecipeListScreenState extends State<RecipeListScreen> {
   }
 
   void _loadRecipes() async {
-    List<Recipe> recipes = await ApiService.fetchRecipes();
-    setState(() {
-      _recipes = recipes;
-      _isLoading = false;
-    });
+    final response = await RecipeService.getUserRecipes();
+    if (response.success && response.data != null) {
+      setState(() {
+        _recipes = response.data!;
+        _isLoading = false;
+      });
+    }
   }
 
   void _navigateToDetail(Recipe recipe) {

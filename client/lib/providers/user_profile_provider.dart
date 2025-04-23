@@ -147,14 +147,30 @@ class UserProfileProvider with ChangeNotifier {
 
     try {
       final snapshot =
-          await _firestore
-              .collection('users')
-              .doc(user.uid)
-              .collection('favorites')
-              .get();
+          await _firestore.collection('favorites').doc(user.uid).get();
 
-      _favoriteRecipes =
-          snapshot.docs.map((doc) => Recipe.fromJson(doc.data())).toList();
+      if (!snapshot.exists) {
+        _favoriteRecipes = [];
+      } else {
+        // If document exists, get the recipes array
+        List<dynamic> recipeIds = snapshot.data()?['recipes'] ?? [];
+        _favoriteRecipes = [];
+
+        // Get each recipe by ID
+        for (String recipeId in recipeIds) {
+          final recipeDoc =
+              await _firestore.collection('recipes').doc(recipeId).get();
+
+          if (recipeDoc.exists) {
+            final recipeData = recipeDoc.data();
+            if (recipeData != null) {
+              _favoriteRecipes.add(
+                Recipe.fromJson({'id': recipeDoc.id, ...recipeData}),
+              );
+            }
+          }
+        }
+      }
     } catch (e) {
       _error = e.toString();
       debugPrint('Error loading favorite recipes: $e');
@@ -169,15 +185,17 @@ class UserProfileProvider with ChangeNotifier {
     if (user == null) return;
 
     try {
-      await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('favorites')
-          .doc(recipe.id)
-          .set(recipe.toJson());
+      // Add the recipe ID to the favorites array
+      await _firestore.collection('favorites').doc(user.uid).set({
+        'recipes': FieldValue.arrayUnion([recipe.id]),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
-      _favoriteRecipes.add(recipe);
-      notifyListeners();
+      // Update UI
+      if (!_favoriteRecipes.any((r) => r.id == recipe.id)) {
+        _favoriteRecipes.add(recipe);
+        notifyListeners();
+      }
     } catch (e) {
       _error = e.toString();
       debugPrint('Error adding recipe to favorites: $e');
@@ -190,13 +208,12 @@ class UserProfileProvider with ChangeNotifier {
     if (user == null) return;
 
     try {
-      await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('favorites')
-          .doc(recipe.id)
-          .delete();
+      // Remove the recipe ID from the favorites array
+      await _firestore.collection('favorites').doc(user.uid).update({
+        'recipes': FieldValue.arrayRemove([recipe.id]),
+      });
 
+      // Update UI
       _favoriteRecipes.removeWhere((r) => r.id == recipe.id);
       notifyListeners();
     } catch (e) {
@@ -211,15 +228,12 @@ class UserProfileProvider with ChangeNotifier {
     if (user == null) return false;
 
     try {
-      final doc =
-          await _firestore
-              .collection('users')
-              .doc(user.uid)
-              .collection('favorites')
-              .doc(recipe.id)
-              .get();
+      final doc = await _firestore.collection('favorites').doc(user.uid).get();
 
-      return doc.exists;
+      if (!doc.exists) return false;
+
+      final List<dynamic> recipes = doc.data()?['recipes'] ?? [];
+      return recipes.contains(recipe.id);
     } catch (e) {
       _error = e.toString();
       debugPrint('Error checking if recipe is favorite: $e');

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/recipe.dart';
-import '../services/api_service.dart';
+import '../services/recipe_service.dart';
 
 class RecipeFormScreen extends StatefulWidget {
   final Recipe? recipe;
@@ -59,9 +59,9 @@ class RecipeFormScreenState extends State<RecipeFormScreen> {
         servings: widget.recipe?.servings ?? '',
       );
       if (widget.recipe == null) {
-        await ApiService.createRecipe(newRecipe);
+        await RecipeService.createUserRecipe(newRecipe);
       } else {
-        await ApiService.updateRecipe(newRecipe);
+        await RecipeService.updateUserRecipe(newRecipe);
       }
       if (mounted) {
         Navigator.pop(context);

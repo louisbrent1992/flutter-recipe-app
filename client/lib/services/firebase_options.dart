@@ -2,7 +2,7 @@
 // ignore_for_file: type=lint
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, kIsWeb, TargetPlatform;
+    show defaultTargetPlatform, TargetPlatform;
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -16,9 +16,6 @@ import 'package:flutter/foundation.dart'
 /// ```
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
-    if (kIsWeb) {
-      return web;
-    }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
@@ -39,16 +36,6 @@ class DefaultFirebaseOptions {
         );
     }
   }
-
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyACo8AcGtaC3UuN5Bd4FIXyA185McTTIKE',
-    appId: '1:826154873845:web:b31cc84f43cc8dee5be6bc',
-    messagingSenderId: '826154873845',
-    projectId: 'recipe-app-c2fcc',
-    authDomain: 'recipe-app-c2fcc.firebaseapp.com',
-    storageBucket: 'recipe-app-c2fcc.firebasestorage.app',
-    measurementId: 'G-52PL9JMNVJ',
-  );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCh2vwuvWxGLlfbegNu73zPq0YOUssm0-0',

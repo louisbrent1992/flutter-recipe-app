@@ -45,13 +45,6 @@ class _EditableRecipeFieldState extends State<EditableRecipeField> {
                     ? TextInputType.multiline
                     : TextInputType.text,
             autofocus: true,
-            onFieldSubmitted:
-                (value) => {
-                  setState(() {
-                    widget.controller.text = value;
-                  }),
-                  widget.onSave(widget.controller.text),
-                },
           ),
           actions: [
             TextButton(

@@ -47,6 +47,17 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     if (widget.recipe == null) return;
 
     final recipe = widget.recipe!;
+
+    // Determine source info to include
+    String sourceInfo = '';
+    if (recipe.source != null && recipe.source!.isNotEmpty) {
+      sourceInfo = '\nSource: ${recipe.source}';
+    } else if (recipe.instagram != null &&
+        recipe.instagram!.shortcode != null) {
+      sourceInfo =
+          '\nOriginal Post: https://www.instagram.com/p/${recipe.instagram!.shortcode}/';
+    }
+
     final String shareText = '''
 ${recipe.title}
 
@@ -63,7 +74,9 @@ ${recipe.ingredients.map((i) => '• $i').join('\n')}
 Instructions:
 ${recipe.instructions.asMap().entries.map((e) => '${e.key + 1}. ${e.value}').join('\n')}
 
-${recipe.tags.isNotEmpty ? 'Tags: ${recipe.tags.join(', ')}' : ''}
+${recipe.tags.isNotEmpty ? 'Tags: ${recipe.tags.join(', ')}' : ''}$sourceInfo
+
+Shared from Recipe App
 ''';
 
     await Share.share(shareText);

@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:recipease/components/app_bar.dart';
-import 'package:recipease/components/nav_drawer.dart';
+import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/editable_recipe_field.dart';
 import 'package:recipease/components/recipe_tags.dart';
 import 'package:recipease/models/recipe.dart';
-import 'package:recipease/services/api_service.dart';
+import 'package:recipease/services/recipe_service.dart';
 
-class ImportDetailsScreen extends StatefulWidget {
-  const ImportDetailsScreen({super.key});
+class RecipeEditScreen extends StatefulWidget {
+  const RecipeEditScreen({super.key});
 
   @override
-  State<ImportDetailsScreen> createState() => _ImportDetailsScreenState();
+  State<RecipeEditScreen> createState() => _RecipeEditScreenState();
 }
 
-class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
+class _RecipeEditScreenState extends State<RecipeEditScreen> {
   Recipe currentRecipe = Recipe();
   final TextEditingController _imageController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
@@ -83,24 +82,39 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
 
   void _saveRecipe(Recipe currentRecipe) async {
     try {
-      Recipe recipe = await ApiService.createRecipe(currentRecipe);
-      setState(() {
-        this.currentRecipe = recipe;
-      });
+      final response =
+          currentRecipe.id.isEmpty
+              ? await RecipeService.createUserRecipe(currentRecipe)
+              : await RecipeService.updateUserRecipe(currentRecipe);
+
+      if (response.success && response.data != null) {
+        setState(() {
+          this.currentRecipe = response.data!;
+        });
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              currentRecipe.id.isEmpty
+                  ? 'Recipe created successfully'
+                  : 'Recipe updated successfully',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, this.currentRecipe);
+      }
     } catch (e) {
       print(e);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saving recipe: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
-
-    if (mounted) {
-      Navigator.pushNamed(context, '/importList', arguments: currentRecipe);
-    }
-  }
-
-  void _autoFillRecipe(Recipe currentRecipe) async {
-    Recipe recipe = await ApiService.fillSocialRecipe(currentRecipe);
-    setState(() {
-      this.currentRecipe = recipe;
-    });
   }
 
   @override
@@ -120,8 +134,10 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Import Recipe'),
-      drawer: const NavDrawer(),
+      appBar: CustomAppBar(
+        title: currentRecipe.id.isEmpty ? 'Create Recipe' : 'Edit Recipe',
+      ),
+
       body: SafeArea(
         child: Scrollbar(
           thumbVisibility: true,
@@ -212,7 +228,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                       EditableRecipeField(
                         label: 'Source',
                         controller: _sourceController,
-                        value: currentRecipe.source!,
+                        value: currentRecipe.source ?? '',
                         hintText: 'Enter recipe source',
                         onSave: (value) {
                           setState(() {
@@ -221,7 +237,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                           });
                         },
                         customDisplay: Text(
-                          currentRecipe.source!,
+                          currentRecipe.source ?? '',
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       ),
@@ -254,13 +270,14 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                     label: 'Ingredients',
                     controller: _ingredientsController,
                     value: currentRecipe.ingredients.join('\n'),
-                    hintText: 'Enter ingredients (one per line)',
+                    hintText: 'Enter ingredients (separate by comma)',
                     isMultiline: true,
+
                     onSave: (value) {
                       final ingredients =
                           value
                               .split('\n')
-                              .map((e) => e.trim())
+                              .map((e) => e.replaceAll(',', '').trim())
                               .where((e) => e.isNotEmpty)
                               .toList();
                       setState(() {
@@ -268,6 +285,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                         _ingredientsController.text = value;
                       });
                     },
+
                     customDisplay: Text(currentRecipe.ingredients.join('\n')),
                   ),
                   const SizedBox(height: 15),
@@ -373,7 +391,7 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
 
                   // Action Buttons
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       ElevatedButton(
                         onPressed: () => Navigator.pop(context),
@@ -384,21 +402,6 @@ class _ImportDetailsScreenState extends State<ImportDetailsScreen> {
                         child: const Text(
                           'Cancel',
                           style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => _autoFillRecipe(currentRecipe),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurple,
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.auto_awesome, color: Colors.white),
-                            Text(
-                              'Autofill',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ],
                         ),
                       ),
                       ElevatedButton(

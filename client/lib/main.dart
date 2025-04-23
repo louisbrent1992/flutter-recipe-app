@@ -3,24 +3,30 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/screens/my_recipes_screen.dart';
 import 'package:recipease/screens/discover_recipes.dart';
-import 'package:recipease/screens/favorite_recipes.dart';
+import 'package:recipease/screens/favorite_recipes_screen.dart';
 import 'package:recipease/screens/generate_recipe_screen.dart';
 import 'package:recipease/screens/home_screen.dart';
-import 'package:recipease/screens/import_details_screen.dart';
+import 'package:recipease/screens/recipe_edit_screen.dart';
 import 'package:recipease/screens/import_list.dart';
 import 'package:recipease/screens/import_recipe_screen.dart';
 import 'package:recipease/screens/recipe_detail_screen.dart';
 import 'package:recipease/screens/settings_screen.dart';
 import 'package:recipease/screens/auth/login_screen.dart';
 import 'package:recipease/screens/auth/register_screen.dart';
+import 'package:recipease/screens/recipe_collection_screen.dart';
+import 'package:recipease/screens/collection_detail_screen.dart';
 import 'package:recipease/theme/theme.dart';
 import 'package:recipease/providers/auth_provider.dart';
 import 'package:recipease/providers/user_profile_provider.dart';
 import 'package:recipease/providers/theme_provider.dart';
 import 'package:recipease/providers/notification_provider.dart';
+import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/models/recipe.dart';
+import 'package:recipease/models/recipe_collection.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:share_handler/share_handler.dart';
+import 'package:share_handler_platform_interface/share_handler_platform_interface.dart';
+import 'package:recipease/services/permission_service.dart';
 import 'services/firebase_options.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -37,13 +43,7 @@ void main() async {
   await Hive.initFlutter();
   await Hive.openBox('preferences');
 
-  if (kIsWeb) {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.web);
-  } else {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  }
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(MyApp(Key('key')));
 }
@@ -56,9 +56,54 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  final ShareHandlerPlatform _shareHandler = ShareHandlerPlatform.instance;
+  final PermissionService _permissionService = PermissionService();
+
   @override
   void initState() {
     super.initState();
+    // Initialize share handler
+    _initShareHandler();
+
+    // Request necessary permissions when app starts
+    _requestInitialPermissions();
+  }
+
+  // Request initial permissions needed for the app
+  Future<void> _requestInitialPermissions() async {
+    // Request notification permission
+    await _permissionService.requestNotificationPermission();
+
+    // We don't request camera and photos permissions on startup
+    // as it's better to request them when they're needed
+  }
+
+  // Initialize the share handler to receive shared content
+  Future<void> _initShareHandler() async {
+    // Initial shared media
+    final sharedMedia = await _shareHandler.getInitialSharedMedia();
+    if (sharedMedia != null) {
+      print('Shared media received: ${sharedMedia.content}');
+      _handleSharedMedia(sharedMedia);
+    }
+
+    // Register callback for future shared media
+    _shareHandler.sharedMediaStream.listen(_handleSharedMedia);
+  }
+
+  // Handle the shared media
+  void _handleSharedMedia(SharedMedia sharedMedia) {
+    if (sharedMedia.content != null && sharedMedia.content!.isNotEmpty) {
+      // Navigate to import screen with URL
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _navigateToImportScreen(sharedMedia.content!);
+      });
+    }
+  }
+
+  // Navigate to the import screen with the shared URL
+  void _navigateToImportScreen(String url) {
+    navigatorKey.currentState?.pushNamed('/import', arguments: url);
   }
 
   @override
@@ -76,6 +121,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(
           create: (_) => NotificationProvider(Hive.box('preferences')),
         ),
+        ChangeNotifierProvider(create: (_) => RecipeProvider()),
       ],
       child: Consumer2<AuthService, ThemeProvider>(
         builder: (context, authService, themeProvider, _) {
@@ -98,9 +144,13 @@ class _MyAppState extends State<MyApp> {
               '/discover': (context) => const DiscoverRecipesScreen(),
               '/favorites': (context) => const FavoriteRecipesScreen(),
               '/generate': (context) => const GenerateRecipeScreen(),
-              '/import': (context) => const ImportRecipeScreen(),
+              '/import':
+                  (context) => ImportRecipeScreen(
+                    sharedUrl:
+                        ModalRoute.of(context)?.settings.arguments as String?,
+                  ),
               '/importList': (context) => const ImportListScreen(),
-              '/importDetails': (context) => const ImportDetailsScreen(),
+              '/recipeEdit': (context) => const RecipeEditScreen(),
               '/myRecipes': (context) => const MyRecipesScreen(),
               '/recipeDetail':
                   (context) => RecipeDetailScreen(
@@ -108,6 +158,13 @@ class _MyAppState extends State<MyApp> {
                         ModalRoute.of(context)!.settings.arguments as Recipe?,
                   ),
               '/settings': (context) => const SettingsScreen(),
+              '/collections': (context) => const RecipeCollectionScreen(),
+              '/collectionDetail':
+                  (context) => CollectionDetailScreen(
+                    collection:
+                        ModalRoute.of(context)!.settings.arguments
+                            as RecipeCollection,
+                  ),
             },
           );
         },
