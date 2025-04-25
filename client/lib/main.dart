@@ -28,6 +28,8 @@ import 'package:share_handler/share_handler.dart';
 import 'package:share_handler_platform_interface/share_handler_platform_interface.dart';
 import 'package:recipease/services/permission_service.dart';
 import 'services/firebase_options.dart';
+import 'screens/generated_recipes_screen.dart';
+import 'screens/imported_recipes_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -165,6 +167,8 @@ class _MyAppState extends State<MyApp> {
                         ModalRoute.of(context)!.settings.arguments
                             as RecipeCollection,
                   ),
+              '/generatedRecipes': (context) => const GeneratedRecipesScreen(),
+              '/importedRecipes': (context) => const ImportedRecipesScreen(),
             },
           );
         },

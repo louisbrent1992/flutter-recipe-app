@@ -108,7 +108,7 @@ class RecipeProvider extends ChangeNotifier {
     _setError(null);
 
     try {
-      final response = await RecipeService.saveAiRecipeToUserCollection(recipe);
+      final response = await RecipeService.createUserRecipe(recipe);
 
       if (response.success && response.data != null) {
         final savedRecipe = response.data;

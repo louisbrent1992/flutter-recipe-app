@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/link.dart';
 import '../models/recipe.dart';
 import '../providers/user_profile_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -31,15 +32,54 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   Future<void> _toggleFavorite() async {
-    if (widget.recipe == null) return;
-    final profile = context.read<UserProfileProvider>();
-    if (_isFavorite) {
-      await profile.removeFromFavorites(widget.recipe!);
-    } else {
-      await profile.addToFavorites(widget.recipe!);
-    }
-    if (mounted) {
-      setState(() => _isFavorite = !_isFavorite);
+    try {
+      final profile = context.read<UserProfileProvider>();
+      if (_isFavorite) {
+        await profile.removeFromFavorites(widget.recipe!);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Removed "${widget.recipe!.title}" from favorites'),
+              backgroundColor: Colors.orange,
+              action: SnackBarAction(
+                label: 'Go to favorites',
+                onPressed: () {
+                  Navigator.pushNamed(context, '/favorites');
+                },
+                textColor: Colors.white,
+              ),
+            ),
+          );
+          setState(() => _isFavorite = false);
+        }
+      } else {
+        await profile.addToFavorites(widget.recipe!);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Added "${widget.recipe!.title}" to favorites'),
+              backgroundColor: Colors.green,
+              action: SnackBarAction(
+                label: 'Go to favorites',
+                onPressed: () {
+                  Navigator.pushNamed(context, '/favorites');
+                },
+                textColor: Colors.white,
+              ),
+            ),
+          );
+          setState(() => _isFavorite = true);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating favorites: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -64,7 +104,7 @@ ${recipe.title}
 Description:
 ${recipe.description}
 
-Cooking Time: ${recipe.cookingTime} minutes
+Cooking Time: ${recipe.cookingTime}
 Servings: ${recipe.servings}
 Difficulty: ${recipe.difficulty}
 
@@ -80,6 +120,79 @@ Shared from Recipe App
 ''';
 
     await Share.share(shareText);
+  }
+
+  Widget _buildSourceLink() {
+    if (widget.recipe == null) return const SizedBox.shrink();
+
+    final recipe = widget.recipe!;
+    String? sourceUrl;
+    String? displayText;
+    IconData? icon;
+
+    if (recipe.instagram != null && recipe.instagram!.shortcode != null) {
+      sourceUrl =
+          recipe.sourceUrl ??
+          'https://www.instagram.com/p/${recipe.instagram!.shortcode}/';
+      displayText = 'View Post';
+      icon = Icons.photo_camera;
+    } else if (recipe.tiktok != null && recipe.tiktok!.videoId != null) {
+      sourceUrl =
+          recipe.sourceUrl ??
+          'https://www.tiktok.com/@${recipe.tiktok!.username}/video/${recipe.tiktok!.videoId}';
+      displayText = 'View Video';
+      icon = Icons.video_library;
+    } else if (recipe.sourceUrl != null && recipe.sourceUrl!.isNotEmpty) {
+      sourceUrl = recipe.sourceUrl;
+      displayText = 'View Source';
+      icon = Icons.link;
+    }
+
+    if (sourceUrl == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (recipe.source != null) ...[
+            Text(
+              recipe.source!,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 4),
+          ],
+          Link(
+            uri: Uri.parse(sourceUrl),
+            target: LinkTarget.blank,
+            builder: (BuildContext context, FollowLink? openLink) {
+              return InkWell(
+                onTap: openLink,
+                child: Row(
+                  children: [
+                    Icon(
+                      icon,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      displayText!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -113,6 +226,7 @@ Shared from Recipe App
           SliverAppBar(
             expandedHeight: 200,
             pinned: true,
+            automaticallyImplyLeading: false,
             flexibleSpace: FlexibleSpaceBar(
               background: AspectRatio(
                 aspectRatio: 16 / 9,
@@ -136,43 +250,58 @@ Shared from Recipe App
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
+                    textAlign: TextAlign.center,
                     recipe.title,
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 8),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+
                     children: [
-                      Icon(
-                        Icons.timer,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.primary,
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.timer,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            recipe.cookingTime,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${recipe.cookingTime} min',
-                        style: Theme.of(context).textTheme.bodyMedium,
+
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.people,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            recipe.servings,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      Icon(
-                        Icons.people,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${recipe.servings} servings',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      const SizedBox(width: 16),
-                      Icon(
-                        Icons.restaurant,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        recipe.difficulty,
-                        style: Theme.of(context).textTheme.bodyMedium,
+
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.restaurant,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            recipe.difficulty,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -181,6 +310,7 @@ Shared from Recipe App
                     recipe.description,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
+                  _buildSourceLink(),
                   const SizedBox(height: 24),
                   Text(
                     'Ingredients',

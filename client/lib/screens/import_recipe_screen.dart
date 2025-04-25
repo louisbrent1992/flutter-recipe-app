@@ -122,7 +122,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
 
   Future<void> _navigateToRecipeDetails(Recipe recipe) async {
     if (mounted) {
-      Navigator.pushNamed(context, '/recipeEdit', arguments: recipe);
+      Navigator.pushReplacementNamed(context, '/recipeEdit', arguments: recipe);
     }
   }
 

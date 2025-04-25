@@ -77,6 +77,15 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
               final recipe = profile.favoriteRecipes[index];
               return RecipeCard(
                 recipe: recipe,
+                showEditButton: true,
+                showFavoriteButton: false,
+                showRemoveButton: true,
+                onRemove: () {
+                  Provider.of<UserProfileProvider>(
+                    context,
+                    listen: false,
+                  ).removeFromFavorites(recipe);
+                },
                 onTap:
                     () => Navigator.pushNamed(
                       context,

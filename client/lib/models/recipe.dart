@@ -11,8 +11,8 @@ class Recipe {
   final String difficulty;
   final String servings;
   final String? source;
-  final String? sourcePlatform;
   final String? sourceUrl;
+  final String? sourcePlatform;
   final String? author;
   final List<String> tags;
   final DateTime createdAt;
@@ -21,6 +21,7 @@ class Recipe {
   final String? userId;
   final String? cuisineType;
   final InstagramData? instagram;
+  final TikTokData? tiktok;
 
   Recipe({
     this.id = '',
@@ -35,8 +36,8 @@ class Recipe {
     this.difficulty = 'Easy',
     this.servings = '4',
     this.source,
-    this.sourcePlatform,
     this.sourceUrl,
+    this.sourcePlatform,
     this.author,
     this.tags = const ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert'],
     DateTime? createdAt,
@@ -45,6 +46,7 @@ class Recipe {
     this.userId,
     this.cuisineType,
     this.instagram,
+    this.tiktok,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Convert from JSON
@@ -66,8 +68,8 @@ class Recipe {
       difficulty: json['difficulty'] ?? 'Medium',
       servings: json['servings']?.toString() ?? '0',
       source: json['source'],
-      sourcePlatform: json['sourcePlatform'],
       sourceUrl: json['sourceUrl'],
+      sourcePlatform: json['sourcePlatform'],
       author: json['author'],
       tags: json['tags'] != null ? List<String>.from(json['tags']) : [],
       createdAt:
@@ -85,6 +87,8 @@ class Recipe {
           json['instagram'] != null
               ? InstagramData.fromJson(json['instagram'])
               : null,
+      tiktok:
+          json['tiktok'] != null ? TikTokData.fromJson(json['tiktok']) : null,
     );
   }
 
@@ -100,8 +104,8 @@ class Recipe {
     'difficulty': difficulty,
     'servings': servings,
     'source': source,
-    'sourcePlatform': sourcePlatform,
     'sourceUrl': sourceUrl,
+    'sourcePlatform': sourcePlatform,
     'author': author,
     'tags': tags,
     'createdAt': createdAt.toIso8601String(),
@@ -110,6 +114,7 @@ class Recipe {
     'userId': userId,
     'cuisineType': cuisineType,
     'instagram': instagram?.toJson(),
+    'tiktok': tiktok?.toJson(),
   };
 
   // Create a copy of the recipe with updated values
@@ -124,8 +129,8 @@ class Recipe {
     String? difficulty,
     String? servings,
     String? source,
-    String? sourcePlatform,
     String? sourceUrl,
+    String? sourcePlatform,
     String? author,
     List<String>? tags,
     DateTime? createdAt,
@@ -134,6 +139,7 @@ class Recipe {
     String? userId,
     String? cuisineType,
     InstagramData? instagram,
+    TikTokData? tiktok,
   }) {
     return Recipe(
       id: id ?? this.id,
@@ -146,8 +152,8 @@ class Recipe {
       difficulty: difficulty ?? this.difficulty,
       servings: servings ?? this.servings,
       source: source ?? this.source,
-      sourcePlatform: sourcePlatform ?? this.sourcePlatform,
       sourceUrl: sourceUrl ?? this.sourceUrl,
+      sourcePlatform: sourcePlatform ?? this.sourcePlatform,
       author: author ?? this.author,
       tags: tags ?? this.tags,
       createdAt: createdAt ?? this.createdAt,
@@ -156,6 +162,7 @@ class Recipe {
       userId: userId ?? this.userId,
       cuisineType: cuisineType ?? this.cuisineType,
       instagram: instagram ?? this.instagram,
+      tiktok: tiktok ?? this.tiktok,
     );
   }
 
@@ -205,4 +212,25 @@ class InstagramData {
     'shortcode': shortcode,
     'username': username,
   };
+}
+
+// Class to store TikTok specific data
+class TikTokData {
+  final String? videoId;
+  final String? username;
+  final String? nickname;
+
+  TikTokData({this.videoId, this.username, this.nickname});
+
+  factory TikTokData.fromJson(Map<String, dynamic> json) {
+    return TikTokData(
+      videoId: json['videoId'],
+      username: json['username'],
+      nickname: json['nickname'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'videoId': videoId, 'username': username, 'nickname': nickname};
+  }
 }

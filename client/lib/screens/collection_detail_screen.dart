@@ -358,6 +358,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                               final recipe = _filteredRecipes[index];
                               return RecipeCard(
                                 recipe: recipe,
+                                showEditButton: true,
                                 onTap:
                                     () => Navigator.pushNamed(
                                       context,

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/providers/recipe_provider.dart';
-import 'package:recipease/components/recipe_card.dart';
-import 'package:recipease/models/recipe.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/checkbox_list.dart';
 import 'package:recipease/components/screen_description_card.dart';
@@ -20,7 +18,6 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
   final List<String> _dietaryRestrictions = [];
   String _cuisineType = 'Italian';
   double _cookingTime = 30;
-  final Map<String, bool> _savedRecipes = {};
 
   void _addIngredient() {
     if (_ingredientController.text.isNotEmpty && mounted) {
@@ -59,12 +56,68 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
 
     try {
+      // Show loading indicator
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder:
+              (context) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Generating Recipes',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const CircularProgressIndicator(),
+                  ],
+                ),
+              ),
+        );
+      }
+
       await recipeProvider.generateRecipes(
         ingredients: _ingredients,
         dietaryRestrictions: _dietaryRestrictions,
         cuisineType: _cuisineType,
       );
+
+      // Close loading dialog
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+
+      if (context.mounted && recipeProvider.generatedRecipes.isNotEmpty) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Recipes generated successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to generated recipes screen
+        Navigator.pushNamed(context, '/generatedRecipes');
+      } else if (context.mounted) {
+        // Show error message if no recipes were generated
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No recipes were generated. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
+      // Close loading dialog if it's still showing
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -86,41 +139,6 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
     }
   }
 
-  Future<void> _handleRecipeAction(Recipe recipe) async {
-    final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    final isCurrentlySaved = _savedRecipes[recipe.id] ?? false;
-
-    if (isCurrentlySaved) {
-      // Remove from collection
-      setState(() {
-        _savedRecipes[recipe.id] = false;
-      });
-      await recipeProvider.deleteUserRecipe(recipe.id);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Recipe removed from your collection'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-    } else {
-      setState(() {
-        _savedRecipes[recipe.id] = true;
-      });
-      // Save to collection
-      await recipeProvider.saveGeneratedRecipe(recipe);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Recipe saved to your collection!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   void dispose() {
     _ingredientController.dispose();
@@ -129,19 +147,15 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    var scrollController = ScrollController();
     return Scaffold(
       appBar: const CustomAppBar(title: 'AI Recipe Generator'),
-
       body: SafeArea(
         child: Consumer<RecipeProvider>(
           builder: (context, recipeProvider, _) {
             return Scrollbar(
               thumbVisibility: true,
               thickness: 10,
-              controller: scrollController, // Attach ScrollController here
               child: SingleChildScrollView(
-                controller: scrollController, // Attach ScrollController here
                 child: Container(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
@@ -163,7 +177,6 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
-
                       TextField(
                         controller: _ingredientController,
                         decoration: InputDecoration(
@@ -171,7 +184,6 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                               'Enter ingredients (e.g., eggs, flour, tomatoes)',
                           suffixIcon: Row(
                             mainAxisSize: MainAxisSize.min,
-
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.add),
@@ -218,10 +230,8 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                       ),
                       DietaryPreferenceCheckboxList(
                         label: 'Select Preferences',
-                        value:
-                            false, // Initial value, you might want to manage this state
+                        value: false,
                         onChanged: (bool? value) {
-                          // Handle change
                           _handleDietaryPreferences(value.toString());
                         },
                       ),
@@ -245,6 +255,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           },
                           items:
                               <String>[
+                                'American',
                                 'Italian',
                                 'Chinese',
                                 'Mexican',
@@ -261,6 +272,12 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                                 'Polish',
                                 'Portuguese',
                                 'Russian',
+                                'Brazilian',
+                                'Dutch',
+                                'Belgian',
+                                'Swedish',
+                                'Norwegian',
+                                'Danish',
                               ].map<DropdownMenuItem<String>>((String value) {
                                 return DropdownMenuItem<String>(
                                   value: value,
@@ -309,7 +326,6 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                             Colors.deepPurple,
                           ),
                         ),
-
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -327,52 +343,6 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-
-                      // Display error if there is one
-                      if (recipeProvider.error != null)
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          color: Colors.red.shade100,
-                          child: Text(
-                            recipeProvider.error!,
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                        ),
-
-                      if (recipeProvider.generatedRecipes.isNotEmpty)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Generated Recipes:',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            ...recipeProvider.generatedRecipes.map(
-                              (recipe) => RecipeCard(
-                                recipe: recipe,
-                                showSaveButton:
-                                    !(_savedRecipes[recipe.id] ?? false),
-                                showRemoveButton:
-                                    _savedRecipes[recipe.id] ?? false,
-                                onSave: () => _handleRecipeAction(recipe),
-                                onRemove: () => _handleRecipeAction(recipe),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                      if (recipeProvider.isLoading)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: CircularProgressIndicator(),
-                          ),
-                        ),
                     ],
                   ),
                 ),

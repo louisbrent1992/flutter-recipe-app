@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/recipe.dart';
+import '../providers/user_profile_provider.dart';
+import 'package:provider/provider.dart';
 
-class RecipeCard extends StatelessWidget {
+class RecipeCard extends StatefulWidget {
   final Recipe recipe;
   final VoidCallback? onTap;
   final VoidCallback? onRemove;
@@ -12,6 +15,9 @@ class RecipeCard extends StatelessWidget {
   final double? aspectRatio;
   final bool showCookingTime;
   final bool showServings;
+  final bool showEditButton;
+  final bool showFavoriteButton;
+  final bool showShareButton;
 
   const RecipeCard({
     super.key,
@@ -24,7 +30,227 @@ class RecipeCard extends StatelessWidget {
     this.aspectRatio,
     this.showCookingTime = true,
     this.showServings = true,
+    this.showEditButton = false,
+    this.showFavoriteButton = true,
+    this.showShareButton = true,
   });
+
+  @override
+  State<RecipeCard> createState() => _RecipeCardState();
+}
+
+class _RecipeCardState extends State<RecipeCard> {
+  bool _isFavoriteLoading = false;
+  bool _isShareLoading = false;
+  bool isFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFavoriteStatus();
+  }
+
+  Future<void> _checkFavoriteStatus() async {
+    final profile = context.read<UserProfileProvider>();
+    final isFavoriteRecipe = await profile.isRecipeFavorite(widget.recipe);
+    if (isFavoriteRecipe) {
+      if (mounted) {
+        setState(() {
+          isFavorite = true;
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          isFavorite = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (_isFavoriteLoading) return;
+
+    setState(() => _isFavoriteLoading = true);
+    try {
+      final profile = context.read<UserProfileProvider>();
+      final isCurrentlyFavorite = isFavorite;
+
+      if (isCurrentlyFavorite) {
+        await profile.removeFromFavorites(widget.recipe);
+        setState(() => isFavorite = false);
+      } else {
+        await profile.addToFavorites(widget.recipe);
+        setState(() => isFavorite = true);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isCurrentlyFavorite
+                  ? 'Removed "${widget.recipe.title}" from favorites'
+                  : 'Added "${widget.recipe.title}" to favorites',
+            ),
+            backgroundColor: isCurrentlyFavorite ? Colors.orange : Colors.green,
+            action: SnackBarAction(
+              label: 'Go to favorites',
+              onPressed: () => Navigator.pushNamed(context, '/favorites'),
+              textColor: Colors.white,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating favorites: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isFavoriteLoading = false);
+      }
+    }
+  }
+
+  Future<void> _shareRecipe() async {
+    if (_isShareLoading) return;
+
+    setState(() => _isShareLoading = true);
+    try {
+      final String shareText = '''
+${widget.recipe.title}
+
+Description:
+${widget.recipe.description}
+
+Cooking Time: ${widget.recipe.cookingTime} minutes
+Servings: ${widget.recipe.servings}
+Difficulty: ${widget.recipe.difficulty}
+
+Ingredients:
+${widget.recipe.ingredients.map((i) => '• $i').join('\n')}
+
+Instructions:
+${widget.recipe.instructions.asMap().entries.map((e) => '${e.key + 1}. ${e.value}').join('\n')}
+
+${widget.recipe.tags.isNotEmpty ? 'Tags: ${widget.recipe.tags.join(', ')}' : ''}
+
+Shared from Recipe App
+''';
+
+      await Share.share(shareText);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sharing recipe: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isShareLoading = false);
+      }
+    }
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    required String tooltip,
+    Color? iconColor,
+    bool isLoading = false,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: isLoading ? null : onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.black.withAlpha(153), // 0.6 alpha
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child:
+              isLoading
+                  ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                  : Icon(icon, color: iconColor ?? Colors.white, size: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecipeInfo() {
+    if (!widget.showCookingTime && !widget.showServings) {
+      return const SizedBox.shrink();
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Wrap(
+          spacing: 16,
+          alignment: WrapAlignment.spaceBetween,
+          children: [
+            if (widget.showCookingTime)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.timer_outlined, size: 14, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Text(
+                    widget.recipe.cookingTime,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            if (widget.showServings)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.restaurant_outlined,
+                    size: 14,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${widget.recipe.servings} servings',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.speed, size: 14, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Text(
+                  widget.recipe.difficulty,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +261,13 @@ class RecipeCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            '/recipeDetail',
+            arguments: widget.recipe,
+          );
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -43,9 +275,9 @@ class RecipeCard extends StatelessWidget {
             Stack(
               children: [
                 AspectRatio(
-                  aspectRatio: aspectRatio ?? 16 / 9,
+                  aspectRatio: widget.aspectRatio ?? 16 / 9,
                   child: CachedNetworkImage(
-                    imageUrl: recipe.imageUrl,
+                    imageUrl: widget.recipe.imageUrl,
                     fit: BoxFit.cover,
                     placeholder:
                         (context, url) =>
@@ -61,106 +293,94 @@ class RecipeCard extends StatelessWidget {
                         ),
                   ),
                 ),
-                if (showRemoveButton && onRemove != null)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: InkWell(
-                      onTap: onRemove,
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(16),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.showEditButton)
+                        _buildActionButton(
+                          icon: Icons.edit_outlined,
+                          onTap: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/recipeEdit',
+                              arguments: widget.recipe,
+                            );
+                          },
+                          tooltip: 'Edit recipe',
                         ),
-                        child: const Icon(
-                          Icons.remove_circle_outline,
-                          color: Colors.white,
-                          size: 16,
+                      if (widget.showEditButton &&
+                          (widget.showRemoveButton ||
+                              widget.showSaveButton ||
+                              widget.showFavoriteButton ||
+                              widget.showShareButton))
+                        const SizedBox(width: 8),
+                      if (widget.showFavoriteButton)
+                        _buildActionButton(
+                          icon:
+                              isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                          onTap: _toggleFavorite,
+                          tooltip:
+                              isFavorite
+                                  ? 'Remove from favorites'
+                                  : 'Add to favorites',
+                          iconColor: isFavorite ? Colors.red : Colors.white,
+                          isLoading: _isFavoriteLoading,
                         ),
-                      ),
-                    ),
+                      if (widget.showFavoriteButton &&
+                          (widget.showRemoveButton ||
+                              widget.showSaveButton ||
+                              widget.showShareButton))
+                        const SizedBox(width: 8),
+                      if (widget.showShareButton)
+                        _buildActionButton(
+                          icon: Icons.share_outlined,
+                          onTap: _shareRecipe,
+                          tooltip: 'Share recipe',
+                          isLoading: _isShareLoading,
+                        ),
+                      if (widget.showShareButton &&
+                          (widget.showRemoveButton || widget.showSaveButton))
+                        const SizedBox(width: 8),
+                      if (widget.showRemoveButton && widget.onRemove != null)
+                        _buildActionButton(
+                          icon: Icons.remove_circle_outline,
+                          onTap: widget.onRemove!,
+                          tooltip: 'Remove recipe',
+                        ),
+                      if (widget.showRemoveButton && widget.showSaveButton)
+                        const SizedBox(width: 8),
+                      if (widget.showSaveButton && widget.onSave != null)
+                        _buildActionButton(
+                          icon: Icons.save_outlined,
+                          onTap: widget.onSave!,
+                          tooltip: 'Save recipe',
+                        ),
+                    ],
                   ),
-                if (showSaveButton && onSave != null)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: InkWell(
-                      onTap: onSave,
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.save_outlined,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                    ),
-                  ),
+                ),
               ],
             ),
 
             // Recipe details
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    recipe.title,
+                    widget.recipe.title,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (showCookingTime || showServings) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        if (showCookingTime) ...[
-                          Icon(
-                            Icons.timer_outlined,
-                            size: 14,
-                            color: Colors.grey[600],
-                          ),
-                          Text(
-                            recipe.cookingTime,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                        if (showCookingTime && showServings) ...[
-                          const SizedBox(width: 8),
-                          Text('•', style: theme.textTheme.bodySmall),
-                          const SizedBox(width: 8),
-                        ],
-                        if (showServings) ...[
-                          Icon(
-                            Icons.restaurant_outlined,
-                            size: 14,
-                            color: Colors.grey[600],
-                          ),
-                          Text(
-                            '${recipe.servings} servings',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
+                  _buildRecipeInfo(),
                 ],
               ),
             ),

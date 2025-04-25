@@ -25,7 +25,7 @@ class _NavDrawerState extends State<NavDrawer> {
             decoration: BoxDecoration(
               color: colorScheme.primary,
               image: const DecorationImage(
-                image: AssetImage('assets/images/drawer_header_bg.jpg'),
+                image: AssetImage('images/drawer_header_bg.jpg'),
                 fit: BoxFit.cover,
                 opacity: 0.7,
               ),

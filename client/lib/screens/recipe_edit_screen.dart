@@ -336,7 +336,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                         child: EditableRecipeField(
                           label: 'Cooking Time',
                           controller: _cookingTimeController,
-                          value: '${currentRecipe.cookingTime} minutes',
+                          value: currentRecipe.cookingTime,
                           hintText: 'Enter cooking time in minutes',
                           onSave: (value) {
                             setState(() {
@@ -345,7 +345,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                             });
                           },
                           customDisplay: Text(
-                            '${currentRecipe.cookingTime} minutes',
+                            currentRecipe.cookingTime,
                             style: Theme.of(context).textTheme.bodyLarge,
                           ),
                         ),
@@ -364,7 +364,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                             });
                           },
                           customDisplay: Text(
-                            ' ${currentRecipe.servings}',
+                            '${currentRecipe.servings} servings',
                             style: Theme.of(context).textTheme.bodyLarge,
                           ),
                         ),
