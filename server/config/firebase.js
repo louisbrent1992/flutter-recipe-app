@@ -1,13 +1,35 @@
-const admin = require("firebase-admin");
-require("dotenv").config();
-const serviceAccount = require("./recipe-app-c2fcc-firebase-adminsdk-fsjis-7641d9672e.json");
+/**
+ * Firebase Configuration
+ *
+ * Initializes Firebase Admin SDK for server-side operations
+ */
+
+const { initializeApp, cert } = require("firebase-admin/app");
 
 // Initialize Firebase Admin
-admin.initializeApp({
-	credential: admin.credential.cert(serviceAccount),
-});
+const initFirebase = () => {
+	try {
+		// Check if we have service account credentials in env
+		if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+			throw new Error(
+				"FIREBASE_SERVICE_ACCOUNT environment variable is not set"
+			);
+		}
 
-// Get Firestore instance
-const db = admin.firestore();
+		// Parse the service account JSON
+		const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
 
-module.exports = { admin, db };
+		// Initialize the app
+		initializeApp({
+			credential: cert(serviceAccount),
+			databaseURL: process.env.FIREBASE_DATABASE_URL,
+		});
+
+		console.log("Firebase Admin initialized successfully");
+	} catch (error) {
+		console.error("Error initializing Firebase Admin:", error);
+		process.exit(1);
+	}
+};
+
+module.exports = { initFirebase };

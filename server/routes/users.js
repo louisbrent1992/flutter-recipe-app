@@ -1,27 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const { admin, db } = require("../config/firebase");
+const { getFirestore } = require("firebase-admin/firestore");
+const auth = require("../middleware/auth");
 
-// Middleware to verify Firebase token
-const authenticateUser = async (req, res, next) => {
-	try {
-		const authHeader = req.headers.authorization;
-		if (!authHeader) {
-			return res.status(401).json({ error: "No authorization header" });
-		}
-
-		const token = authHeader.split("Bearer ")[1];
-		const decodedToken = await admin.auth().verifyIdToken(token);
-		req.user = decodedToken;
-		next();
-	} catch (error) {
-		console.error("Authentication error:", error);
-		res.status(401).json({ error: "Invalid token" });
-	}
-};
+// Get Firestore database instance
+const db = getFirestore();
 
 // Get user profile
-router.get("/profile", authenticateUser, async (req, res) => {
+router.get("/profile", auth, async (req, res) => {
 	try {
 		const userDoc = await db.collection("users").doc(req.user.uid).get();
 		if (!userDoc.exists) {
@@ -35,13 +21,13 @@ router.get("/profile", authenticateUser, async (req, res) => {
 });
 
 // Update user profile
-router.put("/profile", authenticateUser, async (req, res) => {
+router.put("/profile", auth, async (req, res) => {
 	try {
 		const { displayName, email } = req.body;
 		await db.collection("users").doc(req.user.uid).update({
 			displayName,
 			email,
-			updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+			updatedAt: new Date().toISOString(),
 		});
 		res.json({ message: "Profile updated successfully" });
 	} catch (error) {
@@ -51,7 +37,7 @@ router.put("/profile", authenticateUser, async (req, res) => {
 });
 
 // Get user's favorite recipes
-router.get("/favorites", authenticateUser, async (req, res) => {
+router.get("/favorites", auth, async (req, res) => {
 	try {
 		const favoritesDoc = await db
 			.collection("favorites")
@@ -68,7 +54,7 @@ router.get("/favorites", authenticateUser, async (req, res) => {
 });
 
 // Add recipe to favorites
-router.post("/favorites", authenticateUser, async (req, res) => {
+router.post("/favorites", auth, async (req, res) => {
 	try {
 		const { recipeId } = req.body;
 		await db
@@ -76,7 +62,8 @@ router.post("/favorites", authenticateUser, async (req, res) => {
 			.doc(req.user.uid)
 			.set(
 				{
-					recipes: admin.firestore.FieldValue.arrayUnion(recipeId),
+					recipes: db.FieldValue.arrayUnion(recipeId),
+					updatedAt: new Date().toISOString(),
 				},
 				{ merge: true }
 			);
@@ -88,14 +75,15 @@ router.post("/favorites", authenticateUser, async (req, res) => {
 });
 
 // Remove recipe from favorites
-router.delete("/favorites/:recipeId", authenticateUser, async (req, res) => {
+router.delete("/favorites/:recipeId", auth, async (req, res) => {
 	try {
 		const { recipeId } = req.params;
 		await db
 			.collection("favorites")
 			.doc(req.user.uid)
 			.update({
-				recipes: admin.firestore.FieldValue.arrayRemove(recipeId),
+				recipes: db.FieldValue.arrayRemove(recipeId),
+				updatedAt: new Date().toISOString(),
 			});
 		res.json({ message: "Recipe removed from favorites" });
 	} catch (error) {
