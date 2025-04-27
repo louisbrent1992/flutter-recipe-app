@@ -53,6 +53,12 @@ class RecipeProvider extends ChangeNotifier {
     _setLoading(true);
     _setError(null);
 
+    debugPrint('Generating recipes with:');
+    debugPrint('Ingredients: $ingredients');
+    debugPrint('Dietary Restrictions: $dietaryRestrictions');
+    debugPrint('Cuisine Type: $cuisineType');
+    debugPrint('Random: $random');
+
     try {
       final response = await RecipeService.generateRecipes(
         ingredients: ingredients,

@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 
 class DietaryPreferenceCheckboxList extends StatefulWidget {
   final String label;
-  final bool value;
-  final Function(bool?)? onChanged;
+  final List<String> selectedPreferences;
+  final Function(List<String>)? onChanged;
 
   const DietaryPreferenceCheckboxList({
     super.key,
     required this.label,
-    required this.value,
+    required this.selectedPreferences,
     required this.onChanged,
   });
+
   @override
   State<DietaryPreferenceCheckboxList> createState() =>
       DietaryPreferenceCheckboxListState();
@@ -18,33 +19,24 @@ class DietaryPreferenceCheckboxList extends StatefulWidget {
 
 class DietaryPreferenceCheckboxListState
     extends State<DietaryPreferenceCheckboxList> {
-  bool _vegan = false;
+  final List<String> _selectedPreferences = [];
 
-  bool _keto = false;
+  @override
+  void initState() {
+    super.initState();
+    _selectedPreferences.addAll(widget.selectedPreferences);
+  }
 
-  bool _glutenFree = false;
-
-  bool _vegetarian = false;
-
-  bool _spicy = false;
-
-  bool _healthy = false;
-
-  bool _organic = false;
-
-  final TextEditingController _otherController = TextEditingController();
-
-  var children = <Widget>[];
-
-  void update(bool? value) {
+  void _handlePreferenceChange(String preference, bool value) {
     setState(() {
-      _vegan = value!;
-      _keto = value;
-      _glutenFree = value;
-      _vegetarian = value;
-      _spicy = value;
-      _healthy = value;
-      _organic = value;
+      if (value) {
+        if (!_selectedPreferences.contains(preference)) {
+          _selectedPreferences.add(preference);
+        }
+      } else {
+        _selectedPreferences.remove(preference);
+      }
+      widget.onChanged?.call(_selectedPreferences);
     });
   }
 
@@ -59,11 +51,9 @@ class DietaryPreferenceCheckboxListState
           children: [
             const Text('Keto'),
             Checkbox(
-              value: _keto,
+              value: _selectedPreferences.contains('keto'),
               onChanged: (bool? value) {
-                setState(() {
-                  _keto = value!;
-                });
+                _handlePreferenceChange('keto', value ?? false);
               },
             ),
           ],
@@ -73,11 +63,9 @@ class DietaryPreferenceCheckboxListState
           children: [
             const Text('Gluten Free'),
             Checkbox(
-              value: _glutenFree,
+              value: _selectedPreferences.contains('gluten-free'),
               onChanged: (bool? value) {
-                setState(() {
-                  _glutenFree = value!;
-                });
+                _handlePreferenceChange('gluten-free', value ?? false);
               },
             ),
           ],
@@ -87,11 +75,9 @@ class DietaryPreferenceCheckboxListState
           children: [
             const Text('Vegan'),
             Checkbox(
-              value: _vegan,
+              value: _selectedPreferences.contains('vegan'),
               onChanged: (bool? value) {
-                setState(() {
-                  _vegan = value!;
-                });
+                _handlePreferenceChange('vegan', value ?? false);
               },
             ),
           ],
@@ -101,11 +87,9 @@ class DietaryPreferenceCheckboxListState
           children: [
             const Text('Vegetarian'),
             Checkbox(
-              value: _vegetarian,
+              value: _selectedPreferences.contains('vegetarian'),
               onChanged: (bool? value) {
-                setState(() {
-                  _vegetarian = value!;
-                });
+                _handlePreferenceChange('vegetarian', value ?? false);
               },
             ),
           ],
@@ -115,11 +99,9 @@ class DietaryPreferenceCheckboxListState
           children: [
             const Text('Spicy'),
             Checkbox(
-              value: _spicy,
+              value: _selectedPreferences.contains('spicy'),
               onChanged: (bool? value) {
-                setState(() {
-                  _spicy = value!;
-                });
+                _handlePreferenceChange('spicy', value ?? false);
               },
             ),
           ],
@@ -129,11 +111,9 @@ class DietaryPreferenceCheckboxListState
           children: [
             const Text('Healthy'),
             Checkbox(
-              value: _healthy,
+              value: _selectedPreferences.contains('healthy'),
               onChanged: (bool? value) {
-                setState(() {
-                  _healthy = value!;
-                });
+                _handlePreferenceChange('healthy', value ?? false);
               },
             ),
           ],
@@ -143,29 +123,10 @@ class DietaryPreferenceCheckboxListState
           children: [
             const Text('Organic'),
             Checkbox(
-              value: _organic,
+              value: _selectedPreferences.contains('organic'),
               onChanged: (bool? value) {
-                setState(() {
-                  _organic = value!;
-                });
+                _handlePreferenceChange('organic', value ?? false);
               },
-            ),
-          ],
-        ),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _otherController,
-                decoration: const InputDecoration(
-                  hintText: 'Other (e.g. no peanuts, dairy-free, etc.)',
-                ),
-                onChanged: (text) {
-                  setState(() {
-                    // Handle the input text if needed
-                  });
-                },
-              ),
             ),
           ],
         ),

@@ -38,6 +38,8 @@ class RecipeService {
       'random': random,
     };
 
+    debugPrint('Payload: $payload');
+
     final response = await _api.publicPost<List<dynamic>>(
       'ai/recipes/generate',
       body: payload,

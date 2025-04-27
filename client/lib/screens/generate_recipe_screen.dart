@@ -41,15 +41,10 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
     }
   }
 
-  void _handleDietaryPreferences(String dietaryPreference) {
+  void _handleDietaryPreferences(List<String> preferences) {
     setState(() {
-      if (mounted) {
-        if (_dietaryRestrictions.contains(dietaryPreference)) {
-          _dietaryRestrictions.remove(dietaryPreference);
-        } else {
-          _dietaryRestrictions.add(dietaryPreference);
-        }
-      }
+      _dietaryRestrictions.clear();
+      _dietaryRestrictions.addAll(preferences);
     });
   }
 
@@ -233,10 +228,8 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                       ),
                       DietaryPreferenceCheckboxList(
                         label: 'Select Preferences',
-                        value: false,
-                        onChanged: (bool? value) {
-                          _handleDietaryPreferences(value.toString());
-                        },
+                        selectedPreferences: _dietaryRestrictions,
+                        onChanged: _handleDietaryPreferences,
                       ),
                       const SizedBox(height: 24),
                       Text(
