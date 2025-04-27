@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:photo_manager/photo_manager.dart';
+import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import '../models/recipe.dart';
 
@@ -13,6 +13,7 @@ class UserProfileProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+
   Map<String, dynamic> _profile = {};
   List<Recipe> _favoriteRecipes = [];
   bool _isLoading = false;
@@ -62,6 +63,30 @@ class UserProfileProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // Check if user document exists
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+
+      // Create base user data
+      final userData = {
+        'displayName': displayName ?? user.displayName,
+        'email': email ?? user.email,
+        'photoURL': photoURL ?? user.photoURL,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (!userDoc.exists) {
+        // If document doesn't exist, create it with additional fields
+        await _firestore.collection('users').doc(user.uid).set({
+          ...userData,
+          'createdAt': FieldValue.serverTimestamp(),
+          'uid': user.uid,
+        });
+      } else {
+        // If document exists, update it
+        await _firestore.collection('users').doc(user.uid).update(userData);
+      }
+
+      // Update Firebase Auth profile
       await _firebaseService.updateUserProfile(
         displayName: displayName,
         email: email,
@@ -81,57 +106,107 @@ class UserProfileProvider with ChangeNotifier {
 
   Future<void> uploadProfilePicture() async {
     final user = _auth.currentUser;
-    if (user == null) return;
 
+    debugPrint('Uploading profile picture for user: ${user?.uid}');
+    if (user == null) {
+      debugPrint('No user logged in');
+      throw Exception('User is not authenticated. Please sign in first.');
+    }
+
+    // Verify the user's authentication state and get a fresh token
+    try {
+      await user.reload();
+      if (!user.emailVerified) {
+        throw Exception(
+          'Please verify your email before uploading a profile picture.',
+        );
+      }
+
+      // Get a fresh token
+      final token = await user.getIdToken(true);
+      debugPrint('Got fresh token for user: ${user.uid}');
+    } catch (e) {
+      debugPrint('Error verifying user state: $e');
+      throw Exception('Authentication error. Please sign in again.');
+    }
+
+    debugPrint('Starting upload process for user: ${user.uid}');
     _isLoading = true;
     notifyListeners();
 
     try {
-      // Clear the image cache at the start of the upload process
-      await PhotoManager.clearFileCache();
-
-      // Request permission to access photos
-      final PermissionState ps = await PhotoManager.requestPermissionExtend();
-      if (!ps.isAuth) {
-        // Handle permission denial
-        _isLoading = false;
-        notifyListeners();
-        return;
-      }
-
-      // Get the list of asset paths (albums)
-      final List<AssetPathEntity> paths = await PhotoManager.getAssetPathList();
-      // Assuming you want to pick from the first album
-      final AssetPathEntity path = paths.first;
-
-      // Get assets from the selected album
-      final List<AssetEntity> entities = await path.getAssetListPaged(
-        page: 0,
-        size: 80,
+      debugPrint('Step 1: Picking image');
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
       );
-      // Assuming you want to pick the first image
-      final AssetEntity asset = entities.first;
 
-      // Get the file from the asset
-      final File? file = await asset.file;
-
-      if (file == null) {
+      if (result == null) {
+        debugPrint('No image selected');
         _isLoading = false;
         notifyListeners();
         return;
       }
 
-      final ext = file.path.split('.').last;
-      final ref = _storage.ref().child('profile_pictures/${user.uid}.$ext');
+      PlatformFile file = result.files.first;
+      debugPrint('Step 2: Image picked successfully at path: ${file.path}');
 
-      final uploadTask = ref.putFile(file);
-      final snapshot = await uploadTask;
-      final downloadUrl = await snapshot.ref.getDownloadURL();
+      debugPrint('Step 3: Creating file reference');
+      final File imageFile = File(file.path!);
+      final ext = file.extension ?? 'jpg';
+      debugPrint('File extension: $ext');
 
+      debugPrint('Step 4: Creating storage references');
+      final storageRef = _storage.ref();
+      debugPrint('Root storage reference created');
+
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = '${user.uid}_$timestamp.$ext';
+      debugPrint('Generated filename: $fileName');
+
+      final profilePicturesRef = storageRef.child('profile_pictures/$fileName');
+      debugPrint(
+        'Profile pictures reference created at: ${profilePicturesRef.fullPath}',
+      );
+
+      debugPrint('Step 5: Starting file upload');
+      final uploadTask = await profilePicturesRef.putFile(
+        imageFile,
+        SettableMetadata(
+          contentType: 'image/$ext',
+          customMetadata: {
+            'uploadedBy': user.uid,
+            'uploadedAt': timestamp.toString(),
+          },
+        ),
+      );
+      debugPrint('File upload completed');
+
+      debugPrint('Step 6: Getting download URL');
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
+      debugPrint('Download URL obtained: $downloadUrl');
+
+      debugPrint('Step 7: Updating user profile');
       await updateProfile(photoURL: downloadUrl);
+      debugPrint('Profile update completed');
     } catch (e) {
       _error = e.toString();
-      debugPrint('Error uploading profile picture: $e');
+      debugPrint('Error in uploadProfilePicture: $e');
+      if (e is FirebaseException) {
+        debugPrint('Firebase error code: ${e.code}');
+        debugPrint('Firebase error message: ${e.message}');
+        debugPrint('Firebase error details: ${e.plugin}');
+
+        // Handle specific Firebase errors
+        if (e.code == 'unauthenticated') {
+          throw Exception('Authentication error. Please sign in again.');
+        } else if (e.code == 'unauthorized') {
+          throw Exception('You do not have permission to upload files.');
+        } else {
+          throw Exception('Failed to upload profile picture: ${e.message}');
+        }
+      }
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();

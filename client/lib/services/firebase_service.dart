@@ -3,9 +3,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class FirebaseService {
+  static final FirebaseService _instance = FirebaseService._internal();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  factory FirebaseService() {
+    return _instance;
+  }
+
+  FirebaseService._internal();
 
   // Get current user
   User? get currentUser => _auth.currentUser;
@@ -18,15 +25,11 @@ class FirebaseService {
     String email,
     String password,
   ) async {
-    try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      return userCredential.user;
-    } catch (e) {
-      rethrow;
-    }
+    final userCredential = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    return userCredential.user;
   }
 
   // Register with email and password
@@ -35,67 +38,50 @@ class FirebaseService {
     String password,
     String displayName,
   ) async {
-    try {
-      UserCredential result = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+    final result = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
 
-      // Create user profile in Firestore
-      await _firestore.collection('users').doc(result.user!.uid).set({
-        'displayName': displayName,
-        'email': email,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+    // Create user profile in Firestore
+    await _firestore.collection('users').doc(result.user!.uid).set({
+      'displayName': displayName,
+      'email': email,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
 
-      // Update display name
-      await result.user!.updateDisplayName(displayName);
+    // Update display name
+    await result.user!.updateDisplayName(displayName);
 
-      return result;
-    } catch (e) {
-      rethrow;
-    }
+    return result;
   }
 
   // Sign in with Google
   Future<User?> signInWithGoogle() async {
-    try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) throw 'Google sign in aborted';
+    final googleUser = await _googleSignIn.signIn();
+    if (googleUser == null) throw 'Google sign in aborted';
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+    final googleAuth = await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
 
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      UserCredential userCredential = await _auth.signInWithCredential(
-        credential,
-      );
-      return userCredential.user;
-    } catch (e) {
-      rethrow;
-    }
+    final userCredential = await _auth.signInWithCredential(credential);
+    return userCredential.user;
   }
 
   // Sign out
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
-    await _auth.signOut();
+    await Future.wait([_googleSignIn.signOut(), _auth.signOut()]);
   }
 
   // Get user profile
   Future<Map<String, dynamic>> getUserProfile() async {
-    try {
-      final doc =
-          await _firestore.collection('users').doc(currentUser!.uid).get();
-      return doc.data() ?? {};
-    } catch (e) {
-      rethrow;
-    }
+    final doc =
+        await _firestore.collection('users').doc(currentUser!.uid).get();
+    return doc.data() ?? {};
   }
 
   // Update user profile
@@ -104,76 +90,48 @@ class FirebaseService {
     String? email,
     String? photoURL,
   }) async {
-    try {
-      final updates = <String, dynamic>{
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+    final updates = <String, dynamic>{
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
 
-      if (displayName != null) updates['displayName'] = displayName;
-      if (email != null) updates['email'] = email;
-      if (photoURL != null) updates['photoURL'] = photoURL;
+    if (displayName != null) updates['displayName'] = displayName;
+    if (email != null) updates['email'] = email;
+    if (photoURL != null) updates['photoURL'] = photoURL;
 
-      await _firestore
-          .collection('users')
-          .doc(currentUser!.uid)
-          .update(updates);
-
-      if (displayName != null) {
-        await currentUser!.updateDisplayName(displayName);
-      }
-      if (email != null) {
-        await currentUser!.verifyBeforeUpdateEmail(email);
-      }
-      if (photoURL != null) {
-        await currentUser!.updatePhotoURL(photoURL);
-      }
-    } catch (e) {
-      rethrow;
-    }
+    await Future.wait([
+      _firestore.collection('users').doc(currentUser!.uid).update(updates),
+      if (displayName != null) currentUser!.updateDisplayName(displayName),
+      if (email != null) currentUser!.verifyBeforeUpdateEmail(email),
+      if (photoURL != null) currentUser!.updatePhotoURL(photoURL),
+    ]);
   }
 
   // Get user's favorite recipes
   Future<List<String>> getFavoriteRecipes() async {
-    try {
-      final doc =
-          await _firestore.collection('favorites').doc(currentUser!.uid).get();
-      return List<String>.from(doc.data()?['recipes'] ?? []);
-    } catch (e) {
-      rethrow;
-    }
+    final doc =
+        await _firestore.collection('favorites').doc(currentUser!.uid).get();
+    return List<String>.from(doc.data()?['recipes'] ?? []);
   }
 
   // Add recipe to favorites
   Future<void> addToFavorites(String recipeId) async {
-    try {
-      await _firestore.collection('favorites').doc(currentUser!.uid).set({
-        'recipes': FieldValue.arrayUnion([recipeId]),
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    } catch (e) {
-      rethrow;
-    }
+    await _firestore.collection('favorites').doc(currentUser!.uid).set({
+      'recipes': FieldValue.arrayUnion([recipeId]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   // Remove recipe from favorites
   Future<void> removeFromFavorites(String recipeId) async {
-    try {
-      await _firestore.collection('favorites').doc(currentUser!.uid).update({
-        'recipes': FieldValue.arrayRemove([recipeId]),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      rethrow;
-    }
+    await _firestore.collection('favorites').doc(currentUser!.uid).update({
+      'recipes': FieldValue.arrayRemove([recipeId]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   // Check if recipe is in favorites
   Future<bool> isRecipeFavorite(String recipeId) async {
-    try {
-      final favorites = await getFavoriteRecipes();
-      return favorites.contains(recipeId);
-    } catch (e) {
-      rethrow;
-    }
+    final favorites = await getFavoriteRecipes();
+    return favorites.contains(recipeId);
   }
 }

@@ -11,6 +11,7 @@ class NavDrawer extends StatefulWidget {
 
 class _NavDrawerState extends State<NavDrawer> {
   final User? user = FirebaseAuth.instance.currentUser;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   Widget build(BuildContext context) {
@@ -57,74 +58,80 @@ class _NavDrawerState extends State<NavDrawer> {
             accountEmail: Text(user?.email ?? ''),
           ),
           Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                _buildDrawerItem(
-                  context: context,
-                  icon: Icons.home_rounded,
-                  title: 'Home',
-                  route: '/home',
-                ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: Icons.person_rounded,
-                  title: 'Profile',
-                  route: '/profile',
-                ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: Icons.restaurant_menu_rounded,
-                  title: 'My Recipes',
-                  route: '/myRecipes',
-                ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: Icons.collections_bookmark_rounded,
-                  title: 'Recipe Collections',
-                  route: '/collections',
-                ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: Icons.favorite_rounded,
-                  title: 'Favorites',
-                  route: '/favorites',
-                ),
-                const Divider(),
-                Padding(
-                  padding: const EdgeInsets.only(
-                    left: 16.0,
-                    top: 8.0,
-                    bottom: 8.0,
+            child: Scrollbar(
+              thumbVisibility: true,
+              thickness: 10,
+              controller: _scrollController,
+              child: ListView(
+                controller: _scrollController,
+                padding: EdgeInsets.zero,
+                children: [
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.home_rounded,
+                    title: 'Home',
+                    route: '/home',
                   ),
-                  child: Text(
-                    'Recipe Tools',
-                    style: TextStyle(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.bold,
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.person_rounded,
+                    title: 'Profile',
+                    route: '/settings',
+                  ),
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.restaurant_menu_rounded,
+                    title: 'My Recipes',
+                    route: '/myRecipes',
+                  ),
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.collections_bookmark_rounded,
+                    title: 'Recipe Collections',
+                    route: '/collections',
+                  ),
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.favorite_rounded,
+                    title: 'Favorites',
+                    route: '/favorites',
+                  ),
+                  const Divider(),
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 16.0,
+                      top: 8.0,
+                      bottom: 8.0,
+                    ),
+                    child: Text(
+                      'Recipe Tools',
+                      style: TextStyle(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: Icons.add_box_rounded,
-                  title: 'Import Recipe',
-                  route: '/import',
-                ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: Icons.auto_awesome_rounded,
-                  title: 'Generate Recipe',
-                  route: '/generateRecipe',
-                ),
-                const Divider(),
-                _buildDrawerItem(
-                  context: context,
-                  icon: Icons.settings_rounded,
-                  title: 'Settings',
-                  route: '/settings',
-                ),
-              ],
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.add_box_rounded,
+                    title: 'Import Recipe',
+                    route: '/import',
+                  ),
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.auto_awesome_rounded,
+                    title: 'Generate Recipe',
+                    route: '/generateRecipe',
+                  ),
+                  const Divider(),
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.settings_rounded,
+                    title: 'Settings',
+                    route: '/settings',
+                  ),
+                ],
+              ),
             ),
           ),
           // App version at the bottom
@@ -132,7 +139,7 @@ class _NavDrawerState extends State<NavDrawer> {
             padding: const EdgeInsets.symmetric(vertical: 16),
             alignment: Alignment.center,
             child: Text(
-              'Recipease v1.0.0',
+              'Recipease v1.0.1',
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
           ),

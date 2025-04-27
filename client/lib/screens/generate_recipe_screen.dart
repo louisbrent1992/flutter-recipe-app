@@ -18,6 +18,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
   final List<String> _dietaryRestrictions = [];
   String _cuisineType = 'Italian';
   double _cookingTime = 30;
+  final ScrollController _scrollController = ScrollController();
 
   void _addIngredient() {
     if (_ingredientController.text.isNotEmpty && mounted) {
@@ -155,7 +156,9 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
             return Scrollbar(
               thumbVisibility: true,
               thickness: 10,
+              controller: _scrollController,
               child: SingleChildScrollView(
+                controller: _scrollController,
                 child: Container(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(

@@ -1,8 +1,9 @@
 {
   "project_info": {
     "project_number": "826154873845",
+    "firebase_url": "https://recipe-app-c2fcc-default-rtdb.firebaseio.com",
     "project_id": "recipe-app-c2fcc",
-    "storage_bucket": "recipe-app-c2fcc.firebasestorage.app"
+    "storage_bucket": "recipe-app-c2fcc.appspot.com"
   },
   "client": [
     {

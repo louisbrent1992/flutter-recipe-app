@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:recipease/firebase_options.dart';
 import 'package:recipease/screens/my_recipes_screen.dart';
 import 'package:recipease/screens/discover_recipes.dart';
 import 'package:recipease/screens/favorite_recipes_screen.dart';
@@ -27,11 +29,12 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:share_handler_platform_interface/share_handler_platform_interface.dart';
 import 'package:recipease/services/permission_service.dart';
-import 'services/firebase_options.dart';
 import 'screens/generated_recipes_screen.dart';
 import 'screens/imported_recipes_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+final kWebRecaptchaSiteKey = '6Lemcn0dAAAAABLkf6aiiHvpGD6x-zF3nOSDU2M8';
 
 /// Initializes the app.
 ///
@@ -41,11 +44,21 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 ///
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await Hive.initFlutter();
-  await Hive.openBox('preferences');
-
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Activate app check after initialization, but before
+  // usage of any Firebase services.
+  await FirebaseAppCheck.instance
+  // Your personal reCaptcha public key goes here:
+  .activate(
+    androidProvider: AndroidProvider.debug,
+    appleProvider: AppleProvider.debug,
+    webProvider: ReCaptchaV3Provider(kWebRecaptchaSiteKey),
+  );
+  Future(() async {
+    await Hive.initFlutter();
+    await Hive.openBox('preferences');
+  });
 
   runApp(MyApp(Key('key')));
 }
@@ -84,7 +97,9 @@ class _MyAppState extends State<MyApp> {
   Future<void> _initShareHandler() async {
     // Initial shared media
     final sharedMedia = await _shareHandler.getInitialSharedMedia();
-    if (sharedMedia != null) {
+    if (sharedMedia != null &&
+        sharedMedia.content != null &&
+        sharedMedia.content!.isNotEmpty) {
       print('Shared media received: ${sharedMedia.content}');
       _handleSharedMedia(sharedMedia);
     }

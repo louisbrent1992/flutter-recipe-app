@@ -21,16 +21,19 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool _isEditing = false;
   final User? user = FirebaseAuth.instance.currentUser;
   late AnimationController _animationController;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
-
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+    // Schedule the profile loading for the next frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadProfile();
+    });
   }
 
   @override
@@ -42,14 +45,15 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _loadProfile() async {
+    if (!mounted) return;
+
     final profile = context.read<UserProfileProvider>();
     await profile.loadProfile();
-    if (mounted) {
-      setState(() {
-        _nameController.text = profile.profile['displayName'] ?? '';
-        _emailController.text = profile.profile['email'] ?? '';
-      });
-    }
+
+    if (!mounted) return;
+
+    _nameController.text = profile.profile['displayName'] ?? '';
+    _emailController.text = profile.profile['email'] ?? '';
   }
 
   Future<void> _updateProfile() async {
@@ -193,186 +197,191 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ],
               ),
             ),
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              physics: const BouncingScrollPhysics(),
-              children: [
-                // Profile Header
-                _buildProfileHeader(profile, colorScheme),
+            child: Scrollbar(
+              thumbVisibility: true,
+              thickness: 10,
+              controller: _scrollController,
+              child: ListView(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16),
+                children: [
+                  // Profile Header
+                  _buildProfileHeader(profile, colorScheme),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                // Profile Fields
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  padding: EdgeInsets.all(_isEditing ? 16 : 0),
-                  decoration: BoxDecoration(
-                    color:
-                        _isEditing
-                            ? colorScheme.primaryContainer.withValues(
-                              alpha: 0.3,
-                            )
-                            : Colors.transparent,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_isEditing)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Text(
-                            'Edit Profile',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.bold,
+                  // Profile Fields
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    padding: EdgeInsets.all(_isEditing ? 16 : 0),
+                    decoration: BoxDecoration(
+                      color:
+                          _isEditing
+                              ? colorScheme.primaryContainer.withValues(
+                                alpha: 0.3,
+                              )
+                              : Colors.transparent,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_isEditing)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Text(
+                              'Edit Profile',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
+
+                        _buildAnimatedTextField(
+                          controller: _nameController,
+                          enabled: _isEditing,
+                          label: 'Display Name',
+                          hint: user?.displayName ?? 'Your name',
+                          icon: Icons.person_rounded,
                         ),
 
-                      _buildAnimatedTextField(
-                        controller: _nameController,
-                        enabled: _isEditing,
-                        label: 'Display Name',
-                        hint: user?.displayName ?? 'Your name',
-                        icon: Icons.person_rounded,
-                      ),
+                        const SizedBox(height: 16),
 
-                      const SizedBox(height: 16),
-
-                      _buildAnimatedTextField(
-                        controller: _emailController,
-                        enabled: _isEditing,
-                        label: 'Email',
-                        hint: user?.email ?? 'Your email',
-                        icon: Icons.email_rounded,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-                const Divider(height: 1),
-                const SizedBox(height: 16),
-
-                // Appearance Section
-                _buildSectionHeader(
-                  title: 'Appearance',
-                  icon: Icons.palette_outlined,
-                  colorScheme: colorScheme,
-                ),
-
-                const SizedBox(height: 16),
-
-                Consumer<ThemeProvider>(
-                  builder: (context, themeProvider, _) {
-                    return _buildAnimatedSwitchTile(
-                      title: 'Dark Mode',
-                      subtitle: 'Switch between light and dark themes',
-                      value: themeProvider.isDarkMode,
-                      onChanged: (value) => themeProvider.toggleTheme(),
-                      icon:
-                          themeProvider.isDarkMode
-                              ? Icons.dark_mode_rounded
-                              : Icons.light_mode_rounded,
-                      color:
-                          themeProvider.isDarkMode
-                              ? Colors.indigo
-                              : Colors.amber,
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 16),
-                const Divider(height: 1),
-                const SizedBox(height: 16),
-
-                // Notifications Section
-                _buildSectionHeader(
-                  title: 'Notifications',
-                  icon: Icons.notifications_outlined,
-                  colorScheme: colorScheme,
-                ),
-
-                const SizedBox(height: 16),
-
-                Consumer<NotificationProvider>(
-                  builder: (context, notificationProvider, _) {
-                    return Column(
-                      children: [
-                        _buildAnimatedSwitchTile(
-                          title: 'Daily Recipe Reminder',
-                          subtitle: 'Get a recipe suggestion every day',
-                          value: notificationProvider.dailyRecipeReminder,
-                          onChanged:
-                              (value) => notificationProvider
-                                  .setDailyRecipeReminder(value),
-                          icon: Icons.schedule_rounded,
-                          color: Colors.teal,
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        _buildAnimatedSwitchTile(
-                          title: 'Weekly Digest',
-                          subtitle: 'Receive a weekly summary of new recipes',
-                          value: notificationProvider.weeklyDigest,
-                          onChanged:
-                              (value) =>
-                                  notificationProvider.setWeeklyDigest(value),
-                          icon: Icons.summarize_rounded,
-                          color: Colors.purple,
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        _buildAnimatedSwitchTile(
-                          title: 'New Recipes',
-                          subtitle: 'Get notified about new recipes',
-                          value: notificationProvider.newRecipesNotification,
-                          onChanged:
-                              (value) => notificationProvider
-                                  .setNewRecipesNotification(value),
-                          icon: Icons.restaurant_rounded,
-                          color: Colors.orange,
+                        _buildAnimatedTextField(
+                          controller: _emailController,
+                          enabled: _isEditing,
+                          label: 'Email',
+                          hint: user?.email ?? 'Your email',
+                          icon: Icons.email_rounded,
                         ),
                       ],
-                    );
-                  },
-                ),
+                    ),
+                  ),
 
-                const SizedBox(height: 16),
-                const Divider(height: 1),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 32),
+                  const Divider(height: 1),
+                  const SizedBox(height: 16),
 
-                // Links Section
-                _buildSectionHeader(
-                  title: 'Quick Links',
-                  icon: Icons.link_rounded,
-                  colorScheme: colorScheme,
-                ),
+                  // Appearance Section
+                  _buildSectionHeader(
+                    title: 'Appearance',
+                    icon: Icons.palette_outlined,
+                    colorScheme: colorScheme,
+                  ),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                _buildAnimatedListTile(
-                  title: 'Favorite Recipes',
-                  icon: Icons.favorite_rounded,
-                  color: Colors.red,
-                  onTap: () => Navigator.pushNamed(context, '/favorites'),
-                ),
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return _buildAnimatedSwitchTile(
+                        title: 'Dark Mode',
+                        subtitle: 'Switch between light and dark themes',
+                        value: themeProvider.isDarkMode,
+                        onChanged: (value) => themeProvider.toggleTheme(),
+                        icon:
+                            themeProvider.isDarkMode
+                                ? Icons.dark_mode_rounded
+                                : Icons.light_mode_rounded,
+                        color:
+                            themeProvider.isDarkMode
+                                ? Colors.indigo
+                                : Colors.amber,
+                      );
+                    },
+                  ),
 
-                const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+                  const SizedBox(height: 16),
 
-                _buildAnimatedListTile(
-                  title: 'Sign Out',
-                  icon: Icons.logout_rounded,
-                  color: Colors.grey.shade600,
-                  onTap: _signOut,
-                ),
+                  // Notifications Section
+                  _buildSectionHeader(
+                    title: 'Notifications',
+                    icon: Icons.notifications_outlined,
+                    colorScheme: colorScheme,
+                  ),
 
-                const SizedBox(height: 24),
-              ],
+                  const SizedBox(height: 16),
+
+                  Consumer<NotificationProvider>(
+                    builder: (context, notificationProvider, _) {
+                      return Column(
+                        children: [
+                          _buildAnimatedSwitchTile(
+                            title: 'Daily Recipe Reminder',
+                            subtitle: 'Get a recipe suggestion every day',
+                            value: notificationProvider.dailyRecipeReminder,
+                            onChanged:
+                                (value) => notificationProvider
+                                    .setDailyRecipeReminder(value),
+                            icon: Icons.schedule_rounded,
+                            color: Colors.teal,
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          _buildAnimatedSwitchTile(
+                            title: 'Weekly Digest',
+                            subtitle: 'Receive a weekly summary of new recipes',
+                            value: notificationProvider.weeklyDigest,
+                            onChanged:
+                                (value) =>
+                                    notificationProvider.setWeeklyDigest(value),
+                            icon: Icons.summarize_rounded,
+                            color: Colors.purple,
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          _buildAnimatedSwitchTile(
+                            title: 'New Recipes',
+                            subtitle: 'Get notified about new recipes',
+                            value: notificationProvider.newRecipesNotification,
+                            onChanged:
+                                (value) => notificationProvider
+                                    .setNewRecipesNotification(value),
+                            icon: Icons.restaurant_rounded,
+                            color: Colors.orange,
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+                  const SizedBox(height: 16),
+
+                  // Links Section
+                  _buildSectionHeader(
+                    title: 'Quick Links',
+                    icon: Icons.link_rounded,
+                    colorScheme: colorScheme,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildAnimatedListTile(
+                    title: 'Favorite Recipes',
+                    icon: Icons.favorite_rounded,
+                    color: Colors.red,
+                    onTap: () => Navigator.pushNamed(context, '/favorites'),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  _buildAnimatedListTile(
+                    title: 'Sign Out',
+                    icon: Icons.logout_rounded,
+                    color: Colors.grey.shade600,
+                    onTap: _signOut,
+                  ),
+
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           );
         },

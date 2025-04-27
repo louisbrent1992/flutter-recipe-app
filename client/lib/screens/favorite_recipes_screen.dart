@@ -13,6 +13,8 @@ class FavoriteRecipesScreen extends StatefulWidget {
 }
 
 class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -64,36 +66,46 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
             );
           }
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.75,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: profile.favoriteRecipes.length,
-            itemBuilder: (context, index) {
-              final recipe = profile.favoriteRecipes[index];
-              return RecipeCard(
-                recipe: recipe,
-                showEditButton: true,
-                showFavoriteButton: false,
-                showRemoveButton: true,
-                onRemove: () {
-                  Provider.of<UserProfileProvider>(
-                    context,
-                    listen: false,
-                  ).removeFromFavorites(recipe);
+          return Scrollbar(
+            thumbVisibility: true,
+            thickness: 10,
+            controller: _scrollController,
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.75,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                ),
+                itemCount: profile.favoriteRecipes.length,
+                itemBuilder: (context, index) {
+                  final recipe = profile.favoriteRecipes[index];
+                  return RecipeCard(
+                    recipe: recipe,
+                    showEditButton: true,
+                    showFavoriteButton: false,
+                    showRemoveButton: true,
+                    onRemove: () {
+                      Provider.of<UserProfileProvider>(
+                        context,
+                        listen: false,
+                      ).removeFromFavorites(recipe);
+                    },
+                    onTap:
+                        () => Navigator.pushNamed(
+                          context,
+                          '/recipeDetail',
+                          arguments: recipe,
+                        ),
+                  );
                 },
-                onTap:
-                    () => Navigator.pushNamed(
-                      context,
-                      '/recipeDetail',
-                      arguments: recipe,
-                    ),
-              );
-            },
+              ),
+            ),
           );
         },
       ),
