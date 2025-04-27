@@ -10,7 +10,7 @@ const Color purpleColor = Color(0xFF6A0572); // Rich Purple
 // Dark theme colors
 const Color darkPrimaryColor = Color(0xFFE07A5F); // Keep primary color
 const Color darkSecondaryColor = Color(0xFFA5B4D9); // Lighter navy
-const Color darkBackgroundColor = Color(0xFF1A1A1A); // Dark background
+const Color darkBackgroundColor = Color(0xFF1A1B2E); // Darker navy background
 const Color darkAccentColor = Color(0xFF4AFFB3); // Brighter mint
 const Color darkNeutralColor = Color(0xFFD4B17A); // Brighter peach
 const Color darkPurpleColor = Color(0xFF9A0AA2); // Brighter purple
@@ -54,7 +54,7 @@ class AppTheme {
         fontSize: 14,
         fontWeight: FontWeight.bold,
       ),
-      labelSmall: TextStyle(color: secondaryColor, fontSize: 12),
+      labelSmall: TextStyle(color: backgroundColor, fontSize: 12),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -88,7 +88,7 @@ class AppTheme {
         fontWeight: FontWeight.bold,
       ),
       titleLarge: TextStyle(
-        color: darkSecondaryColor,
+        color: backgroundColor,
         fontSize: 20,
         fontWeight: FontWeight.bold,
       ),
@@ -104,7 +104,7 @@ class AppTheme {
         fontSize: 14,
         fontWeight: FontWeight.bold,
       ),
-      labelSmall: TextStyle(color: darkSecondaryColor, fontSize: 12),
+      labelSmall: TextStyle(color: backgroundColor, fontSize: 12),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(

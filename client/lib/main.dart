@@ -55,10 +55,9 @@ void main() async {
     appleProvider: AppleProvider.debug,
     webProvider: ReCaptchaV3Provider(kWebRecaptchaSiteKey),
   );
-  Future(() async {
-    await Hive.initFlutter();
-    await Hive.openBox('preferences');
-  });
+
+  await Hive.initFlutter();
+  await Hive.openBox('preferences');
 
   runApp(MyApp(Key('key')));
 }

@@ -122,8 +122,6 @@ class UserProfileProvider with ChangeNotifier {
         );
       }
 
-      // Get a fresh token
-      final token = await user.getIdToken(true);
       debugPrint('Got fresh token for user: ${user.uid}');
     } catch (e) {
       debugPrint('Error verifying user state: $e');
