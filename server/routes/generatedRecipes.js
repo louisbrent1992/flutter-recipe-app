@@ -132,103 +132,64 @@ router.post("/generate", async (req, res) => {
 		ingredients = [],
 		dietaryRestrictions = [],
 		cuisineType = "",
-		autoFill = false,
 		random = false,
 	} = req.body;
 
+	console.log("Generating recipes with:", {
+		ingredients,
+		dietaryRestrictions,
+		cuisineType,
+		random,
+	});
+
 	try {
-		// Check AI cache first
-		const cacheKey = JSON.stringify({
-			ingredients,
-			dietaryRestrictions,
-			cuisineType,
-			autoFill,
-			random,
-		});
-
-		const cachedResponse = aiResponseCache.get(cacheKey);
-		if (
-			cachedResponse &&
-			Date.now() - cachedResponse.timestamp < CACHE_DURATIONS.AI_GENERATED
-		) {
-			console.log("Recipe found in AI cache");
-			return res.json(cachedResponse.data);
-		}
-
 		if (!ingredients.length && !cuisineType) {
 			random = true;
 		}
 
-		let recipesData = [];
+		const response = await client.beta.chat.completions.parse({
+			model: "gpt-4o-mini",
+			messages: [
+				{
+					role: "user",
+					content: `Generate three recipes that include the following:
+						- Ingredients: ${random ? await randomIngredient() : ingredients}
+						- Dietary restrictions: ${dietaryRestrictions}
+						- Cuisine type: ${cuisineType}
+						- Include cooking time, difficulty level, and number of servings
+						- Additional ingredients if needed
+					`,
+				},
+			],
+			response_format: zodResponseFormat(recipesArrSchema, "recipes"),
+		});
 
-		if (!autoFill) {
-			const response = await client.beta.chat.completions.parse({
-				model: "gpt-4o-mini",
-				messages: [
-					{
-						role: "user",
-						content: `Generate three recipes that include the following:
-							- Ingredients: ${random ? await randomIngredient() : ingredients}
-							- Dietary restrictions: ${dietaryRestrictions}
-							- Cuisine type: ${cuisineType}
-							- Include cooking time, difficulty level, and number of servings
-							- Additional ingredients if needed
-						`,
-					},
-				],
-				response_format: zodResponseFormat(recipesArrSchema, "recipes"),
-			});
-
-			recipesData = response.choices[0].message.parsed.recipes;
-		} else {
-			const response = await client.beta.chat.completions.parse({
-				model: "gpt-4o-mini",
-				messages: [
-					{
-						role: "user",
-						content: `Complete this recipe with any missing details except for imageUrl: ${JSON.stringify(
-							req.body
-						)}`,
-					},
-				],
-				response_format: zodResponseFormat(recipeObjSchema, "recipe"),
-			});
-
-			recipesData = [response.choices[0].message.parsed];
-		}
+		const recipesData = response.choices[0].message.parsed.recipes;
 
 		const generatedRecipes = await Promise.all(
-			(Array.isArray(recipesData) ? recipesData : [recipesData]).map(
-				async (recipeData) => ({
-					id: uuidv4(),
-					title: recipeData.title || "Generated Recipe",
-					cuisineType: recipeData.cuisineType || cuisineType,
-					description: recipeData.description || "Enjoy your generated recipe!",
-					ingredients: Array.isArray(recipeData.ingredients)
-						? recipeData.ingredients
-						: [],
-					instructions: Array.isArray(recipeData.instructions)
-						? recipeData.instructions
-						: [],
-					imageUrl:
-						typeof recipeData.image === "object"
-							? recipeData.image.url
-							: await fetchImage(recipeData.title),
-					cookingTime: recipeData.cookingTime || "30 minutes",
-					difficulty: recipeData.difficulty || "medium",
-					servings: recipeData.servings || "4",
-					tags: recipeData.tags || [],
-					source: "ai-generated",
-					createdAt: new Date().toISOString(),
-				})
-			)
+			recipesData.map(async (recipeData) => ({
+				id: uuidv4(),
+				title: recipeData.title || "Generated Recipe",
+				cuisineType: recipeData.cuisineType || cuisineType,
+				description: recipeData.description || "Enjoy your generated recipe!",
+				ingredients: Array.isArray(recipeData.ingredients)
+					? recipeData.ingredients
+					: [],
+				instructions: Array.isArray(recipeData.instructions)
+					? recipeData.instructions
+					: [],
+				imageUrl:
+					typeof recipeData.image === "object"
+						? recipeData.image.url
+						: await fetchImage(recipeData.title),
+				cookingTime: recipeData.cookingTime || "30 minutes",
+				difficulty: recipeData.difficulty || "medium",
+				servings: recipeData.servings || "4",
+				tags: recipeData.tags || [],
+				source: "ai-generated",
+				createdAt: new Date().toISOString(),
+			}))
 		);
-
-		// Cache the AI response
-		aiResponseCache.set(cacheKey, {
-			data: generatedRecipes,
-			timestamp: Date.now(),
-		});
 
 		tempRecipes.push(...generatedRecipes);
 		res.json(generatedRecipes);
