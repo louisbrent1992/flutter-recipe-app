@@ -98,12 +98,19 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
       if (response.success && response.data != null) {
         setState(() {
           this.currentRecipe = response.data!;
+          isInUserRecipes = true;
         });
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('Recipe saved successfully'),
+              action: SnackBarAction(
+                label: 'Go to My Recipes',
+                onPressed: () {
+                  Navigator.pushNamed(context, '/myRecipes');
+                },
+              ),
               backgroundColor: Colors.green,
             ),
           );
