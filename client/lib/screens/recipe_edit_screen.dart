@@ -3,6 +3,7 @@ import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/editable_recipe_field.dart';
 import 'package:recipease/components/recipe_tags.dart';
 import 'package:recipease/models/recipe.dart';
+import 'package:recipease/screens/my_recipes_screen.dart';
 import 'package:recipease/services/recipe_service.dart';
 
 class RecipeEditScreen extends StatefulWidget {
@@ -24,6 +25,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   final TextEditingController _servingsController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  bool isInUserRecipes = false;
 
   @override
   void initState() {
@@ -48,7 +50,13 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
           });
         }
       }
+      RecipeService.getUserRecipe(currentRecipe.id).then(
+        (response) => setState(() {
+          isInUserRecipes = response.success;
+        }),
+      );
     });
+    debugPrint("isInUserRecipes: ${currentRecipe.id}");
   }
 
   void _updateRecipe({
@@ -83,37 +91,43 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   void _saveRecipe(Recipe currentRecipe) async {
     try {
       final response =
-          currentRecipe.id.isEmpty
-              ? await RecipeService.createUserRecipe(currentRecipe)
-              : await RecipeService.updateUserRecipe(currentRecipe);
+          isInUserRecipes == true
+              ? await RecipeService.updateUserRecipe(currentRecipe)
+              : await RecipeService.createUserRecipe(currentRecipe);
 
       if (response.success && response.data != null) {
         setState(() {
           this.currentRecipe = response.data!;
         });
 
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              currentRecipe.id.isEmpty
-                  ? 'Recipe created successfully'
-                  : 'Recipe updated successfully',
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Recipe saved successfully'),
+              backgroundColor: Colors.green,
             ),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context, this.currentRecipe);
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.message ?? 'Failed to save recipe'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
-      print(e);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error saving recipe: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      debugPrint(e.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to save recipe'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -140,8 +154,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
 
       body: SafeArea(
         child: Scrollbar(
-          thumbVisibility: true,
-          thickness: 10,
           controller: _scrollController,
           child: SingleChildScrollView(
             controller: _scrollController,
@@ -377,52 +389,74 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                   RecipeTags(
                     tags: currentRecipe.tags,
                     onAddTag: (tag) {
-                      if (currentRecipe.tags.contains(tag)) {
-                        _updateRecipe(tags: [...currentRecipe.tags, tag]);
+                      if (!currentRecipe.tags.contains(tag)) {
+                        setState(() {
+                          _updateRecipe(tags: [...currentRecipe.tags, tag]);
+                        });
                       }
                     },
                     onDeleteTag: (index) {
-                      final newTags = List<String>.from(currentRecipe.tags)
-                        ..removeAt(index);
-                      _updateRecipe(tags: newTags);
+                      setState(() {
+                        final newTags = List<String>.from(currentRecipe.tags)
+                          ..removeAt(index);
+                        _updateRecipe(tags: newTags);
+                      });
                     },
                   ),
                   const SizedBox(height: 15),
-
                   // Action Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.secondary,
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => _saveRecipe(currentRecipe),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.tertiary,
-                        ),
-                        child: Text(
-                          'Save',
-                          style: TextStyle(
-                            color:
-                                Theme.of(context).colorScheme.onTertiary
-                                            .computeLuminance() >
-                                        0.5
-                                    ? Colors.black
-                                    : Colors.white,
+                  Center(
+                    child: Wrap(
+                      spacing: 10,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.secondary,
+                          ),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(color: Colors.white),
                           ),
                         ),
-                      ),
-                    ],
+                        ElevatedButton(
+                          onPressed: () => _saveRecipe(currentRecipe),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.tertiary,
+                          ),
+                          child: Text(
+                            isInUserRecipes == true ? 'Update' : 'Save',
+                            style: TextStyle(
+                              color:
+                                  Theme.of(context).colorScheme.onTertiary
+                                              .computeLuminance() >
+                                          0.5
+                                      ? Colors.black
+                                      : Colors.white,
+                            ),
+                          ),
+                        ),
+                        if (currentRecipe.id.isNotEmpty)
+                          ElevatedButton(
+                            onPressed:
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => const MyRecipesScreen(),
+                                  ),
+                                ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                            ),
+                            child: Text('My Recipes'),
+                          ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 20),
                 ],

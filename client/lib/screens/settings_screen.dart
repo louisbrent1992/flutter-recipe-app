@@ -198,8 +198,6 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
             ),
             child: Scrollbar(
-              thumbVisibility: true,
-              thickness: 10,
               controller: _scrollController,
               child: ListView(
                 controller: _scrollController,

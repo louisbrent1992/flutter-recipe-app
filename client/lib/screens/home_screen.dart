@@ -19,6 +19,7 @@ class _HomeScreenState extends State<HomeScreen>
   late AnimationController _animationController;
   final String username =
       FirebaseAuth.instance.currentUser?.displayName ?? 'User';
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -51,8 +52,35 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
     return Scaffold(
-      appBar: const CustomAppBar(title: 'RecipEase', useLogo: true),
+      key: _scaffoldKey,
+      appBar: CustomAppBar(
+        title: 'RecipEase',
+        useLogo: true,
+        leading: Container(
+          margin: const EdgeInsets.all(16),
+          clipBehavior: Clip.hardEdge,
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+
+            color: Theme.of(
+              context,
+            ).colorScheme.primaryContainer.withValues(alpha: 0.2),
+          ),
+          child: Center(
+            child: IconButton(
+              icon: const Icon(Icons.menu_rounded, color: Colors.black),
+              iconSize: 24,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+            ),
+          ),
+        ),
+      ),
       drawer: const NavDrawer(),
+
       body: SafeArea(
         child: Consumer<UserProfileProvider>(
           builder: (context, profile, _) {
@@ -72,8 +100,6 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
               child: Scrollbar(
-                thumbVisibility: true,
-                thickness: 10,
                 controller: _scrollController,
                 child: ListView(
                   controller: _scrollController,
@@ -177,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen>
                     const SizedBox(height: 16),
                     _buildAnimatedSection(
                       context: context,
-                      title: 'Generate Recipe',
+                      title: 'Generate Recipe (Beta)',
                       icon: Icons.auto_awesome,
                       onTap: () => Navigator.pushNamed(context, '/generate'),
                       delay: 0.5,

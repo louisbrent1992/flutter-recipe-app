@@ -67,8 +67,6 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
           }
 
           return Scrollbar(
-            thumbVisibility: true,
-            thickness: 10,
             controller: _scrollController,
             child: SingleChildScrollView(
               controller: _scrollController,
@@ -88,14 +86,9 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
                   return RecipeCard(
                     recipe: recipe,
                     showEditButton: true,
-                    showFavoriteButton: false,
+                    showFavoriteButton: true,
                     showRemoveButton: true,
-                    onRemove: () {
-                      Provider.of<UserProfileProvider>(
-                        context,
-                        listen: false,
-                      ).removeFromFavorites(recipe);
-                    },
+
                     onTap:
                         () => Navigator.pushNamed(
                           context,

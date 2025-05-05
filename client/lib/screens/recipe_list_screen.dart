@@ -30,7 +30,7 @@ class RecipeListScreenState extends State<RecipeListScreen> {
     final response = await RecipeService.getUserRecipes();
     if (response.success && response.data != null) {
       setState(() {
-        _recipes = response.data!;
+        _recipes = response.data!['recipes'] as List<Recipe>;
         _isLoading = false;
       });
     }
@@ -60,8 +60,6 @@ class RecipeListScreenState extends State<RecipeListScreen> {
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : Scrollbar(
-                thumbVisibility: true,
-                thickness: 10,
                 controller: _scrollController,
                 child: ListView.builder(
                   controller: _scrollController,

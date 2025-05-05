@@ -22,6 +22,7 @@ class Recipe {
   final String? cuisineType;
   final InstagramData? instagram;
   final TikTokData? tiktok;
+  final YouTubeData? youtube;
 
   Recipe({
     this.id = '',
@@ -47,6 +48,7 @@ class Recipe {
     this.cuisineType,
     this.instagram,
     this.tiktok,
+    this.youtube,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Convert from JSON
@@ -89,6 +91,10 @@ class Recipe {
               : null,
       tiktok:
           json['tiktok'] != null ? TikTokData.fromJson(json['tiktok']) : null,
+      youtube:
+          json['youtube'] != null
+              ? YouTubeData.fromJson(json['youtube'])
+              : null,
     );
   }
 
@@ -115,6 +121,7 @@ class Recipe {
     'cuisineType': cuisineType,
     'instagram': instagram?.toJson(),
     'tiktok': tiktok?.toJson(),
+    'youtube': youtube?.toJson(),
   };
 
   // Create a copy of the recipe with updated values
@@ -140,6 +147,7 @@ class Recipe {
     String? cuisineType,
     InstagramData? instagram,
     TikTokData? tiktok,
+    YouTubeData? youtube,
   }) {
     return Recipe(
       id: id ?? this.id,
@@ -163,6 +171,7 @@ class Recipe {
       cuisineType: cuisineType ?? this.cuisineType,
       instagram: instagram ?? this.instagram,
       tiktok: tiktok ?? this.tiktok,
+      youtube: youtube ?? this.youtube,
     );
   }
 
@@ -232,5 +241,54 @@ class TikTokData {
 
   Map<String, dynamic> toJson() {
     return {'videoId': videoId, 'username': username, 'nickname': nickname};
+  }
+}
+
+// Class to store YouTube specific data
+class YouTubeData {
+  final String? videoId;
+  final String? channelTitle;
+  final String? channelId;
+  final String? thumbnailUrl;
+  final String? duration;
+  final String? viewCount;
+  final String? likeCount;
+  final String? commentCount;
+
+  YouTubeData({
+    this.videoId,
+    this.channelTitle,
+    this.channelId,
+    this.thumbnailUrl,
+    this.duration,
+    this.viewCount,
+    this.likeCount,
+    this.commentCount,
+  });
+
+  factory YouTubeData.fromJson(Map<String, dynamic> json) {
+    return YouTubeData(
+      videoId: json['videoId'],
+      channelTitle: json['channelTitle'],
+      channelId: json['channelId'],
+      thumbnailUrl: json['thumbnailUrl'],
+      duration: json['duration'],
+      viewCount: json['viewCount'],
+      likeCount: json['likeCount'],
+      commentCount: json['commentCount'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'videoId': videoId,
+      'channelTitle': channelTitle,
+      'channelId': channelId,
+      'thumbnailUrl': thumbnailUrl,
+      'duration': duration,
+      'viewCount': viewCount,
+      'likeCount': likeCount,
+      'commentCount': commentCount,
+    };
   }
 }

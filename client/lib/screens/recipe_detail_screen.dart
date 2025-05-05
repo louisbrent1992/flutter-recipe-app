@@ -142,6 +142,12 @@ Shared from Recipe App
           'https://www.tiktok.com/@${recipe.tiktok!.username}/video/${recipe.tiktok!.videoId}';
       displayText = 'View Video';
       icon = Icons.video_library;
+    } else if (recipe.youtube != null && recipe.youtube!.videoId != null) {
+      sourceUrl =
+          recipe.sourceUrl ??
+          'https://www.youtube.com/watch?v=${recipe.youtube!.videoId}';
+      displayText = 'Watch Video';
+      icon = Icons.play_circle_outline;
     } else if (recipe.sourceUrl != null && recipe.sourceUrl!.isNotEmpty) {
       sourceUrl = recipe.sourceUrl;
       displayText = 'View Source';
@@ -255,9 +261,7 @@ Shared from Recipe App
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-
+                  Wrap(
                     children: [
                       Row(
                         children: [

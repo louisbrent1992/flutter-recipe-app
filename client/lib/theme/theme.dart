@@ -88,7 +88,7 @@ class AppTheme {
         fontWeight: FontWeight.bold,
       ),
       titleLarge: TextStyle(
-        color: backgroundColor,
+        color: darkSecondaryColor,
         fontSize: 20,
         fontWeight: FontWeight.bold,
       ),

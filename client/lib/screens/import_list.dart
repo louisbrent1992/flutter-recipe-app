@@ -99,8 +99,6 @@ class _ImportListScreenState extends State<ImportListScreen> {
         ],
       ),
       body: Scrollbar(
-        thumbVisibility: true,
-        thickness: 10,
         controller: _scrollController,
         child: ListView.separated(
           controller: _scrollController,

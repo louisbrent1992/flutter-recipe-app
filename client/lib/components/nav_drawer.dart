@@ -53,14 +53,19 @@ class _NavDrawerState extends State<NavDrawer> {
             ),
             accountName: Text(
               user?.displayName ?? 'Recipe Enthusiast',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSecondary,
+                fontSize: 16,
+              ),
             ),
-            accountEmail: Text(user?.email ?? ''),
+            accountEmail: Text(
+              user?.email ?? '',
+              style: TextStyle(color: colorScheme.onSecondary),
+            ),
           ),
           Expanded(
             child: Scrollbar(
-              thumbVisibility: true,
-              thickness: 10,
               controller: _scrollController,
               child: ListView(
                 controller: _scrollController,
@@ -120,7 +125,7 @@ class _NavDrawerState extends State<NavDrawer> {
                   _buildDrawerItem(
                     context: context,
                     icon: Icons.auto_awesome_rounded,
-                    title: 'Generate Recipe',
+                    title: 'Generate Recipe (Beta)',
                     route: '/generateRecipe',
                   ),
                   const Divider(),
@@ -139,7 +144,7 @@ class _NavDrawerState extends State<NavDrawer> {
             padding: const EdgeInsets.symmetric(vertical: 16),
             alignment: Alignment.center,
             child: Text(
-              'Recipease v1.0.1',
+              'RecipEase v1.0.1',
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
           ),

@@ -14,6 +14,8 @@ class MyRecipesScreen extends StatefulWidget {
 }
 
 class _MyRecipesScreenState extends State<MyRecipesScreen> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -24,63 +26,37 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
         Provider.of<RecipeProvider>(context, listen: false).loadUserRecipes();
       }
     });
+
+    // Add scroll listener for infinite scroll
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final recipeProvider = Provider.of<RecipeProvider>(
+        context,
+        listen: false,
+      );
+      if (recipeProvider.hasNextPage && !recipeProvider.isLoading) {
+        recipeProvider.loadNextPage();
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(title: 'My Recipes'),
-
-      body: Consumer2<AuthService, RecipeProvider>(
-        builder: (context, authService, recipeProvider, _) {
-          // Check if user is logged in
-          if (authService.user == null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.lock, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Login Required',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'You need to login to view and manage your recipes',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/login');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 12,
-                      ),
-                    ),
-                    child: const Text(
-                      'Login',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/register');
-                    },
-                    child: const Text('Create an Account'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (recipeProvider.isLoading) {
+      body: Consumer<RecipeProvider>(
+        builder: (context, recipeProvider, _) {
+          if (recipeProvider.isLoading && recipeProvider.userRecipes.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -113,12 +89,69 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
             );
           }
 
-          return ListView.builder(
-            itemCount: myRecipes.length,
-            itemBuilder: (context, index) {
-              final recipe = myRecipes[index];
-              return RecipeCard(recipe: recipe, showEditButton: true);
-            },
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  itemCount: myRecipes.length + 1, // +1 for loading indicator
+                  itemBuilder: (context, index) {
+                    if (index == myRecipes.length) {
+                      if (recipeProvider.isLoading) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+                      if (!recipeProvider.hasNextPage) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Text('No more recipes'),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }
+                    final recipe = myRecipes[index];
+                    return RecipeCard(
+                      recipe: recipe,
+                      showEditButton: true,
+                      showRemoveButton: true,
+                    );
+                  },
+                ),
+              ),
+              if (recipeProvider.totalPages > 1)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left),
+                        onPressed:
+                            recipeProvider.hasPrevPage
+                                ? () => recipeProvider.loadPrevPage()
+                                : null,
+                      ),
+                      Text(
+                        'Page ${recipeProvider.currentPage} of ${recipeProvider.totalPages}',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right),
+                        onPressed:
+                            recipeProvider.hasNextPage
+                                ? () => recipeProvider.loadNextPage()
+                                : null,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           );
         },
       ),

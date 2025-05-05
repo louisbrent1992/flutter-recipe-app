@@ -49,17 +49,18 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   color: foregroundColor ?? theme.colorScheme.onPrimary,
                 ),
               ),
-      actions: actions,
-      leading: leading,
       centerTitle: centerTitle,
       automaticallyImplyLeading: automaticallyImplyLeading,
-      backgroundColor:
-          isTransparent
-              ? Colors.transparent
-              : backgroundColor ?? theme.colorScheme.primary,
+      backgroundColor: backgroundColor ?? theme.colorScheme.primary,
+      foregroundColor: foregroundColor ?? theme.colorScheme.onPrimary,
       elevation: elevation,
       flexibleSpace: flexibleSpace,
       bottom: bottom,
+      leading:
+          leading != null
+              ? Builder(builder: (BuildContext context) => leading!)
+              : null,
+      actions: actions,
       iconTheme: IconThemeData(
         color: foregroundColor ?? theme.colorScheme.onPrimary,
       ),

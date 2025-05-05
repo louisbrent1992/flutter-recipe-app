@@ -56,11 +56,11 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
   Future<void> _importRecipe(BuildContext context, String url) async {
     if (url.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid URL'),
+        SnackBar(
+          content: const Text('Please enter a valid URL'),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(10)),
           ),
@@ -72,16 +72,16 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
 
     try {
-      final recipe = await recipeProvider.importRecipeFromUrl(url);
+      final recipe = await recipeProvider.importRecipeFromUrl(url, context);
 
       if (context.mounted && recipe != null) {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Recipe imported successfully!'),
+          SnackBar(
+            content: const Text('Recipe imported successfully!'),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
             ),
@@ -95,24 +95,12 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(child: Text(e.toString())),
-              ],
-            ),
+            content: Text('Error: ${e.toString()}'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            shape: const RoundedRectangleBorder(
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(10)),
-            ),
-            action: SnackBarAction(
-              label: 'Dismiss',
-              onPressed: () {},
-              textColor: Colors.white,
             ),
           ),
         );
@@ -122,7 +110,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
 
   Future<void> _navigateToRecipeDetails(Recipe recipe) async {
     if (mounted) {
-      Navigator.pushReplacementNamed(context, '/recipeEdit', arguments: recipe);
+      Navigator.pushNamed(context, '/recipeEdit', arguments: recipe);
     }
   }
 

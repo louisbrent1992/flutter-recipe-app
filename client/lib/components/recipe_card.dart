@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:recipease/providers/recipe_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/recipe.dart';
 import '../providers/user_profile_provider.dart';
@@ -71,10 +72,40 @@ class _RecipeCardState extends State<RecipeCard> {
   Future<void> _toggleFavorite() async {
     if (_isFavoriteLoading) return;
 
+    final isCurrentlyFavorite = isFavorite;
+    final confirm =
+        isCurrentlyFavorite
+            ? await showDialog<bool>(
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    title: const Text('Remove from Favorites'),
+                    content: Text(
+                      'Are you sure you want to remove "${widget.recipe.title}" from your favorites?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Remove'),
+                      ),
+                    ],
+                  ),
+            )
+            : true;
+
+    if (confirm != true) return;
+
     setState(() => _isFavoriteLoading = true);
     try {
       final profile = context.read<UserProfileProvider>();
-      final isCurrentlyFavorite = isFavorite;
 
       if (isCurrentlyFavorite) {
         await profile.removeFromFavorites(widget.recipe);
@@ -93,11 +124,17 @@ class _RecipeCardState extends State<RecipeCard> {
                   : 'Added "${widget.recipe.title}" to favorites',
             ),
             backgroundColor: isCurrentlyFavorite ? Colors.orange : Colors.green,
-            action: SnackBarAction(
-              label: 'Go to favorites',
-              onPressed: () => Navigator.pushNamed(context, '/favorites'),
-              textColor: Colors.white,
-            ),
+            action:
+                isCurrentlyFavorite
+                    ? SnackBarAction(
+                      label: 'Undo',
+                      onPressed: () async {
+                        await profile.addToFavorites(widget.recipe);
+                        setState(() => isFavorite = true);
+                      },
+                      textColor: Colors.white,
+                    )
+                    : null,
           ),
         );
       }
@@ -160,6 +197,53 @@ Shared from Recipe App
     }
   }
 
+  Future<void> _deleteRecipe() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Recipe'),
+            content: Text(
+              'Are you sure you want to delete "${widget.recipe.title}"? This action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirm == true && mounted) {
+      final profile = context.read<RecipeProvider>();
+      await profile.deleteUserRecipe(widget.recipe.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Recipe "${widget.recipe.title}" deleted'),
+            backgroundColor: Colors.orange,
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () async {
+                await profile.saveGeneratedRecipe(widget.recipe);
+              },
+              textColor: Colors.white,
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildActionButton({
     required IconData icon,
     required VoidCallback onTap,
@@ -213,9 +297,13 @@ Shared from Recipe App
                 children: [
                   Icon(Icons.timer_outlined, size: 14, color: Colors.grey[600]),
                   const SizedBox(width: 4),
-                  Text(
-                    widget.recipe.cookingTime,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  Expanded(
+                    child: Text(
+                      widget.recipe.cookingTime,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -223,26 +311,34 @@ Shared from Recipe App
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.restaurant_outlined,
-                    size: 14,
-                    color: Colors.grey[600],
-                  ),
+                  Icon(Icons.people, size: 14, color: Colors.grey[600]),
                   const SizedBox(width: 4),
-                  Text(
-                    '${widget.recipe.servings} servings',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  Expanded(
+                    child: Text(
+                      '${widget.recipe.servings} servings',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.speed, size: 14, color: Colors.grey[600]),
+                Icon(
+                  Icons.restaurant_outlined,
+                  size: 14,
+                  color: Colors.grey[600],
+                ),
                 const SizedBox(width: 4),
-                Text(
-                  widget.recipe.difficulty,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                Expanded(
+                  child: Text(
+                    widget.recipe.difficulty,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -346,10 +442,10 @@ Shared from Recipe App
                       if (widget.showShareButton &&
                           (widget.showRemoveButton || widget.showSaveButton))
                         const SizedBox(width: 8),
-                      if (widget.showRemoveButton && widget.onRemove != null)
+                      if (widget.showRemoveButton)
                         _buildActionButton(
                           icon: Icons.remove_circle_outline,
-                          onTap: widget.onRemove!,
+                          onTap: widget.onRemove ?? _deleteRecipe,
                           tooltip: 'Remove recipe',
                         ),
                       if (widget.showRemoveButton && widget.showSaveButton)

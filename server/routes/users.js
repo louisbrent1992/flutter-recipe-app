@@ -36,6 +36,36 @@ router.put("/profile", auth, async (req, res) => {
 	}
 });
 
+// Get user's recipes
+router.get("/recipes", auth, async (req, res) => {
+	try {
+		const recipesDoc = await db.collection("recipes").doc(req.user.uid).get();
+		if (!recipesDoc.exists) {
+			return res.json([]);
+		}
+		res.json(recipesDoc.data().recipes || []);
+	} catch (error) {
+		console.error("Error fetching user recipes:", error);
+	}
+});
+
+// Add recipe to user's recipes
+router.post("/recipes", auth, async (req, res) => {
+	try {
+		const { recipeId } = req.body;
+		await db
+			.collection("recipes")
+			.doc(req.user.uid)
+			.update({
+				recipes: db.FieldValue.arrayUnion(recipeId),
+				updatedAt: new Date().toISOString(),
+			});
+		res.json({ message: "Recipe added to user's recipes" });
+	} catch (error) {
+		console.error("Error adding recipe to user's recipes:", error);
+	}
+});
+
 // Get user's favorite recipes
 router.get("/favorites", auth, async (req, res) => {
 	try {

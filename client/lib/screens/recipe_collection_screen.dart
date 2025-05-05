@@ -139,12 +139,14 @@ class _RecipeCollectionScreenState extends State<RecipeCollectionScreen>
   }
 
   Future<void> _deleteCategory(String id, String name) async {
-    final confirmDelete = await showDialog<bool>(
+    final confirm = await showDialog<bool>(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Delete Category'),
-            content: Text('Are you sure you want to delete "$name"?'),
+            title: const Text('Delete Collection'),
+            content: Text(
+              'Are you sure you want to delete the collection "$name"? This action cannot be undone.',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -152,46 +154,52 @@ class _RecipeCollectionScreenState extends State<RecipeCollectionScreen>
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
                 child: const Text('Delete'),
               ),
             ],
           ),
     );
 
-    if (confirmDelete != true || !mounted) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      final success = await CollectionService.deleteCollection(id);
-
-      if (success) {
-        // Refresh the collections list
-        await _loadCollections();
+    if (confirm == true && mounted) {
+      setState(() => _isLoading = true);
+      try {
+        final success = await CollectionService.deleteCollection(id);
+        if (success) {
+          await _loadCollections();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Collection "$name" deleted'),
+                backgroundColor: Colors.orange,
+                action: SnackBarAction(
+                  label: 'Undo',
+                  onPressed: () async {
+                    await CollectionService.createCollection(name);
+                    await _loadCollections();
+                  },
+                  textColor: Colors.white,
+                ),
+              ),
+            );
+          }
+        }
+      } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Category "$name" deleted'),
+              content: Text('Error deleting collection: $e'),
               backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
             ),
           );
         }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error deleting category: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }
@@ -243,7 +251,6 @@ class _RecipeCollectionScreenState extends State<RecipeCollectionScreen>
                 : RefreshIndicator(
                   onRefresh: _loadCollections,
                   child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
                     controller: _scrollController,
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),

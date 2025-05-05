@@ -8,6 +8,7 @@ A mobile application that allows users to generate unique recipes using AI, mana
 - [Core Features](#core-features)
 - [Technology Stack](#technology-stack)
 - [Getting Started](#getting-started)
+- [Instagram Integration](#instagram-integration)
 - [Screenshots](#screenshots)
 - [License](#license)
 
@@ -36,6 +37,7 @@ A mobile application that allows users to generate unique recipes using AI, mana
 - Deep linking to handle shared social media content.
 - Parsing engine to extract recipe details from social media posts.
 - Validation and editing of imported data.
+- Direct integration with Instagram to retrieve captions and images.
 
 ## Technology Stack
 
@@ -44,6 +46,7 @@ A mobile application that allows users to generate unique recipes using AI, mana
 - **Database:** In-memory storage (for demo purposes)
 - **AI Integration:** External AI service (e.g., OpenAI)
 - **State Management:** Provider
+- **External APIs:** RocketAPI for Instagram content
 
 ## Getting Started
 
@@ -76,11 +79,37 @@ To get started with the Flutter Recipe App, follow these steps:
    npm install
    ```
 
-5. Start the server:
+5. Set up environment variables:
+
+   Copy `.env.example` to `.env` and fill in the required API keys.
+
+6. Start the server:
 
    ```bash
    npm run dev
    ```
+
+## Instagram Integration
+
+This app integrates with Instagram posts to extract recipe information from captions. To set up the Instagram integration:
+
+1. Sign up for a RapidAPI key at [RapidAPI](https://rapidapi.com/)
+2. Subscribe to the [RocketAPI for Developers](https://rapidapi.com/rocketapi-rocketapi-default/api/rocketapi-for-developers/)
+3. Add your API key to the `.env` file as `RAPID_API_KEY`
+
+To test the Instagram integration:
+
+```bash
+cd server
+node test-instagram.js https://www.instagram.com/p/SHORTCODE/
+```
+
+The integration allows the app to:
+
+- Extract captions from Instagram posts
+- Retrieve the image from the post
+- Process the caption with AI to identify recipe details
+- Create a recipe entry with metadata from Instagram
 
 ## Screenshots
 
@@ -91,3 +120,57 @@ To get started with the Flutter Recipe App, follow these steps:
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Recipe App
+
+A Flutter application for managing recipes, with features to generate and import recipes.
+
+### Development Setup
+
+1. Clone this repository
+2. Install Flutter SDK
+3. Run `flutter pub get` in the client directory
+4. Set up the server environment:
+   - Navigate to the server directory
+   - Run `npm install`
+   - Create a `.env` file with the required environment variables
+
+### Running the App
+
+1. Start the server: `npm run dev` in the server directory
+2. Run the Flutter app: `flutter run` in the client directory
+
+### Firebase Setup
+
+The app uses Firebase for authentication and Firestore for data storage. To configure Firebase:
+
+1. Create a new Firebase project at https://console.firebase.google.com/
+2. Enable Authentication (Email/Password and Google sign-in)
+3. Enable Cloud Firestore
+4. Deploy the Firestore security rules:
+
+   ```
+   # Install Firebase CLI if you haven't already
+   npm install -g firebase-tools
+
+   # Login to your Firebase account
+   firebase login
+
+   # Initialize Firebase in your project directory (if not already done)
+   firebase init
+
+   # Deploy the Firestore security rules
+   firebase deploy --only firestore
+   ```
+
+### Fixing Firestore Permissions Issues
+
+If you encounter a "Missing or insufficient permissions" error:
+
+1. Make sure you've deployed the Firestore security rules
+2. Check that the collection paths in your code match the paths in the security rules
+3. Verify that the user is properly authenticated before accessing protected data
+
+### License
+
+MIT

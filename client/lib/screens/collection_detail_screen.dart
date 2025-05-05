@@ -5,6 +5,8 @@ import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
 import 'package:recipease/screens/add_recipes_to_collection_screen.dart';
 import '../components/recipe_card.dart';
+import 'package:provider/provider.dart';
+import '../providers/recipe_provider.dart';
 
 class CollectionDetailScreen extends StatefulWidget {
   final RecipeCollection collection;
@@ -29,7 +31,6 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
   void initState() {
     super.initState();
     _collection = widget.collection;
-    _filteredRecipes = _collection.recipes;
     _scrollController = ScrollController();
     _searchController = TextEditingController();
 

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
 
@@ -9,9 +10,14 @@ class RecipeProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
-  // User recipes
+  // User recipes with pagination
   List<Recipe> _userRecipes = [];
   List<Recipe> _favoriteRecipes = [];
+  int _currentPage = 1;
+  int _totalPages = 1;
+  bool _hasNextPage = false;
+  bool _hasPrevPage = false;
+  int _totalRecipes = 0;
 
   // Getters
   List<Recipe> get generatedRecipes => _generatedRecipes;
@@ -20,6 +26,11 @@ class RecipeProvider extends ChangeNotifier {
   String? get error => _error;
   List<Recipe> get userRecipes => _userRecipes;
   List<Recipe> get favoriteRecipes => _favoriteRecipes;
+  int get currentPage => _currentPage;
+  int get totalPages => _totalPages;
+  bool get hasNextPage => _hasNextPage;
+  bool get hasPrevPage => _hasPrevPage;
+  int get totalRecipes => _totalRecipes;
 
   // Set loading state
   void _setLoading(bool loading) {
@@ -53,12 +64,6 @@ class RecipeProvider extends ChangeNotifier {
     _setLoading(true);
     _setError(null);
 
-    debugPrint('Generating recipes with:');
-    debugPrint('Ingredients: $ingredients');
-    debugPrint('Dietary Restrictions: $dietaryRestrictions');
-    debugPrint('Cuisine Type: $cuisineType');
-    debugPrint('Random: $random');
-
     try {
       final response = await RecipeService.generateRecipes(
         ingredients: ingredients,
@@ -83,7 +88,7 @@ class RecipeProvider extends ChangeNotifier {
   }
 
   // Import recipe from social media URL
-  Future<Recipe?> importRecipeFromUrl(String url) async {
+  Future<Recipe?> importRecipeFromUrl(String url, BuildContext context) async {
     _setLoading(true);
     _setError(null);
 
@@ -91,16 +96,50 @@ class RecipeProvider extends ChangeNotifier {
       final response = await RecipeService.importRecipeFromUrl(url);
 
       if (response.success && response.data != null) {
-        _importedRecipe = response.data;
+        final recipe = response.data!;
+
+        // Check for duplicates
+        if (isDuplicateRecipe(recipe)) {
+          _setError('This recipe is already in your collection');
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'This recipe is already in your collection',
+                ),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return null;
+        }
+
+        _importedRecipe = recipe;
         notifyListeners();
         return _importedRecipe;
       } else {
         _setError(response.message ?? 'Failed to import recipe');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.message ?? 'Failed to import recipe'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
         _importedRecipe = null;
         return null;
       }
     } catch (e) {
       _setError(e.toString());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       _importedRecipe = null;
       return null;
     } finally {
@@ -114,6 +153,12 @@ class RecipeProvider extends ChangeNotifier {
     _setError(null);
 
     try {
+      // Check for duplicates
+      if (isDuplicateRecipe(recipe)) {
+        _setError('This recipe is already in your collection');
+        return null;
+      }
+
       final response = await RecipeService.createUserRecipe(recipe);
 
       if (response.success && response.data != null) {
@@ -138,16 +183,25 @@ class RecipeProvider extends ChangeNotifier {
   // USER RECIPE METHODS
   //----------------------------------------
 
-  // Load all user recipes
-  Future<void> loadUserRecipes() async {
+  // Load all user recipes with pagination
+  Future<void> loadUserRecipes({int page = 1, int limit = 10}) async {
     _setLoading(true);
     _setError(null);
 
     try {
-      final response = await RecipeService.getUserRecipes();
+      final response = await RecipeService.getUserRecipes(
+        page: page,
+        limit: limit,
+      );
 
       if (response.success && response.data != null) {
-        _userRecipes = response.data ?? [];
+        final data = response.data!;
+        _userRecipes = (data['recipes'] as List).cast<Recipe>();
+        _currentPage = data['pagination']['page'];
+        _totalPages = data['pagination']['totalPages'];
+        _hasNextPage = data['pagination']['hasNextPage'];
+        _hasPrevPage = data['pagination']['hasPrevPage'];
+        _totalRecipes = data['pagination']['total'];
         notifyListeners();
       } else {
         _setError(response.message ?? 'Failed to load recipes');
@@ -158,6 +212,20 @@ class RecipeProvider extends ChangeNotifier {
       _userRecipes = [];
     } finally {
       _setLoading(false);
+    }
+  }
+
+  // Load next page of recipes
+  Future<void> loadNextPage() async {
+    if (_hasNextPage) {
+      await loadUserRecipes(page: _currentPage + 1);
+    }
+  }
+
+  // Load previous page of recipes
+  Future<void> loadPrevPage() async {
+    if (_hasPrevPage) {
+      await loadUserRecipes(page: _currentPage - 1);
     }
   }
 
@@ -338,5 +406,20 @@ class RecipeProvider extends ChangeNotifier {
   Future<void> refreshAll() async {
     await loadUserRecipes();
     await loadFavoriteRecipes();
+  }
+
+  // Check if a recipe is a duplicate
+  bool isDuplicateRecipe(Recipe recipe) {
+    // Check if recipe with same source URL exists
+    if (recipe.sourceUrl != null) {
+      return _userRecipes.any((r) => r.sourceUrl == recipe.sourceUrl);
+    }
+
+    // If no source URL, check title and description
+    return _userRecipes.any(
+      (r) =>
+          r.title.toLowerCase() == recipe.title.toLowerCase() &&
+          r.description.toLowerCase() == recipe.description.toLowerCase(),
+    );
   }
 }

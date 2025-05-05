@@ -38,8 +38,6 @@ class RecipeService {
       'random': random,
     };
 
-    debugPrint('Payload: $payload');
-
     final response = await _api.publicPost<List<dynamic>>(
       'ai/recipes/generate',
       body: payload,
@@ -83,16 +81,25 @@ class RecipeService {
   // USER RECIPES (Auth required)
   //----------------------------------------
 
-  /// Get all user recipes
-  static Future<ApiResponse<List<Recipe>>> getUserRecipes() async {
-    final response = await _api.authenticatedGet<List<dynamic>>('user/recipes');
+  /// Get all user recipes with pagination
+  static Future<ApiResponse<Map<String, dynamic>>> getUserRecipes({
+    int page = 1,
+    int limit = 10,
+  }) async {
+    final response = await _api.authenticatedGet<Map<String, dynamic>>(
+      'user/recipes?page=$page&limit=$limit',
+    );
 
     if (response.success && response.data != null) {
       final recipes =
-          (response.data as List)
+          (response.data!['recipes'] as List)
               .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
               .toList();
-      return ApiResponse.success(recipes);
+
+      return ApiResponse.success({
+        'recipes': recipes,
+        'pagination': response.data!['pagination'],
+      });
     }
 
     return ApiResponse.error(
@@ -215,6 +222,23 @@ class RecipeService {
 
     return ApiResponse.error(
       response.message ?? 'Failed to get favorite recipes',
+      statusCode: response.statusCode,
+    );
+  }
+
+  /// Delete all user recipes
+  static Future<ApiResponse<bool>> deleteAllUserRecipes() async {
+    final response = await _api.authenticatedDelete('user/recipes');
+
+    if (response.success) {
+      return ApiResponse.success(
+        true,
+        message: 'All recipes deleted successfully',
+      );
+    }
+
+    return ApiResponse.error(
+      response.message ?? 'Failed to delete recipes',
       statusCode: response.statusCode,
     );
   }

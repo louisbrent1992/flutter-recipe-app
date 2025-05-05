@@ -8,6 +8,7 @@ const { zodResponseFormat } = require("openai/helpers/zod");
 const recipeData = require("../data/recipeData");
 const { getInstagramMediaFromUrl } = require("../utils/instagramAPI");
 const { getTikTokVideoFromUrl } = require("../utils/tiktokAPI");
+const { getYouTubeVideoFromUrl } = require("../utils/youtubeAPI");
 
 const client = new OpenAI({
 	api_key: process.env.LlamaAI_API_KEY,
@@ -248,7 +249,8 @@ const processRecipeData = async (
 	socialData,
 	url,
 	isInstagram,
-	isTikTok
+	isTikTok,
+	isYouTube
 ) => {
 	const contentKey = getCacheKey("content", recipeData.slice(0, 100));
 	const cachedRecipe = getFromCache(aiResponseCache, contentKey);
@@ -261,10 +263,20 @@ const processRecipeData = async (
 			imageUrl:
 				socialData?.imageUrl ||
 				socialData?.coverUrl ||
+				socialData?.thumbnailUrl ||
 				(await fetchImage(cachedRecipe.title || "recipe")),
 			sourceUrl: url,
-			sourcePlatform: isInstagram ? "instagram" : isTikTok ? "tiktok" : "web",
-			author: socialData?.username || socialData?.author?.username,
+			sourcePlatform: isInstagram
+				? "instagram"
+				: isTikTok
+				? "tiktok"
+				: isYouTube
+				? "youtube"
+				: "web",
+			author:
+				socialData?.username ||
+				socialData?.author?.username ||
+				socialData?.channelTitle,
 			createdAt: new Date().toISOString(),
 		};
 	}
@@ -276,7 +288,7 @@ const processRecipeData = async (
 			{
 				role: "system",
 				content:
-					isInstagram || isTikTok
+					isInstagram || isTikTok || isYouTube
 						? "Extract recipe details from this social media post. Return title, ingredients (array), instructions (array), description, and tags (array). Fill in any missing recipe details."
 						: "Extract recipe details from this text. Return title, ingredients (array), instructions (array), description, and tags (array). Fill in any missing recipe details.",
 			},
@@ -308,6 +320,7 @@ const processRecipeData = async (
 		imageUrl:
 			socialData?.imageUrl ||
 			socialData?.coverUrl ||
+			socialData?.thumbnailUrl ||
 			(await fetchImage(parsedRecipe.title || "recipe")),
 		cookingTime: parsedRecipe.cookingTime || "30 minutes",
 		difficulty: parsedRecipe.difficulty || "medium",
@@ -316,10 +329,21 @@ const processRecipeData = async (
 			? `Instagram: @${socialData?.username}`
 			: isTikTok
 			? `TikTok: @${socialData?.author?.username}`
+			: isYouTube
+			? `YouTube: ${socialData?.channelTitle}`
 			: "Web",
 		sourceUrl: url,
-		sourcePlatform: isInstagram ? "instagram" : isTikTok ? "tiktok" : "web",
-		author: socialData?.username || socialData?.author?.username,
+		sourcePlatform: isInstagram
+			? "instagram"
+			: isTikTok
+			? "tiktok"
+			: isYouTube
+			? "youtube"
+			: "web",
+		author:
+			socialData?.username ||
+			socialData?.author?.username ||
+			socialData?.channelTitle,
 		tags: parsedRecipe.tags || [],
 		createdAt: new Date().toISOString(),
 		...(isInstagram && {
@@ -335,10 +359,22 @@ const processRecipeData = async (
 				nickname: socialData?.author?.nickname,
 			},
 		}),
+		...(isYouTube && {
+			youtube: {
+				videoId: socialData?.videoId,
+				channelTitle: socialData?.channelTitle,
+				channelId: socialData?.channelId,
+				thumbnailUrl: socialData?.thumbnailUrl,
+				duration: socialData?.duration,
+				viewCount: socialData?.viewCount,
+				likeCount: socialData?.likeCount,
+				commentCount: socialData?.commentCount,
+			},
+		}),
 	};
 };
 
-// Import endpoint with Instagram and TikTok support
+// Import endpoint with Instagram, TikTok, and YouTube support
 router.post("/import", async (req, res) => {
 	const { url } = req.body;
 
@@ -357,6 +393,7 @@ router.post("/import", async (req, res) => {
 		const isInstagram =
 			url.includes("instagram.com/p/") || url.includes("instagram.com/reel/");
 		const isTikTok = url.includes("tiktok.com/");
+		const isYouTube = url.includes("youtube.com/") || url.includes("youtu.be/");
 		let socialData = null;
 		let pageContent = "";
 
@@ -374,10 +411,15 @@ router.post("/import", async (req, res) => {
 				getTikTokVideoFromUrl
 			);
 			pageContent = socialData.description;
+		} else if (isYouTube) {
+			socialData = await processSocialMedia(
+				url,
+				"youtube",
+				getYouTubeVideoFromUrl
+			);
+			pageContent = socialData.description;
 		} else {
-			const textUrl = `https://textfrom.website/${url}`;
-			const { data } = await axios.get(textUrl);
-			pageContent = data;
+			return res.status(500).json({ error: "Unsupported URL type" });
 		}
 
 		if (!pageContent) {
@@ -389,7 +431,8 @@ router.post("/import", async (req, res) => {
 			socialData,
 			url,
 			isInstagram,
-			isTikTok
+			isTikTok,
+			isYouTube
 		);
 		handleCache(recipeCache, url, importedRecipe);
 		tempRecipes.push(importedRecipe);
@@ -507,5 +550,38 @@ const calculateHitRate = (cache) => {
 	const total = cache.hits + cache.misses;
 	return total > 0 ? ((cache.hits / total) * 100).toFixed(2) + "%" : "0%";
 };
+
+// Helper function to get paginated recipes
+const getPaginatedRecipes = (recipes, page = 1, limit = 10) => {
+	const startIndex = (page - 1) * limit;
+	const endIndex = startIndex + limit;
+	const paginatedRecipes = recipes.slice(startIndex, endIndex);
+
+	return {
+		recipes: paginatedRecipes,
+		pagination: {
+			total: recipes.length,
+			page,
+			limit,
+			totalPages: Math.ceil(recipes.length / limit),
+			hasNextPage: endIndex < recipes.length,
+			hasPrevPage: page > 1,
+		},
+	};
+};
+
+// GET /ai/recipes - Get all generated recipes with pagination
+router.get("/", (req, res) => {
+	try {
+		const page = parseInt(req.query.page) || 1;
+		const limit = parseInt(req.query.limit) || 10;
+
+		const result = getPaginatedRecipes(tempRecipes, page, limit);
+		res.json(result);
+	} catch (error) {
+		console.error("Error getting generated recipes:", error);
+		res.status(500).json({ error: "Failed to retrieve generated recipes" });
+	}
+});
 
 module.exports = router;

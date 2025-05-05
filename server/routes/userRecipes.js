@@ -15,18 +15,29 @@ const db = getFirestore();
 
 /**
  * @route   GET /user/recipes
- * @desc    Get all recipes for a user
+ * @desc    Get all recipes for a user with pagination
  * @access  Private
  */
 router.get("/", auth, async (req, res) => {
 	try {
 		const userId = req.user.uid;
+		const page = parseInt(req.query.page) || 1;
+		const limit = parseInt(req.query.limit) || 10;
+		const startAt = (page - 1) * limit;
 
-		// Query Firestore for user's recipes
+		// Query Firestore for user's recipes with pagination
 		const recipesRef = db.collection("recipes");
+		const totalQuery = await recipesRef
+			.where("userId", "==", userId)
+			.count()
+			.get();
+		const totalRecipes = totalQuery.data().count;
+
 		const snapshot = await recipesRef
 			.where("userId", "==", userId)
 			.orderBy("createdAt", "desc")
+			.limit(limit)
+			.offset(startAt)
 			.get();
 
 		// Transform snapshot into array of recipes
@@ -38,7 +49,17 @@ router.get("/", auth, async (req, res) => {
 			});
 		});
 
-		res.json(recipes);
+		res.json({
+			recipes,
+			pagination: {
+				total: totalRecipes,
+				page,
+				limit,
+				totalPages: Math.ceil(totalRecipes / limit),
+				hasNextPage: page * limit < totalRecipes,
+				hasPrevPage: page > 1,
+			},
+		});
 	} catch (error) {
 		console.error("Error getting user recipes:", error);
 		res.status(500).json({ error: "Failed to retrieve recipes" });
@@ -413,6 +434,35 @@ router.get("/favorites", auth, async (req, res) => {
 	} catch (error) {
 		console.error("Error getting favorite recipes:", error);
 		res.status(500).json({ error: "Failed to retrieve favorite recipes" });
+	}
+});
+
+/**
+ * @route   DELETE /user/recipes
+ * @desc    Delete all recipes for a user
+ * @access  Private
+ */
+router.delete("/", auth, async (req, res) => {
+	try {
+		const userId = req.user.uid;
+
+		// Get all recipes for the user
+		const recipesRef = db.collection("recipes");
+		const snapshot = await recipesRef.where("userId", "==", userId).get();
+
+		// Delete each recipe
+		const batch = db.batch();
+		snapshot.forEach((doc) => {
+			batch.delete(doc.ref);
+		});
+
+		// Commit the batch delete
+		await batch.commit();
+
+		res.json({ message: "All recipes deleted successfully" });
+	} catch (error) {
+		console.error("Error deleting all recipes:", error);
+		res.status(500).json({ error: "Failed to delete recipes" });
 	}
 });
 
