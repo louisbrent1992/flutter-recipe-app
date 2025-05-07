@@ -60,6 +60,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           leading != null
               ? Builder(builder: (BuildContext context) => leading!)
               : null,
+
       actions: actions,
       iconTheme: IconThemeData(
         color: foregroundColor ?? theme.colorScheme.onPrimary,

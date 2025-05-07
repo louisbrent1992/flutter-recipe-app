@@ -5,6 +5,7 @@ import 'package:recipease/providers/auth_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/notification_provider.dart';
+import '../components/floating_home_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -180,31 +181,17 @@ class _SettingsScreenState extends State<SettingsScreen>
           ],
         ],
       ),
-      body: Consumer<UserProfileProvider>(
-        builder: (context, profile, _) {
-          if (profile.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  colorScheme.surface,
-                  colorScheme.surface.withValues(alpha: 0.8),
-                ],
-              ),
-            ),
-            child: Scrollbar(
-              controller: _scrollController,
-              child: ListView(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(16),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            controller: _scrollController,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Profile Header
-                  _buildProfileHeader(profile, colorScheme),
+                  _buildProfileHeader(colorScheme),
 
                   const SizedBox(height: 32),
 
@@ -381,16 +368,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ],
               ),
             ),
-          );
-        },
+          ),
+          const FloatingHomeButton(),
+        ],
       ),
     );
   }
 
-  Widget _buildProfileHeader(
-    UserProfileProvider profile,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildProfileHeader(ColorScheme colorScheme) {
     return Center(
       child: Column(
         children: [
@@ -412,13 +397,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                     radius: 60,
                     backgroundColor: Colors.grey[200],
                     backgroundImage:
-                        profile.profile['photoURL'] != null
-                            ? CachedNetworkImageProvider(
-                              profile.profile['photoURL'],
-                            )
+                        user?.photoURL != null
+                            ? CachedNetworkImageProvider(user!.photoURL!)
                             : null,
                     child:
-                        profile.profile['photoURL'] == null
+                        user?.photoURL == null
                             ? Icon(
                               Icons.person_rounded,
                               size: 60,

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/custom_app_bar.dart';
+import 'package:recipease/components/floating_add_button.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
 import 'package:recipease/screens/add_recipes_to_collection_screen.dart';
 import '../components/recipe_card.dart';
-import 'package:provider/provider.dart';
-import '../providers/recipe_provider.dart';
+import '../components/floating_home_button.dart';
 
 class CollectionDetailScreen extends StatefulWidget {
   final RecipeCollection collection;
@@ -290,7 +290,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
           ),
         ],
       ),
-      body:
+      body: Stack(
+        children: [
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicator(
@@ -375,10 +376,12 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                   ],
                 ),
               ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _searchAllRecipes,
-        tooltip: 'Add recipes to collection',
-        child: const Icon(Icons.add),
+          const FloatingHomeButton(),
+          FloatingAddButton(
+            onPressed: _searchAllRecipes,
+            tooltip: 'Add recipes to collection',
+          ),
+        ],
       ),
     );
   }

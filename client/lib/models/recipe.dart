@@ -53,26 +53,47 @@ class Recipe {
 
   // Convert from JSON
   factory Recipe.fromJson(Map<String, dynamic> json) {
+    // Helper function to convert ingredients to strings
+    List<String> parseIngredients(dynamic ingredients) {
+      if (ingredients == null) return [];
+      if (ingredients is List) {
+        return ingredients
+            .map((ing) {
+              if (ing is String) return ing;
+              if (ing is Map) {
+                final name = ing['name']?.toString() ?? '';
+                final amount = ing['amount']?.toString() ?? '';
+                final unit = ing['unit']?.toString() ?? '';
+                if (amount.isNotEmpty && unit.isNotEmpty) {
+                  return '$amount $unit $name';
+                }
+                return name;
+              }
+              return '';
+            })
+            .where((s) => s.isNotEmpty)
+            .toList();
+      }
+      return [];
+    }
+
     return Recipe(
-      id: json['id'] ?? '',
-      title: json['title'] ?? 'Untitled Recipe',
-      ingredients:
-          json['ingredients'] != null
-              ? List<String>.from(json['ingredients'])
-              : [],
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? 'Untitled Recipe',
+      ingredients: parseIngredients(json['ingredients']),
       instructions:
           json['instructions'] != null
               ? List<String>.from(json['instructions'])
               : [],
-      description: json['description'] ?? '',
-      imageUrl: json['imageUrl'] ?? '',
+      description: json['description']?.toString() ?? '',
+      imageUrl: json['imageUrl']?.toString() ?? '',
       cookingTime: json['cookingTime']?.toString() ?? '0',
-      difficulty: json['difficulty'] ?? 'Medium',
+      difficulty: json['difficulty']?.toString() ?? 'Medium',
       servings: json['servings']?.toString() ?? '0',
-      source: json['source'],
-      sourceUrl: json['sourceUrl'],
-      sourcePlatform: json['sourcePlatform'],
-      author: json['author'],
+      source: json['source']?.toString(),
+      sourceUrl: json['sourceUrl']?.toString(),
+      sourcePlatform: json['sourcePlatform']?.toString(),
+      author: json['author']?.toString(),
       tags: json['tags'] != null ? List<String>.from(json['tags']) : [],
       createdAt:
           json['createdAt'] != null
@@ -83,17 +104,21 @@ class Recipe {
               ? DateTime.parse(json['updatedAt'] as String)
               : null,
       isFavorite: json['isFavorite'] ?? false,
-      userId: json['userId'],
-      cuisineType: json['cuisineType'],
+      userId: json['userId']?.toString(),
+      cuisineType: json['cuisineType']?.toString(),
       instagram:
           json['instagram'] != null
-              ? InstagramData.fromJson(json['instagram'])
+              ? InstagramData.fromJson(
+                json['instagram'] as Map<String, dynamic>,
+              )
               : null,
       tiktok:
-          json['tiktok'] != null ? TikTokData.fromJson(json['tiktok']) : null,
+          json['tiktok'] != null
+              ? TikTokData.fromJson(json['tiktok'] as Map<String, dynamic>)
+              : null,
       youtube:
           json['youtube'] != null
-              ? YouTubeData.fromJson(json['youtube'])
+              ? YouTubeData.fromJson(json['youtube'] as Map<String, dynamic>)
               : null,
     );
   }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/components/checkbox_list.dart';
 import 'package:recipease/components/screen_description_card.dart';
+import 'package:recipease/components/floating_home_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class GenerateRecipeScreen extends StatefulWidget {
@@ -29,14 +31,6 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
               .map((ingredient) => ingredient.trim()),
         );
         _ingredientController.clear();
-      });
-    }
-  }
-
-  void _clearIngredients() {
-    if (mounted) {
-      setState(() {
-        _ingredients.clear();
       });
     }
   }
@@ -139,17 +133,21 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Scrollbar(
-        controller: _scrollController,
-
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            SliverAppBar(
-              expandedHeight: 200,
-              pinned: true,
-              flexibleSpace: FlexibleSpaceBar(
-                background: CachedNetworkImage(
+      appBar: CustomAppBar(
+        title: 'Generate Recipe',
+        actions: [
+          IconButton(onPressed: () {}, icon: const Icon(Icons.settings)),
+        ],
+      ),
+      body: Stack(
+        children: [
+          CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 200,
+                automaticallyImplyLeading: false,
+                flexibleSpace: CachedNetworkImage(
                   imageUrl:
                       'https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmVjaXBlJTIwZ2VuZXJhdGlvbnxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80',
                   fit: BoxFit.cover,
@@ -161,189 +159,198 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           const Icon(Icons.error, color: Colors.red),
                 ),
               ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Consumer<RecipeProvider>(
-                  builder: (context, recipeProvider, _) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ScreenDescriptionCard(
-                          title: 'AI Recipe Generator',
-                          description:
-                              'Enter your ingredients, dietary preferences, and cooking time to generate personalized recipes.',
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Ingredients:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.secondary,
+
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Consumer<RecipeProvider>(
+                    builder: (context, recipeProvider, _) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ScreenDescriptionCard(
+                            title: 'AI Recipe Generator',
+                            description:
+                                'Enter your ingredients, dietary preferences, and cooking time to generate personalized recipes.',
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _ingredientController,
-                          decoration: InputDecoration(
-                            hintText: 'Enter ingredients',
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.add),
-                              onPressed: _addIngredient,
+                          const SizedBox(height: 24),
+                          Text(
+                            'Ingredients:',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.secondary,
                             ),
                           ),
-                          onSubmitted: (value) => _addIngredient(),
-                        ),
-                        Wrap(
-                          spacing: 8.0,
-                          children:
-                              _ingredients
-                                  .map(
-                                    (ingredient) => Chip(
-                                      label: Text(ingredient),
-                                      backgroundColor: Colors.grey[350],
-                                      onDeleted: () {
-                                        setState(() {
-                                          _ingredients.remove(ingredient);
-                                        });
-                                      },
-                                    ),
-                                  )
-                                  .toList(),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Dietary Preferences:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.secondary,
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _ingredientController,
+                            decoration: InputDecoration(
+                              hintText: 'Enter ingredients',
+                              suffixIcon: IconButton(
+                                icon: const Icon(Icons.add),
+                                onPressed: _addIngredient,
+                              ),
+                            ),
+                            onSubmitted: (value) => _addIngredient(),
                           ),
-                        ),
-                        DietaryPreferenceCheckboxList(
-                          label: 'Select Preferences',
-                          selectedPreferences: _dietaryRestrictions,
-                          onChanged: _handleDietaryPreferences,
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Cuisine Type:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.secondary,
+                          Wrap(
+                            spacing: 8.0,
+                            children:
+                                _ingredients
+                                    .map(
+                                      (ingredient) => Chip(
+                                        label: Text(ingredient),
+                                        backgroundColor: Colors.grey[350],
+                                        onDeleted: () {
+                                          setState(() {
+                                            _ingredients.remove(ingredient);
+                                          });
+                                        },
+                                      ),
+                                    )
+                                    .toList(),
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 0),
-                          child: DropdownButton<String>(
-                            value: _cuisineType,
-                            onChanged: (String? newValue) {
+                          const SizedBox(height: 24),
+                          Text(
+                            'Dietary Preferences:',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                          ),
+                          DietaryPreferenceCheckboxList(
+                            label: 'Select Preferences',
+                            selectedPreferences: _dietaryRestrictions,
+                            onChanged: _handleDietaryPreferences,
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Cuisine Type:',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              16.0,
+                              0,
+                              16.0,
+                              0,
+                            ),
+                            child: DropdownButton<String>(
+                              value: _cuisineType,
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _cuisineType = newValue!;
+                                });
+                              },
+                              items:
+                                  <String>[
+                                    'American',
+                                    'Italian',
+                                    'Chinese',
+                                    'Mexican',
+                                    'Indian',
+                                    'Japanese',
+                                    'French',
+                                    'Spanish',
+                                    'Thai',
+                                    'Greek',
+                                    'Turkish',
+                                    'Vietnamese',
+                                    'Korean',
+                                    'German',
+                                    'Polish',
+                                    'Portuguese',
+                                    'Russian',
+                                    'Brazilian',
+                                    'Dutch',
+                                    'Belgian',
+                                    'Swedish',
+                                    'Norwegian',
+                                    'Danish',
+                                  ].map<DropdownMenuItem<String>>((
+                                    String value,
+                                  ) {
+                                    return DropdownMenuItem<String>(
+                                      value: value,
+                                      child: Text(
+                                        value,
+                                        style: TextStyle(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.secondary,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Cooking Time:',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                          ),
+                          Slider.adaptive(
+                            value: _cookingTime,
+                            min: 0,
+                            max: 120,
+                            divisions: 12,
+                            label: _cookingTime.round().toString(),
+                            onChanged: (double value) {
                               setState(() {
-                                _cuisineType = newValue!;
+                                _cookingTime = value;
                               });
                             },
-                            items:
-                                <String>[
-                                  'American',
-                                  'Italian',
-                                  'Chinese',
-                                  'Mexican',
-                                  'Indian',
-                                  'Japanese',
-                                  'French',
-                                  'Spanish',
-                                  'Thai',
-                                  'Greek',
-                                  'Turkish',
-                                  'Vietnamese',
-                                  'Korean',
-                                  'German',
-                                  'Polish',
-                                  'Portuguese',
-                                  'Russian',
-                                  'Brazilian',
-                                  'Dutch',
-                                  'Belgian',
-                                  'Swedish',
-                                  'Norwegian',
-                                  'Danish',
-                                ].map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(
-                                      value,
-                                      style: TextStyle(
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.secondary,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Cooking Time:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                        Slider.adaptive(
-                          value: _cookingTime,
-                          min: 0,
-                          max: 120,
-                          divisions: 12,
-                          label: _cookingTime.round().toString(),
-                          onChanged: (double value) {
-                            setState(() {
-                              _cookingTime = value;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed:
-                              recipeProvider.isLoading
-                                  ? null
-                                  : () => _loadRecipes(context),
-                          style: const ButtonStyle(
-                            backgroundColor: WidgetStatePropertyAll(
-                              Colors.deepPurple,
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed:
+                                recipeProvider.isLoading
+                                    ? null
+                                    : () => _loadRecipes(context),
+                            style: const ButtonStyle(
+                              backgroundColor: WidgetStatePropertyAll(
+                                Colors.deepPurple,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.auto_awesome_outlined,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Generate Recipes',
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.auto_awesome_outlined,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Generate Recipes',
-                                style: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+          const FloatingHomeButton(),
+        ],
       ),
     );
   }

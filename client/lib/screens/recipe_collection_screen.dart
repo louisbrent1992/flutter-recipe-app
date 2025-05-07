@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/custom_app_bar.dart';
+import 'package:recipease/components/floating_add_button.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
 
@@ -271,18 +272,7 @@ class _RecipeCollectionScreenState extends State<RecipeCollectionScreen>
                 ),
 
             // Add category FAB
-            Positioned(
-              bottom: 24,
-              right: 24,
-              child: FloatingActionButton(
-                onPressed: _showAddCategoryDialog,
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                elevation: 4,
-                tooltip: 'Add new category',
-                child: const Icon(Icons.add_rounded, size: 28),
-              ),
-            ),
+            FloatingAddButton(onPressed: _showAddCategoryDialog),
           ],
         ),
       ),

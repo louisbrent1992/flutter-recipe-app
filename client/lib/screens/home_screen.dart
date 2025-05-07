@@ -58,21 +58,33 @@ class _HomeScreenState extends State<HomeScreen>
         useLogo: true,
         leading: Container(
           margin: const EdgeInsets.all(16),
-          clipBehavior: Clip.hardEdge,
+          clipBehavior: Clip.antiAlias,
           width: 40,
           height: 40,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-
-            color: Theme.of(
-              context,
-            ).colorScheme.primaryContainer.withValues(alpha: 0.2),
+            color: theme.colorScheme.secondary,
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.secondary.withValues(alpha: 0.2),
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Center(
             child: IconButton(
-              icon: const Icon(Icons.menu_rounded, color: Colors.black),
+              style: ButtonStyle(
+                shape: WidgetStateProperty.all(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              icon: Icon(Icons.menu_rounded, color: theme.colorScheme.primary),
               iconSize: 24,
               padding: EdgeInsets.zero,
+
               constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
               onPressed: () => _scaffoldKey.currentState?.openDrawer(),
             ),

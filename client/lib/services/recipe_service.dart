@@ -264,4 +264,35 @@ class RecipeService {
       statusCode: response.statusCode,
     );
   }
+
+  /// Search for recipes from external API
+  static Future<ApiResponse<Map<String, dynamic>>> searchExternalRecipes({
+    String? query,
+    String? difficulty,
+    String? tag,
+    int page = 1,
+    int limit = 10,
+  }) async {
+    final Map<String, String> queryParams = {
+      if (query != null && query.isNotEmpty) 'query': query,
+      if (difficulty != null && difficulty != 'All') 'difficulty': difficulty,
+      if (tag != null && tag != 'All') 'tag': tag,
+      'page': page.toString(),
+      'limit': limit.toString(),
+    };
+
+    final response = await _api.publicGet<Map<String, dynamic>>(
+      'recipes/search',
+      queryParams: queryParams,
+    );
+
+    if (response.success && response.data != null) {
+      return ApiResponse.success(response.data!);
+    }
+
+    return ApiResponse.error(
+      response.message ?? 'Failed to search recipes',
+      statusCode: response.statusCode,
+    );
+  }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
+import 'package:recipease/components/floating_add_button.dart';
+import 'package:recipease/components/floating_home_button.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 
@@ -463,36 +465,9 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                     ),
                   ),
                 ),
+                const FloatingAddButton(),
 
-                // Floating Action Button
-                Positioned(
-                  bottom: 24,
-                  right: 24,
-                  child: AnimatedBuilder(
-                    animation: _animationController,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale:
-                            _animationController.value < 0.8
-                                ? 0
-                                : (_animationController.value - 0.8) /
-                                    0.2 *
-                                    1.0,
-                        child: child,
-                      );
-                    },
-                    child: FloatingActionButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/recipeEdit');
-                      },
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onSecondary,
-                      elevation: 4,
-                      tooltip: 'Create a recipe manually',
-                      child: const Icon(Icons.add_rounded, size: 28),
-                    ),
-                  ),
-                ),
+                const FloatingHomeButton(),
               ],
             );
           },

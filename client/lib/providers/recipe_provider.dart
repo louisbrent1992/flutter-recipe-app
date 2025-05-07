@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
@@ -421,5 +420,53 @@ class RecipeProvider extends ChangeNotifier {
           r.title.toLowerCase() == recipe.title.toLowerCase() &&
           r.description.toLowerCase() == recipe.description.toLowerCase(),
     );
+  }
+
+  //----------------------------------------
+  // API SEARCH METHODS
+  //----------------------------------------
+
+  // Search for recipes from external API
+  Future<void> searchExternalRecipes({
+    String? query,
+    String? difficulty,
+    String? tag,
+    int page = 1,
+    int limit = 10,
+  }) async {
+    _setLoading(true);
+    _setError(null);
+
+    try {
+      final response = await RecipeService.searchExternalRecipes(
+        query: query,
+        difficulty: difficulty,
+        tag: tag,
+        page: page,
+        limit: limit,
+      );
+
+      if (response.success && response.data != null) {
+        final data = response.data!;
+        _generatedRecipes =
+            (data['recipes'] as List)
+                .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
+                .toList();
+        _currentPage = data['pagination']['page'];
+        _totalPages = data['pagination']['totalPages'];
+        _hasNextPage = data['pagination']['hasNextPage'];
+        _hasPrevPage = data['pagination']['hasPrevPage'];
+        _totalRecipes = data['pagination']['total'];
+        notifyListeners();
+      } else {
+        _setError(response.message ?? 'Failed to search recipes');
+        _generatedRecipes = [];
+      }
+    } catch (e) {
+      _setError(e.toString());
+      _generatedRecipes = [];
+    } finally {
+      _setLoading(false);
+    }
   }
 }

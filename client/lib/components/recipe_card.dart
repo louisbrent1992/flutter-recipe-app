@@ -105,38 +105,46 @@ class _RecipeCardState extends State<RecipeCard> {
 
     setState(() => _isFavoriteLoading = true);
     try {
-      final profile = context.read<UserProfileProvider>();
-
-      if (isCurrentlyFavorite) {
-        await profile.removeFromFavorites(widget.recipe);
-        setState(() => isFavorite = false);
-      } else {
-        await profile.addToFavorites(widget.recipe);
-        setState(() => isFavorite = true);
-      }
-
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isCurrentlyFavorite
-                  ? 'Removed "${widget.recipe.title}" from favorites'
-                  : 'Added "${widget.recipe.title}" to favorites',
-            ),
-            backgroundColor: isCurrentlyFavorite ? Colors.orange : Colors.green,
-            action:
+        final profile = context.read<UserProfileProvider>();
+
+        if (isCurrentlyFavorite) {
+          await profile.removeFromFavorites(widget.recipe);
+          setState(() => isFavorite = false);
+        } else {
+          await profile.addToFavorites(widget.recipe);
+          setState(() => isFavorite = true);
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
                 isCurrentlyFavorite
-                    ? SnackBarAction(
-                      label: 'Undo',
-                      onPressed: () async {
-                        await profile.addToFavorites(widget.recipe);
-                        setState(() => isFavorite = true);
-                      },
-                      textColor: Colors.white,
-                    )
-                    : null,
-          ),
-        );
+                    ? 'Removed "${widget.recipe.title}" from favorites'
+                    : 'Added "${widget.recipe.title}" to favorites',
+              ),
+              backgroundColor: isCurrentlyFavorite ? Colors.orange : Colors.red,
+              action:
+                  isCurrentlyFavorite
+                      ? SnackBarAction(
+                        label: 'Undo',
+                        onPressed: () async {
+                          await profile.addToFavorites(widget.recipe);
+                          setState(() => isFavorite = true);
+                        },
+                        textColor: Colors.white,
+                      )
+                      : SnackBarAction(
+                        label: 'Go to favorites',
+                        onPressed: () async {
+                          Navigator.pushNamed(context, '/favorites');
+                        },
+                        textColor: Colors.white,
+                      ),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -272,7 +280,11 @@ Shared from Recipe App
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                  : Icon(icon, color: iconColor ?? Colors.white, size: 16),
+                  : Icon(
+                    icon,
+                    color: iconColor ?? Theme.of(context).colorScheme.primary,
+                    size: 16,
+                  ),
         ),
       ),
     );
@@ -424,7 +436,10 @@ Shared from Recipe App
                               isFavorite
                                   ? 'Remove from favorites'
                                   : 'Add to favorites',
-                          iconColor: isFavorite ? Colors.red : Colors.white,
+                          iconColor:
+                              isFavorite
+                                  ? Colors.red
+                                  : Theme.of(context).colorScheme.primary,
                           isLoading: _isFavoriteLoading,
                         ),
                       if (widget.showFavoriteButton &&
