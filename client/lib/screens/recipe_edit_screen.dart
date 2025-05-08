@@ -6,6 +6,7 @@ import 'package:recipease/components/floating_home_button.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/screens/my_recipes_screen.dart';
 import 'package:recipease/services/recipe_service.dart';
+import 'package:recipease/components/html_description.dart';
 
 class RecipeEditScreen extends StatefulWidget {
   const RecipeEditScreen({super.key});
@@ -279,7 +280,8 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                         label: 'Description',
                         controller: _descriptionController,
                         value: currentRecipe.description,
-                        hintText: 'Enter recipe description',
+                        hintText:
+                            'Enter recipe description (HTML formatting supported)',
                         isMultiline: true,
                         onSave: (value) {
                           setState(() {
@@ -287,9 +289,19 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                             _descriptionController.text = value;
                           });
                         },
-                        customDisplay: Text(
-                          currentRecipe.description,
-                          style: Theme.of(context).textTheme.bodyLarge,
+                        customDisplay: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Description (HTML formatting supported)',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 4),
+                            HtmlDescription(
+                              htmlContent: currentRecipe.description,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 15),

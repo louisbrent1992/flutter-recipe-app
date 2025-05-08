@@ -73,6 +73,7 @@ dependencies:
 
   # Firebase App Check dependency
   firebase_app_check: ^0.3.2+5
+  flutter_html: ^3.0.0
 
 dev_dependencies:
   flutter_test:

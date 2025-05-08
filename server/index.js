@@ -59,7 +59,7 @@ app.use((req, res) => {
 app.use(errorHandler.globalHandler);
 
 // Schedule a daily job to fetch recipes from Spoonacular
-cron.schedule("0 0 * * *", async () => {
+cron.schedule("0 19 * * *", async () => {
 	console.log("Running scheduled recipe fetch job...");
 	try {
 		const db = admin.firestore();
@@ -103,8 +103,9 @@ cron.schedule("0 0 * * *", async () => {
 				instructions: (recipe.analyzedInstructions?.[0]?.steps || []).map(
 					(step) => step.step || ""
 				),
-				prepTime: recipe.preparationMinutes || 0,
-				cookTime: recipe.cookingMinutes || 0,
+
+				cookingTime:
+					recipe.cookingMinutes || recipe.preparationMinutes || "Not Specified",
 				servings: recipe.servings || 1,
 				difficulty:
 					recipe.readyInMinutes <= 30

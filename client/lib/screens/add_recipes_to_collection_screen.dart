@@ -5,6 +5,7 @@ import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/services/collection_service.dart';
+import 'package:recipease/components/html_description.dart';
 
 class AddRecipesToCollectionScreen extends StatefulWidget {
   final RecipeCollection collection;
@@ -305,10 +306,12 @@ class _AddRecipesToCollectionScreenState
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  subtitle: Text(
-                                    recipe.description,
+                                  subtitle: HtmlDescription(
+                                    htmlContent: recipe.description,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
                                   ),
                                   trailing: Checkbox(
                                     value: isSelected,

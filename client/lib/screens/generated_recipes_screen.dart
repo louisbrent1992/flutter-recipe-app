@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:recipease/components/floating_home_button.dart';
 import '../providers/recipe_provider.dart';
 import '../components/recipe_card.dart';
 import '../components/custom_app_bar.dart';
@@ -41,9 +42,15 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
       await recipeProvider.deleteUserRecipe(recipe.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Recipe removed from your collection'),
             backgroundColor: Colors.orange,
+            action: SnackBarAction(
+              label: 'Go to My Recipes',
+              onPressed: () {
+                Navigator.pushNamed(context, '/myRecipes');
+              },
+            ),
           ),
         );
       }
@@ -55,9 +62,15 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
       await recipeProvider.saveGeneratedRecipe(recipe);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Recipe saved to your collection!'),
             backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'Go to My Recipes',
+              onPressed: () {
+                Navigator.pushNamed(context, '/myRecipes');
+              },
+            ),
           ),
         );
       }
@@ -111,6 +124,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
           );
         },
       ),
+      floatingActionButton: const FloatingHomeButton(),
     );
   }
 }

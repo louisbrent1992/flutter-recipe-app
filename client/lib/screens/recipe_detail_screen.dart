@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:recipease/components/custom_app_bar.dart';
-import 'package:url_launcher/link.dart';
+import 'package:recipease/components/recipe_info_row.dart';
+import 'package:recipease/components/html_description.dart';
 import '../models/recipe.dart';
+import '../providers/recipe_provider.dart';
+import '../components/custom_app_bar.dart';
+import 'package:url_launcher/link.dart';
 import '../providers/user_profile_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../components/floating_home_button.dart';
@@ -202,8 +205,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Text(
-                        recipe.description,
+                      HtmlDescription(
+                        htmlContent: recipe.description,
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
                       const SizedBox(height: 16),

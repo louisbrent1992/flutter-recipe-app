@@ -223,37 +223,54 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                       );
                     }
 
-                    return ListView.builder(
+                    return Scrollbar(
                       controller: _scrollController,
-                      itemCount:
-                          myRecipes.length + 1, // +1 for loading indicator
-                      itemBuilder: (context, index) {
-                        if (index == myRecipes.length) {
-                          if (recipeProvider.isLoading) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: CircularProgressIndicator(),
-                              ),
-                            );
+                      child: GridView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.75,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
+                        itemCount:
+                            myRecipes.length +
+                            (recipeProvider.isLoading ||
+                                    recipeProvider.hasNextPage
+                                ? 1
+                                : 0),
+                        itemBuilder: (context, index) {
+                          if (index == myRecipes.length) {
+                            if (recipeProvider.isLoading) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+                            if (!recipeProvider.hasNextPage) {
+                              return const SizedBox.shrink();
+                            }
+                            return const SizedBox.shrink();
                           }
-                          if (!recipeProvider.hasNextPage) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Text('No more recipes'),
-                              ),
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        }
-                        final recipe = myRecipes[index];
-                        return RecipeCard(
-                          recipe: recipe,
-                          showEditButton: true,
-                          showRemoveButton: true,
-                        );
-                      },
+
+                          final recipe = myRecipes[index];
+                          return RecipeCard(
+                            recipe: recipe,
+                            showEditButton: true,
+                            showRemoveButton: true,
+                            onTap:
+                                () => Navigator.pushNamed(
+                                  context,
+                                  '/recipeDetail',
+                                  arguments: recipe,
+                                ),
+                          );
+                        },
+                      ),
                     );
                   },
                 ),

@@ -448,10 +448,14 @@ class RecipeProvider extends ChangeNotifier {
 
       if (response.success && response.data != null) {
         final data = response.data!;
-        _generatedRecipes =
+        final recipes =
             (data['recipes'] as List)
                 .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
                 .toList();
+
+        // Store both the generated recipes and the original set
+        _generatedRecipes = recipes;
+
         _currentPage = data['pagination']['page'];
         _totalPages = data['pagination']['totalPages'];
         _hasNextPage = data['pagination']['hasNextPage'];

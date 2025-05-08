@@ -4,6 +4,7 @@ import 'package:recipease/components/custom_app_bar.dart';
 import '../providers/recipe_provider.dart';
 import '../components/recipe_card.dart';
 import '../components/floating_home_button.dart';
+import '../models/recipe.dart';
 
 class DiscoverRecipesScreen extends StatefulWidget {
   const DiscoverRecipesScreen({super.key});
@@ -39,7 +40,8 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
   @override
   void initState() {
     super.initState();
-    _searchRecipes();
+    // Load recipes first
+    _loadRecipes();
   }
 
   @override
@@ -48,13 +50,39 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
     super.dispose();
   }
 
-  void _searchRecipes() {
+  // Load recipes from external API
+  Future<void> _loadRecipes() async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    recipeProvider.searchExternalRecipes(
-      query: _searchQuery.isEmpty ? null : _searchQuery,
-      difficulty: _selectedDifficulty == 'All' ? null : _selectedDifficulty,
-      tag: _selectedTag == 'All' ? null : _selectedTag,
-    );
+    await recipeProvider.searchExternalRecipes();
+  }
+
+  // Filter recipes locally using the same approach as MyRecipesScreen
+  List<Recipe> _filterRecipes(List<Recipe> recipes) {
+    return recipes.where((recipe) {
+      final matchesSearch =
+          _searchQuery.isEmpty ||
+          recipe.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          recipe.description.toLowerCase().contains(_searchQuery.toLowerCase());
+
+      final matchesDifficulty =
+          _selectedDifficulty == 'All' ||
+          recipe.difficulty == _selectedDifficulty;
+
+      final matchesTag =
+          _selectedTag == 'All' || recipe.tags.contains(_selectedTag);
+
+      return matchesSearch && matchesDifficulty && matchesTag;
+    }).toList();
+  }
+
+  // Reset all filters and restore original recipes
+  void _resetFilters() {
+    setState(() {
+      _searchController.clear();
+      _searchQuery = '';
+      _selectedDifficulty = 'All';
+      _selectedTag = 'All';
+    });
   }
 
   @override
@@ -84,14 +112,12 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
                                   onPressed: () {
                                     _searchController.clear();
                                     setState(() => _searchQuery = '');
-                                    _searchRecipes();
                                   },
                                 )
                                 : null,
                       ),
                       onChanged: (value) {
                         setState(() => _searchQuery = value);
-                        _searchRecipes();
                       },
                     ),
                     const SizedBox(height: 16),
@@ -112,11 +138,21 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
                                   setState(
                                     () => _selectedDifficulty = difficulty,
                                   );
-                                  _searchRecipes();
                                 },
                               ),
                             ),
                           ),
+                          if (_selectedDifficulty != 'All' ||
+                              _selectedTag != 'All' ||
+                              _searchQuery.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: TextButton.icon(
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Reset Filters'),
+                                onPressed: _resetFilters,
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -136,7 +172,6 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
                                 selected: _selectedTag == tag,
                                 onSelected: (selected) {
                                   setState(() => _selectedTag = tag);
-                                  _searchRecipes();
                                 },
                               ),
                             ),
@@ -198,6 +233,55 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
                       );
                     }
 
+                    // Apply local filtering
+                    final filteredRecipes = _filterRecipes(recipes);
+
+                    if (filteredRecipes.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.search_off,
+                              size: 64,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.5),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No recipes found with current filters',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Try adjusting your search or filters',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.7),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Reset Filters'),
+                              onPressed: () {
+                                setState(() {
+                                  _searchController.clear();
+                                  _searchQuery = '';
+                                  _selectedDifficulty = 'All';
+                                  _selectedTag = 'All';
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
                     return GridView.builder(
                       padding: const EdgeInsets.all(16),
                       gridDelegate:
@@ -207,9 +291,9 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16,
                           ),
-                      itemCount: recipes.length,
+                      itemCount: filteredRecipes.length,
                       itemBuilder: (context, index) {
-                        final recipe = recipes[index];
+                        final recipe = filteredRecipes[index];
                         return RecipeCard(
                           recipe: recipe,
                           showSaveButton: true,
