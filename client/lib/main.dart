@@ -15,7 +15,7 @@ import 'package:recipease/screens/recipe_detail_screen.dart';
 import 'package:recipease/screens/settings_screen.dart';
 import 'package:recipease/screens/auth/login_screen.dart';
 import 'package:recipease/screens/auth/register_screen.dart';
-import 'package:recipease/screens/recipe_collection_screen.dart';
+import 'package:recipease/screens/recipe_collections_screen.dart';
 import 'package:recipease/screens/collection_detail_screen.dart';
 import 'package:recipease/theme/theme.dart';
 import 'package:recipease/providers/auth_provider.dart';

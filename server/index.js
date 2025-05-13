@@ -17,10 +17,10 @@ require("./config/firebase").initFirebase();
 
 // Import routes
 const aiRoutes = require("./routes/generatedRecipes");
-const userRecipesRoutes = require("./routes/userRecipes");
+const discoverRoutes = require("./routes/discover");
 const userRoutes = require("./routes/users");
 const authRoutes = require("./middleware/auth");
-const recipeRoutes = require("./routes/recipes");
+const collectionRoutes = require("./routes/collections");
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -40,10 +40,10 @@ if (process.env.NODE_ENV !== "production") {
 
 // API Routes with clean naming structure
 app.use("/api/ai/recipes", aiRoutes);
-app.use("/api/user/recipes", userRecipesRoutes);
+app.use("/api/discover", discoverRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/api/recipes", recipeRoutes);
+app.use("/api/collections", collectionRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -59,13 +59,13 @@ app.use((req, res) => {
 app.use(errorHandler.globalHandler);
 
 // Schedule a daily job to fetch recipes from Spoonacular
-cron.schedule("0 19 * * *", async () => {
+cron.schedule("0 20 * * *", async () => {
 	console.log("Running scheduled recipe fetch job...");
 	try {
 		const db = admin.firestore();
 		const recipesRef = db.collection("recipes");
 		let offset = 0;
-		const limit = 10; // Fetch 10 recipes per batch
+		const limit = 100; // Fetch 100 recipes per batch
 		let totalFetched = 0;
 		const maxPoints = 150; // Daily quota limit
 		let pointsUsed = 0;
@@ -104,8 +104,7 @@ cron.schedule("0 19 * * *", async () => {
 					(step) => step.step || ""
 				),
 
-				cookingTime:
-					recipe.cookingMinutes || recipe.preparationMinutes || "Not Specified",
+				cookingTime: recipe.readyInMinutes || "Not Specified",
 				servings: recipe.servings || 1,
 				difficulty:
 					recipe.readyInMinutes <= 30

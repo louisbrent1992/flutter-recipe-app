@@ -367,6 +367,10 @@ class RecipeProvider extends ChangeNotifier {
         }
 
         notifyListeners();
+
+        // Refresh the favorites from the server to ensure collections are updated
+        await loadFavoriteRecipes();
+
         return true;
       } else {
         _setError(response.message ?? 'Failed to update favorite status');

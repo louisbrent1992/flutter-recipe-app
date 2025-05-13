@@ -133,14 +133,14 @@ class _HomeScreenState extends State<HomeScreen>
                         children: [
                           Text(
                             'Welcome,',
-                            style: theme.textTheme.titleMedium?.copyWith(
+                            style: theme.textTheme.titleLarge?.copyWith(
                               color: colorScheme.primary,
                               fontWeight: FontWeight.normal,
                             ),
                           ),
                           Text(
                             username,
-                            style: theme.textTheme.headlineMedium?.copyWith(
+                            style: theme.textTheme.headlineLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               letterSpacing: -0.5,
                             ),
@@ -164,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen>
                       icon: Icons.restaurant_menu,
                       onTap: () => Navigator.pushNamed(context, '/myRecipes'),
                       delay: 0.1,
-                      description: 'Access your saved recipes',
+                      description: 'Access your saved recipes 🍴',
                       color: Colors.orange.withValues(alpha: 0.2),
                       iconColor: Colors.orange,
                     ),
@@ -175,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen>
                       icon: Icons.collections_bookmark_rounded,
                       onTap: () => Navigator.pushNamed(context, '/collections'),
                       delay: 0.15,
-                      description: 'Organize recipes into categories',
+                      description: 'Organize recipes into categories 📂',
                       color: Colors.purple.withValues(alpha: 0.2),
                       iconColor: Colors.purple,
                     ),
@@ -186,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen>
                       icon: Icons.explore,
                       onTap: () => Navigator.pushNamed(context, '/discover'),
                       delay: 0.2,
-                      description: 'Find new recipes to try',
+                      description: 'Find new recipes to try 🔍',
                       color: Colors.blue.withValues(alpha: 0.2),
                       iconColor: Colors.blue,
                     ),
@@ -197,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen>
                       icon: Icons.favorite,
                       onTap: () => Navigator.pushNamed(context, '/favorites'),
                       delay: 0.3,
-                      description: 'Browse your favorite recipes',
+                      description: 'Browse your favorite recipes 💖',
                       color: Colors.red.withValues(alpha: 0.2),
                       iconColor: Colors.red,
                     ),
@@ -208,7 +208,8 @@ class _HomeScreenState extends State<HomeScreen>
                       icon: Icons.add_circle_outline,
                       onTap: () => Navigator.pushNamed(context, '/import'),
                       delay: 0.4,
-                      description: 'Import recipes from websites',
+                      description:
+                          'Import recipes from social media and websites 🔗',
                       color: Colors.green.withValues(alpha: 0.2),
                       iconColor: Colors.green,
                     ),
@@ -219,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen>
                       icon: Icons.auto_awesome,
                       onTap: () => Navigator.pushNamed(context, '/generate'),
                       delay: 0.5,
-                      description: 'Create new recipes with AI',
+                      description: 'Create new recipes using AI 🤖',
                       color: Colors.purple.withValues(alpha: 0.2),
                       iconColor: Colors.purple,
                     ),
@@ -292,9 +293,8 @@ class _HomeScreenState extends State<HomeScreen>
                     children: [
                       Text(
                         title,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
                       Text(

@@ -33,6 +33,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
     _collection = widget.collection;
     _scrollController = ScrollController();
     _searchController = TextEditingController();
+    _filteredRecipes = _collection.recipes;
 
     _animationController = AnimationController(
       vsync: this,

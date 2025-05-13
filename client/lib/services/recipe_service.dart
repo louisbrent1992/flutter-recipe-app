@@ -87,7 +87,7 @@ class RecipeService {
     int limit = 10,
   }) async {
     final response = await _api.authenticatedGet<Map<String, dynamic>>(
-      'user/recipes?page=$page&limit=$limit',
+      'users/recipes?page=$page&limit=$limit',
     );
 
     if (response.success && response.data != null) {
@@ -111,7 +111,7 @@ class RecipeService {
   /// Get a specific user recipe
   static Future<ApiResponse<Recipe>> getUserRecipe(String id) async {
     final response = await _api.authenticatedGet<Map<String, dynamic>>(
-      'user/recipes/$id',
+      'users/recipes/$id',
     );
 
     if (response.success && response.data != null) {
@@ -127,7 +127,7 @@ class RecipeService {
   /// Create a new user recipe
   static Future<ApiResponse<Recipe>> createUserRecipe(Recipe recipe) async {
     final response = await _api.authenticatedPost<Map<String, dynamic>>(
-      'user/recipes',
+      'users/recipes',
       body: recipe.toJson(),
     );
 
@@ -147,7 +147,7 @@ class RecipeService {
   /// Update an existing user recipe
   static Future<ApiResponse<Recipe>> updateUserRecipe(Recipe recipe) async {
     final response = await _api.authenticatedPut<Map<String, dynamic>>(
-      'user/recipes/${recipe.id}',
+      'users/recipes/${recipe.id}',
       body: recipe.toJson(),
     );
 
@@ -166,7 +166,7 @@ class RecipeService {
 
   /// Delete a user recipe
   static Future<ApiResponse<bool>> deleteUserRecipe(String id) async {
-    final response = await _api.authenticatedDelete('user/recipes/$id');
+    final response = await _api.authenticatedDelete('users/recipes/$id');
 
     if (response.success) {
       return ApiResponse.success(true, message: 'Recipe deleted successfully');
@@ -184,8 +184,8 @@ class RecipeService {
     bool isFavorite,
   ) async {
     final response = await _api.authenticatedPut(
-      'user/recipes/$id/favorite',
-      body: {'isFavorite': isFavorite},
+      'users/favorites',
+      body: {'recipeId': id, 'isFavorite': isFavorite},
     );
 
     if (response.success) {
@@ -206,24 +206,65 @@ class RecipeService {
 
   /// Get all favorite recipes
   static Future<ApiResponse<List<Recipe>>> getFavoriteRecipes() async {
-    final response = await _api.authenticatedGet<List<dynamic>>(
-      'user/recipes/favorites',
-    );
+    try {
+      final response = await _api.authenticatedGet<Map<String, dynamic>>(
+        'users/favorites',
+      );
 
-    print('favorites: ${response.data}');
+      if (response.success && response.data != null) {
+        final favoritesData = response.data!;
+        if (favoritesData['recipes'] != null) {
+          final favorites =
+              (favoritesData['recipes'] as List)
+                  .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
+                  .toList();
+          return ApiResponse.success(favorites);
+        }
+        return ApiResponse.success([]);
+      }
 
-    if (response.success && response.data != null) {
-      final recipes =
-          (response.data as List)
-              .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
-              .toList();
-      return ApiResponse.success(recipes);
+      return ApiResponse.error(
+        response.message ?? 'Failed to get favorite recipes',
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      return ApiResponse.error(
+        'Error fetching favorite recipes: ${e.toString()}',
+      );
     }
+  }
 
-    return ApiResponse.error(
-      response.message ?? 'Failed to get favorite recipes',
-      statusCode: response.statusCode,
-    );
+  /// Get recipes added in the last 7 days
+  static Future<ApiResponse<List<Recipe>>> getRecentlyAddedRecipes() async {
+    try {
+      // Get all user recipes first
+      final response = await getUserRecipes(
+        limit: 20,
+      ); // Use a larger limit to get most recipes
+
+      if (response.success && response.data != null) {
+        final recipesList = response.data!['recipes'] as List<Recipe>;
+        final now = DateTime.now();
+        final oneWeekAgo = now.subtract(const Duration(days: 7));
+
+        // Filter recipes created in the last 7 days
+        final recentRecipes =
+            recipesList
+                .where((recipe) => recipe.createdAt.isAfter(oneWeekAgo))
+                .toList();
+
+        return ApiResponse.success(recentRecipes);
+      }
+
+      return ApiResponse.error(
+        response.message ?? 'Failed to get recently added recipes',
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      return ApiResponse.error(
+        'Error fetching recently added recipes: ${e.toString()}',
+      );
+    }
   }
 
   /// Delete all user recipes
@@ -282,7 +323,7 @@ class RecipeService {
     };
 
     final response = await _api.publicGet<Map<String, dynamic>>(
-      'recipes/search',
+      'discover/search',
       queryParams: queryParams,
     );
 

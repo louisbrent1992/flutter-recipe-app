@@ -40,8 +40,10 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
   @override
   void initState() {
     super.initState();
-    // Load recipes first
-    _loadRecipes();
+    // Load recipes after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadRecipes();
+    });
   }
 
   @override

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:recipease/components/recipe_info_row.dart';
 import 'package:recipease/components/html_description.dart';
 import '../models/recipe.dart';
-import '../providers/recipe_provider.dart';
 import '../components/custom_app_bar.dart';
 import 'package:url_launcher/link.dart';
 import '../providers/user_profile_provider.dart';
@@ -153,7 +151,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       Text(
                         textAlign: TextAlign.center,
                         recipe.title,
-                        style: Theme.of(context).textTheme.headlineMedium,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       Wrap(
@@ -209,12 +208,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         htmlContent: recipe.description,
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
-                      const SizedBox(height: 16),
+
                       _buildSourceLink(),
                       const SizedBox(height: 24),
                       Text(
                         'Ingredients',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
                       ...recipe.ingredients.map(
@@ -237,7 +236,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       const SizedBox(height: 24),
                       Text(
                         'Instructions',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
                       ...recipe.instructions.asMap().entries.map(
@@ -281,7 +280,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         const SizedBox(height: 24),
                         Text(
                           'Tags',
-                          style: Theme.of(context).textTheme.titleLarge,
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
                         Wrap(

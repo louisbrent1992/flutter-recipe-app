@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/floating_add_button.dart';
+import 'package:recipease/components/floating_home_button.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
 
@@ -8,10 +9,11 @@ class RecipeCollectionScreen extends StatefulWidget {
   const RecipeCollectionScreen({super.key});
 
   @override
-  State<RecipeCollectionScreen> createState() => _RecipeCollectionScreenState();
+  State<RecipeCollectionScreen> createState() =>
+      _RecipeCollectionsScreenState();
 }
 
-class _RecipeCollectionScreenState extends State<RecipeCollectionScreen>
+class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   final TextEditingController _categoryNameController = TextEditingController();
@@ -148,6 +150,7 @@ class _RecipeCollectionScreenState extends State<RecipeCollectionScreen>
             content: Text(
               'Are you sure you want to delete the collection "$name"? This action cannot be undone.',
             ),
+            contentTextStyle: Theme.of(context).textTheme.bodySmall,
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -273,6 +276,7 @@ class _RecipeCollectionScreenState extends State<RecipeCollectionScreen>
 
             // Add category FAB
             FloatingAddButton(onPressed: _showAddCategoryDialog),
+            const FloatingHomeButton(),
           ],
         ),
       ),
@@ -468,10 +472,7 @@ class _RecipeCollectionScreenState extends State<RecipeCollectionScreen>
               const Spacer(),
               Text(
                 collection.name,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.titleMedium,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

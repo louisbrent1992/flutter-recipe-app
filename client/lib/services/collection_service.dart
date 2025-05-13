@@ -1,15 +1,15 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/recipe.dart';
 import '../models/recipe_collection.dart';
+import '../services/recipe_service.dart';
+import '../services/api_client.dart';
 
 class CollectionService {
   static final logger = Logger();
-  static const String baseUrl = 'http://localhost:3001';
-  static const String _collectionsBoxName = 'collections';
-  static const String _collectionsKey = 'user_recipe_collections';
+  static final ApiClient _api = ApiClient();
+  static final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Default collections that all users start with
   static final List<RecipeCollection> _defaultCollections = [
@@ -24,22 +24,56 @@ class CollectionService {
   // Get all collections
   static Future<List<RecipeCollection>> getCollections() async {
     try {
-      // In a full implementation, this would call the API
-      // For now, we'll use Hive to persist collections locally
-      final box = await Hive.openBox(_collectionsBoxName);
-      final collectionsJson = box.get(_collectionsKey) as List<dynamic>?;
-
-      if (collectionsJson == null || collectionsJson.isEmpty) {
-        // No collections found, return default collections
-        await _saveCollections(_defaultCollections);
+      final user = _auth.currentUser;
+      if (user == null) {
+        logger.e('No authenticated user found');
         return _defaultCollections;
       }
 
-      // Convert JSON strings to RecipeCollection objects
-      return collectionsJson
-          .map((json) => RecipeCollection.fromJson(jsonDecode(json)))
-          .cast<RecipeCollection>()
-          .toList();
+      final response = await _api.authenticatedGet<List<dynamic>>(
+        'collections',
+      );
+
+      List<RecipeCollection> collections;
+      if (response.success && response.data != null) {
+        if (response.data!.isEmpty) {
+          // No collections found, create default collections
+          collections = _defaultCollections;
+          await _saveCollections(collections);
+        } else {
+          collections =
+              response.data!
+                  .map((json) => RecipeCollection.fromJson(json))
+                  .toList();
+
+          // Ensure special collections exist
+          final hasFavorites = collections.any((c) => c.name == 'Favorites');
+          final hasRecentlyAdded = collections.any(
+            (c) => c.name == 'Recently Added',
+          );
+
+          if (!hasFavorites) {
+            collections.add(RecipeCollection.withName('Favorites'));
+          }
+          if (!hasRecentlyAdded) {
+            collections.add(RecipeCollection.withName('Recently Added'));
+          }
+
+          // Save if we added any missing collections
+          if (!hasFavorites || !hasRecentlyAdded) {
+            await _saveCollections(collections);
+          }
+        }
+      } else {
+        logger.e('Error getting collections: ${response.message}');
+        collections = _defaultCollections;
+        await _saveCollections(collections);
+      }
+
+      // Update the recently added collection with current data
+      await _updateRecentlyAddedCollection(collections);
+
+      return collections;
     } catch (e) {
       logger.e('Error getting collections: $e');
       return _defaultCollections;
@@ -49,8 +83,22 @@ class CollectionService {
   // Get a specific collection by ID
   static Future<RecipeCollection?> getCollection(String id) async {
     try {
-      final collections = await getCollections();
-      return collections.firstWhere((collection) => collection.id == id);
+      final user = _auth.currentUser;
+      if (user == null) {
+        logger.e('No authenticated user found');
+        return null;
+      }
+
+      final response = await _api.authenticatedGet<Map<String, dynamic>>(
+        'collections/$id',
+      );
+
+      if (response.success && response.data != null) {
+        return RecipeCollection.fromJson(response.data!);
+      } else {
+        logger.e('Error getting collection: ${response.message}');
+        return null;
+      }
     } catch (e) {
       logger.e('Error getting collection: $e');
       return null;
@@ -64,25 +112,36 @@ class CollectionService {
     IconData? icon,
   }) async {
     try {
-      final collections = await getCollections();
-
-      // Check if collection with this name already exists
-      if (collections.any((c) => c.name.toLowerCase() == name.toLowerCase())) {
-        throw Exception('A collection with this name already exists');
+      logger.i('Creating collection: $name');
+      final user = _auth.currentUser;
+      if (user == null) {
+        logger.e('No authenticated user found');
+        return null;
       }
 
-      // Create new collection
-      final newCollection = RecipeCollection.withName(
-        name,
-        color: color,
-        icon: icon,
+      // Create a map with only non-null values
+      final Map<String, dynamic> body = {'name': name};
+      if (color != null) {
+        body['color'] = color.toARGB32();
+      }
+      if (icon != null) {
+        body['icon'] = {
+          'codePoint': icon.codePoint,
+          'fontFamily': icon.fontFamily,
+          'fontPackage': icon.fontPackage,
+        };
+      }
+
+      final response = await _api.authenticatedPost<Map<String, dynamic>>(
+        'collections',
+        body: body,
       );
 
-      // Add to existing collections and save
-      collections.add(newCollection);
-      await _saveCollections(collections);
-
-      return newCollection;
+      if (response.success && response.data != null) {
+        return RecipeCollection.fromJson(response.data!);
+      } else {
+        throw Exception(response.message ?? 'Failed to create collection');
+      }
     } catch (e) {
       logger.e('Error creating collection: $e');
       return null;
@@ -97,35 +156,35 @@ class CollectionService {
     IconData? icon,
   }) async {
     try {
-      final collections = await getCollections();
-      final index = collections.indexWhere((c) => c.id == id);
-
-      if (index == -1) {
-        throw Exception('Collection not found');
+      logger.i('Updating collection: $id');
+      final user = _auth.currentUser;
+      if (user == null) {
+        logger.e('No authenticated user found');
+        return null;
       }
 
-      // If updating name, check for duplicates
-      if (name != null) {
-        final duplicateName = collections.any(
-          (c) => c.id != id && c.name.toLowerCase() == name.toLowerCase(),
-        );
-        if (duplicateName) {
-          throw Exception('A collection with this name already exists');
-        }
+      // Create a map with only non-null values
+      final Map<String, dynamic> body = {};
+      if (name != null) body['name'] = name;
+      if (color != null) body['color'] = color.toARGB32();
+      if (icon != null) {
+        body['icon'] = {
+          'codePoint': icon.codePoint,
+          'fontFamily': icon.fontFamily,
+          'fontPackage': icon.fontPackage,
+        };
       }
 
-      // Update collection
-      final updatedCollection = collections[index].copyWith(
-        name: name,
-        color: color,
-        icon: icon,
+      final response = await _api.authenticatedPut<Map<String, dynamic>>(
+        'collections/$id',
+        body: body,
       );
 
-      // Replace old collection with updated one
-      collections[index] = updatedCollection;
-      await _saveCollections(collections);
-
-      return updatedCollection;
+      if (response.success && response.data != null) {
+        return RecipeCollection.fromJson(response.data!);
+      } else {
+        throw Exception(response.message ?? 'Failed to update collection');
+      }
     } catch (e) {
       logger.e('Error updating collection: $e');
       return null;
@@ -135,15 +194,14 @@ class CollectionService {
   // Delete a collection
   static Future<bool> deleteCollection(String id) async {
     try {
-      final collections = await getCollections();
-      final filteredCollections = collections.where((c) => c.id != id).toList();
-
-      if (collections.length == filteredCollections.length) {
-        return false; // Collection not found
+      final user = _auth.currentUser;
+      if (user == null) {
+        logger.e('No authenticated user found');
+        return false;
       }
 
-      await _saveCollections(filteredCollections);
-      return true;
+      final response = await _api.authenticatedDelete('collections/$id');
+      return response.success;
     } catch (e) {
       logger.e('Error deleting collection: $e');
       return false;
@@ -155,32 +213,39 @@ class CollectionService {
     String collectionId,
     Recipe recipe,
   ) async {
-    print("Adding recipe to collection: $collectionId");
     try {
-      final collections = await getCollections();
-      final index = collections.indexWhere((c) => c.id == collectionId);
-
-      if (index == -1) {
-        print("Collection not found: $collectionId");
-        return false; // Collection not found
+      final user = _auth.currentUser;
+      if (user == null) {
+        logger.e('No authenticated user found');
+        return false;
       }
 
-      // Add recipe to collection
-      print(
-        "Current recipes in collection: ${collections[index].recipes.length}",
-      );
-      final updatedCollection = collections[index].addRecipe(recipe);
-      collections[index] = updatedCollection;
-      print(
-        "Updated recipes in collection: ${collections[index].recipes.length}",
+      // Get all collections to find the favorites collection
+      final collections = await getCollections();
+      final favoritesCollection = collections.firstWhere(
+        (c) => c.name == 'Favorites',
+        orElse: () => RecipeCollection.withName('Favorites'),
       );
 
-      await _saveCollections(collections);
-      print("Collections saved successfully");
-      return true;
+      // If adding to favorites collection, update the recipe's favorite status
+      if (collectionId == favoritesCollection.id) {
+        await RecipeService.toggleFavoriteStatus(recipe.id, true);
+      }
+
+      final response = await _api.authenticatedPost(
+        'collections/$collectionId/recipes',
+        body: {'recipe': recipe.toJson()},
+      );
+
+      if (response.success) {
+        return true;
+      } else {
+        throw Exception(
+          response.message ?? 'Failed to add recipe to collection',
+        );
+      }
     } catch (e) {
       logger.e('Error adding recipe to collection: $e');
-      print("Error adding recipe to collection: $e");
       return false;
     }
   }
@@ -191,65 +256,52 @@ class CollectionService {
     String recipeId,
   ) async {
     try {
-      final collections = await getCollections();
-      final index = collections.indexWhere((c) => c.id == collectionId);
-
-      if (index == -1) {
-        return false; // Collection not found
+      final user = _auth.currentUser;
+      if (user == null) {
+        logger.e('No authenticated user found');
+        return false;
       }
 
-      // Remove recipe from collection
-      final updatedCollection = collections[index].removeRecipe(recipeId);
-      collections[index] = updatedCollection;
+      // Get all collections to find the favorites collection
+      final collections = await getCollections();
+      final favoritesCollection = collections.firstWhere(
+        (c) => c.name == 'Favorites',
+        orElse: () => RecipeCollection.withName('Favorites'),
+      );
 
-      await _saveCollections(collections);
-      return true;
+      // If removing from favorites collection, update the recipe's favorite status
+      if (collectionId == favoritesCollection.id) {
+        await RecipeService.toggleFavoriteStatus(recipeId, false);
+      }
+
+      final response = await _api.authenticatedDelete(
+        'collections/$collectionId/recipes/$recipeId',
+      );
+
+      return response.success;
     } catch (e) {
       logger.e('Error removing recipe from collection: $e');
       return false;
     }
   }
 
-  // Helper method to save collections to Hive
+  // Helper method to save collections to server
   static Future<void> _saveCollections(
     List<RecipeCollection> collections,
   ) async {
-    print("Saving ${collections.length} collections");
     try {
-      final box = await Hive.openBox(_collectionsBoxName);
-      final collectionsJson =
-          collections
-              .map((collection) => jsonEncode(collection.toJson()))
-              .toList();
-
-      // Print the first collection's recipes count before saving
-      if (collections.isNotEmpty) {
-        print(
-          "First collection (${collections[0].name}) has ${collections[0].recipes.length} recipes",
-        );
+      final user = _auth.currentUser;
+      if (user == null) {
+        logger.e('No authenticated user found');
+        return;
       }
 
-      await box.put(_collectionsKey, collectionsJson);
-      print("Collections saved to Hive");
-
-      // Verify the save by reading back
-      final savedJson = box.get(_collectionsKey) as List<dynamic>?;
-      if (savedJson != null) {
-        final savedCollections =
-            savedJson
-                .map((json) => RecipeCollection.fromJson(jsonDecode(json)))
-                .cast<RecipeCollection>()
-                .toList();
-
-        if (collections.isNotEmpty && savedCollections.isNotEmpty) {
-          print(
-            "After save, first collection has ${savedCollections[0].recipes.length} recipes",
-          );
-        }
+      // Create each collection
+      for (var collection in collections) {
+        await _api.authenticatedPost('collections', body: collection.toJson());
       }
     } catch (e) {
       logger.e('Error saving collections: $e');
-      print('Error saving collections: $e');
       rethrow;
     }
   }
@@ -261,6 +313,114 @@ class CollectionService {
       return true;
     } catch (e) {
       logger.e('Error resetting collections: $e');
+      return false;
+    }
+  }
+
+  // Update the "Recently Added" collection with recipes from the last 7 days
+  static Future<void> _updateRecentlyAddedCollection(
+    List<RecipeCollection> collections,
+  ) async {
+    try {
+      // Find the "Recently Added" collection
+      final recentlyAddedIndex = collections.indexWhere(
+        (collection) => collection.name == 'Recently Added',
+      );
+
+      if (recentlyAddedIndex == -1) {
+        // If not found, create it
+        collections.add(RecipeCollection.withName('Recently Added'));
+        return;
+      }
+
+      // Get recipes from last 7 days
+      final recentRecipesResponse =
+          await RecipeService.getRecentlyAddedRecipes();
+
+      if (recentRecipesResponse.success && recentRecipesResponse.data != null) {
+        final recentRecipes = recentRecipesResponse.data!;
+
+        // Start with an empty collection to properly replace all recipes
+        var updatedCollection = collections[recentlyAddedIndex].copyWith(
+          recipes: [],
+        );
+
+        // Add all recently added recipes to the collection
+        for (final recipe in recentRecipes) {
+          updatedCollection = updatedCollection.addRecipe(recipe);
+        }
+
+        // Update the collection in the list
+        collections[recentlyAddedIndex] = updatedCollection;
+
+        // Update the collection on the server
+        await updateCollection(
+          updatedCollection.id,
+          name: updatedCollection.name,
+        );
+      } else {
+        // Log the error but don't throw - just keep the existing collection
+        logger.e(
+          'Error getting recently added recipes: ${recentRecipesResponse.message}',
+        );
+      }
+    } catch (e) {
+      logger.e('Error updating recently added collection: $e');
+      // Continue silently - this is a convenience feature
+    }
+  }
+
+  // Update a collection directly with the given recipes
+  static Future<bool> updateCollectionRecipes(
+    String collectionName,
+    List<Recipe> recipes,
+  ) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        logger.e('No authenticated user found');
+        return false;
+      }
+
+      // Get all collections
+      final collections = await getCollections();
+
+      // Find the collection by name
+      final index = collections.indexWhere((c) => c.name == collectionName);
+
+      if (index == -1) {
+        // If not found, create a new collection with these recipes
+        final newCollection = RecipeCollection.withName(collectionName);
+
+        // Add all recipes
+        var updatedCollection = newCollection;
+        for (final recipe in recipes) {
+          updatedCollection = updatedCollection.addRecipe(recipe);
+        }
+
+        // Add to collections and save
+        collections.add(updatedCollection);
+        await _saveCollections(collections);
+        return true;
+      }
+
+      // Update existing collection - replace all recipes
+      var updatedCollection = collections[index].copyWith(recipes: []);
+
+      // Add all recipes
+      for (final recipe in recipes) {
+        updatedCollection = updatedCollection.addRecipe(recipe);
+      }
+
+      // Update the collection
+      final result = await updateCollection(
+        updatedCollection.id,
+        name: updatedCollection.name,
+      );
+
+      return result != null;
+    } catch (e) {
+      logger.e('Error updating collection recipes: $e');
       return false;
     }
   }

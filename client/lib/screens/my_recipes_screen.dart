@@ -28,20 +28,21 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
   @override
   void initState() {
     super.initState();
-    // Load recipes when screen initializes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      if (authService.user != null) {
-        Provider.of<RecipeProvider>(context, listen: false).loadUserRecipes();
-      }
-    });
-
-    // Add scroll listener for infinite scroll
     _scrollController.addListener(_scrollListener);
+    // Initial load of recipes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final recipeProvider = Provider.of<RecipeProvider>(
+        context,
+        listen: false,
+      );
+      recipeProvider.loadUserRecipes();
+      _updateAvailableTags(recipeProvider.userRecipes);
+    });
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -183,11 +184,6 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                         recipeProvider.userRecipes.isEmpty) {
                       return const Center(child: CircularProgressIndicator());
                     }
-
-                    // Update tags when recipes change
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      _updateAvailableTags(recipeProvider.userRecipes);
-                    });
 
                     final List<Recipe> myRecipes = _filterRecipes(
                       recipeProvider.userRecipes,

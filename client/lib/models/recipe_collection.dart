@@ -45,9 +45,12 @@ class RecipeCollection {
               ?.map((recipeJson) => Recipe.fromJson(recipeJson))
               .toList() ??
           [],
-      color: Color(json['color'] as int),
+      color:
+          json['color'] != null
+              ? Color(json['color'] as int)
+              : _getDefaultColor(json['name'] as String),
       icon: _createIconData(
-        json['iconCodePoint'] as int,
+        json['iconCodePoint'] as int? ?? 0xe318, // Default to restaurant icon
         json['iconFontFamily'] as String?,
         json['iconFontPackage'] as String?,
       ),

@@ -53,22 +53,20 @@ class _NavDrawerState extends State<NavDrawer> {
             ),
             accountName: Text(
               user?.displayName ?? 'Recipe Enthusiast',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSecondary,
-                fontSize: 16,
-              ),
+              style: theme.textTheme.titleLarge,
             ),
             accountEmail: Text(
               user?.email ?? '',
-              style: TextStyle(color: colorScheme.onSecondary),
+              style: theme.textTheme.bodyMedium,
             ),
           ),
           Expanded(
             child: Scrollbar(
               controller: _scrollController,
+
               child: ListView(
                 controller: _scrollController,
+                shrinkWrap: true,
                 padding: EdgeInsets.zero,
                 children: [
                   _buildDrawerItem(

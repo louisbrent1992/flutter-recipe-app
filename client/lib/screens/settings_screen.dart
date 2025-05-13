@@ -440,7 +440,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           const SizedBox(height: 16),
           Text(
             user?.displayName ?? 'Recipe Enthusiast',
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 4),
           Text(

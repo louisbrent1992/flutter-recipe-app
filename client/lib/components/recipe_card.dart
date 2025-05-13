@@ -367,7 +367,7 @@ Shared from Recipe App
     return Card(
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
+      elevation: 4,
       child: InkWell(
         onTap: () {
           Navigator.pushNamed(
@@ -384,21 +384,30 @@ Shared from Recipe App
               children: [
                 AspectRatio(
                   aspectRatio: widget.aspectRatio ?? 16 / 9,
-                  child: CachedNetworkImage(
-                    imageUrl: widget.recipe.imageUrl,
-                    fit: BoxFit.cover,
-                    placeholder:
-                        (context, url) =>
-                            const Center(child: CircularProgressIndicator()),
-                    errorWidget:
-                        (context, url, error) => Container(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          child: Icon(
-                            Icons.restaurant,
-                            size: 48,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
+
+                  child: Container(
+                    padding: const EdgeInsets.all(4.0),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: CachedNetworkImage(
+                        imageUrl: widget.recipe.imageUrl,
+                        fit: BoxFit.cover,
+
+                        placeholder:
+                            (context, url) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                        errorWidget:
+                            (context, url, error) => Container(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                              child: Icon(
+                                Icons.restaurant,
+                                size: 48,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                      ),
+                    ),
                   ),
                 ),
                 Positioned(
@@ -488,7 +497,7 @@ Shared from Recipe App
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   _buildRecipeInfo(),

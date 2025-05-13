@@ -37,7 +37,17 @@ class AppTheme {
         fontSize: 24,
         fontWeight: FontWeight.bold,
       ),
+      headlineMedium: TextStyle(
+        color: secondaryColor,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
       titleLarge: TextStyle(
+        color: Colors.white,
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+      ),
+      titleMedium: TextStyle(
         color: secondaryColor,
         fontSize: 20,
         fontWeight: FontWeight.bold,
@@ -87,15 +97,25 @@ class AppTheme {
         fontSize: 24,
         fontWeight: FontWeight.bold,
       ),
+      headlineMedium: TextStyle(
+        color: Colors.white,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
       titleLarge: TextStyle(
         color: darkSecondaryColor,
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+      ),
+      titleMedium: TextStyle(
+        color: Colors.white,
         fontSize: 20,
         fontWeight: FontWeight.bold,
       ),
       bodyMedium: TextStyle(color: Colors.white, fontSize: 14),
       bodySmall: TextStyle(color: Colors.white, fontSize: 12),
       labelLarge: TextStyle(
-        color: Colors.white,
+        color: darkSecondaryColor,
         fontSize: 16,
         fontWeight: FontWeight.bold,
       ),

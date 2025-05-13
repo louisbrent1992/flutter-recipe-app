@@ -3,6 +3,11 @@ const router = express.Router();
 const axios = require("axios");
 const auth = require("../middleware/auth");
 const admin = require("firebase-admin");
+const { v4: uuidv4 } = require("uuid");
+const { getFirestore } = require("firebase-admin/firestore");
+
+// Get Firestore database instance
+const db = getFirestore();
 
 // Search recipes from Spoonacular API
 router.get("/search", async (req, res) => {
@@ -61,7 +66,5 @@ router.get("/search", async (req, res) => {
 		res.status(500).json({ error: "Failed to search recipes" });
 	}
 });
-
-// ... existing routes ...
 
 module.exports = router;

@@ -176,11 +176,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           const SizedBox(height: 24),
                           Text(
                             'Ingredients:',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           TextField(
@@ -214,11 +210,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           const SizedBox(height: 24),
                           Text(
                             'Dietary Preferences:',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
                           DietaryPreferenceCheckboxList(
                             label: 'Select Preferences',
@@ -228,11 +220,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           const SizedBox(height: 24),
                           Text(
                             'Cuisine Type:',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(
@@ -280,12 +268,10 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                                       value: value,
                                       child: Text(
                                         value,
-                                        style: TextStyle(
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.secondary,
-                                        ),
+                                        style:
+                                            Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium,
                                       ),
                                     );
                                   }).toList(),
@@ -294,11 +280,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           const SizedBox(height: 24),
                           Text(
                             'Cooking Time:',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
                           Slider.adaptive(
                             value: _cookingTime,

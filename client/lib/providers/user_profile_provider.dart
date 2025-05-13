@@ -7,6 +7,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import '../models/recipe.dart';
+import '../services/collection_service.dart';
+import '../models/recipe_collection.dart';
 
 class UserProfileProvider with ChangeNotifier {
   final FirebaseService _firebaseService = FirebaseService();
@@ -269,6 +271,9 @@ class UserProfileProvider with ChangeNotifier {
         _favoriteRecipes.add(recipe);
         notifyListeners();
       }
+
+      // Update Favorites collection in CollectionService
+      await _updateFavoritesCollection();
     } catch (e) {
       _error = e.toString();
       debugPrint('Error adding recipe to favorites: $e');
@@ -289,10 +294,47 @@ class UserProfileProvider with ChangeNotifier {
       // Update UI
       _favoriteRecipes.removeWhere((r) => r.id == recipe.id);
       notifyListeners();
+
+      // Update Favorites collection in CollectionService
+      await _updateFavoritesCollection();
     } catch (e) {
       _error = e.toString();
       debugPrint('Error removing recipe from favorites: $e');
       rethrow;
+    }
+  }
+
+  // Helper method to update the Favorites collection
+  Future<void> _updateFavoritesCollection() async {
+    try {
+      // Get all collections
+      final collections = await CollectionService.getCollections();
+
+      // Find the Favorites collection
+      final favoritesCollection = collections.firstWhere(
+        (collection) => collection.name == 'Favorites',
+        orElse: () => RecipeCollection.withName('Favorites'),
+      );
+
+      // Create a fresh collection with current favorites
+      var updatedCollection = favoritesCollection.copyWith(recipes: []);
+
+      // Add all favorite recipes to the collection
+      for (final recipe in _favoriteRecipes) {
+        updatedCollection = updatedCollection.addRecipe(recipe);
+      }
+
+      // Save the updated collection
+      await CollectionService.updateCollection(
+        updatedCollection.id,
+        name: updatedCollection.name,
+      );
+
+      // Force a refresh of the collection
+      await CollectionService.getCollections();
+    } catch (e) {
+      debugPrint('Error updating favorites collection: $e');
+      // Continue silently as this is just a convenience update
     }
   }
 

@@ -56,7 +56,7 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'No favorite recipes yet',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: Theme.of(context).textTheme.headlineLarge,
                       ),
                       const SizedBox(height: 8),
                       Text(
