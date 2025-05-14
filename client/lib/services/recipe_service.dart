@@ -205,22 +205,17 @@ class RecipeService {
   }
 
   /// Get all favorite recipes
-  static Future<ApiResponse<List<Recipe>>> getFavoriteRecipes() async {
+  static Future<ApiResponse<List<String>>> getFavoriteRecipes() async {
     try {
-      final response = await _api.authenticatedGet<Map<String, dynamic>>(
+      final response = await _api.authenticatedGet<List<dynamic>>(
         'users/favorites',
       );
 
       if (response.success && response.data != null) {
-        final favoritesData = response.data!;
-        if (favoritesData['recipes'] != null) {
-          final favorites =
-              (favoritesData['recipes'] as List)
-                  .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
-                  .toList();
-          return ApiResponse.success(favorites);
-        }
-        return ApiResponse.success([]);
+        // Convert each dynamic element to String
+        final favoriteIds =
+            response.data!.map<String>((id) => id.toString()).toList();
+        return ApiResponse.success(favoriteIds);
       }
 
       return ApiResponse.error(

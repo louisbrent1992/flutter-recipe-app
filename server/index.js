@@ -67,6 +67,7 @@ cron.schedule("0 20 * * *", async () => {
 		let offset = 0;
 		const limit = 100; // Fetch 100 recipes per batch
 		let totalFetched = 0;
+		let totalSaved = 0;
 		const maxPoints = 150; // Daily quota limit
 		let pointsUsed = 0;
 
@@ -121,13 +122,33 @@ cron.schedule("0 20 * * *", async () => {
 				externalId: recipe.id.toString(),
 			}));
 
-			// Save recipes to Firestore
+			// Check which recipes already exist
 			const batch = db.batch();
-			recipes.forEach((recipe) => {
+			const recipesToSave = [];
+
+			// Process recipes in smaller chunks to avoid hitting Firestore limits
+			for (let i = 0; i < recipes.length; i++) {
+				const recipe = recipes[i];
 				const docRef = recipesRef.doc(recipe.id);
-				batch.set(docRef, recipe, { merge: true });
-			});
-			await batch.commit();
+				const doc = await docRef.get();
+
+				if (!doc.exists) {
+					recipesToSave.push(recipe);
+					batch.set(docRef, recipe);
+				} else {
+					// Optionally update certain fields if needed
+					// For now, we're skipping existing recipes
+				}
+
+				// Commit in batches of 20 to avoid potential Firestore limits
+				if (recipesToSave.length >= 20 || i === recipes.length - 1) {
+					if (recipesToSave.length > 0) {
+						await batch.commit();
+						totalSaved += recipesToSave.length;
+					}
+					recipesToSave.length = 0; // Clear the array
+				}
+			}
 
 			totalFetched += recipes.length;
 			pointsUsed += recipes.length; // Assuming 1 point per recipe
@@ -137,7 +158,7 @@ cron.schedule("0 20 * * *", async () => {
 		}
 
 		console.log(
-			`Fetched and saved ${totalFetched} recipes. Points used: ${pointsUsed}`
+			`Fetched ${totalFetched} recipes. Saved ${totalSaved} new recipes. Points used: ${pointsUsed}`
 		);
 	} catch (error) {
 		console.error("Error in scheduled recipe fetch job:", error);

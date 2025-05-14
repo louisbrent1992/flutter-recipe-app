@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/models/recipe.dart';
-import 'package:recipease/providers/auth_provider.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/recipe_card.dart';

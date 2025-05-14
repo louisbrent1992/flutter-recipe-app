@@ -109,6 +109,37 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
+  String _formatCookingTime(String cookingTime) {
+    // If already contains 'hour' or 'minute', it's already formatted
+    if (cookingTime.contains('hour') || cookingTime.contains('minute')) {
+      return cookingTime;
+    }
+
+    // Try to parse as integer
+    int? minutes = int.tryParse(cookingTime);
+    if (minutes != null) {
+      if (minutes >= 60) {
+        int hours = minutes ~/ 60;
+        int remainingMinutes = minutes % 60;
+        if (remainingMinutes == 0) {
+          return '$hours hour${hours > 1 ? 's' : ''}';
+        } else {
+          return '$hours hour${hours > 1 ? 's' : ''} $remainingMinutes min${remainingMinutes > 1 ? 's' : ''}';
+        }
+      } else {
+        return '$minutes minute${minutes > 1 ? 's' : ''}';
+      }
+    }
+
+    // Default case: just append 'minutes' if it's a number-like string
+    if (RegExp(r'^\d+$').hasMatch(cookingTime)) {
+      return '$cookingTime minutes';
+    }
+
+    // If we can't parse it, return as is
+    return cookingTime;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.recipe == null) {
@@ -166,7 +197,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                recipe.cookingTime,
+                                _formatCookingTime(recipe.cookingTime),
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                             ],

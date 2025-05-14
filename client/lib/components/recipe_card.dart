@@ -311,7 +311,7 @@ Shared from Recipe App
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      widget.recipe.cookingTime,
+                      _formatCookingTime(widget.recipe.cookingTime),
                       style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -358,6 +358,37 @@ Shared from Recipe App
         ),
       ),
     );
+  }
+
+  String _formatCookingTime(String cookingTime) {
+    // If already contains 'hour' or 'minute', it's already formatted
+    if (cookingTime.contains('hour') || cookingTime.contains('minute')) {
+      return cookingTime;
+    }
+
+    // Try to parse as integer
+    int? minutes = int.tryParse(cookingTime);
+    if (minutes != null) {
+      if (minutes >= 60) {
+        int hours = minutes ~/ 60;
+        int remainingMinutes = minutes % 60;
+        if (remainingMinutes == 0) {
+          return '$hours hour${hours > 1 ? 's' : ''}';
+        } else {
+          return '$hours hour${hours > 1 ? 's' : ''} $remainingMinutes min${remainingMinutes > 1 ? 's' : ''}';
+        }
+      } else {
+        return '$minutes minute${minutes > 1 ? 's' : ''}';
+      }
+    }
+
+    // Default case: just append 'minutes' if it's a number-like string
+    if (RegExp(r'^\d+$').hasMatch(cookingTime)) {
+      return '$cookingTime minutes';
+    }
+
+    // If we can't parse it, return as is
+    return cookingTime;
   }
 
   @override

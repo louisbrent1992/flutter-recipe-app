@@ -13,10 +13,6 @@ class CollectionService {
 
   // Default collections that all users start with
   static final List<RecipeCollection> _defaultCollections = [
-    RecipeCollection.withName('Breakfast'),
-    RecipeCollection.withName('Lunch'),
-    RecipeCollection.withName('Dinner'),
-    RecipeCollection.withName('Desserts'),
     RecipeCollection.withName('Favorites'),
     RecipeCollection.withName('Recently Added'),
   ];
@@ -72,6 +68,7 @@ class CollectionService {
 
       // Update the recently added collection with current data
       await _updateRecentlyAddedCollection(collections);
+      await _updateFavoritesCollection(collections);
 
       return collections;
     } catch (e) {
@@ -367,6 +364,67 @@ class CollectionService {
     } catch (e) {
       logger.e('Error updating recently added collection: $e');
       // Continue silently - this is a convenience feature
+    }
+  }
+
+  static Future<void> _updateFavoritesCollection(
+    List<RecipeCollection> collections,
+  ) async {
+    try {
+      // Find the "Favorites" collection
+      final favoritesIndex = collections.indexWhere(
+        (collection) => collection.name == 'Favorites',
+      );
+
+      if (favoritesIndex == -1) {
+        // If not found, create it
+        collections.add(RecipeCollection.withName('Favorites'));
+        return;
+      }
+
+      // Get all recipes from the database
+      final allRecipesResponse = await RecipeService.getUserRecipes();
+
+      if (allRecipesResponse.success && allRecipesResponse.data != null) {
+        final allRecipes = allRecipesResponse.data!['recipes'] as List<Recipe>;
+
+        // Get all favorites from the database
+        final favoritesResponse = await RecipeService.getFavoriteRecipes();
+
+        if (favoritesResponse.success && favoritesResponse.data != null) {
+          // Get the list of favorite recipe IDs
+          final favoriteIds = favoritesResponse.data!;
+
+          // Filter all recipes to only include those with IDs in the favorites list
+          final favoriteRecipes =
+              allRecipes
+                  .where((recipe) => favoriteIds.contains(recipe.id))
+                  .toList();
+
+          // Start with an empty collection to properly replace all recipes
+          var updatedCollection = collections[favoritesIndex].copyWith(
+            recipes: [],
+          );
+
+          // Add all favorite recipes to the collection
+          for (final recipe in favoriteRecipes) {
+            updatedCollection = updatedCollection.addRecipe(recipe);
+          }
+
+          // Update the collection in the list
+          collections[favoritesIndex] = updatedCollection;
+
+          // Update the collection on the server
+          await updateCollection(
+            updatedCollection.id,
+            name: updatedCollection.name,
+          );
+        }
+      } else {
+        logger.e('Error getting recipes: ${allRecipesResponse.message}');
+      }
+    } catch (e) {
+      logger.e('Error updating favorites collection: $e');
     }
   }
 

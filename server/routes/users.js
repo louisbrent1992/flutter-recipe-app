@@ -251,6 +251,7 @@ router.get("/favorites", auth, async (req, res) => {
 		if (!favoritesDoc.exists) {
 			return res.json([]);
 		}
+		console.log(favoritesDoc.data().recipes);
 		res.json(favoritesDoc.data().recipes || []);
 	} catch (error) {
 		console.error("Error fetching favorites:", error);

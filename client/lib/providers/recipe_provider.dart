@@ -391,7 +391,14 @@ class RecipeProvider extends ChangeNotifier {
       final response = await RecipeService.getFavoriteRecipes();
 
       if (response.success && response.data != null) {
-        _favoriteRecipes = response.data ?? [];
+        final favoriteIds = response.data ?? <String>[];
+
+        // Filter the user recipes to find those with IDs in the favorites list
+        _favoriteRecipes =
+            _userRecipes
+                .where((recipe) => favoriteIds.contains(recipe.id))
+                .toList();
+
         notifyListeners();
       } else {
         _setError(response.message ?? 'Failed to load favorite recipes');
