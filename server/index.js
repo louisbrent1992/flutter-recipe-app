@@ -59,40 +59,58 @@ app.use((req, res) => {
 app.use(errorHandler.globalHandler);
 
 // Schedule a daily job to fetch recipes from Spoonacular
-cron.schedule("0 20 * * *", async () => {
+cron.schedule("40 20 * * *", async () => {
 	console.log("Running scheduled recipe fetch job...");
 	try {
 		const db = admin.firestore();
 		const recipesRef = db.collection("recipes");
 		let offset = 0;
-		const limit = 100; // Fetch 100 recipes per batch
+		const limit = 100; // Maximum allowed for random recipes endpoint
 		let totalFetched = 0;
 		let totalSaved = 0;
+		let totalPointsUsed = 0;
 		const maxPoints = 150; // Daily quota limit
-		let pointsUsed = 0;
 
-		while (pointsUsed < maxPoints) {
+		while (totalPointsUsed < maxPoints) {
 			const params = {
 				apiKey: process.env.SPOONACULAR_API_KEY,
 				number: limit,
-				offset,
-				addRecipeInformation: true,
-				fillIngredients: true,
 				instructionsRequired: true,
+				fillIngredients: true,
+				addRecipeInformation: true,
 			};
 
+			console.log("Fetching random recipes...");
 			const response = await axios.get(
-				"https://api.spoonacular.com/recipes/complexSearch",
+				"https://api.spoonacular.com/recipes/random",
 				{ params }
 			);
 			if (
 				!response.data ||
-				!response.data.results ||
-				response.data.results.length === 0
+				!response.data.recipes ||
+				response.data.recipes.length === 0
 			)
 				break;
 
-			const recipes = response.data.results.map((recipe) => ({
+			// Extract quota information from headers
+			const pointsUsed = parseInt(response.headers["x-api-quota-used"] || "0");
+			const pointsRemaining = parseInt(
+				response.headers["x-api-quota-left"] || "0"
+			);
+
+			totalPointsUsed += pointsUsed;
+			console.log(
+				`API call used ${pointsUsed} points. ${pointsRemaining} points remaining.`
+			);
+
+			if (totalPointsUsed >= maxPoints || pointsRemaining <= 0) {
+				console.log(
+					`Stopping recipe fetch: Reached quota limit (${totalPointsUsed}/${maxPoints} points used)`
+				);
+				break;
+			}
+
+			const recipes = response.data.recipes.map((recipe) => ({
 				id: recipe.id.toString(),
 				title: recipe.title || "",
 				description: recipe.summary || "",
@@ -104,7 +122,6 @@ cron.schedule("0 20 * * *", async () => {
 				instructions: (recipe.analyzedInstructions?.[0]?.steps || []).map(
 					(step) => step.step || ""
 				),
-
 				cookingTime: recipe.readyInMinutes || "Not Specified",
 				servings: recipe.servings || 1,
 				difficulty:
@@ -123,7 +140,6 @@ cron.schedule("0 20 * * *", async () => {
 			}));
 
 			// Check which recipes already exist
-			const batch = db.batch();
 			const recipesToSave = [];
 
 			// Process recipes in smaller chunks to avoid hitting Firestore limits
@@ -134,31 +150,34 @@ cron.schedule("0 20 * * *", async () => {
 
 				if (!doc.exists) {
 					recipesToSave.push(recipe);
-					batch.set(docRef, recipe);
 				} else {
 					// Optionally update certain fields if needed
 					// For now, we're skipping existing recipes
 				}
-
-				// Commit in batches of 20 to avoid potential Firestore limits
-				if (recipesToSave.length >= 20 || i === recipes.length - 1) {
-					if (recipesToSave.length > 0) {
-						await batch.commit();
-						totalSaved += recipesToSave.length;
-					}
-					recipesToSave.length = 0; // Clear the array
-				}
 			}
 
+			// Save recipes in batches of 20
+			for (let i = 0; i < recipesToSave.length; i += 20) {
+				const batch = db.batch(); // Create a new batch for each group
+				const chunk = recipesToSave.slice(i, i + 20);
+
+				chunk.forEach((recipe) => {
+					const docRef = recipesRef.doc(recipe.id);
+					batch.set(docRef, recipe);
+				});
+
+				await batch.commit();
+			}
+
+			totalSaved += recipesToSave.length;
 			totalFetched += recipes.length;
-			pointsUsed += recipes.length; // Assuming 1 point per recipe
 			offset += limit;
 
-			if (response.data.results.length < limit) break;
+			if (response.data.recipes.length < limit) break;
 		}
 
 		console.log(
-			`Fetched ${totalFetched} recipes. Saved ${totalSaved} new recipes. Points used: ${pointsUsed}`
+			`Fetched ${totalFetched} recipes. Saved ${totalSaved} new recipes. Points used: ${totalPointsUsed}`
 		);
 	} catch (error) {
 		console.error("Error in scheduled recipe fetch job:", error);
