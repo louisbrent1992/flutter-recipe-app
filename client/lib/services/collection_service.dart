@@ -117,17 +117,8 @@ class CollectionService {
       }
 
       // Create a map with only non-null values
-      final Map<String, dynamic> body = {'name': name};
-      if (color != null) {
-        body['color'] = color.toARGB32();
-      }
-      if (icon != null) {
-        body['icon'] = {
-          'codePoint': icon.codePoint,
-          'fontFamily': icon.fontFamily,
-          'fontPackage': icon.fontPackage,
-        };
-      }
+      final Map<String, dynamic> body =
+          RecipeCollection.withName(name).toJson();
 
       final response = await _api.authenticatedPost<Map<String, dynamic>>(
         'collections',

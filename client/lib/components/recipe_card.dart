@@ -443,9 +443,8 @@ Shared from Recipe App
                 ),
                 Positioned(
                   top: 8,
-                  right: 8,
+                  right: 6,
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       if (widget.showEditButton)
                         _buildActionButton(
