@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen>
           height: 40,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: theme.colorScheme.secondary,
+            color: Color(0xFF4B662A),
             boxShadow: [
               BoxShadow(
                 color: theme.colorScheme.secondary.withValues(alpha: 0.2),

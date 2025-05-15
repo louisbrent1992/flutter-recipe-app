@@ -21,7 +21,23 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
   String _searchQuery = '';
   String _selectedDifficulty = 'All';
   String _selectedTag = 'All';
-  final List<String> _availableTags = [];
+  final List<String> _availableTags = [
+    'All',
+    'Breakfast',
+    'Lunch',
+    'Dinner',
+    'Dessert',
+    'Vegetarian',
+    'Vegan',
+    'Gluten-Free',
+    'Quick & Easy',
+    'Healthy',
+    'Comfort Food',
+    'Italian',
+    'Mexican',
+    'Asian',
+    'Mediterranean',
+  ];
   final List<String> _difficulties = ['All', 'Easy', 'Medium', 'Hard'];
 
   @override

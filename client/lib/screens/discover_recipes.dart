@@ -55,7 +55,11 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
   // Load recipes from external API
   Future<void> _loadRecipes() async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    await recipeProvider.searchExternalRecipes();
+    await recipeProvider.searchExternalRecipes(
+      query: _searchQuery.isEmpty ? null : _searchQuery,
+      difficulty: _selectedDifficulty == 'All' ? null : _selectedDifficulty,
+      tag: _selectedTag == 'All' ? null : _selectedTag,
+    );
   }
 
   // Filter recipes locally using the same approach as MyRecipesScreen
@@ -64,14 +68,21 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
       final matchesSearch =
           _searchQuery.isEmpty ||
           recipe.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          recipe.description.toLowerCase().contains(_searchQuery.toLowerCase());
+          recipe.description.toLowerCase().contains(
+            _searchQuery.toLowerCase(),
+          ) ||
+          recipe.ingredients.any(
+            (ingredient) =>
+                ingredient.toLowerCase().contains(_searchQuery.toLowerCase()),
+          );
 
       final matchesDifficulty =
           _selectedDifficulty == 'All' ||
           recipe.difficulty == _selectedDifficulty;
 
       final matchesTag =
-          _selectedTag == 'All' || recipe.tags.contains(_selectedTag);
+          _selectedTag == 'All' ||
+          recipe.tags.contains(_selectedTag.toLowerCase());
 
       return matchesSearch && matchesDifficulty && matchesTag;
     }).toList();
@@ -85,6 +96,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
       _selectedDifficulty = 'All';
       _selectedTag = 'All';
     });
+    _loadRecipes(); // Reload recipes with reset filters
   }
 
   @override
@@ -120,6 +132,12 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
                       ),
                       onChanged: (value) {
                         setState(() => _searchQuery = value);
+                        // Add debounce for search to avoid too many API calls
+                        Future.delayed(const Duration(milliseconds: 500), () {
+                          if (_searchQuery == value) {
+                            _loadRecipes();
+                          }
+                        });
                       },
                     ),
                     const SizedBox(height: 16),
@@ -140,6 +158,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
                                   setState(
                                     () => _selectedDifficulty = difficulty,
                                   );
+                                  _loadRecipes(); // Reload with new filter
                                 },
                               ),
                             ),
@@ -174,6 +193,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen> {
                                 selected: _selectedTag == tag,
                                 onSelected: (selected) {
                                   setState(() => _selectedTag = tag);
+                                  _loadRecipes(); // Reload with new filter
                                 },
                               ),
                             ),
