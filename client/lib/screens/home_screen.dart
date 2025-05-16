@@ -293,7 +293,7 @@ class _HomeScreenState extends State<HomeScreen>
                     children: [
                       Text(
                         title,
-                        style: Theme.of(context).textTheme.titleMedium
+                        style: Theme.of(context).textTheme.headlineMedium
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),

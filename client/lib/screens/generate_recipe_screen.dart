@@ -176,7 +176,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           const SizedBox(height: 24),
                           Text(
                             'Ingredients:',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: Theme.of(context).textTheme.headlineMedium,
                           ),
                           const SizedBox(height: 8),
                           TextField(
@@ -210,7 +210,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           const SizedBox(height: 24),
                           Text(
                             'Dietary Preferences:',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: Theme.of(context).textTheme.headlineMedium,
                           ),
                           DietaryPreferenceCheckboxList(
                             label: 'Select Preferences',
@@ -220,7 +220,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           const SizedBox(height: 24),
                           Text(
                             'Cuisine Type:',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: Theme.of(context).textTheme.headlineMedium,
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(
@@ -280,7 +280,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           const SizedBox(height: 24),
                           Text(
                             'Cooking Time:',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            style: Theme.of(context).textTheme.headlineMedium,
                           ),
                           Slider.adaptive(
                             value: _cookingTime,

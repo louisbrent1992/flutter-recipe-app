@@ -57,7 +57,7 @@ class _NavDrawerState extends State<NavDrawer> {
             ),
             accountEmail: Text(
               user?.email ?? '',
-              style: theme.textTheme.bodyMedium,
+              style: theme.textTheme.titleSmall,
             ),
           ),
           Expanded(

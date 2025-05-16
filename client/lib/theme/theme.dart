@@ -42,14 +42,24 @@ class AppTheme {
         fontSize: 20,
         fontWeight: FontWeight.bold,
       ),
+      headlineSmall: TextStyle(
+        color: secondaryColor,
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+      ),
       titleLarge: TextStyle(
         color: Colors.white,
         fontSize: 24,
         fontWeight: FontWeight.bold,
       ),
       titleMedium: TextStyle(
-        color: secondaryColor,
+        color: Colors.white,
         fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
+      titleSmall: TextStyle(
+        color: Colors.white,
+        fontSize: 16,
         fontWeight: FontWeight.bold,
       ),
       bodyMedium: TextStyle(color: Colors.black, fontSize: 14),

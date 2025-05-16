@@ -217,7 +217,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                             padding: const EdgeInsets.only(bottom: 12),
                             child: Text(
                               'Edit Profile',
-                              style: theme.textTheme.titleMedium?.copyWith(
+                              style: theme.textTheme.headlineMedium?.copyWith(
                                 color: colorScheme.primary,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -227,7 +227,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         _buildAnimatedTextField(
                           controller: _nameController,
                           enabled: _isEditing,
-                          label: 'Display Name',
+                          label: 'Display Name:',
                           hint: user?.displayName ?? 'Your name',
                           icon: Icons.person_rounded,
                         ),
@@ -237,7 +237,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         _buildAnimatedTextField(
                           controller: _emailController,
                           enabled: _isEditing,
-                          label: 'Email',
+                          label: 'Email:',
                           hint: user?.email ?? 'Your email',
                           icon: Icons.email_rounded,
                         ),
@@ -440,7 +440,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           const SizedBox(height: 16),
           Text(
             user?.displayName ?? 'Recipe Enthusiast',
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 4),
           Text(

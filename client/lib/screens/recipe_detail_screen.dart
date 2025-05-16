@@ -182,7 +182,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       Text(
                         textAlign: TextAlign.center,
                         recipe.title,
-                        style: Theme.of(context).textTheme.titleMedium
+                        style: Theme.of(context).textTheme.headlineMedium
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
@@ -237,7 +237,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'Cuisine Type',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -248,7 +248,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
                       Text(
                         'Description',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 8),
                       HtmlDescription(
@@ -260,7 +260,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       const SizedBox(height: 24),
                       Text(
                         'Ingredients',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 8),
                       ...recipe.ingredients.map(
@@ -283,7 +283,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       const SizedBox(height: 24),
                       Text(
                         'Instructions',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 8),
                       ...recipe.instructions.asMap().entries.map(
@@ -327,7 +327,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         const SizedBox(height: 24),
                         Text(
                           'Tags',
-                          style: Theme.of(context).textTheme.titleMedium,
+                          style: Theme.of(context).textTheme.headlineMedium,
                         ),
                         const SizedBox(height: 8),
                         Wrap(

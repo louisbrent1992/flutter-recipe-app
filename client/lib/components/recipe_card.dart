@@ -524,7 +524,7 @@ Shared from Recipe App
                 children: [
                   Text(
                     widget.recipe.title,
-                    style: theme.textTheme.titleMedium?.copyWith(
+                    style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                     maxLines: 1,
