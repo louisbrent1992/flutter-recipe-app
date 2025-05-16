@@ -7,6 +7,10 @@ import 'package:recipease/models/recipe.dart';
 import 'package:recipease/screens/my_recipes_screen.dart';
 import 'package:recipease/services/recipe_service.dart';
 import 'package:recipease/components/html_description.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RecipeEditScreen extends StatefulWidget {
   const RecipeEditScreen({super.key});
@@ -19,6 +23,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   Recipe currentRecipe = Recipe();
   final TextEditingController _imageController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _cuisineTypeController = TextEditingController();
   final TextEditingController _sourceController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _ingredientsController = TextEditingController();
@@ -28,6 +33,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   final TextEditingController _tagsController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool isInUserRecipes = false;
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -36,34 +42,42 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
     // We need to use addPostFrameCallback because we can't access context in initState directly
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final arguments = ModalRoute.of(context)?.settings.arguments;
-      if (arguments != null) {
-        if (arguments is Recipe) {
-          setState(() {
-            currentRecipe = arguments;
-            // Also update all the controllers with the new values
-            _imageController.text = arguments.imageUrl;
-            _titleController.text = arguments.title;
-            _sourceController.text = arguments.source!;
-            _descriptionController.text = arguments.description;
-            _ingredientsController.text = arguments.ingredients.join('\n');
-            _instructionsController.text = arguments.instructions.join('\n');
-            _cookingTimeController.text = arguments.cookingTime;
-            _servingsController.text = arguments.servings;
-          });
+      if (arguments != null && arguments is Recipe) {
+        setState(() {
+          currentRecipe = arguments;
+          // Also update all the controllers with the new values
+          _imageController.text = arguments.imageUrl;
+          _titleController.text = arguments.title;
+          _cuisineTypeController.text = arguments.cuisineType;
+          _sourceController.text = arguments.source ?? '';
+          _descriptionController.text = arguments.description;
+          _ingredientsController.text = arguments.ingredients.join('\n');
+          _instructionsController.text = arguments.instructions.join('\n');
+          _cookingTimeController.text = arguments.cookingTime;
+          _servingsController.text = arguments.servings;
+        });
+
+        // Only check if recipe exists in user recipes if we have a recipe ID
+        if (arguments.id.isNotEmpty) {
+          RecipeService.getUserRecipe(arguments.id).then(
+            (response) => setState(() {
+              isInUserRecipes = response.success;
+            }),
+          );
         }
+      } else {
+        // For new recipe creation, set isInUserRecipes to false
+        setState(() {
+          isInUserRecipes = false;
+        });
       }
-      RecipeService.getUserRecipe(currentRecipe.id).then(
-        (response) => setState(() {
-          isInUserRecipes = response.success;
-        }),
-      );
     });
-    debugPrint("isInUserRecipes: ${currentRecipe.id}");
   }
 
   void _updateRecipe({
     String? title,
     String? source,
+    String? cuisineType,
     String? description,
     String? imageUrl,
     List<String>? ingredients,
@@ -77,6 +91,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
       currentRecipe = Recipe(
         id: currentRecipe.id,
         title: title ?? currentRecipe.title,
+        cuisineType: cuisineType ?? currentRecipe.cuisineType,
         ingredients: ingredients ?? currentRecipe.ingredients,
         instructions: instructions ?? currentRecipe.instructions,
         description: description ?? currentRecipe.description,
@@ -96,6 +111,8 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
           isInUserRecipes == true
               ? await RecipeService.updateUserRecipe(currentRecipe)
               : await RecipeService.createUserRecipe(currentRecipe);
+
+      print(isInUserRecipes);
 
       if (response.success && response.data != null) {
         setState(() {
@@ -140,9 +157,86 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
     }
   }
 
+  Future<void> _uploadRecipeImage() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in to upload images'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      setState(() => _isUploading = true);
+
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+
+      if (result == null) {
+        setState(() => _isUploading = false);
+        return;
+      }
+
+      PlatformFile file = result.files.first;
+      final File imageFile = File(file.path!);
+      final ext = file.extension ?? 'jpg';
+
+      final storageRef = FirebaseStorage.instance.ref();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = '${user.uid}_${currentRecipe.id}_$timestamp.$ext';
+      final recipeImagesRef = storageRef.child('recipe_images/$fileName');
+
+      final uploadTask = await recipeImagesRef.putFile(
+        imageFile,
+        SettableMetadata(
+          contentType: 'image/$ext',
+          customMetadata: {
+            'uploadedBy': user.uid,
+            'uploadedAt': timestamp.toString(),
+            'recipeId': currentRecipe.id,
+          },
+        ),
+      );
+
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
+
+      setState(() {
+        currentRecipe = currentRecipe.copyWith(imageUrl: downloadUrl);
+        _imageController.text = downloadUrl;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Image uploaded successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error uploading image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error uploading image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isUploading = false);
+    }
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
+    _cuisineTypeController.dispose();
     _sourceController.dispose();
     _descriptionController.dispose();
     _ingredientsController.dispose();
@@ -176,66 +270,120 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(
-                            width: double.infinity,
-                            height: 250,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                currentRecipe.imageUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    width: double.infinity,
-                                    height: 250,
-                                    color: Colors.grey[300],
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Icons.broken_image,
-                                          size: 64,
-                                          color: Colors.grey,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          'Failed to load image',
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
+                          Stack(
+                            children: [
+                              SizedBox(
+                                width: double.infinity,
+                                height: 250,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child:
+                                      _isUploading
+                                          ? Container(
+                                            color: Colors.grey[200],
+                                            child: const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            ),
+                                          )
+                                          : Image.network(
+                                            currentRecipe.imageUrl,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                            ) {
+                                              return Container(
+                                                width: double.infinity,
+                                                height: 250,
+                                                color: Colors.grey[300],
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.broken_image,
+                                                      size: 64,
+                                                      color: Colors.grey,
+                                                    ),
+                                                    const SizedBox(height: 8),
+                                                    Text(
+                                                      'Failed to load image',
+                                                      style: TextStyle(
+                                                        color: Colors.grey[600],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                            loadingBuilder: (
+                                              context,
+                                              child,
+                                              loadingProgress,
+                                            ) {
+                                              if (loadingProgress == null) {
+                                                return child;
+                                              }
+                                              return Container(
+                                                width: double.infinity,
+                                                height: 250,
+                                                color: Colors.grey[200],
+                                                child: Center(
+                                                  child: CircularProgressIndicator(
+                                                    value:
+                                                        loadingProgress
+                                                                    .expectedTotalBytes !=
+                                                                null
+                                                            ? loadingProgress
+                                                                    .cumulativeBytesLoaded /
+                                                                loadingProgress
+                                                                    .expectedTotalBytes!
+                                                            : null,
+                                                  ),
+                                                ),
+                                              );
+                                            },
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                                loadingBuilder: (
-                                  context,
-                                  child,
-                                  loadingProgress,
-                                ) {
-                                  if (loadingProgress == null) return child;
-                                  return Container(
-                                    width: double.infinity,
-                                    height: 250,
-                                    color: Colors.grey[200],
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        value:
-                                            loadingProgress
-                                                        .expectedTotalBytes !=
-                                                    null
-                                                ? loadingProgress
-                                                        .cumulativeBytesLoaded /
-                                                    loadingProgress
-                                                        .expectedTotalBytes!
-                                                : null,
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 10,
+                                right: 10,
+                                child: Material(
+                                  elevation: 4,
+                                  shape: const CircleBorder(),
+                                  clipBehavior: Clip.hardEdge,
+                                  child: InkWell(
+                                    onTap:
+                                        _isUploading
+                                            ? null
+                                            : _uploadRecipeImage,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.secondary,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        _isUploading
+                                            ? Icons.upload
+                                            : Icons.camera_alt_rounded,
+                                        size: 24,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSecondary,
                                       ),
                                     ),
-                                  );
-                                },
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                           const SizedBox(height: 10),
                           EditableRecipeField(
@@ -256,6 +404,23 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                           ),
                           const SizedBox(height: 10),
                           EditableRecipeField(
+                            label: 'Cuisine Type',
+                            controller: _cuisineTypeController,
+                            value: currentRecipe.cuisineType,
+                            onSave: (value) {
+                              setState(() {
+                                _updateRecipe(cuisineType: value);
+                                _cuisineTypeController.text = value;
+                              });
+                            },
+                            customDisplay: Text(
+                              'Fusion',
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            hintText: 'Enter recipe cuisine type',
+                          ),
+                          const SizedBox(height: 10),
+                          EditableRecipeField(
                             label: 'Source',
                             controller: _sourceController,
                             value: currentRecipe.source ?? '',
@@ -267,7 +432,8 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                               });
                             },
                             customDisplay: Text(
-                              currentRecipe.source ?? '',
+                              currentRecipe.source ??
+                                  'Enter recipe source (Instagram, Pinterest, etc.)',
                               style: Theme.of(context).textTheme.bodyLarge,
                             ),
                           ),
@@ -280,8 +446,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                         label: 'Description',
                         controller: _descriptionController,
                         value: currentRecipe.description,
-                        hintText:
-                            'Enter recipe description (HTML formatting supported)',
+                        hintText: 'Enter recipe description',
                         isMultiline: true,
                         onSave: (value) {
                           setState(() {
@@ -292,11 +457,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                         customDisplay: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Description (HTML formatting supported)',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 4),
                             HtmlDescription(
                               htmlContent: currentRecipe.description,
                               style: Theme.of(context).textTheme.bodyLarge,

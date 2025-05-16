@@ -37,7 +37,7 @@ class ScreenDescriptionCard extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 16),
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          Text(title, style: Theme.of(context).textTheme.headlineLarge),
           const SizedBox(height: 8),
           Text(description),
           const SizedBox(height: 16),

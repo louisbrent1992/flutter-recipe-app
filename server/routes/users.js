@@ -119,7 +119,7 @@ router.post("/recipes", auth, async (req, res) => {
 		const userId = req.user.uid;
 		const {
 			title,
-			cuisineType = "",
+			cuisineType = "Fusion",
 			description = "",
 			ingredients = [],
 			instructions = [],
@@ -138,6 +138,17 @@ router.post("/recipes", auth, async (req, res) => {
 		if (!title) {
 			return res.status(400).json({ error: "Title is required" });
 		}
+
+		// Generate searchable fields
+		const searchableFields = [
+			title.toLowerCase(),
+			description.toLowerCase(),
+			...ingredients.map((i) => i.toLowerCase()),
+			...instructions.map((i) => i.toLowerCase()),
+			...tags.map((t) => t.toLowerCase()),
+			difficulty.toLowerCase(),
+			cuisineType.toLowerCase(),
+		].filter((field) => field.length > 0);
 
 		const newRecipe = {
 			userId,
@@ -159,6 +170,7 @@ router.post("/recipes", auth, async (req, res) => {
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 			isFavorite: false,
+			searchableFields,
 		};
 
 		const docRef = await db.collection("recipes").add(newRecipe);
@@ -194,8 +206,26 @@ router.put("/recipes/:id", auth, async (req, res) => {
 				.json({ error: "Not authorized to update this recipe" });
 		}
 
+		// Generate searchable fields from the updated data
+		const searchableFields = [
+			req.body.title?.toLowerCase() || recipeData.title.toLowerCase(),
+			req.body.description?.toLowerCase() ||
+				recipeData.description.toLowerCase(),
+			...(req.body.ingredients || recipeData.ingredients).map((i) =>
+				i.toLowerCase()
+			),
+			...(req.body.instructions || recipeData.instructions).map((i) =>
+				i.toLowerCase()
+			),
+			...(req.body.tags || recipeData.tags).map((t) => t.toLowerCase()),
+			(req.body.difficulty || recipeData.difficulty).toLowerCase(),
+			(req.body.cuisineType || recipeData.cuisineType || "").toLowerCase(),
+		].filter((field) => field.length > 0);
+
 		const updates = {
 			...req.body,
+			userId: recipeData.userId,
+			searchableFields,
 			updatedAt: new Date().toISOString(),
 		};
 

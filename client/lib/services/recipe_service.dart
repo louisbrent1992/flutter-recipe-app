@@ -317,7 +317,7 @@ class RecipeService {
       'limit': limit.toString(),
     };
 
-    final response = await _api.publicGet<Map<String, dynamic>>(
+    final response = await _api.authenticatedGet<Map<String, dynamic>>(
       'discover/search',
       queryParams: queryParams,
     );

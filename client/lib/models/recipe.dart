@@ -19,7 +19,7 @@ class Recipe {
   final DateTime? updatedAt;
   final bool isFavorite;
   final String? userId;
-  final String? cuisineType;
+  final String cuisineType;
   final InstagramData? instagram;
   final TikTokData? tiktok;
   final YouTubeData? youtube;
@@ -45,7 +45,7 @@ class Recipe {
     this.updatedAt,
     this.isFavorite = false,
     this.userId,
-    this.cuisineType,
+    this.cuisineType = 'Fusion',
     this.instagram,
     this.tiktok,
     this.youtube,
@@ -105,7 +105,7 @@ class Recipe {
               : null,
       isFavorite: json['isFavorite'] ?? false,
       userId: json['userId']?.toString(),
-      cuisineType: json['cuisineType']?.toString(),
+      cuisineType: json['cuisineType']?.toString() ?? 'Fusion',
       instagram:
           json['instagram'] != null
               ? InstagramData.fromJson(
@@ -209,7 +209,7 @@ $description
 ⏱️ Cooking Time: $cookingTime
 👥 Servings: $servings
 📊 Difficulty: $difficulty
-${cuisineType != null && cuisineType!.isNotEmpty ? '🌎 Cuisine: $cuisineType' : ''}
+${cuisineType.isNotEmpty ? '🌎 Cuisine: $cuisineType' : ''}
 
 🛒 Ingredients:
 ${ingredients.map((i) => '• $i').join('\n')}

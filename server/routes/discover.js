@@ -10,7 +10,7 @@ const { getFirestore } = require("firebase-admin/firestore");
 const db = getFirestore();
 
 // Search recipes from Spoonacular API
-router.get("/search", async (req, res) => {
+router.get("/search", auth, async (req, res) => {
 	try {
 		const { query, difficulty, tag } = req.query;
 		const page = parseInt(req.query.page) || 1;
@@ -18,22 +18,51 @@ router.get("/search", async (req, res) => {
 		const startAt = (page - 1) * limit;
 
 		// Build Firestore query
-		let recipesRef = admin.firestore().collection("recipes");
+		let recipesRef = db.collection("recipes");
+
 		if (query) {
-			recipesRef = recipesRef
-				.where("title", ">=", query)
-				.where("title", "<=", query + "\uf8ff");
+			console.log("Search query:", query);
+			// Create a compound query to search across multiple fields
+			const searchTerms = query
+				.toLowerCase()
+				.split(/\s+/) // Split on any whitespace
+				.filter((term) => term.length > 0);
+			console.log("Search terms:", searchTerms);
+
+			// Start with the base query
+			recipesRef = db.collection("recipes");
+
+			// Create a compound query that matches any of the search terms
+			const searchQueries = searchTerms.map((term) => {
+				return db
+					.collection("recipes")
+					.where("searchableFields", "array-contains", term);
+			});
+
+			// If we have search terms, use the first query as base
+			if (searchQueries.length > 0) {
+				recipesRef = searchQueries[0];
+			}
 		}
 		if (difficulty) {
-			recipesRef = recipesRef.where("difficulty", "==", difficulty);
+			recipesRef = recipesRef.where(
+				"difficulty",
+				"==",
+				difficulty.charAt(0).toUpperCase() + difficulty.slice(1).toLowerCase()
+			);
 		}
 		if (tag) {
-			recipesRef = recipesRef.where("tags", "array-contains", tag);
+			recipesRef = recipesRef.where(
+				"tags",
+				"array-contains",
+				tag.toLowerCase()
+			);
 		}
 
 		// Get total count for pagination
 		const totalQuery = await recipesRef.count().get();
 		const totalRecipes = totalQuery.data().count;
+		console.log("Total recipes found:", totalRecipes);
 
 		// Fetch paginated recipes
 		const snapshot = await recipesRef
@@ -44,9 +73,11 @@ router.get("/search", async (req, res) => {
 
 		const recipes = [];
 		snapshot.forEach((doc) => {
+			const data = doc.data();
+
 			recipes.push({
 				id: doc.id,
-				...doc.data(),
+				...data,
 			});
 		});
 

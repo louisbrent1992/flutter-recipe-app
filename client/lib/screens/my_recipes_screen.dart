@@ -7,6 +7,8 @@ import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/recipe_card.dart';
 import 'package:recipease/components/floating_home_button.dart';
 import 'package:recipease/components/floating_add_button.dart';
+import 'package:recipease/components/recipe_filter_bar.dart';
+import 'package:recipease/mixins/recipe_filter_mixin.dart';
 
 class MyRecipesScreen extends StatefulWidget {
   const MyRecipesScreen({super.key});
@@ -15,7 +17,8 @@ class MyRecipesScreen extends StatefulWidget {
   State<MyRecipesScreen> createState() => _MyRecipesScreenState();
 }
 
-class _MyRecipesScreenState extends State<MyRecipesScreen> {
+class _MyRecipesScreenState extends State<MyRecipesScreen>
+    with RecipeFilterMixin {
   final ScrollController _scrollController = ScrollController();
   final _searchController = TextEditingController();
   String _searchQuery = '';
@@ -88,24 +91,6 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
     }
   }
 
-  List<Recipe> _filterRecipes(List<Recipe> recipes) {
-    return recipes.where((recipe) {
-      final matchesSearch =
-          _searchQuery.isEmpty ||
-          recipe.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          recipe.description.toLowerCase().contains(_searchQuery.toLowerCase());
-
-      final matchesDifficulty =
-          _selectedDifficulty == 'All' ||
-          recipe.difficulty == _selectedDifficulty;
-
-      final matchesTag =
-          _selectedTag == 'All' || recipe.tags.contains(_selectedTag);
-
-      return matchesSearch && matchesDifficulty && matchesTag;
-    }).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -116,80 +101,22 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search recipes...',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        suffixIcon:
-                            _searchQuery.isNotEmpty
-                                ? IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() => _searchQuery = '');
-                                  },
-                                )
-                                : null,
-                      ),
-                      onChanged: (value) {
-                        setState(() => _searchQuery = value);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          const Text('Difficulty: '),
-                          ..._difficulties.map(
-                            (difficulty) => Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                              ),
-                              child: FilterChip(
-                                label: Text(difficulty),
-                                selected: _selectedDifficulty == difficulty,
-                                onSelected: (selected) {
-                                  setState(
-                                    () => _selectedDifficulty = difficulty,
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          const Text('Tags: '),
-                          ..._availableTags.map(
-                            (tag) => Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                              ),
-                              child: FilterChip(
-                                label: Text(tag),
-                                selected: _selectedTag == tag,
-                                onSelected: (selected) {
-                                  setState(() => _selectedTag = tag);
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                child: RecipeFilterBar(
+                  searchController: _searchController,
+                  searchQuery: _searchQuery,
+                  selectedDifficulty: _selectedDifficulty,
+                  selectedTag: _selectedTag,
+                  difficulties: _difficulties,
+                  availableTags: _availableTags,
+                  onSearchChanged: (value) {
+                    setState(() => _searchQuery = value);
+                  },
+                  onDifficultySelected: (difficulty) {
+                    setState(() => _selectedDifficulty = difficulty);
+                  },
+                  onTagSelected: (tag) {
+                    setState(() => _selectedTag = tag);
+                  },
                 ),
               ),
               Expanded(
@@ -200,8 +127,11 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    final List<Recipe> myRecipes = _filterRecipes(
+                    final List<Recipe> myRecipes = filterRecipes(
                       recipeProvider.userRecipes,
+                      searchQuery: _searchQuery,
+                      selectedDifficulty: _selectedDifficulty,
+                      selectedTag: _selectedTag,
                     );
 
                     if (myRecipes.isEmpty) {

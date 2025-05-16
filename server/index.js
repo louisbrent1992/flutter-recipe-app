@@ -59,13 +59,13 @@ app.use((req, res) => {
 app.use(errorHandler.globalHandler);
 
 // Schedule a daily job to fetch recipes from Spoonacular
-cron.schedule("40 20 * * *", async () => {
+cron.schedule("50 8 * * *", async () => {
 	console.log("Running scheduled recipe fetch job...");
 	try {
 		const db = admin.firestore();
 		const recipesRef = db.collection("recipes");
 		let offset = 0;
-		const limit = 100; // Maximum allowed for random recipes endpoint
+		const limit = 10; // Maximum allowed for random recipes endpoint
 		let totalFetched = 0;
 		let totalSaved = 0;
 		let totalPointsUsed = 0;
@@ -110,34 +110,76 @@ cron.schedule("40 20 * * *", async () => {
 				break;
 			}
 
-			const recipes = response.data.recipes.map((recipe) => ({
-				id: recipe.id.toString(),
-				title: recipe.title || "",
-				description: recipe.summary || "",
-				ingredients: (recipe.extendedIngredients || []).map((ing) => ({
-					name: ing.name || "",
-					amount: ing.amount || 0,
-					unit: ing.unit || "",
-				})),
-				instructions: (recipe.analyzedInstructions?.[0]?.steps || []).map(
-					(step) => step.step || ""
-				),
-				cookingTime: recipe.readyInMinutes || "Not Specified",
-				servings: recipe.servings || 1,
-				difficulty:
-					recipe.readyInMinutes <= 30
+			const recipes = response.data.recipes.map((recipe) => {
+				// Generate searchable fields
+				const searchableFields = [
+					// Split title into words
+					...(recipe.title ? recipe.title.toLowerCase().split(/\s+/) : []),
+					// Split summary into words
+					...(recipe.summary ? recipe.summary.toLowerCase().split(/\s+/) : []),
+					// Split ingredient names into words
+					...(recipe.extendedIngredients || []).reduce((acc, ing) => {
+						if (ing?.name) {
+							acc.push(...ing.name.toLowerCase().split(/\s+/));
+						}
+						return acc;
+					}, []),
+					// Split instruction steps into words
+					...(recipe.analyzedInstructions?.[0]?.steps || []).reduce(
+						(acc, step) => {
+							if (step?.step) {
+								acc.push(...step.step.toLowerCase().split(/\s+/));
+							}
+							return acc;
+						},
+						[]
+					),
+					// Split dish types into words
+					...(recipe.dishTypes || []).reduce((acc, tag) => {
+						if (tag) {
+							acc.push(...tag.toLowerCase().split(/\s+/));
+						}
+						return acc;
+					}, []),
+					// Add difficulty level
+					(recipe.readyInMinutes <= 30
 						? "Easy"
 						: recipe.readyInMinutes <= 60
 						? "Medium"
-						: "Hard",
-				tags: recipe.dishTypes || [],
-				imageUrl: recipe.image || "",
-				sourceUrl: recipe.sourceUrl || "",
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString(),
-				isExternal: true,
-				externalId: recipe.id.toString(),
-			}));
+						: "Hard"
+					).toLowerCase(),
+				].filter((field) => field && field.length > 0);
+
+				return {
+					id: recipe.id.toString(),
+					title: recipe.title || "",
+					description: recipe.summary || "",
+					ingredients: (recipe.extendedIngredients || []).map((ing) => ({
+						name: ing.name || "",
+						amount: ing.amount || 0,
+						unit: ing.unit || "",
+					})),
+					instructions: (recipe.analyzedInstructions?.[0]?.steps || []).map(
+						(step) => step.step || ""
+					),
+					cookingTime: recipe.readyInMinutes || "Not Specified",
+					servings: recipe.servings || 1,
+					difficulty:
+						recipe.readyInMinutes <= 30
+							? "Easy"
+							: recipe.readyInMinutes <= 60
+							? "Medium"
+							: "Hard",
+					tags: recipe.dishTypes || [],
+					imageUrl: recipe.image || "",
+					sourceUrl: recipe.sourceUrl || "",
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
+					isExternal: true,
+					externalId: recipe.id.toString(),
+					searchableFields,
+				};
+			});
 
 			// Check which recipes already exist
 			const recipesToSave = [];

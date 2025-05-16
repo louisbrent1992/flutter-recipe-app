@@ -235,6 +235,22 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
+                      Text(
+                        'Cuisine Type',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        recipe.cuisineType,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 16),
+
+                      Text(
+                        'Description',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
                       HtmlDescription(
                         htmlContent: recipe.description,
                         style: Theme.of(context).textTheme.bodyLarge,
