@@ -59,13 +59,13 @@ app.use((req, res) => {
 app.use(errorHandler.globalHandler);
 
 // Schedule a daily job to fetch recipes from Spoonacular
-cron.schedule("50 8 * * *", async () => {
+cron.schedule("00 20 * * *", async () => {
 	console.log("Running scheduled recipe fetch job...");
 	try {
 		const db = admin.firestore();
 		const recipesRef = db.collection("recipes");
 		let offset = 0;
-		const limit = 10; // Maximum allowed for random recipes endpoint
+		const limit = 100; // Maximum allowed for random recipes endpoint
 		let totalFetched = 0;
 		let totalSaved = 0;
 		let totalPointsUsed = 0;
