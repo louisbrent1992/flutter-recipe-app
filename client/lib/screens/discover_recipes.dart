@@ -7,6 +7,7 @@ import '../components/floating_home_button.dart';
 import '../components/recipe_filter_bar.dart';
 import '../mixins/recipe_filter_mixin.dart';
 import '../models/recipe.dart';
+import '../components/error_display.dart';
 
 class DiscoverRecipesScreen extends StatefulWidget {
   const DiscoverRecipesScreen({super.key});
@@ -182,11 +183,15 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                     }
 
                     if (recipeProvider.error != null) {
-                      return Center(
-                        child: Text(
-                          recipeProvider.error!,
-                          style: const TextStyle(color: Colors.red),
-                        ),
+                      return ErrorDisplay(
+                        message: recipeProvider.error!.userFriendlyMessage,
+                        isNetworkError: recipeProvider.error!.isNetworkError,
+                        isAuthError: recipeProvider.error!.isAuthError,
+                        isFormatError: recipeProvider.error!.isFormatError,
+                        onRetry: () {
+                          recipeProvider.clearError();
+                          _loadRecipes();
+                        },
                       );
                     }
 

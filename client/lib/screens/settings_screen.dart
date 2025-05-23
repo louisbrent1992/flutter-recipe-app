@@ -7,6 +7,8 @@ import '../providers/theme_provider.dart';
 import '../providers/notification_provider.dart';
 import '../components/floating_home_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../providers/subscription_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -147,6 +149,15 @@ class _SettingsScreenState extends State<SettingsScreen>
     } else {
       _animationController.reverse();
     }
+  }
+
+  String? encodeQueryParameters(Map<String, String> params) {
+    return params.entries
+        .map(
+          (MapEntry<String, String> e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+        )
+        .join('&');
   }
 
   @override
@@ -328,9 +339,45 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 (value) => notificationProvider
                                     .setNewRecipesNotification(value),
                             icon: Icons.restaurant_rounded,
-                            color: Colors.orange,
+                            color: theme.colorScheme.onTertiary,
                           ),
                         ],
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+                  const SizedBox(height: 16),
+
+                  // Premium Features Section
+                  _buildSectionHeader(
+                    title: 'Premium Features',
+                    icon: Icons.star_rounded,
+                    colorScheme: colorScheme,
+                  ),
+                  const SizedBox(height: 16),
+                  Consumer<SubscriptionProvider>(
+                    builder: (context, subscriptionProvider, _) {
+                      return _buildAnimatedListTile(
+                        title:
+                            subscriptionProvider.isPremium
+                                ? 'Premium Active'
+                                : 'Upgrade to Premium',
+                        subtitle:
+                            subscriptionProvider.isPremium
+                                ? 'Enjoy all premium features'
+                                : 'Remove ads and unlock premium features',
+                        icon:
+                            subscriptionProvider.isPremium
+                                ? Icons.star_rounded
+                                : Icons.star_outline_rounded,
+                        color:
+                            subscriptionProvider.isPremium
+                                ? Colors.amber
+                                : colorScheme.primary,
+                        onTap:
+                            () => Navigator.pushNamed(context, '/subscription'),
                       );
                     },
                   ),
@@ -355,7 +402,137 @@ class _SettingsScreenState extends State<SettingsScreen>
                     onTap: () => Navigator.pushNamed(context, '/favorites'),
                   ),
 
+                  const SizedBox(height: 16),
+                  _buildAnimatedListTile(
+                    title: 'My Recipes',
+                    icon: Icons.restaurant_menu,
+                    color: Colors.orange,
+                    onTap: () => Navigator.pushNamed(context, '/my_recipes'),
+                  ),
+
+                  const SizedBox(height: 16),
+                  _buildAnimatedListTile(
+                    title: 'Discover Recipes',
+                    icon: Icons.explore,
+                    color: Colors.blue,
+                    onTap: () => Navigator.pushNamed(context, '/discover'),
+                  ),
+
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+                  const SizedBox(height: 16),
+                  // Contact Section
+                  _buildSectionHeader(
+                    title: 'Contact Us',
+                    icon: Icons.contact_support_rounded,
+                    colorScheme: colorScheme,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Support Inquiries
+                  _buildAnimatedListTile(
+                    title: 'Customer Support',
+                    subtitle: 'Get help with app issues',
+                    icon: Icons.support_agent_rounded,
+                    color: colorScheme.primary,
+                    onTap: () async {
+                      final Uri emailLaunchUri = Uri(
+                        scheme: 'mailto',
+                        path: 'support@recipease.kitchen',
+                        query: encodeQueryParameters({
+                          'subject': 'Customer Support - RecipEase',
+                          'body':
+                              'Hi RecipEase Support Team,\n\nI need help with...\n\nThank you!\n',
+                        }),
+                      );
+                      if (await canLaunchUrl(emailLaunchUri)) {
+                        await launchUrl(emailLaunchUri);
+                      } else {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Could not launch email client'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+
                   const SizedBox(height: 12),
+
+                  // General Inquiries
+                  _buildAnimatedListTile(
+                    title: 'General Inquiries',
+                    subtitle: 'Questions about RecipEase',
+                    icon: Icons.help_outline_rounded,
+                    color: Colors.blue,
+                    onTap: () async {
+                      final Uri emailLaunchUri = Uri(
+                        scheme: 'mailto',
+                        path: 'hello@recipease.kitchen',
+                        query: encodeQueryParameters({
+                          'subject': 'General Inquiry - RecipEase',
+                          'body':
+                              'Hello RecipEase Team,\n\nI would like to know...\n\nThank you!\n',
+                        }),
+                      );
+                      if (await canLaunchUrl(emailLaunchUri)) {
+                        await launchUrl(emailLaunchUri);
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Billing Support
+                  _buildAnimatedListTile(
+                    title: 'Billing Support',
+                    subtitle: 'Payments and invoices',
+                    icon: Icons.payment_rounded,
+                    color: Colors.green,
+                    onTap: () async {
+                      final Uri emailLaunchUri = Uri(
+                        scheme: 'mailto',
+                        path: 'billing@adventhubsolutions.com',
+                        query: encodeQueryParameters({
+                          'subject': 'Billing Inquiry - RecipEase',
+                          'body':
+                              'Hello Billing Team,\n\nI have a question about...\n\nThank you!\n',
+                        }),
+                      );
+                      if (await canLaunchUrl(emailLaunchUri)) {
+                        await launchUrl(emailLaunchUri);
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Business Inquiries
+                  _buildAnimatedListTile(
+                    title: 'Business Inquiries',
+                    subtitle: 'Partnerships and collaborations',
+                    icon: Icons.business_rounded,
+                    color: Colors.purple,
+                    onTap: () async {
+                      final Uri emailLaunchUri = Uri(
+                        scheme: 'mailto',
+                        path: 'partnerships@adventhubsolutions.com',
+                        query: encodeQueryParameters({
+                          'subject': 'Business Inquiry - RecipEase',
+                          'body':
+                              'Hello Business Team,\n\nI am interested in...\n\nThank you!\n',
+                        }),
+                      );
+                      if (await canLaunchUrl(emailLaunchUri)) {
+                        await launchUrl(emailLaunchUri);
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
 
                   _buildAnimatedListTile(
                     title: 'Sign Out',
@@ -573,6 +750,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Widget _buildAnimatedListTile({
     required String title,
+    String? subtitle,
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
@@ -599,15 +777,31 @@ class _SettingsScreenState extends State<SettingsScreen>
                 child: Icon(icon, color: color),
               ),
               const SizedBox(width: 16),
-              Text(
-                title,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: color.withValues(alpha: 0.7),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              const Spacer(),
               const Icon(Icons.chevron_right_rounded),
             ],
           ),

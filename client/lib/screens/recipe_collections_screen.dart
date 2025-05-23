@@ -224,7 +224,6 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     return SafeArea(
       child: Scaffold(
         appBar: const CustomAppBar(title: 'Recipe Collections'),
-
         body: Stack(
           fit: StackFit.expand,
           children: [
@@ -239,11 +238,6 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                       colorScheme.surface,
                       colorScheme.surface.withValues(alpha: 0.8),
                     ],
-                  ),
-                ),
-                child: CustomPaint(
-                  painter: _BackgroundPatternPainter(
-                    color: colorScheme.primary.withValues(alpha: 0.03),
                   ),
                 ),
               ),
@@ -428,7 +422,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     required ColorScheme colorScheme,
   }) {
     return Card(
-      elevation: 2,
+      elevation: 20,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () {
@@ -493,45 +487,4 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
       ),
     );
   }
-}
-
-// Custom painter to draw a subtle pattern in the background
-class _BackgroundPatternPainter extends CustomPainter {
-  final Color color;
-
-  _BackgroundPatternPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = color
-          ..strokeWidth = 1.0
-          ..style = PaintingStyle.stroke;
-
-    const spacing = 25.0;
-
-    // Draw small circles pattern
-    for (double x = 0; x < size.width; x += spacing) {
-      for (double y = 0; y < size.height; y += spacing) {
-        // Alternate between small circles and dots
-        if ((x ~/ spacing + y ~/ spacing) % 3 == 0) {
-          canvas.drawCircle(Offset(x, y), 2, paint);
-        } else if ((x ~/ spacing + y ~/ spacing) % 3 == 1) {
-          canvas.drawCircle(Offset(x, y), 1, paint);
-        } else {
-          canvas.drawCircle(Offset(x, y), 3, paint..style = PaintingStyle.fill);
-          canvas.drawCircle(
-            Offset(x, y),
-            3,
-            paint..style = PaintingStyle.stroke,
-          );
-        }
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_BackgroundPatternPainter oldDelegate) =>
-      color != oldDelegate.color;
 }

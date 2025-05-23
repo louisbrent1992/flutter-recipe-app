@@ -17,12 +17,15 @@ import 'package:recipease/screens/auth/login_screen.dart';
 import 'package:recipease/screens/auth/register_screen.dart';
 import 'package:recipease/screens/recipe_collections_screen.dart';
 import 'package:recipease/screens/collection_detail_screen.dart';
+import 'package:recipease/screens/subscription_screen.dart';
 import 'package:recipease/theme/theme.dart';
 import 'package:recipease/providers/auth_provider.dart';
 import 'package:recipease/providers/user_profile_provider.dart';
 import 'package:recipease/providers/theme_provider.dart';
 import 'package:recipease/providers/notification_provider.dart';
 import 'package:recipease/providers/recipe_provider.dart';
+import 'package:recipease/providers/subscription_provider.dart';
+
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -44,6 +47,8 @@ final kWebRecaptchaSiteKey = '6Lemcn0dAAAAABLkf6aiiHvpGD6x-zF3nOSDU2M8';
 ///
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase first
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Activate app check after initialization, but before
@@ -138,6 +143,7 @@ class _MyAppState extends State<MyApp> {
           create: (_) => NotificationProvider(Hive.box('preferences')),
         ),
         ChangeNotifierProvider(create: (_) => RecipeProvider()),
+        ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
       ],
       child: Consumer2<AuthService, ThemeProvider>(
         builder: (context, authService, themeProvider, _) {
@@ -183,6 +189,7 @@ class _MyAppState extends State<MyApp> {
                   ),
               '/generatedRecipes': (context) => const GeneratedRecipesScreen(),
               '/importedRecipes': (context) => const ImportedRecipesScreen(),
+              '/subscription': (context) => const SubscriptionScreen(),
             },
           );
         },

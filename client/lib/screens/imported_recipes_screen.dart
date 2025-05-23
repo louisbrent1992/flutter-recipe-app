@@ -4,15 +4,16 @@ import '../providers/recipe_provider.dart';
 import '../components/recipe_card.dart';
 import '../components/custom_app_bar.dart';
 import '../models/recipe.dart';
+import '../components/error_display.dart';
 
 class ImportedRecipesScreen extends StatefulWidget {
   const ImportedRecipesScreen({super.key});
 
   @override
-  ImportedRecipesScreenState createState() => ImportedRecipesScreenState();
+  State<ImportedRecipesScreen> createState() => _ImportedRecipesScreenState();
 }
 
-class ImportedRecipesScreenState extends State<ImportedRecipesScreen> {
+class _ImportedRecipesScreenState extends State<ImportedRecipesScreen> {
   final Map<String, bool> _savedRecipes = {};
 
   @override
@@ -31,37 +32,17 @@ class ImportedRecipesScreenState extends State<ImportedRecipesScreen> {
 
   Future<void> _handleRecipeAction(Recipe recipe) async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    final isCurrentlySaved = _savedRecipes[recipe.id] ?? false;
+    final isSaved = _savedRecipes[recipe.id] ?? false;
 
-    if (isCurrentlySaved) {
-      // Remove from collection
-      setState(() {
-        _savedRecipes[recipe.id] = false;
-      });
+    if (isSaved) {
       await recipeProvider.deleteUserRecipe(recipe.id);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Recipe removed from your collection'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
     } else {
-      setState(() {
-        _savedRecipes[recipe.id] = true;
-      });
-      // Save to collection
       await recipeProvider.saveGeneratedRecipe(recipe);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Recipe saved to your collection!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
     }
+
+    setState(() {
+      _savedRecipes[recipe.id] = !isSaved;
+    });
   }
 
   @override
@@ -75,11 +56,15 @@ class ImportedRecipesScreenState extends State<ImportedRecipesScreen> {
           }
 
           if (recipeProvider.error != null) {
-            return Center(
-              child: Text(
-                recipeProvider.error!,
-                style: const TextStyle(color: Colors.red),
-              ),
+            return ErrorDisplay(
+              message: recipeProvider.error!.userFriendlyMessage,
+              isNetworkError: recipeProvider.error!.isNetworkError,
+              isAuthError: recipeProvider.error!.isAuthError,
+              isFormatError: recipeProvider.error!.isFormatError,
+              onRetry: () {
+                recipeProvider.clearError();
+                // Add retry logic here
+              },
             );
           }
 

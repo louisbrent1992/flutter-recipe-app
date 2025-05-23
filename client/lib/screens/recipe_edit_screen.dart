@@ -11,23 +11,32 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import '../providers/recipe_provider.dart';
+import '../components/error_display.dart';
+import '../models/api_response.dart';
 
 class RecipeEditScreen extends StatefulWidget {
-  const RecipeEditScreen({super.key});
+  final Recipe? recipe;
+
+  const RecipeEditScreen({super.key, this.recipe});
 
   @override
   State<RecipeEditScreen> createState() => _RecipeEditScreenState();
 }
 
 class _RecipeEditScreenState extends State<RecipeEditScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _titleController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _instructionsController;
+  late TextEditingController _ingredientsController;
+  bool _isLoading = false;
+  ApiResponse<Recipe>? _error;
   Recipe currentRecipe = Recipe();
   final TextEditingController _imageController = TextEditingController();
-  final TextEditingController _titleController = TextEditingController();
   final TextEditingController _cuisineTypeController = TextEditingController();
   final TextEditingController _sourceController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _ingredientsController = TextEditingController();
-  final TextEditingController _instructionsController = TextEditingController();
   final TextEditingController _cookingTimeController = TextEditingController();
   final TextEditingController _servingsController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
@@ -38,6 +47,21 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   @override
   void initState() {
     super.initState();
+    _titleController = TextEditingController(text: widget.recipe?.title ?? '');
+    _descriptionController = TextEditingController(
+      text: widget.recipe?.description ?? '',
+    );
+    _instructionsController = TextEditingController(
+      text: widget.recipe?.instructions.join('\n') ?? '',
+    );
+    _ingredientsController = TextEditingController(
+      text: widget.recipe?.ingredients.join('\n') ?? '',
+    );
+    _imageController.text = widget.recipe?.imageUrl ?? '';
+    _cuisineTypeController.text = widget.recipe?.cuisineType ?? '';
+    _sourceController.text = widget.recipe?.source ?? '';
+    _cookingTimeController.text = widget.recipe?.cookingTime ?? '';
+    _servingsController.text = widget.recipe?.servings ?? '';
 
     // We need to use addPostFrameCallback because we can't access context in initState directly
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -47,12 +71,8 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
           currentRecipe = arguments;
           // Also update all the controllers with the new values
           _imageController.text = arguments.imageUrl;
-          _titleController.text = arguments.title;
           _cuisineTypeController.text = arguments.cuisineType;
           _sourceController.text = arguments.source ?? '';
-          _descriptionController.text = arguments.description;
-          _ingredientsController.text = arguments.ingredients.join('\n');
-          _instructionsController.text = arguments.instructions.join('\n');
           _cookingTimeController.text = arguments.cookingTime;
           _servingsController.text = arguments.servings;
         });
@@ -105,54 +125,58 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
     });
   }
 
-  void _saveRecipe(Recipe currentRecipe) async {
+  Future<void> _saveRecipe() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
     try {
-      final response =
-          isInUserRecipes == true
-              ? await RecipeService.updateUserRecipe(currentRecipe)
-              : await RecipeService.createUserRecipe(currentRecipe);
+      final recipeProvider = Provider.of<RecipeProvider>(
+        context,
+        listen: false,
+      );
+      final recipe = Recipe(
+        id:
+            widget.recipe?.id ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
+        title: _titleController.text,
+        description: _descriptionController.text,
+        instructions:
+            _instructionsController.text
+                .split('\n')
+                .where((i) => i.isNotEmpty)
+                .toList(),
+        ingredients:
+            _ingredientsController.text
+                .split('\n')
+                .where((i) => i.isNotEmpty)
+                .toList(),
+        imageUrl: _imageController.text,
+        cookingTime: _cookingTimeController.text,
+        servings: _servingsController.text,
+        cuisineType: _cuisineTypeController.text,
+        createdAt: widget.recipe?.createdAt ?? DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
 
-      print(isInUserRecipes);
-
-      if (response.success && response.data != null) {
-        setState(() {
-          this.currentRecipe = response.data!;
-          isInUserRecipes = true;
-        });
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Recipe saved successfully'),
-              action: SnackBarAction(
-                label: 'Go to My Recipes',
-                onPressed: () {
-                  Navigator.pushNamed(context, '/myRecipes');
-                },
-              ),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+      if (widget.recipe == null) {
+        await recipeProvider.createUserRecipe(recipe);
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response.message ?? 'Failed to save recipe'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        await recipeProvider.updateUserRecipe(recipe);
+      }
+
+      if (mounted) {
+        Navigator.pop(context, recipe);
       }
     } catch (e) {
-      debugPrint(e.toString());
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to save recipe'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        setState(() {
+          _error = ApiResponse<Recipe>.error(e.toString());
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -236,11 +260,12 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   @override
   void dispose() {
     _titleController.dispose();
+    _descriptionController.dispose();
+    _instructionsController.dispose();
+    _ingredientsController.dispose();
+    _imageController.dispose();
     _cuisineTypeController.dispose();
     _sourceController.dispose();
-    _descriptionController.dispose();
-    _ingredientsController.dispose();
-    _instructionsController.dispose();
     _cookingTimeController.dispose();
     _servingsController.dispose();
     _tagsController.dispose();
@@ -252,7 +277,22 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: currentRecipe.id.isEmpty ? 'Create Recipe' : 'Edit Recipe',
+        title: widget.recipe == null ? 'New Recipe' : 'Edit Recipe',
+        actions: [
+          if (_isLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else
+            IconButton(icon: const Icon(Icons.save), onPressed: _saveRecipe),
+        ],
       ),
       body: Stack(
         children: [
@@ -263,404 +303,466 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                 controller: _scrollController,
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Recipe Header with Image
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Stack(
-                            children: [
-                              SizedBox(
-                                width: double.infinity,
-                                height: 250,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child:
-                                      _isUploading
-                                          ? Container(
-                                            color: Colors.grey[200],
-                                            child: const Center(
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            ),
-                                          )
-                                          : Image.network(
-                                            currentRecipe.imageUrl,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (
-                                              context,
-                                              error,
-                                              stackTrace,
-                                            ) {
-                                              return Container(
-                                                width: double.infinity,
-                                                height: 250,
-                                                color: Colors.grey[300],
-                                                child: Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: [
-                                                    const Icon(
-                                                      Icons.broken_image,
-                                                      size: 64,
-                                                      color: Colors.grey,
-                                                    ),
-                                                    const SizedBox(height: 8),
-                                                    Text(
-                                                      'Failed to load image',
-                                                      style: TextStyle(
-                                                        color: Colors.grey[600],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            },
-                                            loadingBuilder: (
-                                              context,
-                                              child,
-                                              loadingProgress,
-                                            ) {
-                                              if (loadingProgress == null) {
-                                                return child;
-                                              }
-                                              return Container(
-                                                width: double.infinity,
-                                                height: 250,
-                                                color: Colors.grey[200],
-                                                child: Center(
-                                                  child: CircularProgressIndicator(
-                                                    value:
-                                                        loadingProgress
-                                                                    .expectedTotalBytes !=
-                                                                null
-                                                            ? loadingProgress
-                                                                    .cumulativeBytesLoaded /
-                                                                loadingProgress
-                                                                    .expectedTotalBytes!
-                                                            : null,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                ),
-                              ),
-                              Positioned(
-                                bottom: 10,
-                                right: 10,
-                                child: Material(
-                                  elevation: 4,
-                                  shape: const CircleBorder(),
-                                  clipBehavior: Clip.hardEdge,
-                                  child: InkWell(
-                                    onTap:
-                                        _isUploading
-                                            ? null
-                                            : _uploadRecipeImage,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.secondary,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        _isUploading
-                                            ? Icons.upload
-                                            : Icons.camera_alt_rounded,
-                                        size: 24,
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.onSecondary,
-                                      ),
-                                    ),
+                  child: Consumer<RecipeProvider>(
+                    builder: (context, recipeProvider, _) {
+                      if (recipeProvider.error != null) {
+                        return ErrorDisplay(
+                          message: recipeProvider.error!.userFriendlyMessage,
+                          isNetworkError: recipeProvider.error!.isNetworkError,
+                          isAuthError: recipeProvider.error!.isAuthError,
+                          isFormatError: recipeProvider.error!.isFormatError,
+                          onRetry: () {
+                            recipeProvider.clearError();
+                            _saveRecipe();
+                          },
+                        );
+                      }
+
+                      return Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (_error != null)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: Text(
+                                  _error!.message ?? 'An error occurred',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          EditableRecipeField(
-                            label: 'Title',
-                            controller: _titleController,
-                            value: currentRecipe.title,
-                            hintText: 'Enter recipe title',
-                            onSave: (value) {
-                              setState(() {
-                                _updateRecipe(title: _titleController.text);
-                                _titleController.text = value;
-                              });
-                            },
-                            customDisplay: Text(
-                              currentRecipe.title,
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          EditableRecipeField(
-                            label: 'Cuisine Type',
-                            controller: _cuisineTypeController,
-                            value: currentRecipe.cuisineType,
-                            onSave: (value) {
-                              setState(() {
-                                _updateRecipe(cuisineType: value);
-                                _cuisineTypeController.text = value;
-                              });
-                            },
-                            customDisplay: Text(
-                              'Fusion',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            hintText: 'Enter recipe cuisine type',
-                          ),
-                          const SizedBox(height: 10),
-                          EditableRecipeField(
-                            label: 'Source',
-                            controller: _sourceController,
-                            value: currentRecipe.source ?? '',
-                            hintText: 'Enter recipe source',
-                            onSave: (value) {
-                              setState(() {
-                                _updateRecipe(source: _sourceController.text);
-                                _sourceController.text = value;
-                              });
-                            },
-                            customDisplay: Text(
-                              currentRecipe.source ??
-                                  'Enter recipe source (Instagram, Pinterest, etc.)',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Description
-                      EditableRecipeField(
-                        label: 'Description',
-                        controller: _descriptionController,
-                        value: currentRecipe.description,
-                        hintText: 'Enter recipe description',
-                        isMultiline: true,
-                        onSave: (value) {
-                          setState(() {
-                            _updateRecipe(description: value);
-                            _descriptionController.text = value;
-                          });
-                        },
-                        customDisplay: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            HtmlDescription(
-                              htmlContent: currentRecipe.description,
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-
-                      // Ingredients
-                      EditableRecipeField(
-                        label: 'Ingredients',
-                        controller: _ingredientsController,
-                        value: currentRecipe.ingredients.join('\n'),
-                        hintText: 'Enter ingredients (separate by comma)',
-                        isMultiline: true,
-
-                        onSave: (value) {
-                          final ingredients =
-                              value
-                                  .split('\n')
-                                  .map((e) => e.replaceAll(',', '').trim())
-                                  .where((e) => e.isNotEmpty)
-                                  .toList();
-                          setState(() {
-                            _updateRecipe(ingredients: ingredients);
-                            _ingredientsController.text = value;
-                          });
-                        },
-
-                        customDisplay: Text(
-                          currentRecipe.ingredients.join('\n'),
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-
-                      // Instructions
-                      EditableRecipeField(
-                        label: 'Instructions',
-                        value: currentRecipe.instructions
-                            .asMap()
-                            .entries
-                            .map((entry) => '${entry.key + 1}. ${entry.value}')
-                            .join('\n'),
-                        controller: _instructionsController,
-                        hintText: 'Enter instructions (one per line)',
-                        isMultiline: true,
-                        onSave: (value) {
-                          final instructions =
-                              value
-                                  .split('\n')
-                                  .map(
-                                    (e) =>
-                                        e
-                                            .replaceFirst(
-                                              RegExp(r'^\d+\.\s*'),
-                                              '',
-                                            )
-                                            .trim(),
-                                  )
-                                  .where((e) => e.isNotEmpty)
-                                  .toList();
-                          setState(() {
-                            _updateRecipe(instructions: instructions);
-                            _instructionsController.text = value;
-                          });
-                        },
-                        customDisplay: Text(
-                          currentRecipe.instructions
-                              .asMap()
-                              .entries
-                              .map(
-                                (entry) => '${entry.key + 1}. ${entry.value}',
-                              )
-                              .join('\n'),
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-
-                      // Cooking Details
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: EditableRecipeField(
-                              label: 'Cooking Time',
-                              controller: _cookingTimeController,
-                              value: currentRecipe.cookingTime,
-                              hintText: 'Enter cooking time in minutes',
-                              onSave: (value) {
-                                setState(() {
-                                  _updateRecipe(cookingTime: value);
-                                  _cookingTimeController.text = value;
-                                });
-                              },
-                              customDisplay: Text(
-                                currentRecipe.cookingTime,
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Flexible(
-                            child: EditableRecipeField(
-                              label: 'Servings',
-                              controller: _servingsController,
-                              value: currentRecipe.servings,
-                              hintText: 'Enter number of servings',
-                              onSave: (value) {
-                                setState(() {
-                                  _updateRecipe(servings: value);
-                                  _servingsController.text = value;
-                                });
-                              },
-                              customDisplay: Text(
-                                '${currentRecipe.servings} servings',
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 15),
-
-                      // Tags
-                      RecipeTags(
-                        tags: currentRecipe.tags,
-                        onAddTag: (tag) {
-                          if (!currentRecipe.tags.contains(tag)) {
-                            setState(() {
-                              _updateRecipe(tags: [...currentRecipe.tags, tag]);
-                            });
-                          }
-                        },
-                        onDeleteTag: (index) {
-                          setState(() {
-                            final newTags = List<String>.from(
-                              currentRecipe.tags,
-                            )..removeAt(index);
-                            _updateRecipe(tags: newTags);
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 15),
-                      // Action Buttons
-                      Center(
-                        child: Wrap(
-                          spacing: 10,
-                          alignment: WrapAlignment.center,
-                          children: [
-                            ElevatedButton(
-                              onPressed: () => Navigator.pop(context),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.secondary,
-                              ),
-                              child: const Text(
-                                'Cancel',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => _saveRecipe(currentRecipe),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.tertiary,
-                              ),
-                              child: Text(
-                                isInUserRecipes == true &&
-                                        currentRecipe.id.isNotEmpty
-                                    ? 'Update'
-                                    : 'Save',
-                                style: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.onTertiary
-                                                  .computeLuminance() >
-                                              0.5
-                                          ? Colors.black
-                                          : Colors.white,
-                                ),
-                              ),
-                            ),
-                            if (currentRecipe.id.isNotEmpty)
-                              ElevatedButton(
-                                onPressed:
-                                    () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) =>
-                                                const MyRecipesScreen(),
+                            // Recipe Header with Image
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Stack(
+                                  children: [
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 250,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child:
+                                            _isUploading
+                                                ? Container(
+                                                  color: Colors.grey[200],
+                                                  child: const Center(
+                                                    child:
+                                                        CircularProgressIndicator(),
+                                                  ),
+                                                )
+                                                : Image.network(
+                                                  currentRecipe.imageUrl,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (
+                                                    context,
+                                                    error,
+                                                    stackTrace,
+                                                  ) {
+                                                    return Container(
+                                                      width: double.infinity,
+                                                      height: 250,
+                                                      color: Colors.grey[300],
+                                                      child: Column(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          const Icon(
+                                                            Icons.broken_image,
+                                                            size: 64,
+                                                            color: Colors.grey,
+                                                          ),
+                                                          const SizedBox(
+                                                            height: 8,
+                                                          ),
+                                                          Text(
+                                                            'Failed to load image',
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors
+                                                                      .grey[600],
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  },
+                                                  loadingBuilder: (
+                                                    context,
+                                                    child,
+                                                    loadingProgress,
+                                                  ) {
+                                                    if (loadingProgress ==
+                                                        null) {
+                                                      return child;
+                                                    }
+                                                    return Container(
+                                                      width: double.infinity,
+                                                      height: 250,
+                                                      color: Colors.grey[200],
+                                                      child: Center(
+                                                        child: CircularProgressIndicator(
+                                                          value:
+                                                              loadingProgress
+                                                                          .expectedTotalBytes !=
+                                                                      null
+                                                                  ? loadingProgress
+                                                                          .cumulativeBytesLoaded /
+                                                                      loadingProgress
+                                                                          .expectedTotalBytes!
+                                                                  : null,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
                                       ),
                                     ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      Theme.of(context).colorScheme.primary,
+                                    Positioned(
+                                      bottom: 10,
+                                      right: 10,
+                                      child: Material(
+                                        elevation: 4,
+                                        shape: const CircleBorder(),
+                                        clipBehavior: Clip.hardEdge,
+                                        child: InkWell(
+                                          onTap:
+                                              _isUploading
+                                                  ? null
+                                                  : _uploadRecipeImage,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).colorScheme.secondary,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              _isUploading
+                                                  ? Icons.upload
+                                                  : Icons.camera_alt_rounded,
+                                              size: 24,
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).colorScheme.onSecondary,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                child: Text('My Recipes'),
+                                const SizedBox(height: 10),
+                                EditableRecipeField(
+                                  label: 'Title',
+                                  controller: _titleController,
+                                  value: currentRecipe.title,
+                                  hintText: 'Enter recipe title',
+                                  onSave: (value) {
+                                    setState(() {
+                                      _updateRecipe(
+                                        title: _titleController.text,
+                                      );
+                                      _titleController.text = value;
+                                    });
+                                  },
+                                  customDisplay: Text(
+                                    currentRecipe.title,
+                                    style:
+                                        Theme.of(context).textTheme.bodyLarge,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                EditableRecipeField(
+                                  label: 'Cuisine Type',
+                                  controller: _cuisineTypeController,
+                                  value: currentRecipe.cuisineType,
+                                  onSave: (value) {
+                                    setState(() {
+                                      _updateRecipe(cuisineType: value);
+                                      _cuisineTypeController.text = value;
+                                    });
+                                  },
+                                  customDisplay: Text(
+                                    'Fusion',
+                                    style:
+                                        Theme.of(context).textTheme.bodyLarge,
+                                  ),
+                                  hintText: 'Enter recipe cuisine type',
+                                ),
+                                const SizedBox(height: 10),
+                                EditableRecipeField(
+                                  label: 'Source',
+                                  controller: _sourceController,
+                                  value: currentRecipe.source ?? '',
+                                  hintText: 'Enter recipe source',
+                                  onSave: (value) {
+                                    setState(() {
+                                      _updateRecipe(
+                                        source: _sourceController.text,
+                                      );
+                                      _sourceController.text = value;
+                                    });
+                                  },
+                                  customDisplay: Text(
+                                    currentRecipe.source ??
+                                        'Enter recipe source (Instagram, Pinterest, etc.)',
+                                    style:
+                                        Theme.of(context).textTheme.bodyLarge,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+
+                            // Description
+                            EditableRecipeField(
+                              label: 'Description',
+                              controller: _descriptionController,
+                              value: currentRecipe.description,
+                              hintText: 'Enter recipe description',
+                              isMultiline: true,
+                              onSave: (value) {
+                                setState(() {
+                                  _updateRecipe(description: value);
+                                  _descriptionController.text = value;
+                                });
+                              },
+                              customDisplay: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  HtmlDescription(
+                                    htmlContent: currentRecipe.description,
+                                    style:
+                                        Theme.of(context).textTheme.bodyLarge,
+                                  ),
+                                ],
                               ),
+                            ),
+                            const SizedBox(height: 15),
+
+                            // Ingredients
+                            EditableRecipeField(
+                              label: 'Ingredients',
+                              controller: _ingredientsController,
+                              value: currentRecipe.ingredients.join('\n'),
+                              hintText: 'Enter ingredients (separate by comma)',
+                              isMultiline: true,
+
+                              onSave: (value) {
+                                final ingredients =
+                                    value
+                                        .split('\n')
+                                        .map(
+                                          (e) => e.replaceAll(',', '').trim(),
+                                        )
+                                        .where((e) => e.isNotEmpty)
+                                        .toList();
+                                setState(() {
+                                  _updateRecipe(ingredients: ingredients);
+                                  _ingredientsController.text = value;
+                                });
+                              },
+
+                              customDisplay: Text(
+                                currentRecipe.ingredients.join('\n'),
+                              ),
+                            ),
+                            const SizedBox(height: 15),
+
+                            // Instructions
+                            EditableRecipeField(
+                              label: 'Instructions',
+                              value: currentRecipe.instructions
+                                  .asMap()
+                                  .entries
+                                  .map(
+                                    (entry) =>
+                                        '${entry.key + 1}. ${entry.value}',
+                                  )
+                                  .join('\n'),
+                              controller: _instructionsController,
+                              hintText: 'Enter instructions (one per line)',
+                              isMultiline: true,
+                              onSave: (value) {
+                                final instructions =
+                                    value
+                                        .split('\n')
+                                        .map(
+                                          (e) =>
+                                              e
+                                                  .replaceFirst(
+                                                    RegExp(r'^\d+\.\s*'),
+                                                    '',
+                                                  )
+                                                  .trim(),
+                                        )
+                                        .where((e) => e.isNotEmpty)
+                                        .toList();
+                                setState(() {
+                                  _updateRecipe(instructions: instructions);
+                                  _instructionsController.text = value;
+                                });
+                              },
+                              customDisplay: Text(
+                                currentRecipe.instructions
+                                    .asMap()
+                                    .entries
+                                    .map(
+                                      (entry) =>
+                                          '${entry.key + 1}. ${entry.value}',
+                                    )
+                                    .join('\n'),
+                              ),
+                            ),
+                            const SizedBox(height: 15),
+
+                            // Cooking Details
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Flexible(
+                                  child: EditableRecipeField(
+                                    label: 'Cooking Time',
+                                    controller: _cookingTimeController,
+                                    value: currentRecipe.cookingTime,
+                                    hintText: 'Enter cooking time in minutes',
+                                    onSave: (value) {
+                                      setState(() {
+                                        _updateRecipe(cookingTime: value);
+                                        _cookingTimeController.text = value;
+                                      });
+                                    },
+                                    customDisplay: Text(
+                                      currentRecipe.cookingTime,
+                                      style:
+                                          Theme.of(context).textTheme.bodyLarge,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Flexible(
+                                  child: EditableRecipeField(
+                                    label: 'Servings',
+                                    controller: _servingsController,
+                                    value: currentRecipe.servings,
+                                    hintText: 'Enter number of servings',
+                                    onSave: (value) {
+                                      setState(() {
+                                        _updateRecipe(servings: value);
+                                        _servingsController.text = value;
+                                      });
+                                    },
+                                    customDisplay: Text(
+                                      '${currentRecipe.servings} servings',
+                                      style:
+                                          Theme.of(context).textTheme.bodyLarge,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 15),
+
+                            // Tags
+                            RecipeTags(
+                              tags: currentRecipe.tags,
+                              onAddTag: (tag) {
+                                if (!currentRecipe.tags.contains(tag)) {
+                                  setState(() {
+                                    _updateRecipe(
+                                      tags: [...currentRecipe.tags, tag],
+                                    );
+                                  });
+                                }
+                              },
+                              onDeleteTag: (index) {
+                                setState(() {
+                                  final newTags = List<String>.from(
+                                    currentRecipe.tags,
+                                  )..removeAt(index);
+                                  _updateRecipe(tags: newTags);
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 15),
+                            // Action Buttons
+                            Center(
+                              child: Wrap(
+                                spacing: 10,
+                                alignment: WrapAlignment.center,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.secondary,
+                                    ),
+                                    child: const Text(
+                                      'Cancel',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () => _saveRecipe(),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.tertiary,
+                                    ),
+                                    child: Text(
+                                      isInUserRecipes == true &&
+                                              currentRecipe.id.isNotEmpty
+                                          ? 'Update'
+                                          : 'Save',
+                                      style: TextStyle(
+                                        color:
+                                            Theme.of(context)
+                                                        .colorScheme
+                                                        .onTertiary
+                                                        .computeLuminance() >
+                                                    0.5
+                                                ? Colors.black
+                                                : Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  if (currentRecipe.id.isNotEmpty)
+                                    ElevatedButton(
+                                      onPressed:
+                                          () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (context) =>
+                                                      const MyRecipesScreen(),
+                                            ),
+                                          ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
+                                      ),
+                                      child: Text('My Recipes'),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ),

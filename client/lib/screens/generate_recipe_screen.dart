@@ -6,6 +6,7 @@ import 'package:recipease/components/checkbox_list.dart';
 import 'package:recipease/components/screen_description_card.dart';
 import 'package:recipease/components/floating_home_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../components/error_display.dart';
 
 class GenerateRecipeScreen extends StatefulWidget {
   const GenerateRecipeScreen({super.key});
@@ -109,16 +110,28 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
       }
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              e.toString().contains('Connection error')
-                  ? 'Unable to connect to server. Please check your internet connection.'
-                  : 'Error generating recipes: ${e.toString()}',
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
+        showDialog(
+          context: context,
+          builder:
+              (context) => ErrorDisplay(
+                message:
+                    e.toString().contains('Connection error')
+                        ? 'Unable to connect to server. Please check your internet connection.'
+                        : 'Error generating recipes: ${e.toString()}',
+                isNetworkError:
+                    e.toString().toLowerCase().contains('connection') ||
+                    e.toString().toLowerCase().contains('network'),
+                isAuthError:
+                    e.toString().toLowerCase().contains('auth') ||
+                    e.toString().toLowerCase().contains('login'),
+                isFormatError:
+                    e.toString().toLowerCase().contains('format') ||
+                    e.toString().toLowerCase().contains('parse'),
+                onRetry: () {
+                  Navigator.pop(context);
+                  _loadRecipes(context);
+                },
+              ),
         );
       }
     }
@@ -136,7 +149,12 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
       appBar: CustomAppBar(
         title: 'Generate Recipe',
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.settings)),
+          IconButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/settings');
+            },
+            icon: const Icon(Icons.settings),
+          ),
         ],
       ),
       body: Stack(

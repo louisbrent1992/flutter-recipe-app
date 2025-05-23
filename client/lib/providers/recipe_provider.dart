@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/recipe.dart';
+import '../models/api_response.dart';
 import '../services/recipe_service.dart';
 
 class RecipeProvider extends ChangeNotifier {
@@ -7,7 +8,7 @@ class RecipeProvider extends ChangeNotifier {
   List<Recipe> _generatedRecipes = [];
   Recipe? _importedRecipe;
   bool _isLoading = false;
-  String? _error;
+  ApiResponse<Recipe>? _error;
 
   // User recipes with pagination
   List<Recipe> _userRecipes = [];
@@ -22,7 +23,7 @@ class RecipeProvider extends ChangeNotifier {
   List<Recipe> get generatedRecipes => _generatedRecipes;
   Recipe? get importedRecipe => _importedRecipe;
   bool get isLoading => _isLoading;
-  String? get error => _error;
+  ApiResponse<Recipe>? get error => _error;
   List<Recipe> get userRecipes => _userRecipes;
   List<Recipe> get favoriteRecipes => _favoriteRecipes;
   int get currentPage => _currentPage;
@@ -39,7 +40,9 @@ class RecipeProvider extends ChangeNotifier {
 
   // Set error message
   void _setError(String? errorMessage) {
-    _error = errorMessage;
+    _error = ApiResponse<Recipe>.error(
+      errorMessage ?? 'An unexpected error occurred',
+    );
     notifyListeners();
   }
 
@@ -61,7 +64,7 @@ class RecipeProvider extends ChangeNotifier {
     bool random = false,
   }) async {
     _setLoading(true);
-    _setError(null);
+    clearError();
 
     try {
       final response = await RecipeService.generateRecipes(
@@ -89,7 +92,7 @@ class RecipeProvider extends ChangeNotifier {
   // Import recipe from social media URL
   Future<Recipe?> importRecipeFromUrl(String url, BuildContext context) async {
     _setLoading(true);
-    _setError(null);
+    clearError();
 
     try {
       final response = await RecipeService.importRecipeFromUrl(url);
@@ -149,7 +152,7 @@ class RecipeProvider extends ChangeNotifier {
   // Save a generated recipe to the user's collection
   Future<Recipe?> saveGeneratedRecipe(Recipe recipe) async {
     _setLoading(true);
-    _setError(null);
+    clearError();
 
     try {
       // Check for duplicates
@@ -185,7 +188,7 @@ class RecipeProvider extends ChangeNotifier {
   // Load all user recipes with pagination
   Future<void> loadUserRecipes({int page = 1, int limit = 10}) async {
     _setLoading(true);
-    _setError(null);
+    clearError();
 
     try {
       final response = await RecipeService.getUserRecipes(
@@ -231,7 +234,7 @@ class RecipeProvider extends ChangeNotifier {
   // Get a specific user recipe
   Future<Recipe?> getUserRecipe(String id) async {
     _setLoading(true);
-    _setError(null);
+    clearError();
 
     try {
       final response = await RecipeService.getUserRecipe(id);
@@ -253,7 +256,7 @@ class RecipeProvider extends ChangeNotifier {
   // Create a new user recipe
   Future<Recipe?> createUserRecipe(Recipe recipe) async {
     _setLoading(true);
-    _setError(null);
+    clearError();
 
     try {
       final response = await RecipeService.createUserRecipe(recipe);
@@ -278,7 +281,7 @@ class RecipeProvider extends ChangeNotifier {
   // Update an existing user recipe
   Future<Recipe?> updateUserRecipe(Recipe recipe) async {
     _setLoading(true);
-    _setError(null);
+    clearError();
 
     try {
       final response = await RecipeService.updateUserRecipe(recipe);
@@ -315,7 +318,7 @@ class RecipeProvider extends ChangeNotifier {
   // Delete a user recipe
   Future<bool> deleteUserRecipe(String id) async {
     _setLoading(true);
-    _setError(null);
+    clearError();
 
     try {
       final response = await RecipeService.deleteUserRecipe(id);
@@ -341,7 +344,7 @@ class RecipeProvider extends ChangeNotifier {
 
   // Toggle favorite status
   Future<bool> toggleFavorite(String id, bool isFavorite) async {
-    _setError(null);
+    clearError();
 
     try {
       final response = await RecipeService.toggleFavoriteStatus(id, isFavorite);
@@ -385,7 +388,7 @@ class RecipeProvider extends ChangeNotifier {
   // Load favorite recipes
   Future<void> loadFavoriteRecipes() async {
     _setLoading(true);
-    _setError(null);
+    clearError();
 
     try {
       final response = await RecipeService.getFavoriteRecipes();
@@ -446,7 +449,7 @@ class RecipeProvider extends ChangeNotifier {
     int limit = 10,
   }) async {
     _setLoading(true);
-    _setError(null);
+    clearError();
 
     try {
       final response = await RecipeService.searchExternalRecipes(

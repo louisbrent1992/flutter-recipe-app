@@ -5,6 +5,7 @@ import '../providers/recipe_provider.dart';
 import '../components/recipe_card.dart';
 import '../components/custom_app_bar.dart';
 import '../models/recipe.dart';
+import '../components/error_display.dart';
 
 class GeneratedRecipesScreen extends StatefulWidget {
   const GeneratedRecipesScreen({super.key});
@@ -88,11 +89,15 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
           }
 
           if (recipeProvider.error != null) {
-            return Center(
-              child: Text(
-                recipeProvider.error!,
-                style: const TextStyle(color: Colors.red),
-              ),
+            return ErrorDisplay(
+              message: recipeProvider.error!.userFriendlyMessage,
+              isNetworkError: recipeProvider.error!.isNetworkError,
+              isAuthError: recipeProvider.error!.isAuthError,
+              isFormatError: recipeProvider.error!.isFormatError,
+              onRetry: () {
+                recipeProvider.clearError();
+                recipeProvider.generateRecipes();
+              },
             );
           }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 const Color primaryColor = Color(0xFFE07A5F); // Warm Terracotta
 const Color secondaryColor = Color(0xFF3D405B); // Deep Navy
@@ -24,62 +25,63 @@ class AppTheme {
       onTertiary: purpleColor,
       surface: backgroundColor,
       error: Colors.red,
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
+      onPrimary: backgroundColor,
+      onSecondary: backgroundColor,
       onSurface: Colors.black,
-      onError: Colors.white,
+      onError: backgroundColor,
       brightness: Brightness.light,
     ),
     scaffoldBackgroundColor: backgroundColor,
-    textTheme: const TextTheme(
-      headlineLarge: TextStyle(
+    textTheme: TextTheme(
+      headlineLarge: GoogleFonts.playfairDisplay(
+        fontSize: 28,
+        fontWeight: FontWeight.bold,
         color: secondaryColor,
+      ),
+      headlineMedium: GoogleFonts.playfairDisplay(
         fontSize: 24,
         fontWeight: FontWeight.bold,
-      ),
-      headlineMedium: TextStyle(
         color: secondaryColor,
+      ),
+      headlineSmall: GoogleFonts.playfairDisplay(
         fontSize: 20,
         fontWeight: FontWeight.bold,
-      ),
-      headlineSmall: TextStyle(
         color: secondaryColor,
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
       ),
-      titleLarge: TextStyle(
-        color: Colors.white,
+      titleLarge: GoogleFonts.playfairDisplay(
         fontSize: 24,
         fontWeight: FontWeight.bold,
+        color: backgroundColor,
       ),
-      titleMedium: TextStyle(
-        color: Colors.white,
+      titleMedium: GoogleFonts.playfairDisplay(
         fontSize: 20,
         fontWeight: FontWeight.bold,
+        color: backgroundColor,
       ),
-      titleSmall: TextStyle(
-        color: Colors.white,
+      titleSmall: GoogleFonts.playfairDisplay(
         fontSize: 16,
         fontWeight: FontWeight.bold,
+        color: backgroundColor,
       ),
-      bodyMedium: TextStyle(color: Colors.black, fontSize: 14),
-      bodySmall: TextStyle(color: Colors.black, fontSize: 12),
-      labelLarge: TextStyle(
+      bodyLarge: GoogleFonts.sourceSans3(fontSize: 16, color: Colors.black),
+      bodyMedium: GoogleFonts.sourceSans3(fontSize: 14, color: Colors.black),
+      bodySmall: GoogleFonts.sourceSans3(fontSize: 12, color: Colors.black),
+      labelLarge: GoogleFonts.sourceSans3(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
         color: Colors.black,
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
       ),
-      labelMedium: TextStyle(
-        color: secondaryColor,
+      labelMedium: GoogleFonts.sourceSans3(
         fontSize: 14,
         fontWeight: FontWeight.bold,
+        color: secondaryColor,
       ),
-      labelSmall: TextStyle(color: backgroundColor, fontSize: 12),
+      labelSmall: GoogleFonts.sourceSans3(fontSize: 12, color: backgroundColor),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
+        foregroundColor: backgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     ),
@@ -94,52 +96,63 @@ class AppTheme {
       onTertiary: darkPurpleColor,
       surface: darkBackgroundColor,
       error: Colors.red,
-      onPrimary: Colors.white,
+      onPrimary: backgroundColor,
       onSecondary: Colors.black,
-      onSurface: Colors.white,
-      onError: Colors.white,
+      onSurface: backgroundColor,
+      onError: backgroundColor,
       brightness: Brightness.dark,
     ),
     scaffoldBackgroundColor: darkBackgroundColor,
-    textTheme: const TextTheme(
-      headlineLarge: TextStyle(
-        color: darkSecondaryColor,
+    textTheme: TextTheme(
+      headlineLarge: GoogleFonts.playfairDisplay(
+        fontSize: 28,
+        fontWeight: FontWeight.bold,
+        color: backgroundColor,
+      ),
+      headlineMedium: GoogleFonts.playfairDisplay(
         fontSize: 24,
         fontWeight: FontWeight.bold,
+        color: backgroundColor,
       ),
-      headlineMedium: TextStyle(
-        color: Colors.white,
+      headlineSmall: GoogleFonts.playfairDisplay(
         fontSize: 20,
         fontWeight: FontWeight.bold,
+        color: backgroundColor,
       ),
-      titleLarge: TextStyle(
-        color: darkSecondaryColor,
+      titleLarge: GoogleFonts.playfairDisplay(
         fontSize: 24,
         fontWeight: FontWeight.bold,
+        color: backgroundColor,
       ),
-      titleMedium: TextStyle(
-        color: Colors.white,
+      titleMedium: GoogleFonts.playfairDisplay(
         fontSize: 20,
         fontWeight: FontWeight.bold,
+        color: backgroundColor,
       ),
-      bodyMedium: TextStyle(color: Colors.white, fontSize: 14),
-      bodySmall: TextStyle(color: Colors.white, fontSize: 12),
-      labelLarge: TextStyle(
-        color: darkSecondaryColor,
+      titleSmall: GoogleFonts.playfairDisplay(
         fontSize: 16,
         fontWeight: FontWeight.bold,
+        color: backgroundColor,
       ),
-      labelMedium: TextStyle(
+      bodyLarge: GoogleFonts.sourceSans3(fontSize: 16, color: backgroundColor),
+      bodyMedium: GoogleFonts.sourceSans3(fontSize: 14, color: backgroundColor),
+      bodySmall: GoogleFonts.sourceSans3(fontSize: 12, color: backgroundColor),
+      labelLarge: GoogleFonts.sourceSans3(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
         color: darkSecondaryColor,
+      ),
+      labelMedium: GoogleFonts.sourceSans3(
         fontSize: 14,
         fontWeight: FontWeight.bold,
+        color: darkSecondaryColor,
       ),
-      labelSmall: TextStyle(color: backgroundColor, fontSize: 12),
+      labelSmall: GoogleFonts.sourceSans3(fontSize: 12, color: backgroundColor),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: darkPrimaryColor,
-        foregroundColor: Colors.white,
+        foregroundColor: backgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     ),

@@ -53,14 +53,30 @@ class ApiResponse<T> {
       message?.toLowerCase().contains('connection') == true ||
       statusCode == null;
 
+  /// Utility method to check if there was an authentication error
+  bool get isAuthError =>
+      statusCode == 401 ||
+      statusCode == 403 ||
+      message?.toLowerCase().contains('auth') == true ||
+      message?.toLowerCase().contains('login') == true;
+
+  /// Utility method to check if there was a format error
+  bool get isFormatError =>
+      message?.toLowerCase().contains('format') == true ||
+      message?.toLowerCase().contains('parse') == true;
+
   /// User-friendly error message for display
   String get userFriendlyMessage {
     if (isNetworkError) {
       return 'Network error. Please check your internet connection.';
     }
 
-    if (statusCode == 401 || statusCode == 403) {
+    if (isAuthError) {
       return 'Authentication error. Please login again.';
+    }
+
+    if (isFormatError) {
+      return 'Data format error. Please try again.';
     }
 
     if (statusCode == 404) {
