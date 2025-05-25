@@ -67,6 +67,7 @@ class _EditableRecipeFieldState extends State<EditableRecipeField> {
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 5,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

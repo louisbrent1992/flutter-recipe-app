@@ -209,6 +209,17 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                                   '/recipeDetail',
                                   arguments: recipe,
                                 ),
+                            onRecipeUpdated: (updatedRecipe) {
+                              // Update the recipe in the list
+                              setState(() {
+                                final index = myRecipes.indexWhere(
+                                  (r) => r.id == updatedRecipe.id,
+                                );
+                                if (index != -1) {
+                                  myRecipes[index] = updatedRecipe;
+                                }
+                              });
+                            },
                           );
                         },
                       ),

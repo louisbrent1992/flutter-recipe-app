@@ -466,7 +466,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
               const Spacer(),
               Text(
                 collection.name,
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.headlineSmall,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

@@ -3,9 +3,9 @@ import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/editable_recipe_field.dart';
 import 'package:recipease/components/recipe_tags.dart';
 import 'package:recipease/components/floating_home_button.dart';
+import 'package:recipease/components/floating_save_button.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/screens/my_recipes_screen.dart';
-import 'package:recipease/services/recipe_service.dart';
 import 'package:recipease/components/html_description.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
@@ -41,7 +41,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   final TextEditingController _servingsController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  bool isInUserRecipes = false;
   bool _isUploading = false;
 
   @override
@@ -75,20 +74,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
           _sourceController.text = arguments.source ?? '';
           _cookingTimeController.text = arguments.cookingTime;
           _servingsController.text = arguments.servings;
-        });
-
-        // Only check if recipe exists in user recipes if we have a recipe ID
-        if (arguments.id.isNotEmpty) {
-          RecipeService.getUserRecipe(arguments.id).then(
-            (response) => setState(() {
-              isInUserRecipes = response.success;
-            }),
-          );
-        }
-      } else {
-        // For new recipe creation, set isInUserRecipes to false
-        setState(() {
-          isInUserRecipes = false;
         });
       }
     });
@@ -157,16 +142,20 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
         cuisineType: _cuisineTypeController.text,
         createdAt: widget.recipe?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
+        toEdit: widget.recipe?.toEdit ?? false,
+        tags: currentRecipe.tags,
       );
 
-      if (widget.recipe == null) {
-        await recipeProvider.createUserRecipe(recipe);
+      if (widget.recipe?.toEdit == true) {
+        final updatedRecipe = await recipeProvider.updateUserRecipe(recipe);
+        if (updatedRecipe != null && mounted) {
+          Navigator.pop(context, updatedRecipe);
+        }
       } else {
-        await recipeProvider.updateUserRecipe(recipe);
-      }
-
-      if (mounted) {
-        Navigator.pop(context, recipe);
+        final newRecipe = await recipeProvider.createUserRecipe(recipe);
+        if (newRecipe != null && mounted) {
+          Navigator.pop(context, newRecipe);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -277,22 +266,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: widget.recipe == null ? 'New Recipe' : 'Edit Recipe',
-        actions: [
-          if (_isLoading)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            )
-          else
-            IconButton(icon: const Icon(Icons.save), onPressed: _saveRecipe),
-        ],
+        title: widget.recipe?.toEdit == true ? 'Edit Recipe' : 'New Recipe',
       ),
       body: Stack(
         children: [
@@ -477,24 +451,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                     style:
                                         Theme.of(context).textTheme.bodyLarge,
                                   ),
-                                ),
-                                const SizedBox(height: 10),
-                                EditableRecipeField(
-                                  label: 'Cuisine Type',
-                                  controller: _cuisineTypeController,
-                                  value: currentRecipe.cuisineType,
-                                  onSave: (value) {
-                                    setState(() {
-                                      _updateRecipe(cuisineType: value);
-                                      _cuisineTypeController.text = value;
-                                    });
-                                  },
-                                  customDisplay: Text(
-                                    'Fusion',
-                                    style:
-                                        Theme.of(context).textTheme.bodyLarge,
-                                  ),
-                                  hintText: 'Enter recipe cuisine type',
                                 ),
                                 const SizedBox(height: 10),
                                 EditableRecipeField(
@@ -720,8 +676,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                           ).colorScheme.tertiary,
                                     ),
                                     child: Text(
-                                      isInUserRecipes == true &&
-                                              currentRecipe.id.isNotEmpty
+                                      widget.recipe?.toEdit == true
                                           ? 'Update'
                                           : 'Save',
                                       style: TextStyle(
@@ -769,6 +724,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
             ),
           ),
           const FloatingHomeButton(),
+          FloatingSaveButton(onPressed: _saveRecipe, isLoading: _isLoading),
         ],
       ),
     );

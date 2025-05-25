@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
+import 'package:recipease/components/floating_home_button.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/providers/recipe_provider.dart';
@@ -196,140 +197,159 @@ class _AddRecipesToCollectionScreenState
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : Column(
-                children: [
-                  // Search field
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: _filterRecipes,
-                      decoration: InputDecoration(
-                        hintText: 'Search recipes...',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon:
-                            _searchQuery.isNotEmpty
-                                ? IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    _filterRecipes('');
-                                  },
-                                )
-                                : null,
-                        filled: true,
-                        fillColor: colorScheme.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: colorScheme.outline.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: colorScheme.primary.withValues(alpha: 0.5),
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Recipes list or empty state
-                  Expanded(
-                    child:
-                        _filteredRecipes.isEmpty
-                            ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.no_meals,
-                                    size: 64,
-                                    color: colorScheme.onSurface.withValues(
-                                      alpha: 0.2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    _searchQuery.isEmpty
-                                        ? 'No recipes available to add'
-                                        : 'No recipes match your search',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: colorScheme.onSurface.withValues(
-                                        alpha: 0.6,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+              : RefreshIndicator(
+                onRefresh: _loadRecipes,
+                child: Stack(
+                  children: [
+                    Column(
+                      children: [
+                        // Search field
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: _filterRecipes,
+                            decoration: InputDecoration(
+                              hintText: 'Search recipes...',
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon:
+                                  _searchQuery.isNotEmpty
+                                      ? IconButton(
+                                        icon: const Icon(Icons.clear),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          _filterRecipes('');
+                                        },
+                                      )
+                                      : null,
+                              filled: true,
+                              fillColor: colorScheme.surface,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
                               ),
-                            )
-                            : ListView.builder(
-                              itemCount: _filteredRecipes.length,
-                              padding: const EdgeInsets.only(bottom: 80),
-                              itemBuilder: (context, index) {
-                                final recipe = _filteredRecipes[index];
-                                final isSelected = _selectedRecipes.any(
-                                  (r) => r.id == recipe.id,
-                                );
-
-                                return ListTile(
-                                  leading: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      recipe.imageUrl,
-                                      width: 60,
-                                      height: 60,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              Container(
-                                                width: 60,
-                                                height: 60,
-                                                color: Colors.grey[300],
-                                                child: const Icon(
-                                                  Icons.broken_image,
-                                                  size: 30,
-                                                ),
-                                              ),
-                                    ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: colorScheme.outline.withValues(
+                                    alpha: 0.2,
                                   ),
-                                  title: Text(
-                                    recipe.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: colorScheme.primary.withValues(
+                                    alpha: 0.5,
                                   ),
-                                  subtitle: HtmlDescription(
-                                    htmlContent: recipe.description,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style:
-                                        Theme.of(context).textTheme.bodyMedium,
-                                  ),
-                                  trailing: Checkbox(
-                                    value: isSelected,
-                                    onChanged:
-                                        (value) =>
-                                            _toggleRecipeSelection(recipe),
-                                    activeColor: colorScheme.primary,
-                                  ),
-                                  onTap: () => _toggleRecipeSelection(recipe),
-                                  selected: isSelected,
-                                  selectedTileColor: colorScheme
-                                      .primaryContainer
-                                      .withValues(alpha: 0.1),
-                                );
-                              },
+                                  width: 2,
+                                ),
+                              ),
                             ),
-                  ),
-                ],
+                          ),
+                        ),
+
+                        // Recipes list or empty state
+                        Expanded(
+                          child:
+                              _filteredRecipes.isEmpty
+                                  ? Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.no_meals,
+                                          size: 64,
+                                          color: colorScheme.onSurface
+                                              .withValues(alpha: 0.2),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          _searchQuery.isEmpty
+                                              ? 'No recipes available to add'
+                                              : 'No recipes match your search',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: colorScheme.onSurface
+                                                .withValues(alpha: 0.6),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                  : ListView.builder(
+                                    itemCount: _filteredRecipes.length,
+                                    padding: const EdgeInsets.only(bottom: 80),
+                                    itemBuilder: (context, index) {
+                                      final recipe = _filteredRecipes[index];
+                                      final isSelected = _selectedRecipes.any(
+                                        (r) => r.id == recipe.id,
+                                      );
+
+                                      return ListTile(
+                                        leading: ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          child: Image.network(
+                                            recipe.imageUrl,
+                                            width: 60,
+                                            height: 60,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) =>
+                                                    Container(
+                                                      width: 60,
+                                                      height: 60,
+                                                      color: Colors.grey[300],
+                                                      child: const Icon(
+                                                        Icons.broken_image,
+                                                        size: 30,
+                                                      ),
+                                                    ),
+                                          ),
+                                        ),
+                                        title: Text(
+                                          recipe.title,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        subtitle: HtmlDescription(
+                                          htmlContent: recipe.description,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+
+                                          style:
+                                              Theme.of(
+                                                context,
+                                              ).textTheme.bodyMedium,
+                                        ),
+                                        trailing: Checkbox(
+                                          value: isSelected,
+                                          onChanged:
+                                              (value) => _toggleRecipeSelection(
+                                                recipe,
+                                              ),
+                                          activeColor: colorScheme.primary,
+                                        ),
+                                        onTap:
+                                            () =>
+                                                _toggleRecipeSelection(recipe),
+                                        selected: isSelected,
+                                        selectedTileColor: colorScheme
+                                            .primaryContainer
+                                            .withValues(alpha: 0.1),
+                                      );
+                                    },
+                                  ),
+                        ),
+                      ],
+                    ),
+                    const FloatingHomeButton(),
+                  ],
+                ),
               ),
       floatingActionButton:
           _selectedRecipes.isEmpty

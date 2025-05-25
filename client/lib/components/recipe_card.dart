@@ -19,6 +19,7 @@ class RecipeCard extends StatefulWidget {
   final bool showEditButton;
   final bool showFavoriteButton;
   final bool showShareButton;
+  final Function(Recipe)? onRecipeUpdated;
 
   const RecipeCard({
     super.key,
@@ -34,6 +35,7 @@ class RecipeCard extends StatefulWidget {
     this.showEditButton = false,
     this.showFavoriteButton = true,
     this.showShareButton = true,
+    this.onRecipeUpdated,
   });
 
   @override
@@ -394,6 +396,7 @@ Shared from Recipe App
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    print(widget.recipe.imageUrl);
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -449,12 +452,18 @@ Shared from Recipe App
                       if (widget.showEditButton)
                         _buildActionButton(
                           icon: Icons.edit_outlined,
-                          onTap: () {
-                            Navigator.pushNamed(
+                          onTap: () async {
+                            final result = await Navigator.pushNamed(
                               context,
                               '/recipeEdit',
-                              arguments: widget.recipe,
+                              arguments: widget.recipe.copyWith(toEdit: true),
                             );
+                            if (result != null && result is Recipe) {
+                              // Notify parent widget about the updated recipe
+                              if (widget.onRecipeUpdated != null) {
+                                widget.onRecipeUpdated!(result);
+                              }
+                            }
                           },
                           tooltip: 'Edit recipe',
                         ),

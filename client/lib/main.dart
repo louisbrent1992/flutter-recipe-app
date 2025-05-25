@@ -2,6 +2,7 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:recipease/components/persistent_banner_layout.dart';
 import 'package:recipease/firebase_options.dart';
 import 'package:recipease/screens/my_recipes_screen.dart';
 import 'package:recipease/screens/discover_recipes.dart';
@@ -34,6 +35,7 @@ import 'package:share_handler_platform_interface/share_handler_platform_interfac
 import 'package:recipease/services/permission_service.dart';
 import 'screens/generated_recipes_screen.dart';
 import 'screens/imported_recipes_screen.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -47,6 +49,18 @@ final kWebRecaptchaSiteKey = '6Lemcn0dAAAAABLkf6aiiHvpGD6x-zF3nOSDU2M8';
 ///
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize MobileAds with test device configuration
+  await MobileAds.instance.initialize();
+
+  // Configure test devices
+  MobileAds.instance.updateRequestConfiguration(
+    RequestConfiguration(
+      testDeviceIds: ['02A173696D1667C3CA2143D2D279EE38'],
+      tagForChildDirectedTreatment: TagForChildDirectedTreatment.unspecified,
+      tagForUnderAgeOfConsent: TagForUnderAgeOfConsent.unspecified,
+    ),
+  );
 
   // Initialize Firebase first
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -157,39 +171,77 @@ class _MyAppState extends State<MyApp> {
             debugShowCheckedModeBanner: false,
             home:
                 authService.user != null
-                    ? const HomeScreen()
+                    ? const PersistentBannerLayout(child: HomeScreen())
                     : const LoginScreen(),
             routes: {
               '/home': (context) => const HomeScreen(),
               '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),
-              '/discover': (context) => const DiscoverRecipesScreen(),
-              '/favorites': (context) => const FavoriteRecipesScreen(),
-              '/generate': (context) => const GenerateRecipeScreen(),
+              '/discover':
+                  (context) => const PersistentBannerLayout(
+                    child: DiscoverRecipesScreen(),
+                  ),
+              '/favorites':
+                  (context) => const PersistentBannerLayout(
+                    child: FavoriteRecipesScreen(),
+                  ),
+              '/generate':
+                  (context) => const PersistentBannerLayout(
+                    child: GenerateRecipeScreen(),
+                  ),
               '/import':
-                  (context) => ImportRecipeScreen(
-                    sharedUrl:
-                        ModalRoute.of(context)?.settings.arguments as String?,
+                  (context) => PersistentBannerLayout(
+                    child: ImportRecipeScreen(
+                      sharedUrl:
+                          ModalRoute.of(context)?.settings.arguments as String?,
+                    ),
                   ),
-              '/importList': (context) => const ImportListScreen(),
-              '/recipeEdit': (context) => const RecipeEditScreen(),
-              '/myRecipes': (context) => const MyRecipesScreen(),
+              '/importList':
+                  (context) =>
+                      const PersistentBannerLayout(child: ImportListScreen()),
+              '/recipeEdit':
+                  (context) => PersistentBannerLayout(
+                    child: RecipeEditScreen(
+                      recipe:
+                          ModalRoute.of(context)?.settings.arguments as Recipe?,
+                    ),
+                  ),
+              '/myRecipes':
+                  (context) =>
+                      const PersistentBannerLayout(child: MyRecipesScreen()),
               '/recipeDetail':
-                  (context) => RecipeDetailScreen(
-                    recipe:
-                        ModalRoute.of(context)!.settings.arguments as Recipe?,
+                  (context) => PersistentBannerLayout(
+                    child: RecipeDetailScreen(
+                      recipe:
+                          ModalRoute.of(context)!.settings.arguments as Recipe,
+                    ),
                   ),
-              '/settings': (context) => const SettingsScreen(),
-              '/collections': (context) => const RecipeCollectionScreen(),
+              '/settings':
+                  (context) =>
+                      const PersistentBannerLayout(child: SettingsScreen()),
+              '/collections':
+                  (context) => const PersistentBannerLayout(
+                    child: RecipeCollectionScreen(),
+                  ),
               '/collectionDetail':
-                  (context) => CollectionDetailScreen(
-                    collection:
-                        ModalRoute.of(context)!.settings.arguments
-                            as RecipeCollection,
+                  (context) => PersistentBannerLayout(
+                    child: CollectionDetailScreen(
+                      collection:
+                          ModalRoute.of(context)!.settings.arguments
+                              as RecipeCollection,
+                    ),
                   ),
-              '/generatedRecipes': (context) => const GeneratedRecipesScreen(),
-              '/importedRecipes': (context) => const ImportedRecipesScreen(),
-              '/subscription': (context) => const SubscriptionScreen(),
+              '/generatedRecipes':
+                  (context) => const PersistentBannerLayout(
+                    child: GeneratedRecipesScreen(),
+                  ),
+              '/importedRecipes':
+                  (context) => const PersistentBannerLayout(
+                    child: ImportedRecipesScreen(),
+                  ),
+              '/subscription':
+                  (context) =>
+                      const PersistentBannerLayout(child: SubscriptionScreen()),
             },
           );
         },

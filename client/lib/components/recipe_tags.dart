@@ -46,6 +46,7 @@ class RecipeTags extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 5,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(

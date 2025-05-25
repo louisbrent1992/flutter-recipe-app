@@ -23,6 +23,7 @@ class Recipe {
   final InstagramData? instagram;
   final TikTokData? tiktok;
   final YouTubeData? youtube;
+  final bool toEdit;
 
   Recipe({
     this.id = '',
@@ -49,6 +50,7 @@ class Recipe {
     this.instagram,
     this.tiktok,
     this.youtube,
+    this.toEdit = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Convert from JSON
@@ -120,6 +122,7 @@ class Recipe {
           json['youtube'] != null
               ? YouTubeData.fromJson(json['youtube'] as Map<String, dynamic>)
               : null,
+      toEdit: json['toEdit'] ?? false,
     );
   }
 
@@ -147,6 +150,7 @@ class Recipe {
     'instagram': instagram?.toJson(),
     'tiktok': tiktok?.toJson(),
     'youtube': youtube?.toJson(),
+    'toEdit': toEdit,
   };
 
   // Create a copy of the recipe with updated values
@@ -173,6 +177,7 @@ class Recipe {
     InstagramData? instagram,
     TikTokData? tiktok,
     YouTubeData? youtube,
+    bool? toEdit,
   }) {
     return Recipe(
       id: id ?? this.id,
@@ -197,6 +202,7 @@ class Recipe {
       instagram: instagram ?? this.instagram,
       tiktok: tiktok ?? this.tiktok,
       youtube: youtube ?? this.youtube,
+      toEdit: toEdit ?? this.toEdit,
     );
   }
 

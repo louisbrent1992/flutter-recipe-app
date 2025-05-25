@@ -7,33 +7,37 @@ import 'package:url_launcher/link.dart';
 import '../providers/user_profile_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../components/floating_home_button.dart';
+import '../components/floating_edit_button.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
-  final Recipe? recipe;
+  final Recipe recipe;
 
-  const RecipeDetailScreen({super.key, this.recipe});
+  const RecipeDetailScreen({super.key, required this.recipe});
 
   @override
   State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
 }
 
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
+  late Recipe _currentRecipe;
+
   @override
   void initState() {
     super.initState();
+    _currentRecipe = widget.recipe;
     _checkFavoriteStatus();
   }
 
   Future<void> _checkFavoriteStatus() async {
-    if (widget.recipe == null) return;
+    if (widget.recipe.id.isEmpty) return;
     context.read<UserProfileProvider>();
     if (mounted) setState(() {});
   }
 
   Widget _buildSourceLink() {
-    if (widget.recipe == null) return const SizedBox.shrink();
+    if (widget.recipe.id.isEmpty) return const SizedBox.shrink();
 
-    final recipe = widget.recipe!;
+    final recipe = widget.recipe;
     String? sourceUrl;
     String? displayText;
     IconData? icon;
@@ -142,11 +146,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.recipe == null) {
+    if (widget.recipe.id.isEmpty) {
       return const Scaffold(body: Center(child: Text('Recipe not found')));
     }
 
-    final recipe = widget.recipe!;
+    final recipe = widget.recipe;
 
     return Scaffold(
       appBar: const CustomAppBar(title: 'Recipe Details'),
@@ -345,6 +349,20 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             ],
           ),
           const FloatingHomeButton(),
+          FloatingEditButton(
+            onPressed: () async {
+              final result = await Navigator.pushNamed(
+                context,
+                '/recipeEdit',
+                arguments: _currentRecipe.copyWith(toEdit: true),
+              );
+              if (result != null && result is Recipe) {
+                setState(() {
+                  _currentRecipe = result;
+                });
+              }
+            },
+          ),
         ],
       ),
     );

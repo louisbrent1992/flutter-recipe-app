@@ -37,62 +37,65 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
       appBar: const CustomAppBar(title: 'Favorite Recipes'),
       body: Stack(
         children: [
-          Consumer<UserProfileProvider>(
-            builder: (context, profile, _) {
-              if (profile.isLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
+          Column(
+            children: [
+              Expanded(
+                child: Consumer<UserProfileProvider>(
+                  builder: (context, profile, _) {
+                    if (profile.isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-              if (profile.favoriteRecipes.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.favorite_border,
-                        size: 64,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No favorite recipes yet',
-                        style: Theme.of(context).textTheme.headlineLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Add recipes to your favorites to see them here',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                );
-              }
+                    if (profile.favoriteRecipes.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.favorite_border,
+                              size: 64,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'No favorite recipes yet',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
 
-              return ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(16),
-                itemCount: profile.favoriteRecipes.length,
-                itemBuilder: (context, index) {
-                  final recipe = profile.favoriteRecipes[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: RecipeCard(
-                      recipe: recipe,
-                      showEditButton: false,
-                      showFavoriteButton: true,
-                      showRemoveButton: true,
-                      onTap:
-                          () => Navigator.pushNamed(
-                            context,
-                            '/recipeDetail',
-                            arguments: recipe,
+                    return ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: profile.favoriteRecipes.length,
+                      itemBuilder: (context, index) {
+                        final recipe = profile.favoriteRecipes[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: RecipeCard(
+                            recipe: recipe,
+                            showEditButton: false,
+                            showFavoriteButton: true,
+                            showRemoveButton: true,
+                            onTap:
+                                () => Navigator.pushNamed(
+                                  context,
+                                  '/recipeDetail',
+                                  arguments: recipe,
+                                ),
                           ),
-                    ),
-                  );
-                },
-              );
-            },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
           const FloatingHomeButton(),
         ],

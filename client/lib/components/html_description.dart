@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class HtmlDescription extends StatelessWidget {
+class HtmlDescription extends StatefulWidget {
   final String htmlContent;
   final TextStyle? style;
   final int? maxLines;
@@ -17,24 +17,75 @@ class HtmlDescription extends StatelessWidget {
   });
 
   @override
+  State<HtmlDescription> createState() => _HtmlDescriptionState();
+}
+
+class _HtmlDescriptionState extends State<HtmlDescription> {
+  bool _isExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
     // For truncated text, we use a different approach
-    if (maxLines != null) {
-      return Html(
-        data: htmlContent,
+    if (widget.maxLines != null && !_isExpanded) {
+      return GestureDetector(
+        onTap: () {
+          setState(() {
+            _isExpanded = true;
+          });
+        },
+        child: Html(
+          data: widget.htmlContent,
+          style: {
+            'body': Style(
+              fontSize:
+                  widget.style?.fontSize != null
+                      ? FontSize(widget.style!.fontSize!)
+                      : FontSize.medium,
+              color: widget.style?.color,
+              fontWeight:
+                  widget.style?.fontWeight == FontWeight.bold
+                      ? FontWeight.bold
+                      : FontWeight.normal,
+              maxLines: widget.maxLines,
+              textOverflow: widget.overflow,
+            ),
+            'b': Style(fontWeight: FontWeight.bold),
+            'a': Style(
+              color: Theme.of(context).colorScheme.primary,
+              textDecoration: TextDecoration.underline,
+            ),
+          },
+          onAnchorTap: (url, attributes, element) {
+            if (url != null) {
+              _launchURL(url);
+            }
+          },
+        ),
+      );
+    }
+
+    // Full text rendering
+    return GestureDetector(
+      onTap: () {
+        if (widget.maxLines != null) {
+          setState(() {
+            _isExpanded = false;
+          });
+        }
+      },
+      child: Html(
+        data: widget.htmlContent,
         style: {
           'body': Style(
             fontSize:
-                style?.fontSize != null
-                    ? FontSize(style!.fontSize!)
+                widget.style?.fontSize != null
+                    ? FontSize(widget.style!.fontSize!)
                     : FontSize.medium,
-            color: style?.color,
+            color: widget.style?.color,
             fontWeight:
-                style?.fontWeight == FontWeight.bold
+                widget.style?.fontWeight == FontWeight.bold
                     ? FontWeight.bold
                     : FontWeight.normal,
-            maxLines: maxLines,
-            textOverflow: overflow,
           ),
           'b': Style(fontWeight: FontWeight.bold),
           'a': Style(
@@ -47,35 +98,7 @@ class HtmlDescription extends StatelessWidget {
             _launchURL(url);
           }
         },
-      );
-    }
-
-    // Full text rendering
-    return Html(
-      data: htmlContent,
-      style: {
-        'body': Style(
-          fontSize:
-              style?.fontSize != null
-                  ? FontSize(style!.fontSize!)
-                  : FontSize.medium,
-          color: style?.color,
-          fontWeight:
-              style?.fontWeight == FontWeight.bold
-                  ? FontWeight.bold
-                  : FontWeight.normal,
-        ),
-        'b': Style(fontWeight: FontWeight.bold),
-        'a': Style(
-          color: Theme.of(context).colorScheme.primary,
-          textDecoration: TextDecoration.underline,
-        ),
-      },
-      onAnchorTap: (url, attributes, element) {
-        if (url != null) {
-          _launchURL(url);
-        }
-      },
+      ),
     );
   }
 

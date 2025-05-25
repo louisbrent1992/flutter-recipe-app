@@ -5,7 +5,6 @@ import '../providers/user_profile_provider.dart';
 import '../components/custom_app_bar.dart';
 import '../components/nav_drawer.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../widgets/banner_ad_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -202,8 +201,7 @@ class _HomeScreenState extends State<HomeScreen>
                       color: Colors.red.withValues(alpha: 0.2),
                       iconColor: Colors.red,
                     ),
-                    const SizedBox(height: 16),
-                    const BannerAdWidget(),
+
                     const SizedBox(height: 16),
                     _buildAnimatedSection(
                       context: context,

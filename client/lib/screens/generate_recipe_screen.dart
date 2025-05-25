@@ -200,7 +200,8 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           TextField(
                             controller: _ingredientController,
                             decoration: InputDecoration(
-                              hintText: 'Enter ingredients',
+                              hintText:
+                                  'Enter any ingredients or preferences you have (e.g. gluten-free, vegan, eggs etc.)',
                               suffixIcon: IconButton(
                                 icon: const Icon(Icons.add),
                                 onPressed: _addIngredient,

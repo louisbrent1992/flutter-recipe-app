@@ -293,6 +293,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
       ),
       body: Stack(
         children: [
+          // Main content
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicator(
