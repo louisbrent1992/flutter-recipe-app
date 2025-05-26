@@ -15,6 +15,97 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  final _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_onEmailChanged);
+  }
+
+  void _onEmailChanged() {
+    if (_emailController.text.isNotEmpty) {
+      setState(() {});
+    }
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return;
+
+    // Hide any existing snackbars
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    // Show new snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline : Icons.check_circle_outline,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+        margin: const EdgeInsets.all(8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        action:
+            isError
+                ? SnackBarAction(
+                  label: 'Dismiss',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  },
+                )
+                : null,
+      ),
+    );
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your password';
+    }
+
+    // Check minimum length
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+
+    // Check for spaces
+    if (value.contains(' ')) {
+      return 'Password cannot contain spaces';
+    }
+
+    // Check for uppercase letter
+    if (!value.contains(RegExp(r'[A-Z]'))) {
+      return 'Password must contain at least one uppercase letter';
+    }
+
+    // Check for lowercase letter
+    if (!value.contains(RegExp(r'[a-z]'))) {
+      return 'Password must contain at least one lowercase letter';
+    }
+
+    // Check for number
+    if (!value.contains(RegExp(r'[0-9]'))) {
+      return 'Password must contain at least one number';
+    }
+
+    // Check for special character
+    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      return 'Password must contain at least one special character (!@#\$%^&*(),.?":{}|<>)';
+    }
+
+    return null;
+  }
 
   @override
   void dispose() {
@@ -26,61 +117,62 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signInWithEmailAndPassword() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    final authService = context.read<AuthService>();
+
     try {
-      await context.read<AuthService>().signInWithEmailAndPassword(
+      final user = await authService.signInWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
 
-      // After signing in, retrieve the user data
-      final userData = mounted ? context.read<AuthService>() : null;
-
-      if (mounted) {
-        Navigator.pushNamed(context, '/home', arguments: userData);
+      if (mounted && user != null) {
+        _showSnackBar('Successfully signed in!');
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      } else if (mounted && authService.error != null) {
+        _showSnackBar(authService.error!, isError: true);
+        // Clear password field on authentication error
+        _passwordController.clear();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
+        _showSnackBar(
+          'An unexpected error occurred. Please try again.',
+          isError: true,
+        );
+        _passwordController.clear();
       }
     }
   }
 
   Future<void> _signInWithGoogle() async {
-    setState(() => _isLoading = true);
-    print('Attempting to sign in with Google...');
+    final authService = context.read<AuthService>();
+
     try {
-      final User? userData =
-          await context.read<AuthService>().signInWithGoogle();
-      print('Google sign-in successful. User: $userData');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        Navigator.pushNamed(context, '/home', arguments: userData);
+      final user = await authService.signInWithGoogle();
+      if (mounted && user != null) {
+        _showSnackBar('Successfully signed in with Google!');
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      } else if (mounted && authService.error != null) {
+        _showSnackBar(authService.error!, isError: true);
       }
     } catch (e) {
-      print('Error during Google sign-in: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Sign-in failed: $e')));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
+        _showSnackBar(
+          'Failed to sign in with Google. Please try again.',
+          isError: true,
+        );
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authService = context.watch<AuthService>();
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -100,9 +192,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 32),
                   TextFormField(
                     controller: _emailController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Email',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
+                      errorText:
+                          _emailController.text.isNotEmpty &&
+                                  !_emailController.text.contains('@')
+                              ? 'Please enter a valid email'
+                              : null,
                     ),
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
@@ -118,27 +215,38 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Password',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
                     ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
+                    obscureText: _obscurePassword,
+                    validator: _validatePassword,
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: _isLoading ? null : _signInWithEmailAndPassword,
+                    onPressed:
+                        authService.isLoading
+                            ? null
+                            : _signInWithEmailAndPassword,
                     child:
-                        _isLoading
-                            ? const CircularProgressIndicator()
+                        authService.isLoading
+                            ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                             : const Text('Sign In'),
                   ),
                   const SizedBox(height: 16),
@@ -154,7 +262,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   OutlinedButton.icon(
-                    onPressed: _isLoading ? null : _signInWithGoogle,
+                    onPressed: authService.isLoading ? null : _signInWithGoogle,
                     icon: Image.network(
                       'https://www.google.com/favicon.ico',
                       height: 24,

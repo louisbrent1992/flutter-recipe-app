@@ -7,8 +7,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import '../models/recipe.dart';
-import '../services/collection_service.dart';
-import '../models/recipe_collection.dart';
+import '../services/recipe_service.dart';
 
 class UserProfileProvider with ChangeNotifier {
   final FirebaseService _firebaseService = FirebaseService();
@@ -17,12 +16,10 @@ class UserProfileProvider with ChangeNotifier {
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
   Map<String, dynamic> _profile = {};
-  List<Recipe> _favoriteRecipes = [];
   bool _isLoading = false;
   String? _error;
 
   Map<String, dynamic> get profile => _profile;
-  List<Recipe> get favoriteRecipes => _favoriteRecipes;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -109,9 +106,7 @@ class UserProfileProvider with ChangeNotifier {
   Future<void> uploadProfilePicture() async {
     final user = _auth.currentUser;
 
-    debugPrint('Uploading profile picture for user: ${user?.uid}');
     if (user == null) {
-      debugPrint('No user logged in');
       throw Exception('User is not authenticated. Please sign in first.');
     }
 
@@ -123,53 +118,34 @@ class UserProfileProvider with ChangeNotifier {
           'Please verify your email before uploading a profile picture.',
         );
       }
-
-      debugPrint('Got fresh token for user: ${user.uid}');
     } catch (e) {
-      debugPrint('Error verifying user state: $e');
       throw Exception('Authentication error. Please sign in again.');
     }
 
-    debugPrint('Starting upload process for user: ${user.uid}');
     _isLoading = true;
     notifyListeners();
 
     try {
-      debugPrint('Step 1: Picking image');
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.image,
         allowMultiple: false,
       );
 
       if (result == null) {
-        debugPrint('No image selected');
         _isLoading = false;
         notifyListeners();
         return;
       }
 
       PlatformFile file = result.files.first;
-      debugPrint('Step 2: Image picked successfully at path: ${file.path}');
-
-      debugPrint('Step 3: Creating file reference');
       final File imageFile = File(file.path!);
       final ext = file.extension ?? 'jpg';
-      debugPrint('File extension: $ext');
 
-      debugPrint('Step 4: Creating storage references');
       final storageRef = _storage.ref();
-      debugPrint('Root storage reference created');
-
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = '${user.uid}_$timestamp.$ext';
-      debugPrint('Generated filename: $fileName');
-
       final profilePicturesRef = storageRef.child('profile_pictures/$fileName');
-      debugPrint(
-        'Profile pictures reference created at: ${profilePicturesRef.fullPath}',
-      );
 
-      debugPrint('Step 5: Starting file upload');
       final uploadTask = await profilePicturesRef.putFile(
         imageFile,
         SettableMetadata(
@@ -180,23 +156,12 @@ class UserProfileProvider with ChangeNotifier {
           },
         ),
       );
-      debugPrint('File upload completed');
 
-      debugPrint('Step 6: Getting download URL');
       final downloadUrl = await uploadTask.ref.getDownloadURL();
-      debugPrint('Download URL obtained: $downloadUrl');
-
-      debugPrint('Step 7: Updating user profile');
       await updateProfile(photoURL: downloadUrl);
-      debugPrint('Profile update completed');
     } catch (e) {
       _error = e.toString();
-      debugPrint('Error in uploadProfilePicture: $e');
       if (e is FirebaseException) {
-        debugPrint('Firebase error code: ${e.code}');
-        debugPrint('Firebase error message: ${e.message}');
-        debugPrint('Firebase error details: ${e.plugin}');
-
         // Handle specific Firebase errors
         if (e.code == 'unauthenticated') {
           throw Exception('Authentication error. Please sign in again.');
@@ -213,67 +178,68 @@ class UserProfileProvider with ChangeNotifier {
     }
   }
 
-  Future<void> getFavoriteRecipes() async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      final snapshot =
-          await _firestore.collection('favorites').doc(user.uid).get();
-
-      if (!snapshot.exists) {
-        _favoriteRecipes = [];
-      } else {
-        // If document exists, get the recipes array
-        List<dynamic> recipeIds = snapshot.data()?['recipes'] ?? [];
-        _favoriteRecipes = [];
-
-        // Get each recipe by ID
-        for (String recipeId in recipeIds) {
-          final recipeDoc =
-              await _firestore.collection('recipes').doc(recipeId).get();
-
-          if (recipeDoc.exists) {
-            final recipeData = recipeDoc.data();
-            if (recipeData != null) {
-              _favoriteRecipes.add(
-                Recipe.fromJson({'id': recipeDoc.id, ...recipeData}),
-              );
-            }
-          }
-        }
-      }
-    } catch (e) {
-      _error = e.toString();
-      debugPrint('Error loading favorite recipes: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
   Future<void> addToFavorites(Recipe recipe) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
     try {
-      // Add the recipe ID to the favorites array
-      await _firestore.collection('favorites').doc(user.uid).set({
-        'recipes': FieldValue.arrayUnion([recipe.id]),
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      String recipeIdToFavorite = recipe.id;
+      Recipe recipeToFavorite = recipe;
 
-      // Update UI
-      if (!_favoriteRecipes.any((r) => r.id == recipe.id)) {
-        _favoriteRecipes.add(recipe);
-        notifyListeners();
+      // Check if recipe exists in user's collection using the API
+      final userRecipesResponse = await RecipeService.getUserRecipes(
+        limit: 100,
+      );
+      bool recipeExists = false;
+      Recipe? existingRecipe;
+
+      if (userRecipesResponse.success && userRecipesResponse.data != null) {
+        final userRecipes =
+            userRecipesResponse.data!['recipes'] as List<Recipe>;
+
+        // Check if recipe exists by comparing original ID or current ID
+        existingRecipe = userRecipes.firstWhere(
+          (r) =>
+              r.id == recipe.id ||
+              (r.sourceUrl != null && r.sourceUrl == recipe.sourceUrl) ||
+              (r.title == recipe.title && r.description == recipe.description),
+          orElse: () => Recipe(),
+        );
+
+        recipeExists = existingRecipe.id.isNotEmpty;
+
+        if (recipeExists) {
+          // Use the existing recipe's ID for favoriting
+          recipeIdToFavorite = existingRecipe.id;
+          recipeToFavorite = existingRecipe;
+        }
       }
 
-      // Update Favorites collection in CollectionService
-      await _updateFavoritesCollection();
+      if (!recipeExists) {
+        // If recipe doesn't exist in user's collection, save it first
+        final saveResponse = await RecipeService.createUserRecipe(recipe);
+        if (saveResponse.success && saveResponse.data != null) {
+          // Use the new saved recipe's ID for favoriting
+          recipeIdToFavorite = saveResponse.data!.id;
+          recipeToFavorite = saveResponse.data!;
+        } else {
+          throw Exception('Failed to save recipe before favoriting');
+        }
+      }
+
+      // Now use the correct recipe ID to add to favorites
+      final favoriteResponse = await RecipeService.toggleFavoriteStatus(
+        recipeIdToFavorite,
+        true,
+      );
+
+      if (!favoriteResponse.success) {
+        throw Exception(
+          favoriteResponse.message ?? 'Failed to add to favorites',
+        );
+      }
+
+      notifyListeners();
     } catch (e) {
       _error = e.toString();
       debugPrint('Error adding recipe to favorites: $e');
@@ -286,55 +252,23 @@ class UserProfileProvider with ChangeNotifier {
     if (user == null) return;
 
     try {
-      // Remove the recipe ID from the favorites array
-      await _firestore.collection('favorites').doc(user.uid).update({
-        'recipes': FieldValue.arrayRemove([recipe.id]),
-      });
+      // Use the API to remove from favorites
+      final favoriteResponse = await RecipeService.toggleFavoriteStatus(
+        recipe.id,
+        false,
+      );
 
-      // Update UI
-      _favoriteRecipes.removeWhere((r) => r.id == recipe.id);
+      if (!favoriteResponse.success) {
+        throw Exception(
+          favoriteResponse.message ?? 'Failed to remove from favorites',
+        );
+      }
+
       notifyListeners();
-
-      // Update Favorites collection in CollectionService
-      await _updateFavoritesCollection();
     } catch (e) {
       _error = e.toString();
       debugPrint('Error removing recipe from favorites: $e');
       rethrow;
-    }
-  }
-
-  // Helper method to update the Favorites collection
-  Future<void> _updateFavoritesCollection() async {
-    try {
-      // Get all collections
-      final collections = await CollectionService.getCollections();
-
-      // Find the Favorites collection
-      final favoritesCollection = collections.firstWhere(
-        (collection) => collection.name == 'Favorites',
-        orElse: () => RecipeCollection.withName('Favorites'),
-      );
-
-      // Create a fresh collection with current favorites
-      var updatedCollection = favoritesCollection.copyWith(recipes: []);
-
-      // Add all favorite recipes to the collection
-      for (final recipe in _favoriteRecipes) {
-        updatedCollection = updatedCollection.addRecipe(recipe);
-      }
-
-      // Save the updated collection
-      await CollectionService.updateCollection(
-        updatedCollection.id,
-        name: updatedCollection.name,
-      );
-
-      // Force a refresh of the collection
-      await CollectionService.getCollections();
-    } catch (e) {
-      debugPrint('Error updating favorites collection: $e');
-      // Continue silently as this is just a convenience update
     }
   }
 
@@ -343,12 +277,12 @@ class UserProfileProvider with ChangeNotifier {
     if (user == null) return false;
 
     try {
-      final doc = await _firestore.collection('favorites').doc(user.uid).get();
-
-      if (!doc.exists) return false;
-
-      final List<dynamic> recipes = doc.data()?['recipes'] ?? [];
-      return recipes.contains(recipe.id);
+      final response = await RecipeService.getFavoriteRecipes();
+      if (response.success && response.data != null) {
+        final favoriteIds = response.data!;
+        return favoriteIds.any((id) => id.toString() == recipe.id.toString());
+      }
+      return false;
     } catch (e) {
       _error = e.toString();
       debugPrint('Error checking if recipe is favorite: $e');

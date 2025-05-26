@@ -377,20 +377,45 @@ class CollectionService {
       final allRecipesResponse = await RecipeService.getUserRecipes();
 
       if (allRecipesResponse.success && allRecipesResponse.data != null) {
-        final allRecipes = allRecipesResponse.data!['recipes'] as List<Recipe>;
+        // The data is already converted to Recipe objects by RecipeService
+        final List<Recipe> allRecipes =
+            allRecipesResponse.data!['recipes'] as List<Recipe>;
 
         // Get all favorites from the database
         final favoritesResponse = await RecipeService.getFavoriteRecipes();
 
         if (favoritesResponse.success && favoritesResponse.data != null) {
           // Get the list of favorite recipe IDs
-          final favoriteIds = favoritesResponse.data!;
+          final List<String> favoriteIds = favoritesResponse.data!;
 
           // Filter all recipes to only include those with IDs in the favorites list
+          // Convert both to strings for comparison to handle mixed types
           final favoriteRecipes =
-              allRecipes
-                  .where((recipe) => favoriteIds.contains(recipe.id))
-                  .toList();
+              allRecipes.where((recipe) {
+                final recipeIdStr = recipe.id.toString();
+
+                // First check direct ID match
+                bool isMatch = favoriteIds.any(
+                  (favId) => favId.toString() == recipeIdStr,
+                );
+
+                // If no direct match, check if this recipe might be a saved version of a favorited external recipe
+                if (!isMatch &&
+                    recipe.source != null &&
+                    recipe.source != 'user-created') {
+                  // For external recipes that were saved, the original external ID might be in favorites
+                  // but the recipe now has a new Firestore ID
+                  isMatch = favoriteIds.any((favId) {
+                    final favIdStr = favId.toString();
+                    // Check if the favorite ID looks like an external API ID (numeric)
+                    return RegExp(r'^\d+$').hasMatch(favIdStr) &&
+                        recipe.sourceUrl != null &&
+                        recipe.sourceUrl!.contains(favIdStr);
+                  });
+                }
+
+                return isMatch;
+              }).toList();
 
           // Start with an empty collection to properly replace all recipes
           var updatedCollection = collections[favoritesIndex].copyWith(
@@ -410,12 +435,16 @@ class CollectionService {
             updatedCollection.id,
             name: updatedCollection.name,
           );
+        } else {
+          logger.e('Failed to get favorites: ${favoritesResponse.message}');
         }
       } else {
         logger.e('Error getting recipes: ${allRecipesResponse.message}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       logger.e('Error updating favorites collection: $e');
+      logger.e('Stack trace: $stackTrace');
+      // Don't rethrow - this is a background update
     }
   }
 
@@ -471,6 +500,42 @@ class CollectionService {
     } catch (e) {
       logger.e('Error updating collection recipes: $e');
       return false;
+    }
+  }
+
+  // Refresh collections after recipe deletion to ensure consistency
+  static Future<void> refreshCollectionsAfterRecipeDeletion(
+    String recipeId,
+  ) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        logger.e('No authenticated user found');
+        return;
+      }
+
+      // Get all collections and update them to remove the deleted recipe
+      final collections = await getCollections();
+
+      for (var collection in collections) {
+        // Check if this collection contains the deleted recipe
+        final hasRecipe = collection.recipes.any((r) => r.id == recipeId);
+
+        if (hasRecipe) {
+          // Remove the recipe from this collection
+          final updatedRecipes =
+              collection.recipes.where((r) => r.id != recipeId).toList();
+
+          // Update the collection on the server
+          await updateCollectionRecipes(collection.name, updatedRecipes);
+          logger.i(
+            'Removed deleted recipe ${recipeId} from collection ${collection.name}',
+          );
+        }
+      }
+    } catch (e) {
+      logger.e('Error refreshing collections after recipe deletion: $e');
+      // Continue silently - this is a cleanup operation
     }
   }
 }

@@ -36,13 +36,26 @@ class _ImportedRecipesScreenState extends State<ImportedRecipesScreen> {
 
     if (isSaved) {
       await recipeProvider.deleteUserRecipe(recipe.id);
+      setState(() {
+        _savedRecipes[recipe.id] = false;
+      });
     } else {
-      await recipeProvider.saveGeneratedRecipe(recipe);
+      final savedRecipe = await recipeProvider.createUserRecipe(recipe);
+      if (savedRecipe != null) {
+        setState(() {
+          _savedRecipes[recipe.id] = true;
+        });
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to save recipe'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
-
-    setState(() {
-      _savedRecipes[recipe.id] = !isSaved;
-    });
   }
 
   @override

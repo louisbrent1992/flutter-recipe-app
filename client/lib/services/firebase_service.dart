@@ -105,33 +105,4 @@ class FirebaseService {
       if (photoURL != null) currentUser!.updatePhotoURL(photoURL),
     ]);
   }
-
-  // Get user's favorite recipes
-  Future<List<String>> getFavoriteRecipes() async {
-    final doc =
-        await _firestore.collection('favorites').doc(currentUser!.uid).get();
-    return List<String>.from(doc.data()?['recipes'] ?? []);
-  }
-
-  // Add recipe to favorites
-  Future<void> addToFavorites(String recipeId) async {
-    await _firestore.collection('favorites').doc(currentUser!.uid).set({
-      'recipes': FieldValue.arrayUnion([recipeId]),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-  }
-
-  // Remove recipe from favorites
-  Future<void> removeFromFavorites(String recipeId) async {
-    await _firestore.collection('favorites').doc(currentUser!.uid).update({
-      'recipes': FieldValue.arrayRemove([recipeId]),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-  }
-
-  // Check if recipe is in favorites
-  Future<bool> isRecipeFavorite(String recipeId) async {
-    final favorites = await getFavoriteRecipes();
-    return favorites.contains(recipeId);
-  }
 }

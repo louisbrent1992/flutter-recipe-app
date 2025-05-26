@@ -19,7 +19,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
   final TextEditingController _ingredientController = TextEditingController();
   final List<String> _ingredients = [];
   final List<String> _dietaryRestrictions = [];
-  String _cuisineType = 'Italian';
+  String _cuisineType = 'American';
   double _cookingTime = 30;
   final ScrollController _scrollController = ScrollController();
 

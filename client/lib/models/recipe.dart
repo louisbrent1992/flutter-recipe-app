@@ -53,6 +53,37 @@ class Recipe {
     this.toEdit = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
+  // Helper method to parse DateTime from various formats
+  static DateTime _parseDateTime(dynamic dateValue) {
+    if (dateValue == null) return DateTime.now();
+
+    // Handle Firestore Timestamp objects
+    if (dateValue is Map && dateValue.containsKey('_seconds')) {
+      final seconds = dateValue['_seconds'] as int;
+      final nanoseconds = (dateValue['_nanoseconds'] as int?) ?? 0;
+      return DateTime.fromMillisecondsSinceEpoch(
+        seconds * 1000 + (nanoseconds / 1000000).round(),
+      );
+    }
+
+    // Handle ISO string format
+    if (dateValue is String) {
+      try {
+        return DateTime.parse(dateValue);
+      } catch (e) {
+        return DateTime.now();
+      }
+    }
+
+    // Handle DateTime objects directly
+    if (dateValue is DateTime) {
+      return dateValue;
+    }
+
+    // Fallback
+    return DateTime.now();
+  }
+
   // Convert from JSON
   factory Recipe.fromJson(Map<String, dynamic> json) {
     // Helper function to convert ingredients to strings
@@ -85,7 +116,9 @@ class Recipe {
       ingredients: parseIngredients(json['ingredients']),
       instructions:
           json['instructions'] != null
-              ? List<String>.from(json['instructions'])
+              ? (json['instructions'] as List)
+                  .map((item) => item.toString())
+                  .toList()
               : [],
       description: json['description']?.toString() ?? '',
       imageUrl: json['imageUrl']?.toString() ?? '',
@@ -96,31 +129,36 @@ class Recipe {
       sourceUrl: json['sourceUrl']?.toString(),
       sourcePlatform: json['sourcePlatform']?.toString(),
       author: json['author']?.toString(),
-      tags: json['tags'] != null ? List<String>.from(json['tags']) : [],
+      tags:
+          json['tags'] != null
+              ? (json['tags'] as List).map((item) => item.toString()).toList()
+              : [],
       createdAt:
           json['createdAt'] != null
-              ? DateTime.parse(json['createdAt'] as String)
+              ? _parseDateTime(json['createdAt'])
               : DateTime.now(),
       updatedAt:
-          json['updatedAt'] != null
-              ? DateTime.parse(json['updatedAt'] as String)
-              : null,
+          json['updatedAt'] != null ? _parseDateTime(json['updatedAt']) : null,
       isFavorite: json['isFavorite'] ?? false,
       userId: json['userId']?.toString(),
       cuisineType: json['cuisineType']?.toString() ?? 'Fusion',
       instagram:
-          json['instagram'] != null
+          json['instagram'] != null && json['instagram'] is Map
               ? InstagramData.fromJson(
-                json['instagram'] as Map<String, dynamic>,
+                Map<String, dynamic>.from(json['instagram'] as Map),
               )
               : null,
       tiktok:
-          json['tiktok'] != null
-              ? TikTokData.fromJson(json['tiktok'] as Map<String, dynamic>)
+          json['tiktok'] != null && json['tiktok'] is Map
+              ? TikTokData.fromJson(
+                Map<String, dynamic>.from(json['tiktok'] as Map),
+              )
               : null,
       youtube:
-          json['youtube'] != null
-              ? YouTubeData.fromJson(json['youtube'] as Map<String, dynamic>)
+          json['youtube'] != null && json['youtube'] is Map
+              ? YouTubeData.fromJson(
+                Map<String, dynamic>.from(json['youtube'] as Map),
+              )
               : null,
       toEdit: json['toEdit'] ?? false,
     );

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/providers/auth_provider.dart';
-import '../providers/user_profile_provider.dart';
+import '../providers/recipe_provider.dart';
 import '../components/recipe_card.dart';
 import '../components/floating_home_button.dart';
 
@@ -23,10 +23,10 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authService = Provider.of<AuthService>(context, listen: false);
       if (authService.user != null) {
-        Provider.of<UserProfileProvider>(
+        Provider.of<RecipeProvider>(
           context,
           listen: false,
-        ).getFavoriteRecipes();
+        ).loadFavoriteRecipes();
       }
     });
   }
@@ -40,13 +40,13 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
           Column(
             children: [
               Expanded(
-                child: Consumer<UserProfileProvider>(
-                  builder: (context, profile, _) {
-                    if (profile.isLoading) {
+                child: Consumer<RecipeProvider>(
+                  builder: (context, recipeProvider, _) {
+                    if (recipeProvider.isLoading) {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    if (profile.favoriteRecipes.isEmpty) {
+                    if (recipeProvider.favoriteRecipes.isEmpty) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -72,9 +72,9 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
                     return ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.all(16),
-                      itemCount: profile.favoriteRecipes.length,
+                      itemCount: recipeProvider.favoriteRecipes.length,
                       itemBuilder: (context, index) {
-                        final recipe = profile.favoriteRecipes[index];
+                        final recipe = recipeProvider.favoriteRecipes[index];
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: RecipeCard(

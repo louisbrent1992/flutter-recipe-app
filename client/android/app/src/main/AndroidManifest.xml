@@ -30,6 +30,11 @@
             android:name="android.webkit.WebView.EnableSafeBrowsing"
             android:value="true" />
             
+        <!-- Firebase Auth reCAPTCHA configuration -->
+        <meta-data
+            android:name="com.google.firebase.auth.API_KEY"
+            android:value="AIzaSyCh2vwuvWxGLlfbegNu73zPq0YOUssm0-0" />
+            
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"

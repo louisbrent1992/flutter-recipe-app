@@ -7,6 +7,7 @@ import '../components/custom_app_bar.dart';
 import '../models/recipe.dart';
 import '../components/error_display.dart';
 import 'package:recipease/components/banner_ad.dart';
+import '../services/recipe_service.dart';
 
 class GeneratedRecipesScreen extends StatefulWidget {
   const GeneratedRecipesScreen({super.key});
@@ -60,21 +61,34 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
       setState(() {
         _savedRecipes[recipe.id] = true;
       });
-      // Save to collection
-      await recipeProvider.saveGeneratedRecipe(recipe);
+      // Save to collection using standard recipe creation
+      final response = await RecipeService.createUserRecipe(recipe);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Recipe saved to your collection!'),
-            backgroundColor: Colors.green,
-            action: SnackBarAction(
-              label: 'Go to My Recipes',
-              onPressed: () {
-                Navigator.pushNamed(context, '/myRecipes');
-              },
+        if (response.success && response.data != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Recipe saved to your collection!'),
+              backgroundColor: Colors.green,
+              action: SnackBarAction(
+                label: 'Go to My Recipes',
+                onPressed: () {
+                  Navigator.pushNamed(context, '/myRecipes');
+                },
+              ),
             ),
-          ),
-        );
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.message ?? 'Failed to save recipe'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          // Revert the saved state if save failed
+          setState(() {
+            _savedRecipes[recipe.id] = false;
+          });
+        }
       }
     }
   }

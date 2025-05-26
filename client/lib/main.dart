@@ -36,6 +36,7 @@ import 'package:recipease/services/permission_service.dart';
 import 'screens/generated_recipes_screen.dart';
 import 'screens/imported_recipes_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -67,12 +68,10 @@ void main() async {
 
   // Activate app check after initialization, but before
   // usage of any Firebase services.
-  await FirebaseAppCheck.instance
-  // Your personal reCaptcha public key goes here:
-  .activate(
+  await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.debug,
     appleProvider: AppleProvider.debug,
-    webProvider: ReCaptchaV3Provider(kWebRecaptchaSiteKey),
+    webProvider: kIsWeb ? ReCaptchaV3Provider(kWebRecaptchaSiteKey) : null,
   );
 
   await Hive.initFlutter();

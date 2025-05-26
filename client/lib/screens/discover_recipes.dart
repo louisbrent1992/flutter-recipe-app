@@ -112,18 +112,29 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
         return;
       }
 
-      setState(() {
-        _savedRecipes[recipe.id] = true;
-      });
-      // Save to collection
-      await recipeProvider.saveGeneratedRecipe(recipe);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Recipe saved to your collection!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      // Save to collection using RecipeProvider
+      final savedRecipe = await recipeProvider.createUserRecipe(recipe);
+      if (savedRecipe != null) {
+        setState(() {
+          _savedRecipes[recipe.id] = true;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Recipe saved to your collection!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to save recipe'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }

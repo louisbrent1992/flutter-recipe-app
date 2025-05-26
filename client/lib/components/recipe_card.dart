@@ -3,8 +3,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/recipe.dart';
-import '../providers/user_profile_provider.dart';
 import 'package:provider/provider.dart';
+import '../services/recipe_service.dart';
 
 class RecipeCard extends StatefulWidget {
   final Recipe recipe;
@@ -45,36 +45,16 @@ class RecipeCard extends StatefulWidget {
 class _RecipeCardState extends State<RecipeCard> {
   bool _isFavoriteLoading = false;
   bool _isShareLoading = false;
-  bool isFavorite = false;
 
   @override
   void initState() {
     super.initState();
-    _checkFavoriteStatus();
-  }
-
-  Future<void> _checkFavoriteStatus() async {
-    final profile = context.read<UserProfileProvider>();
-    final isFavoriteRecipe = await profile.isRecipeFavorite(widget.recipe);
-    if (isFavoriteRecipe) {
-      if (mounted) {
-        setState(() {
-          isFavorite = true;
-        });
-      }
-    } else {
-      if (mounted) {
-        setState(() {
-          isFavorite = false;
-        });
-      }
-    }
   }
 
   Future<void> _toggleFavorite() async {
     if (_isFavoriteLoading) return;
 
-    final isCurrentlyFavorite = isFavorite;
+    final isCurrentlyFavorite = widget.recipe.isFavorite;
     final confirm =
         isCurrentlyFavorite
             ? await showDialog<bool>(
@@ -108,15 +88,11 @@ class _RecipeCardState extends State<RecipeCard> {
     setState(() => _isFavoriteLoading = true);
     try {
       if (mounted) {
-        final profile = context.read<UserProfileProvider>();
-
-        if (isCurrentlyFavorite) {
-          await profile.removeFromFavorites(widget.recipe);
-          setState(() => isFavorite = false);
-        } else {
-          await profile.addToFavorites(widget.recipe);
-          setState(() => isFavorite = true);
-        }
+        final recipeProvider = context.read<RecipeProvider>();
+        await recipeProvider.toggleFavorite(
+          widget.recipe.id,
+          !isCurrentlyFavorite,
+        );
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -132,8 +108,10 @@ class _RecipeCardState extends State<RecipeCard> {
                       ? SnackBarAction(
                         label: 'Undo',
                         onPressed: () async {
-                          await profile.addToFavorites(widget.recipe);
-                          setState(() => isFavorite = true);
+                          await recipeProvider.toggleFavorite(
+                            widget.recipe.id,
+                            true,
+                          );
                         },
                         textColor: Colors.white,
                       )
@@ -244,7 +222,17 @@ Shared from Recipe App
             action: SnackBarAction(
               label: 'Undo',
               onPressed: () async {
-                await profile.saveGeneratedRecipe(widget.recipe);
+                final response = await RecipeService.createUserRecipe(
+                  widget.recipe,
+                );
+                if (response.success && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Recipe restored'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
               },
               textColor: Colors.white,
             ),
@@ -476,16 +464,16 @@ Shared from Recipe App
                       if (widget.showFavoriteButton)
                         _buildActionButton(
                           icon:
-                              isFavorite
+                              widget.recipe.isFavorite
                                   ? Icons.favorite
                                   : Icons.favorite_border,
                           onTap: _toggleFavorite,
                           tooltip:
-                              isFavorite
+                              widget.recipe.isFavorite
                                   ? 'Remove from favorites'
                                   : 'Add to favorites',
                           iconColor:
-                              isFavorite
+                              widget.recipe.isFavorite
                                   ? Colors.red
                                   : Theme.of(context).colorScheme.primary,
                           isLoading: _isFavoriteLoading,

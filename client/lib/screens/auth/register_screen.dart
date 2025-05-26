@@ -17,7 +17,101 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   final User? user = FirebaseAuth.instance.currentUser;
+
+  // Password requirement states
+  bool _hasMinLength = false;
+  bool _hasUpperCase = false;
+  bool _hasLowerCase = false;
+  bool _hasNumber = false;
+  bool _hasSpecialChar = false;
+  bool _hasNoSpaces = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _passwordController.addListener(_validatePasswordRequirements);
+    _confirmPasswordController.addListener(_validatePasswordMatch);
+    _emailController.addListener(_onEmailChanged);
+  }
+
+  void _validatePasswordRequirements() {
+    final password = _passwordController.text;
+    setState(() {
+      _hasMinLength = password.length >= 8;
+      _hasUpperCase = password.contains(RegExp(r'[A-Z]'));
+      _hasLowerCase = password.contains(RegExp(r'[a-z]'));
+      _hasNumber = password.contains(RegExp(r'[0-9]'));
+      _hasSpecialChar = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+      _hasNoSpaces = !password.contains(' ');
+    });
+  }
+
+  void _validatePasswordMatch() {
+    if (_confirmPasswordController.text.isNotEmpty) {
+      setState(() {});
+    }
+  }
+
+  void _onEmailChanged() {
+    setState(() {});
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your password';
+    }
+
+    if (!_hasMinLength) {
+      return 'Password must be at least 8 characters';
+    }
+
+    if (!_hasUpperCase) {
+      return 'Password must contain at least one uppercase letter';
+    }
+
+    if (!_hasLowerCase) {
+      return 'Password must contain at least one lowercase letter';
+    }
+
+    if (!_hasNumber) {
+      return 'Password must contain at least one number';
+    }
+
+    if (!_hasSpecialChar) {
+      return 'Password must contain at least one special character';
+    }
+
+    if (!_hasNoSpaces) {
+      return 'Password cannot contain spaces';
+    }
+
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your email';
+    }
+    if (!value.contains('@')) {
+      return 'Please enter a valid email';
+    }
+    return null;
+  }
 
   @override
   void dispose() {
@@ -40,14 +134,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _nameController.text.trim(),
       );
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/');
+        _showSnackBar('Registration successful! Please sign in to continue.');
+        Navigator.pushReplacementNamed(context, '/login');
       }
+    } on FirebaseAuthException catch (e) {
+      String message;
+      switch (e.code) {
+        case 'email-already-in-use':
+          message = 'An account already exists with this email.';
+          break;
+        case 'invalid-email':
+          message = 'Please enter a valid email address.';
+          break;
+        case 'operation-not-allowed':
+          message = 'Email/password accounts are not enabled.';
+          break;
+        case 'weak-password':
+          message = 'Please choose a stronger password.';
+          break;
+        default:
+          message = 'An error occurred during registration.';
+      }
+      _showSnackBar(message, isError: true);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+      _showSnackBar(
+        'An unexpected error occurred. Please try again.',
+        isError: true,
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -62,14 +175,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final User? userData =
           await context.read<AuthService>().signInWithGoogle();
       if (mounted) {
+        _showSnackBar('Successfully signed up with Google!');
         Navigator.pushNamed(context, '/home', arguments: userData);
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
+    } on FirebaseAuthException catch (e) {
+      String message;
+      switch (e.code) {
+        case 'account-exists-with-different-credential':
+          message =
+              'An account already exists with this email using a different sign-in method.';
+          break;
+        case 'invalid-credential':
+          message = 'Invalid credentials. Please try again.';
+          break;
+        case 'operation-not-allowed':
+          message = 'Google sign-in is not enabled.';
+          break;
+        case 'user-disabled':
+          message = 'This account has been disabled.';
+          break;
+        default:
+          message = 'An error occurred during Google sign-up.';
       }
+      _showSnackBar(message, isError: true);
+    } catch (e) {
+      _showSnackBar(
+        'Failed to sign up with Google. Please try again.',
+        isError: true,
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -79,6 +212,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -98,9 +234,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 32),
                   TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Full Name',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
+                      errorText:
+                          _nameController.text.isEmpty &&
+                                  _nameController.text.isNotEmpty
+                              ? 'Please enter your name'
+                              : null,
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -112,47 +253,101 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _emailController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Email',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
+                      errorText:
+                          _emailController.text.isNotEmpty &&
+                                  !_emailController.text.contains('@')
+                              ? 'Please enter a valid email'
+                              : null,
                     ),
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
+                    validator: _validateEmail,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Password',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
                     ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
+                    obscureText: _obscurePassword,
+                    validator: _validatePassword,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0, left: 4.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Password must be at least 8 characters long and contain:',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.secondary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        _buildRequirementText(
+                          'At least one uppercase letter (A-Z)',
+                          _hasUpperCase,
+                        ),
+                        _buildRequirementText(
+                          'At least one lowercase letter (a-z)',
+                          _hasLowerCase,
+                        ),
+                        _buildRequirementText(
+                          'At least one number (0-9)',
+                          _hasNumber,
+                        ),
+                        _buildRequirementText(
+                          'At least one special character (!@#\$%^&*(),.?":{}|<>)',
+                          _hasSpecialChar,
+                        ),
+                        _buildRequirementText(
+                          'No spaces allowed',
+                          _hasNoSpaces,
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _confirmPasswordController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Confirm Password',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
+                      ),
+                      errorText:
+                          _confirmPasswordController.text.isNotEmpty &&
+                                  _confirmPasswordController.text !=
+                                      _passwordController.text
+                              ? 'Passwords do not match'
+                              : null,
                     ),
-                    obscureText: true,
+                    obscureText: _obscureConfirmPassword,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please confirm your password';
@@ -207,6 +402,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRequirementText(String text, bool isMet) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0, top: 2.0),
+      child: Row(
+        children: [
+          Icon(
+            isMet ? Icons.check_circle : Icons.circle_outlined,
+            size: 16,
+            color: isMet ? Colors.green : Colors.grey,
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: isMet ? Colors.green : Colors.grey,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

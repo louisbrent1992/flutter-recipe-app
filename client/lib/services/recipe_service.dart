@@ -91,10 +91,32 @@ class RecipeService {
     );
 
     if (response.success && response.data != null) {
-      final recipes =
-          (response.data!['recipes'] as List)
-              .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
-              .toList();
+      final recipesData = response.data!['recipes'];
+
+      if (recipesData is! List) {
+        return ApiResponse.error(
+          'Invalid response format: recipes is not a list',
+        );
+      }
+
+      final recipes = <Recipe>[];
+      for (final item in recipesData) {
+        try {
+          if (item is Map<String, dynamic>) {
+            recipes.add(Recipe.fromJson(item));
+          } else if (item is Map) {
+            // Convert Map to Map<String, dynamic>
+            final convertedItem = Map<String, dynamic>.from(item);
+            recipes.add(Recipe.fromJson(convertedItem));
+          } else {
+            debugPrint('Skipping invalid recipe item: ${item.runtimeType}');
+            continue; // Skip this item
+          }
+        } catch (e) {
+          debugPrint('Error converting recipe item: $e');
+          continue; // Skip this item
+        }
+      }
 
       return ApiResponse.success({
         'recipes': recipes,
@@ -212,9 +234,30 @@ class RecipeService {
       );
 
       if (response.success && response.data != null) {
-        // Convert each dynamic element to String
+        // Handle the case where data might be a List or might be something else
+        List<dynamic> rawData;
+        if (response.data is List) {
+          rawData = response.data!;
+        } else {
+          return ApiResponse.success([]);
+        }
+
+        // Convert each dynamic element to String, handling potential Maps
         final favoriteIds =
-            response.data!.map<String>((id) => id.toString()).toList();
+            rawData
+                .map<String>((id) {
+                  if (id is String) {
+                    return id;
+                  } else if (id is Map) {
+                    // If it's a map, try to get an 'id' field
+                    return id['id']?.toString() ?? '';
+                  } else {
+                    return id.toString();
+                  }
+                })
+                .where((id) => id.isNotEmpty)
+                .toList();
+
         return ApiResponse.success(favoriteIds);
       }
 

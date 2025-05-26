@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/recipe.dart';
 import '../models/api_response.dart';
 import '../services/recipe_service.dart';
+import '../services/collection_service.dart';
 
 class RecipeProvider extends ChangeNotifier {
   // AI generated recipes
@@ -149,38 +151,6 @@ class RecipeProvider extends ChangeNotifier {
     }
   }
 
-  // Save a generated recipe to the user's collection
-  Future<Recipe?> saveGeneratedRecipe(Recipe recipe) async {
-    _setLoading(true);
-    clearError();
-
-    try {
-      // Check for duplicates
-      if (isDuplicateRecipe(recipe)) {
-        _setError('This recipe is already in your collection');
-        return null;
-      }
-
-      final response = await RecipeService.createUserRecipe(recipe);
-
-      if (response.success && response.data != null) {
-        final savedRecipe = response.data;
-        // Add to user recipes list
-        _userRecipes.add(savedRecipe!);
-        notifyListeners();
-        return savedRecipe;
-      } else {
-        _setError(response.message ?? 'Failed to save recipe');
-        return null;
-      }
-    } catch (e) {
-      _setError(e.toString());
-      return null;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
   //----------------------------------------
   // USER RECIPE METHODS
   //----------------------------------------
@@ -204,6 +174,10 @@ class RecipeProvider extends ChangeNotifier {
         _hasNextPage = data['pagination']['hasNextPage'];
         _hasPrevPage = data['pagination']['hasPrevPage'];
         _totalRecipes = data['pagination']['total'];
+
+        // Update favorite status for loaded recipes
+        await _updateRecipeFavoriteStatus();
+
         notifyListeners();
       } else {
         _setError(response.message ?? 'Failed to load recipes');
@@ -324,9 +298,18 @@ class RecipeProvider extends ChangeNotifier {
       final response = await RecipeService.deleteUserRecipe(id);
 
       if (response.success) {
-        // Remove from lists
+        // Remove from all local lists
         _userRecipes.removeWhere((recipe) => recipe.id == id);
         _favoriteRecipes.removeWhere((recipe) => recipe.id == id);
+        _generatedRecipes.removeWhere((recipe) => recipe.id == id);
+
+        // Clear imported recipe if it matches
+        if (_importedRecipe?.id == id) {
+          _importedRecipe = null;
+        }
+
+        // Refresh collections to ensure the deleted recipe is removed from all collections
+        await CollectionService.refreshCollectionsAfterRecipeDeletion(id);
 
         notifyListeners();
         return true;
@@ -350,8 +333,10 @@ class RecipeProvider extends ChangeNotifier {
       final response = await RecipeService.toggleFavoriteStatus(id, isFavorite);
 
       if (response.success) {
-        // Update in user recipes list
-        final index = _userRecipes.indexWhere((r) => r.id == id);
+        // Update in user recipes list - handle string/number ID comparison
+        final index = _userRecipes.indexWhere(
+          (r) => r.id.toString() == id.toString(),
+        );
         if (index != -1) {
           _userRecipes[index] = _userRecipes[index].copyWith(
             isFavorite: isFavorite,
@@ -361,12 +346,13 @@ class RecipeProvider extends ChangeNotifier {
         // Update favorites list
         if (isFavorite) {
           // If not already in favorites and marking as favorite, add it
-          if (!_favoriteRecipes.any((r) => r.id == id) && index != -1) {
+          if (!_favoriteRecipes.any((r) => r.id.toString() == id.toString()) &&
+              index != -1) {
             _favoriteRecipes.add(_userRecipes[index]);
           }
         } else {
           // If removing from favorites, remove from list
-          _favoriteRecipes.removeWhere((r) => r.id == id);
+          _favoriteRecipes.removeWhere((r) => r.id.toString() == id.toString());
         }
 
         notifyListeners();
@@ -397,10 +383,14 @@ class RecipeProvider extends ChangeNotifier {
         final favoriteIds = response.data ?? <String>[];
 
         // Filter the user recipes to find those with IDs in the favorites list
+        // Convert both to strings for comparison to handle mixed types
         _favoriteRecipes =
-            _userRecipes
-                .where((recipe) => favoriteIds.contains(recipe.id))
-                .toList();
+            _userRecipes.where((recipe) {
+              final recipeIdStr = recipe.id.toString();
+              return favoriteIds.any(
+                (favId) => favId.toString() == recipeIdStr,
+              );
+            }).toList();
 
         notifyListeners();
       } else {
@@ -412,6 +402,33 @@ class RecipeProvider extends ChangeNotifier {
       _favoriteRecipes = [];
     } finally {
       _setLoading(false);
+    }
+  }
+
+  // Helper method to update favorite status for loaded recipes
+  Future<void> _updateRecipeFavoriteStatus() async {
+    try {
+      final favoritesResponse = await RecipeService.getFavoriteRecipes();
+
+      if (favoritesResponse.success && favoritesResponse.data != null) {
+        final favoriteIds = favoritesResponse.data ?? <String>[];
+
+        // Update isFavorite field for each recipe
+        for (int i = 0; i < _userRecipes.length; i++) {
+          final recipe = _userRecipes[i];
+          final recipeIdStr = recipe.id.toString();
+          final isFavorite = favoriteIds.any(
+            (favId) => favId.toString() == recipeIdStr,
+          );
+
+          if (recipe.isFavorite != isFavorite) {
+            _userRecipes[i] = recipe.copyWith(isFavorite: isFavorite);
+          }
+        }
+      }
+    } catch (e) {
+      // Silently continue if favorites check fails
+      debugPrint('Error updating recipe favorite status: $e');
     }
   }
 

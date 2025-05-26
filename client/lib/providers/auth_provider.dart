@@ -11,7 +11,6 @@ class AuthService with ChangeNotifier {
   User? _user;
   bool _isLoading = false;
   String? _error;
-  final bool _isNavigating = false;
 
   User? get user => _user;
   bool get isLoading => _isLoading;
@@ -25,25 +24,106 @@ class AuthService with ChangeNotifier {
     });
   }
 
-  // Sign in with email and password
-  Future<void> signInWithEmailAndPassword(String email, String password) async {
-    if (!_isNavigating) {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
+  // Helper method to create/update user profile in Firestore
+  Future<void> _createOrUpdateUserProfile(
+    User user, {
+    String? displayName,
+  }) async {
+    try {
+      final userDoc = _firestore.collection('users').doc(user.uid);
+      final userData = {
+        'email': user.email,
+        'displayName': displayName ?? user.displayName,
+        'photoURL': user.photoURL,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
 
-      try {
-        UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+      // Check if document exists
+      final docSnapshot = await userDoc.get();
+      if (!docSnapshot.exists) {
+        // If document doesn't exist, add createdAt
+        userData['createdAt'] = FieldValue.serverTimestamp();
+      }
+
+      // Update or create the document
+      await userDoc.set(userData, SetOptions(merge: true));
+    } catch (e) {
+      print('Error creating/updating user profile: $e');
+      rethrow;
+    }
+  }
+
+  // Sign in with email and password
+  Future<User?> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      // Configure auth persistence based on platform
+      if (kIsWeb) {
+        await _auth.setPersistence(Persistence.LOCAL);
+      }
+
+      // Attempt sign in with platform-specific configuration
+      UserCredential userCredential;
+      if (kIsWeb) {
+        // Web platform requires reCAPTCHA
+        userCredential = await _auth.signInWithEmailAndPassword(
           email: email,
           password: password,
         );
-        _user = userCredential.user;
-      } catch (e) {
-        _error = e.toString();
-      } finally {
-        _isLoading = false;
-        notifyListeners();
+      } else {
+        // Mobile platforms don't require reCAPTCHA
+        userCredential = await _auth.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
       }
+
+      _user = userCredential.user;
+
+      // Update user profile in Firestore
+      if (_user != null) {
+        await _createOrUpdateUserProfile(_user!);
+      }
+
+      return _user;
+    } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException: ${e.code} - ${e.message}');
+      switch (e.code) {
+        case 'user-not-found':
+          _error = 'No account found with this email. Please sign up first.';
+          break;
+        case 'wrong-password':
+          _error = 'Incorrect password. Please try again.';
+          break;
+        case 'invalid-email':
+          _error = 'Please enter a valid email address.';
+          break;
+        case 'user-disabled':
+          _error = 'This account has been disabled. Please contact support.';
+          break;
+        case 'invalid-credential':
+          _error = 'Invalid email or password. Please try again.';
+          break;
+        case 'network-request-failed':
+          _error = 'Network error. Please check your internet connection.';
+          break;
+        default:
+          _error = 'An error occurred during sign in. Please try again.';
+      }
+      return null;
+    } catch (e) {
+      print('Unexpected error during sign in: $e');
+      _error = 'An unexpected error occurred. Please try again.';
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -58,22 +138,34 @@ class AuthService with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // Only set persistence on web platforms
+      if (kIsWeb) {
+        await _auth.setPersistence(Persistence.LOCAL);
+      }
+
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // Create user profile in Firestore
-      await _firestore.collection('users').doc(result.user!.uid).set({
-        'displayName': displayName,
-        'email': email,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      print('User created: ${result.user}');
 
       // Update display name
       await result.user!.updateDisplayName(displayName);
       _user = result.user;
+
+      // Create user profile in Firestore
+      if (_user != null) {
+        await _createOrUpdateUserProfile(_user!, displayName: displayName);
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'network-request-failed') {
+        _error = 'Please check your internet connection and try again.';
+      } else if (e.code == 'email-already-in-use') {
+        _error = 'The email address is already in use by another account.';
+      } else {
+        _error = e.message ?? 'An error occurred during registration.';
+      }
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -84,6 +176,10 @@ class AuthService with ChangeNotifier {
 
   // Sign in with Google
   Future<User?> signInWithGoogle() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) throw 'Google sign in aborted';
@@ -99,9 +195,23 @@ class AuthService with ChangeNotifier {
       UserCredential userCredential = await _auth.signInWithCredential(
         credential,
       );
-      return userCredential.user;
+
+      // Create or update user profile in Firestore
+      if (userCredential.user != null) {
+        await _createOrUpdateUserProfile(
+          userCredential.user!,
+          displayName: googleUser.displayName,
+        );
+      }
+
+      _user = userCredential.user;
+      return _user;
     } catch (e) {
-      rethrow;
+      _error = e.toString();
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 

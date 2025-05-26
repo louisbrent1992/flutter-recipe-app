@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const auth = require("../middleware/auth");
 
 // Get Firestore database instance
@@ -262,9 +262,49 @@ router.delete("/recipes/:id", auth, async (req, res) => {
 				.json({ error: "Not authorized to delete this recipe" });
 		}
 
-		await recipeRef.delete();
+		// Start a batch to ensure all operations succeed or fail together
+		const batch = db.batch();
 
-		res.json({ message: "Recipe deleted successfully" });
+		// 1. Delete the recipe document
+		batch.delete(recipeRef);
+
+		// 2. Remove from user's favorites if present
+		const favoritesRef = db.collection("favorites").doc(userId);
+		batch.update(favoritesRef, {
+			recipes: FieldValue.arrayRemove(recipeId),
+			updatedAt: new Date().toISOString(),
+		});
+
+		// 3. Remove from all user's collections
+		const collectionsSnapshot = await db
+			.collection("users")
+			.doc(userId)
+			.collection("collections")
+			.get();
+
+		for (const collectionDoc of collectionsSnapshot.docs) {
+			const collectionData = collectionDoc.data();
+			const recipes = collectionData.recipes || [];
+
+			// Check if this recipe is in this collection
+			const updatedRecipes = recipes.filter((r) => r.id !== recipeId);
+
+			// Only update if the recipe was actually in this collection
+			if (updatedRecipes.length !== recipes.length) {
+				batch.update(collectionDoc.ref, {
+					recipes: updatedRecipes,
+					updatedAt: new Date().toISOString(),
+				});
+			}
+		}
+
+		// Commit all operations
+		await batch.commit();
+
+		res.json({
+			message:
+				"Recipe deleted successfully and removed from favorites and collections",
+		});
 	} catch (error) {
 		console.error("Error deleting recipe:", error);
 		res.status(500).json({ error: "Failed to delete recipe" });
@@ -281,7 +321,7 @@ router.get("/favorites", auth, async (req, res) => {
 		if (!favoritesDoc.exists) {
 			return res.json([]);
 		}
-		console.log(favoritesDoc.data().recipes);
+
 		res.json(favoritesDoc.data().recipes || []);
 	} catch (error) {
 		console.error("Error fetching favorites:", error);
@@ -298,7 +338,7 @@ router.post("/favorites", auth, async (req, res) => {
 			.doc(req.user.uid)
 			.set(
 				{
-					recipes: db.FieldValue.arrayUnion(recipeId),
+					recipes: FieldValue.arrayUnion(recipeId),
 					updatedAt: new Date().toISOString(),
 				},
 				{ merge: true }
@@ -318,12 +358,51 @@ router.delete("/favorites/:recipeId", auth, async (req, res) => {
 			.collection("favorites")
 			.doc(req.user.uid)
 			.update({
-				recipes: db.FieldValue.arrayRemove(recipeId),
+				recipes: FieldValue.arrayRemove(recipeId),
 				updatedAt: new Date().toISOString(),
 			});
 		res.json({ message: "Recipe removed from favorites" });
 	} catch (error) {
 		console.error("Error removing from favorites:", error);
+		res.status(500).json({ error: "Internal server error" });
+	}
+});
+
+// Toggle favorite status of a recipe
+router.put("/favorites", auth, async (req, res) => {
+	try {
+		const { recipeId, isFavorite } = req.body;
+
+		if (!recipeId) {
+			return res.status(400).json({ error: "Recipe ID is required" });
+		}
+
+		if (isFavorite) {
+			// Add to favorites
+			await db
+				.collection("favorites")
+				.doc(req.user.uid)
+				.set(
+					{
+						recipes: FieldValue.arrayUnion(recipeId),
+						updatedAt: new Date().toISOString(),
+					},
+					{ merge: true }
+				);
+			res.json({ message: "Recipe added to favorites" });
+		} else {
+			// Remove from favorites
+			await db
+				.collection("favorites")
+				.doc(req.user.uid)
+				.update({
+					recipes: FieldValue.arrayRemove(recipeId),
+					updatedAt: new Date().toISOString(),
+				});
+			res.json({ message: "Recipe removed from favorites" });
+		}
+	} catch (error) {
+		console.error("Error toggling favorite status:", error);
 		res.status(500).json({ error: "Internal server error" });
 	}
 });
