@@ -142,6 +142,190 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
+  Future<void> _showDeleteAccountDialog() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.warning_rounded, color: Colors.red, size: 28),
+              const SizedBox(width: 12),
+              const Text('Delete Account'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Are you sure you want to permanently delete your account?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.red.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'This action will permanently delete:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text('• Your account and profile'),
+                    const Text('• All your saved recipes'),
+                    const Text('• Your recipe collections'),
+                    const Text('• All app preferences and data'),
+                    const SizedBox(height: 8),
+                    Text(
+                      'This action cannot be undone.',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Delete Account'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true && mounted) {
+      await _deleteAccount();
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    final auth = context.read<AuthService>();
+
+    // Store the navigator and scaffold messenger to avoid context issues
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text('Deleting account...'),
+              ],
+            ),
+          );
+        },
+      );
+
+      await auth.deleteAccount();
+
+      // Close loading dialog first
+      if (mounted) {
+        navigator.pop();
+      }
+
+      // Small delay to ensure auth state has updated
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Navigate to login screen and clear all routes
+      if (mounted) {
+        navigator.pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+
+      // Show success message after navigation
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Use a post-frame callback to ensure the login screen is built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Account deleted successfully. Thank you for using RecipEase!',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      });
+    } catch (e) {
+      if (mounted) {
+        // Close loading dialog
+        navigator.pop();
+
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Error deleting account: $e',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   void _toggleEditing() {
     setState(() => _isEditing = !_isEditing);
     if (_isEditing) {
@@ -257,7 +441,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
 
                   const SizedBox(height: 32),
-                  const Divider(height: 1),
+                  const Divider(height: 1, thickness: 0.1),
                   const SizedBox(height: 16),
 
                   // Appearance Section
@@ -289,7 +473,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
 
                   const SizedBox(height: 16),
-                  const Divider(height: 1),
+                  const Divider(height: 1, thickness: 0.1),
                   const SizedBox(height: 16),
 
                   // Notifications Section
@@ -347,7 +531,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
 
                   const SizedBox(height: 16),
-                  const Divider(height: 1),
+                  const Divider(height: 1, thickness: 0.1),
                   const SizedBox(height: 16),
 
                   // Premium Features Section
@@ -383,7 +567,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
 
                   const SizedBox(height: 16),
-                  const Divider(height: 1),
+                  const Divider(height: 1, thickness: 0.1),
                   const SizedBox(height: 16),
 
                   // Links Section
@@ -419,7 +603,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
 
                   const SizedBox(height: 16),
-                  const Divider(height: 1),
+                  const Divider(height: 1, thickness: 0.1),
                   const SizedBox(height: 16),
                   // Contact Section
                   _buildSectionHeader(
@@ -531,6 +715,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                       }
                     },
                   ),
+                  const SizedBox(height: 16),
+
+                  const Divider(height: 1, thickness: 0.1),
+                  const SizedBox(height: 16),
+
+                  // Links Section
+                  _buildSectionHeader(
+                    title: 'Account Management',
+                    icon: Icons.person_rounded,
+                    colorScheme: colorScheme,
+                  ),
 
                   const SizedBox(height: 16),
 
@@ -539,6 +734,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                     icon: Icons.logout_rounded,
                     color: Colors.grey.shade600,
                     onTap: _signOut,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildAnimatedListTile(
+                    title: 'Delete Account',
+                    subtitle: 'Permanently delete your account and all data',
+                    icon: Icons.delete_forever_rounded,
+                    color: Colors.red,
+                    onTap: _showDeleteAccountDialog,
                   ),
 
                   const SizedBox(height: 24),

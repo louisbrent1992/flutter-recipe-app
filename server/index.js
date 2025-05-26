@@ -21,6 +21,7 @@ const discoverRoutes = require("./routes/discover");
 const userRoutes = require("./routes/users");
 const authRoutes = require("./middleware/auth");
 const collectionRoutes = require("./routes/collections");
+const dataDeletionRoutes = require("./routes/data-deletion");
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -29,6 +30,12 @@ const port = process.env.PORT || 3001;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+
+// Trust proxy for rate limiting and IP detection (needed for data deletion)
+app.set("trust proxy", 1);
+
+// Serve static files from public directory (for data deletion page)
+app.use(express.static(require("path").join(__dirname, "public")));
 
 // Add request logger in development
 if (process.env.NODE_ENV !== "production") {
@@ -44,6 +51,12 @@ app.use("/api/discover", discoverRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/collections", collectionRoutes);
+app.use("/api", dataDeletionRoutes);
+
+// Serve the data deletion page (for Google Play Console compliance)
+app.get("/data-deletion", (req, res) => {
+	res.sendFile(require("path").join(__dirname, "public", "data-deletion.html"));
+});
 
 // Health check endpoint
 app.get("/health", (req, res) => {

@@ -228,15 +228,41 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                               ),
-                              child: Text(
-                                'Paste a recipe URL below to import recipes from your favorite websites, or click the button below to create a recipe manually',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: colorScheme.onSurface.withAlpha(
-                                    179,
-                                  ), // 0.7 alpha
-                                ),
+                              child: RichText(
                                 textAlign: TextAlign.center,
+                                text: TextSpan(
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: colorScheme.onSurface.withAlpha(
+                                      179,
+                                    ), // 0.7 alpha
+                                  ),
+                                  children: [
+                                    const TextSpan(text: 'Tap the '),
+                                    WidgetSpan(
+                                      child: Icon(
+                                        Icons.share,
+                                        size: 18,
+                                        color: colorScheme.primary,
+                                      ),
+                                    ),
+                                    const TextSpan(
+                                      text:
+                                          ' share button in your favorite social media app, or paste a recipe URL below to import recipes. You can also create a recipe manually using the ',
+                                    ),
+                                    WidgetSpan(
+                                      child: Icon(
+                                        Icons.add_circle,
+                                        size: 18,
+                                        color: colorScheme.primary,
+                                      ),
+                                    ),
+                                    const TextSpan(
+                                      text:
+                                          ' button at the bottom of your screen.',
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -279,7 +305,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                 controller: _urlController,
                                 decoration: InputDecoration(
                                   hintText: 'https://www.example.com/recipe',
-                                  labelText: 'Recipe URL',
+                                  labelText: 'Paste recipe URL here',
                                   hintStyle: TextStyle(
                                     color: colorScheme.onSurface.withAlpha(
                                       102,

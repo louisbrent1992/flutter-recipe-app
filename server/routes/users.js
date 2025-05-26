@@ -407,4 +407,21 @@ router.put("/favorites", auth, async (req, res) => {
 	}
 });
 
+// Delete user account
+router.delete("/account", auth, async (req, res) => {
+	try {
+		const userId = req.user.uid;
+
+		// 5. Delete user profile from Firestore
+		await db.collection("users").doc(userId).delete();
+
+		res.json({ success: true, message: "Account deleted successfully" });
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			message: "Failed to delete account data",
+		});
+	}
+});
+
 module.exports = router;

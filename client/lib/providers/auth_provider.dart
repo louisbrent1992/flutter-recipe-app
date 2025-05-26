@@ -2,11 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../services/api_client.dart';
 
 class AuthService with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final ApiClient _apiClient = ApiClient();
 
   User? _user;
   bool _isLoading = false;
@@ -227,6 +229,55 @@ class AuthService with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Delete account
+  Future<void> deleteAccount() async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw 'No user is currently signed in';
+      }
+
+      // Call server endpoint to delete all user data
+      final response = await _apiClient.authenticatedDelete('users/account');
+
+      if (!response.success) {
+        throw response.message ?? 'Failed to delete user data from server';
+      }
+
+      // After server confirms data deletion, delete the Firebase Auth account
+      await user.delete();
+
+      // Sign out from Google if signed in
+      await _googleSignIn.signOut();
+
+      _user = null;
+      notifyListeners();
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'requires-recent-login':
+          _error =
+              'For security reasons, please sign out and sign back in before deleting your account.';
+          break;
+        case 'user-not-found':
+          _error = 'User account not found.';
+          break;
+        default:
+          _error = 'Failed to delete account: ${e.message}';
+      }
+      rethrow;
+    } catch (e) {
+      _error = 'An unexpected error occurred while deleting your account.';
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
