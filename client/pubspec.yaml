@@ -78,7 +78,7 @@ dependencies:
   firebase_app_check: ^0.3.2+5
   flutter_html: ^3.0.0
   google_fonts: ^6.2.1
-  google_mobile_ads: 6.0.0
+  google_mobile_ads: ^6.0.0
 
 dev_dependencies:
   flutter_test:
