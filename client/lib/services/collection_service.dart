@@ -529,7 +529,7 @@ class CollectionService {
           // Update the collection on the server
           await updateCollectionRecipes(collection.name, updatedRecipes);
           logger.i(
-            'Removed deleted recipe ${recipeId} from collection ${collection.name}',
+            'Removed deleted recipe $recipeId from collection ${collection.name}',
           );
         }
       }

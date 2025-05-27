@@ -184,7 +184,6 @@ class UserProfileProvider with ChangeNotifier {
 
     try {
       String recipeIdToFavorite = recipe.id;
-      Recipe recipeToFavorite = recipe;
 
       // Check if recipe exists in user's collection using the API
       final userRecipesResponse = await RecipeService.getUserRecipes(
@@ -211,7 +210,6 @@ class UserProfileProvider with ChangeNotifier {
         if (recipeExists) {
           // Use the existing recipe's ID for favoriting
           recipeIdToFavorite = existingRecipe.id;
-          recipeToFavorite = existingRecipe;
         }
       }
 
@@ -221,7 +219,6 @@ class UserProfileProvider with ChangeNotifier {
         if (saveResponse.success && saveResponse.data != null) {
           // Use the new saved recipe's ID for favoriting
           recipeIdToFavorite = saveResponse.data!.id;
-          recipeToFavorite = saveResponse.data!;
         } else {
           throw Exception('Failed to save recipe before favoriting');
         }
