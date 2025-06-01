@@ -5,9 +5,6 @@ import '../providers/user_profile_provider.dart';
 import '../components/custom_app_bar.dart';
 import '../components/nav_drawer.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../providers/subscription_provider.dart';
-import '../providers/recipe_provider.dart';
-import '../providers/notification_provider.dart';
 import '../theme/theme.dart';
 
 class HomeScreen extends StatefulWidget {

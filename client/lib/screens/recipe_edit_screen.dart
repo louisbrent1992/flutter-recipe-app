@@ -728,15 +728,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
           FloatingSaveButton(onPressed: _saveRecipe, isLoading: _isLoading),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        elevation: AppElevation.fab,
-        onPressed: _isLoading ? null : _saveRecipe,
-        label: Text(
-          widget.recipe?.toEdit == true ? 'Update' : 'Save',
-          style: TextStyle(color: Theme.of(context).colorScheme.onTertiary),
-        ),
-        icon: Icon(Icons.save, color: Theme.of(context).colorScheme.onTertiary),
-      ),
     );
   }
 }

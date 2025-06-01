@@ -4,8 +4,6 @@ import 'package:recipease/components/floating_add_button.dart';
 import 'package:recipease/components/floating_home_button.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
-import '../providers/recipe_provider.dart';
-import '../services/recipe_service.dart';
 import '../theme/theme.dart';
 
 class RecipeCollectionScreen extends StatefulWidget {
