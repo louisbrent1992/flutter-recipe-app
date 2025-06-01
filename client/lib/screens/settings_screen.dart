@@ -5,10 +5,11 @@ import 'package:recipease/providers/auth_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/notification_provider.dart';
+import '../providers/subscription_provider.dart';
+import '../theme/theme.dart';
 import '../components/floating_home_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../providers/subscription_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -352,7 +353,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        elevation: 0,
+        elevation: AppElevation.appBar,
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
         actions: [
@@ -797,7 +798,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 bottom: 0,
                 right: 0,
                 child: Material(
-                  elevation: 4,
+                  elevation: AppElevation.button,
                   shape: const CircleBorder(),
                   clipBehavior: Clip.hardEdge,
                   child: InkWell(
@@ -991,18 +992,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                       style: TextStyle(
                         color: color,
                         fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     if (subtitle != null) ...[
                       const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          color: color.withValues(alpha: 0.7),
-                          fontSize: 14,
-                        ),
-                      ),
+                      Text(subtitle),
                     ],
                   ],
                 ),

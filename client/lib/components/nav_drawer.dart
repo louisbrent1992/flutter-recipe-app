@@ -25,13 +25,13 @@ class _NavDrawerState extends State<NavDrawer> {
             margin: EdgeInsets.zero,
             onDetailsPressed: () => Navigator.pushNamed(context, '/settings'),
             decoration: BoxDecoration(
-              color: colorScheme.primary,
+              color: colorScheme.secondary,
               image: DecorationImage(
                 image: const AssetImage('images/drawer_header_bg.jpg'),
                 fit: BoxFit.cover,
                 opacity: 0.7,
                 colorFilter: ColorFilter.mode(
-                  colorScheme.primary.withValues(alpha: 0.5),
+                  colorScheme.secondary.withValues(alpha: 0.5),
                   BlendMode.darken,
                 ),
               ),
@@ -51,7 +51,7 @@ class _NavDrawerState extends State<NavDrawer> {
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: colorScheme.onPrimaryContainer,
+                          color: colorScheme.tertiary,
                         ),
                       )
                       : null,

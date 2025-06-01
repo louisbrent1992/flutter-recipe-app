@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import '../providers/subscription_provider.dart';
 import '../components/error_display.dart';
+import '../theme/theme.dart';
 
 class SubscriptionScreen extends StatelessWidget {
   const SubscriptionScreen({super.key});
@@ -14,9 +15,9 @@ class SubscriptionScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Premium Features'),
-        elevation: 0,
-        backgroundColor: colorScheme.surface,
+        title: const Text('Premium Subscription'),
+        elevation: AppElevation.appBar,
+        backgroundColor: theme.colorScheme.primary,
         foregroundColor: colorScheme.onSurface,
       ),
       body: Consumer<SubscriptionProvider>(

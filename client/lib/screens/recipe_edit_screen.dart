@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 import '../providers/recipe_provider.dart';
 import '../components/error_display.dart';
 import '../models/api_response.dart';
+import '../theme/theme.dart';
 
 class RecipeEditScreen extends StatefulWidget {
   final Recipe? recipe;
@@ -399,7 +400,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                       bottom: 10,
                                       right: 10,
                                       child: Material(
-                                        elevation: 4,
+                                        elevation: AppElevation.button,
                                         shape: const CircleBorder(),
                                         clipBehavior: Clip.hardEdge,
                                         child: InkWell(
@@ -726,6 +727,15 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
           const FloatingHomeButton(),
           FloatingSaveButton(onPressed: _saveRecipe, isLoading: _isLoading),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        elevation: AppElevation.fab,
+        onPressed: _isLoading ? null : _saveRecipe,
+        label: Text(
+          widget.recipe?.toEdit == true ? 'Update' : 'Save',
+          style: TextStyle(color: Theme.of(context).colorScheme.onTertiary),
+        ),
+        icon: Icon(Icons.save, color: Theme.of(context).colorScheme.onTertiary),
       ),
     );
   }

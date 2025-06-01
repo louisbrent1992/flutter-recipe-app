@@ -5,6 +5,7 @@ import 'package:recipease/components/floating_add_button.dart';
 import 'package:recipease/components/floating_home_button.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/providers/recipe_provider.dart';
+import 'package:recipease/theme/theme.dart';
 
 class ImportRecipeScreen extends StatefulWidget {
   final String? sharedUrl;
@@ -433,7 +434,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                 style: ElevatedButton.styleFrom(
                                   foregroundColor: Colors.white,
                                   backgroundColor: colorScheme.primary,
-                                  elevation: 4,
+                                  elevation: AppElevation.button,
                                   shadowColor: colorScheme.primary.withAlpha(
                                     102,
                                   ), // 0.4 alpha

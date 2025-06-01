@@ -18,10 +18,12 @@ class DiscoverRecipesScreen extends StatefulWidget {
 
 class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     with RecipeFilterMixin {
+  final ScrollController _scrollController = ScrollController();
   final _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedDifficulty = 'All';
   String _selectedTag = 'All';
+  double _filtersOpacity = 1.0;
   final Map<String, bool> _savedRecipes = {};
   final List<String> _difficulties = ['All', 'Easy', 'Medium', 'Hard'];
   final List<String> _availableTags = [
@@ -45,6 +47,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_scrollListener);
     // Load recipes after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadRecipes();
@@ -139,8 +142,36 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     }
   }
 
+  void _scrollListener() {
+    // Calculate opacity based on scroll position for progressive fade
+    const fadeStartDistance = 0.0;
+    const fadeEndDistance = 120.0;
+    final scrollPosition = _scrollController.position.pixels;
+
+    double newOpacity;
+    if (scrollPosition <= fadeStartDistance) {
+      newOpacity = 1.0;
+    } else if (scrollPosition >= fadeEndDistance) {
+      newOpacity = 0.0;
+    } else {
+      // Linear interpolation between 1.0 and 0.0
+      newOpacity =
+          1.0 -
+          ((scrollPosition - fadeStartDistance) /
+              (fadeEndDistance - fadeStartDistance));
+    }
+
+    if ((newOpacity - _filtersOpacity).abs() > 0.01) {
+      setState(() {
+        _filtersOpacity = newOpacity;
+      });
+    }
+  }
+
   @override
   void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -162,6 +193,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                   selectedTag: _selectedTag,
                   difficulties: _difficulties,
                   availableTags: _availableTags,
+                  filtersOpacity: _filtersOpacity,
                   onSearchChanged: (value) {
                     setState(() => _searchQuery = value);
                     // Add debounce for search to avoid too many API calls
@@ -242,6 +274,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                     }
 
                     return GridView.builder(
+                      controller: _scrollController,
                       padding: const EdgeInsets.all(16),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(

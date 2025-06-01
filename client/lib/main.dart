@@ -26,12 +26,10 @@ import 'package:recipease/providers/theme_provider.dart';
 import 'package:recipease/providers/notification_provider.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/providers/subscription_provider.dart';
-
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:share_handler/share_handler.dart';
-import 'package:share_handler_platform_interface/share_handler_platform_interface.dart';
 import 'package:recipease/services/permission_service.dart';
 import 'screens/generated_recipes_screen.dart';
 import 'screens/imported_recipes_screen.dart';
@@ -41,6 +39,13 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 final kWebRecaptchaSiteKey = '6Lemcn0dAAAAABLkf6aiiHvpGD6x-zF3nOSDU2M8';
+
+// Debug flag to disable ads for screenshots - set to true to hide ads
+const bool hideAds = true;
+
+// Alternative: Environment-based approach
+// const bool HIDE_ADS_FOR_SCREENSHOTS = bool.fromEnvironment('HIDE_ADS', defaultValue: false);
+// Then run with: flutter run --dart-define=HIDE_ADS=true
 
 /// Initializes the app.
 ///

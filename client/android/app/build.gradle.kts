@@ -30,6 +30,11 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
+    // Enable BuildConfig feature
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.recipease"
@@ -39,6 +44,13 @@ android {
         targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Enable incremental annotation processing
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments["dagger.incremental"] = "true"
+            }
+        }
     }
 
     signingConfigs {
@@ -51,8 +63,27 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            isMinifyEnabled = false
+            isDebuggable = true
+            // Speed up debug builds
+            // applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            // Disable crashlytics for debug builds
+            buildConfigField("boolean", "ENABLE_CRASHLYTICS", "false")
+        }
         release {
             signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isDebuggable = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/gradle/incremental.annotation.processors"
         }
     }
 }
@@ -72,4 +103,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:21.3.0")
     
     implementation("com.google.android.material:material:1.12.0")
+
+    compileOnly("com.google.dagger:dagger:2.56.2")
+    annotationProcessor("com.google.dagger:dagger-compiler:2.56.2")
 }

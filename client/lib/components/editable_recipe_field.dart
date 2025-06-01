@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme.dart';
 
 class EditableRecipeField extends StatefulWidget {
   final String label;
@@ -67,7 +68,7 @@ class _EditableRecipeFieldState extends State<EditableRecipeField> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 5,
+      elevation: AppElevation.card,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

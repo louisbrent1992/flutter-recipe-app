@@ -4,6 +4,9 @@ import 'package:recipease/components/floating_add_button.dart';
 import 'package:recipease/components/floating_home_button.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
+import '../providers/recipe_provider.dart';
+import '../services/recipe_service.dart';
+import '../theme/theme.dart';
 
 class RecipeCollectionScreen extends StatefulWidget {
   const RecipeCollectionScreen({super.key});
@@ -76,15 +79,20 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Add New Category'),
-            content: TextField(
-              controller: _categoryNameController,
-              decoration: const InputDecoration(
-                hintText: 'Enter category name',
-                labelText: 'Category Name',
-              ),
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
+            title: const Text('Name Your Collection'),
+            elevation: AppElevation.dialog,
+            content: Column(
+              children: [
+                TextField(
+                  controller: _categoryNameController,
+                  decoration: const InputDecoration(
+                    hintText: 'Enter category name',
+                    labelText: 'Category Name',
+                  ),
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.words,
+                ),
+              ],
             ),
             actions: [
               TextButton(
@@ -422,7 +430,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     required ColorScheme colorScheme,
   }) {
     return Card(
-      elevation: 20,
+      elevation: AppElevation.card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () {

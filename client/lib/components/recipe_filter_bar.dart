@@ -12,6 +12,7 @@ class RecipeFilterBar extends StatelessWidget {
   final Function(String) onTagSelected;
   final VoidCallback? onResetFilters;
   final bool showResetButton;
+  final double filtersOpacity;
 
   const RecipeFilterBar({
     super.key,
@@ -26,6 +27,7 @@ class RecipeFilterBar extends StatelessWidget {
     required this.onTagSelected,
     this.onResetFilters,
     this.showResetButton = false,
+    this.filtersOpacity = 1.0,
   });
 
   @override
@@ -34,10 +36,12 @@ class RecipeFilterBar extends StatelessWidget {
       children: [
         TextField(
           controller: searchController,
+          textAlignVertical: TextAlignVertical.bottom,
           decoration: InputDecoration(
             hintText: 'Search recipes...',
             prefixIcon: const Icon(Icons.search),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(50)),
+            constraints: const BoxConstraints(maxHeight: 35),
             suffixIcon:
                 searchQuery.isNotEmpty
                     ? IconButton(
@@ -51,52 +55,75 @@ class RecipeFilterBar extends StatelessWidget {
           ),
           onChanged: onSearchChanged,
         ),
-        const SizedBox(height: 16),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              const Text('Difficulty: '),
-              ...difficulties.map(
-                (difficulty) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: FilterChip(
-                    label: Text(difficulty),
-                    selected: selectedDifficulty == difficulty,
-                    onSelected: (selected) => onDifficultySelected(difficulty),
-                  ),
-                ),
-              ),
-              if (showResetButton)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: TextButton.icon(
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Reset Filters'),
-                    onPressed: onResetFilters,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              const Text('Tags: '),
-              ...availableTags.map(
-                (tag) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: FilterChip(
-                    label: Text(tag),
-                    selected: selectedTag == tag,
-                    onSelected: (selected) => onTagSelected(tag),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: filtersOpacity,
+          child:
+              filtersOpacity > 0
+                  ? Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            const Text('Difficulty: '),
+                            ...difficulties.map(
+                              (difficulty) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                child: FilterChip(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(50),
+                                  ),
+                                  label: Text(difficulty),
+                                  selected: selectedDifficulty == difficulty,
+                                  onSelected:
+                                      (selected) =>
+                                          onDifficultySelected(difficulty),
+                                ),
+                              ),
+                            ),
+                            if (showResetButton)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: TextButton.icon(
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text('Reset Filters'),
+                                  onPressed: onResetFilters,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            const Text('Tags: '),
+                            ...availableTags.map(
+                              (tag) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                child: FilterChip(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(50),
+                                  ),
+                                  label: Text(tag),
+                                  selected: selectedTag == tag,
+                                  onSelected: (selected) => onTagSelected(tag),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                  : const SizedBox.shrink(),
         ),
       ],
     );

@@ -24,6 +24,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
   String _searchQuery = '';
   String _selectedDifficulty = 'All';
   String _selectedTag = 'All';
+  double _filtersOpacity = 1.0;
   final List<String> _availableTags = [
     'All',
     'Breakfast',
@@ -77,6 +78,30 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
         recipeProvider.loadNextPage();
       }
     }
+
+    // Calculate opacity based on scroll position for progressive fade
+    const fadeStartDistance = 0.0;
+    const fadeEndDistance = 120.0;
+    final scrollPosition = _scrollController.position.pixels;
+
+    double newOpacity;
+    if (scrollPosition <= fadeStartDistance) {
+      newOpacity = 1.0;
+    } else if (scrollPosition >= fadeEndDistance) {
+      newOpacity = 0.0;
+    } else {
+      // Linear interpolation between 1.0 and 0.0
+      newOpacity =
+          1.0 -
+          ((scrollPosition - fadeStartDistance) /
+              (fadeEndDistance - fadeStartDistance));
+    }
+
+    if ((newOpacity - _filtersOpacity).abs() > 0.01) {
+      setState(() {
+        _filtersOpacity = newOpacity;
+      });
+    }
   }
 
   void _updateAvailableTags(List<Recipe> recipes) {
@@ -108,6 +133,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                   selectedTag: _selectedTag,
                   difficulties: _difficulties,
                   availableTags: _availableTags,
+                  filtersOpacity: _filtersOpacity,
                   onSearchChanged: (value) {
                     setState(() => _searchQuery = value);
                   },

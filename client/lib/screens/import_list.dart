@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:recipease/models/recipe.dart';
+import '../models/recipe.dart';
+import '../theme/theme.dart';
 
 class ImportListScreen extends StatefulWidget {
   const ImportListScreen({super.key});
@@ -118,7 +119,7 @@ class _ImportListScreenState extends State<ImportListScreen> {
     final timeAgo = _getTimeAgo(recipe.createdAt);
 
     return Card(
-      elevation: 2,
+      elevation: AppElevation.card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

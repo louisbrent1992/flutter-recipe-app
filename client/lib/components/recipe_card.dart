@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../models/recipe.dart';
 import 'package:provider/provider.dart';
 import '../services/recipe_service.dart';
+import '../theme/theme.dart';
 
 class RecipeCard extends StatefulWidget {
   final Recipe recipe;
@@ -384,12 +385,11 @@ Shared from Recipe App
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    print(widget.recipe.imageUrl);
 
     return Card(
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 4,
+      elevation: AppElevation.card,
       child: InkWell(
         onTap: () {
           Navigator.pushNamed(

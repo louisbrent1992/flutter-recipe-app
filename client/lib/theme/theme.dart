@@ -16,6 +16,27 @@ const Color darkAccentColor = Color(0xFF4AFFB3); // Brighter mint
 const Color darkNeutralColor = Color(0xFFD4B17A); // Brighter peach
 const Color darkPurpleColor = Color(0xFF9A0AA2); // Brighter purple
 
+/// Elevation system for consistent shadow depths throughout the app
+/// Following Material Design 3 elevation guidelines
+class AppElevation {
+  static const double level0 = 0.0; // No elevation (app bars, backgrounds)
+  static const double level1 =
+      1.0; // Minimal elevation (search bars, text fields)
+  static const double level2 = 3.0; // Low elevation (cards, chips)
+  static const double level3 = 6.0; // Medium elevation (FABs, snackbars)
+  static const double level4 = 8.0; // High elevation (navigation drawers)
+  static const double level5 = 12.0; // Highest elevation (modal dialogs)
+
+  // Semantic aliases for common use cases
+  static const double appBar = level0;
+  static const double card = level2;
+  static const double button = level1;
+  static const double fab = level3;
+  static const double dialog = level5;
+  static const double bottomSheet = level4;
+  static const double menu = level3;
+}
+
 class AppTheme {
   static final ThemeData lightTheme = ThemeData(
     colorScheme: const ColorScheme(

@@ -3,6 +3,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../services/ad_helper.dart';
 import 'package:provider/provider.dart';
 import '../providers/subscription_provider.dart';
+import '../main.dart'; // Import to access the debug flag
 
 class BannerAdWidget extends StatefulWidget {
   const BannerAdWidget({super.key});
@@ -20,7 +21,10 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
   @override
   void initState() {
     super.initState();
-    _loadAd();
+    // Only load ads if not in screenshot mode
+    if (!hideAds) {
+      _loadAd();
+    }
   }
 
   void _loadAd() {
@@ -73,6 +77,11 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Hide ads completely when debug flag is set
+    if (hideAds) {
+      return const SizedBox.shrink();
+    }
+
     if (!_isAdLoaded) {
       return const SizedBox.shrink();
     }
