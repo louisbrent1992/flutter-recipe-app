@@ -1,4 +1,4 @@
-package com.example.recipease
+package com.recipease.kitchen
 
 import io.flutter.embedding.android.FlutterActivity
 
