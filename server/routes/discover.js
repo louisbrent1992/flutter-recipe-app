@@ -98,4 +98,92 @@ router.get("/search", auth, async (req, res) => {
 	}
 });
 
+// Admin endpoint to remove duplicate recipes
+router.post("/cleanup-duplicates", auth, async (req, res) => {
+	try {
+		console.log("Starting duplicate recipe cleanup...");
+
+		const recipesRef = db.collection("recipes");
+		const snapshot = await recipesRef.get();
+
+		const recipeMap = new Map();
+		const duplicatesToDelete = [];
+
+		// Group recipes by title and description
+		snapshot.forEach((doc) => {
+			const data = doc.data();
+			const key = `${data.title?.toLowerCase() || ""}|${
+				data.description?.toLowerCase() || ""
+			}`;
+
+			if (recipeMap.has(key)) {
+				// This is a duplicate - keep the older one (assuming it was added first)
+				const existing = recipeMap.get(key);
+				const existingDate = existing.createdAt?.toDate() || new Date(0);
+				const currentDate = data.createdAt?.toDate() || new Date(0);
+
+				if (currentDate > existingDate) {
+					// Current recipe is newer, mark it for deletion
+					duplicatesToDelete.push({
+						id: doc.id,
+						title: data.title,
+						createdAt: currentDate,
+					});
+				} else {
+					// Existing recipe is newer, replace it and mark the old one for deletion
+					duplicatesToDelete.push({
+						id: existing.id,
+						title: existing.title,
+						createdAt: existingDate,
+					});
+					recipeMap.set(key, {
+						id: doc.id,
+						title: data.title,
+						createdAt: currentDate,
+					});
+				}
+			} else {
+				recipeMap.set(key, {
+					id: doc.id,
+					title: data.title,
+					createdAt: data.createdAt?.toDate() || new Date(0),
+				});
+			}
+		});
+
+		console.log(
+			`Found ${duplicatesToDelete.length} duplicate recipes to delete`
+		);
+
+		// Delete duplicates in batches of 500 (Firestore limit)
+		let deletedCount = 0;
+		for (let i = 0; i < duplicatesToDelete.length; i += 500) {
+			const batch = db.batch();
+			const batchItems = duplicatesToDelete.slice(i, i + 500);
+
+			batchItems.forEach((duplicate) => {
+				const docRef = recipesRef.doc(duplicate.id);
+				batch.delete(docRef);
+			});
+
+			await batch.commit();
+			deletedCount += batchItems.length;
+
+			console.log(
+				`Deleted batch of ${batchItems.length} recipes. Total: ${deletedCount}/${duplicatesToDelete.length}`
+			);
+		}
+
+		res.json({
+			message: "Duplicate cleanup completed",
+			duplicatesFound: duplicatesToDelete.length,
+			duplicatesDeleted: deletedCount,
+			uniqueRecipesRemaining: recipeMap.size,
+		});
+	} catch (error) {
+		console.error("Error during duplicate cleanup:", error);
+		res.status(500).json({ error: "Failed to cleanup duplicates" });
+	}
+});
+
 module.exports = router;

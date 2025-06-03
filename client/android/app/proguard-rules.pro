@@ -14,10 +14,32 @@
 -keep class com.google.firebase.** { *; }
 -keep class com.google.android.gms.** { *; }
 
+# Google Play Core (for app bundles and dynamic delivery)
+-keep class com.google.android.play.core.** { *; }
+-keep interface com.google.android.play.core.** { *; }
+
+# Keep Google Play Core splitcompat classes
+-keep class com.google.android.play.core.splitcompat.** { *; }
+-keep class com.google.android.play.core.splitinstall.** { *; }
+-keep class com.google.android.play.core.tasks.** { *; }
+
+# Keep Google Play Core listeners and callbacks
+-keep class * implements com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener { *; }
+-keep class * implements com.google.android.play.core.tasks.OnSuccessListener { *; }
+-keep class * implements com.google.android.play.core.tasks.OnFailureListener { *; }
+
 # Keep native methods
 -keepclasseswithmembernames class * {
     native <methods>;
 }
 
 # Keep custom classes used by Flutter
--keep class com.example.recipease.** { *; } 
+-keep class com.example.recipease.** { *; }
+
+# Additional rules for Flutter release builds
+-keepattributes *Annotation*
+-keepattributes SourceFile,LineNumberTable
+-keep public class * extends java.lang.Exception
+
+# Dontwarn for missing optional dependencies
+-dontwarn com.google.android.play.core.** 

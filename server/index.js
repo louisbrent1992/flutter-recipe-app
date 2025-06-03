@@ -200,11 +200,24 @@ cron.schedule("00 20 * * *", async () => {
 			// Process recipes in smaller chunks to avoid hitting Firestore limits
 			for (let i = 0; i < recipes.length; i++) {
 				const recipe = recipes[i];
+
+				// Check for existing recipe by ID
 				const docRef = recipesRef.doc(recipe.id);
 				const doc = await docRef.get();
 
 				if (!doc.exists) {
-					recipesToSave.push(recipe);
+					// Also check for duplicates by title and description
+					const duplicateQuery = await recipesRef
+						.where("title", "==", recipe.title)
+						.where("description", "==", recipe.description)
+						.limit(1)
+						.get();
+
+					if (duplicateQuery.empty) {
+						recipesToSave.push(recipe);
+					} else {
+						console.log(`Skipping duplicate recipe: ${recipe.title}`);
+					}
 				} else {
 					// Optionally update certain fields if needed
 					// For now, we're skipping existing recipes
