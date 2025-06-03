@@ -58,10 +58,20 @@ class _HomeScreenState extends State<HomeScreen>
         title: 'RecipEase',
         useLogo: true,
         leading: Container(
-          margin: const EdgeInsets.all(16),
+          margin: AppSpacing.allResponsive(context),
           clipBehavior: Clip.antiAlias,
-          width: 40,
-          height: 40,
+          width: AppSizing.responsiveIconSize(
+            context,
+            mobile: 40,
+            tablet: 44,
+            desktop: 48,
+          ),
+          height: AppSizing.responsiveIconSize(
+            context,
+            mobile: 40,
+            tablet: 44,
+            desktop: 48,
+          ),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Color(0xFF4B662A),
@@ -83,10 +93,22 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
               icon: Icon(Icons.menu_rounded, color: theme.colorScheme.primary),
-              iconSize: 24,
+              iconSize: AppSizing.responsiveIconSize(context),
               padding: EdgeInsets.zero,
-
-              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              constraints: BoxConstraints(
+                minWidth: AppSizing.responsiveIconSize(
+                  context,
+                  mobile: 40,
+                  tablet: 44,
+                  desktop: 48,
+                ),
+                minHeight: AppSizing.responsiveIconSize(
+                  context,
+                  mobile: 40,
+                  tablet: 44,
+                  desktop: 48,
+                ),
+              ),
               onPressed: () => _scaffoldKey.currentState?.openDrawer(),
             ),
           ),
@@ -116,13 +138,10 @@ class _HomeScreenState extends State<HomeScreen>
                 controller: _scrollController,
                 child: ListView(
                   controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
+                  padding: AppSpacing.allResponsive(context),
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 16,
-                      ),
+                      padding: AppSpacing.allResponsive(context),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
                         color: colorScheme.primaryContainer.withValues(
@@ -159,6 +178,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
                     const SizedBox(height: 24),
+                    SizedBox(height: AppSpacing.responsive(context)),
                     _buildAnimatedSection(
                       context: context,
                       title: 'My Recipes',
@@ -169,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen>
                       color: Colors.orange.withValues(alpha: 0.2),
                       iconColor: Colors.orange,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: AppSpacing.responsive(context)),
                     _buildAnimatedSection(
                       context: context,
                       title: 'Recipe Collections',
@@ -180,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen>
                       color: Colors.purple.withValues(alpha: 0.2),
                       iconColor: Colors.purple,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: AppSpacing.responsive(context)),
                     _buildAnimatedSection(
                       context: context,
                       title: 'Discover Recipes',
@@ -191,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen>
                       color: Colors.blue.withValues(alpha: 0.2),
                       iconColor: Colors.blue,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: AppSpacing.responsive(context)),
                     _buildAnimatedSection(
                       context: context,
                       title: 'Favorite Recipes',
@@ -203,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen>
                       iconColor: Colors.red,
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: AppSpacing.responsive(context)),
                     _buildAnimatedSection(
                       context: context,
                       title: 'Import Recipe',
@@ -215,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen>
                       color: Colors.green.withValues(alpha: 0.2),
                       iconColor: Colors.green,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: AppSpacing.responsive(context)),
                     _buildAnimatedSection(
                       context: context,
                       title: 'Generate Recipe (Beta)',
@@ -270,11 +290,11 @@ class _HomeScreenState extends State<HomeScreen>
               borderRadius: BorderRadius.circular(12),
               color: color,
             ),
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            padding: AppSizing.responsiveCardPadding(context),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: AppSizing.responsiveCardPadding(context),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
@@ -286,25 +306,39 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ],
                   ),
-                  child: Icon(icon, size: 28, color: iconColor),
+                  child: Icon(
+                    icon,
+                    size: AppSizing.responsiveIconSize(context),
+                    color: iconColor,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: AppSpacing.responsive(context)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: AppTypography.responsiveHeadingSize(
+                            context,
+                            mobile: 16,
+                            tablet: 18,
+                            desktop: 20,
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: AppSpacing.xs),
                       Text(
                         description,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(
                             context,
                           ).colorScheme.onSurface.withValues(alpha: 0.7),
+                          fontSize: AppTypography.responsiveFontSize(context),
                         ),
                       ),
                     ],

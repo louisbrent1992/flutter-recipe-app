@@ -361,23 +361,33 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
           children: [
             Icon(
               Icons.folder_outlined,
-              size: 64,
+              size: AppSizing.responsiveIconSize(
+                context,
+                mobile: 48,
+                tablet: 56,
+                desktop: 64,
+              ),
               color: colorScheme.onSurface.withValues(alpha: 0.2),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppSpacing.responsive(context)),
             Text(
               'No collections yet',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: AppTypography.responsiveHeadingSize(
+                  context,
+                  mobile: 16,
+                  tablet: 18,
+                  desktop: 20,
+                ),
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: AppSpacing.sm),
             Text(
               'Create your first collection by tapping the + button',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: AppTypography.responsiveFontSize(context),
                 color: colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               textAlign: TextAlign.center,
@@ -404,11 +414,11 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.85,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: AppSizing.responsiveGridCount(context),
+          childAspectRatio: AppSizing.responsiveAspectRatio(context),
+          crossAxisSpacing: AppSpacing.responsive(context),
+          mainAxisSpacing: AppSpacing.responsive(context),
         ),
         itemCount: _collections.length,
         itemBuilder: (context, index) {
@@ -428,7 +438,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     required ColorScheme colorScheme,
   }) {
     return Card(
-      elevation: AppElevation.card,
+      elevation: AppElevation.responsive(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () {
@@ -440,55 +450,153 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
           ).then((_) => _loadCollections()); // Refresh after returning
         },
         borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final cardWidth = constraints.maxWidth;
+
+            // Use theme-based responsive sizing
+            final iconContainerSize = cardWidth * 0.35;
+            final iconSize = AppSizing.responsiveIconSize(
+              context,
+              mobile: iconContainerSize * 0.4,
+              tablet: iconContainerSize * 0.45,
+              desktop: iconContainerSize * 0.5,
+            );
+            final containerPadding = iconContainerSize * 0.15;
+            final borderRadius = iconContainerSize * 0.2;
+
+            // Use theme typography
+            final titleFontSize = AppTypography.responsiveFontSize(
+              context,
+              mobile: 14.0,
+              tablet: 16.0,
+              desktop: 18.0,
+            );
+            final countFontSize = AppTypography.responsiveCaptionSize(context);
+            final countIconSize = AppSizing.responsiveIconSize(
+              context,
+              mobile: 12.0,
+              tablet: 14.0,
+              desktop: 16.0,
+            );
+
+            // Use theme spacing
+            final verticalSpacing =
+                AppSpacing.responsive(
+                  context,
+                  mobile: AppSpacing.xs,
+                  tablet: AppSpacing.sm,
+                  desktop: AppSpacing.md,
+                ) *
+                0.5;
+            final deleteButtonSize = AppSizing.responsiveIconSize(
+              context,
+              mobile: 16.0,
+              tablet: 18.0,
+              desktop: 20.0,
+            );
+
+            return Padding(
+              padding: AppSizing.responsiveCardPadding(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: collection.color.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      collection.icon,
-                      color: collection.color,
-                      size: 28,
+                  // Delete button in top right corner
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: IconButton(
+                      icon: Icon(Icons.delete_outline, size: deleteButtonSize),
+                      onPressed:
+                          () => _deleteCategory(collection.id, collection.name),
+                      tooltip: 'Delete category',
+                      color: Colors.grey.shade600,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: VisualDensity.compact,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 20),
-                    onPressed:
-                        () => _deleteCategory(collection.id, collection.name),
-                    tooltip: 'Delete category',
-                    color: Colors.grey.shade600,
+
+                  // Flexible space for icon
+                  Expanded(
+                    flex: 3,
+                    child: Center(
+                      child: Container(
+                        width: iconContainerSize,
+                        height: iconContainerSize,
+                        padding: EdgeInsets.all(containerPadding),
+                        decoration: BoxDecoration(
+                          color: collection.color.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(borderRadius),
+                          border: Border.all(
+                            color: collection.color.withValues(alpha: 0.5),
+                            width: AppBreakpoints.isMobile(context) ? 1.5 : 2.0,
+                          ),
+                        ),
+                        child: FittedBox(
+                          child: Icon(
+                            collection.icon,
+                            color: collection.color,
+                            size: iconSize,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: verticalSpacing),
+
+                  // Collection name - flexible space
+                  Expanded(
+                    flex: 2,
+                    child: Center(
+                      child: Text(
+                        collection.name,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.headlineSmall?.copyWith(
+                          fontSize: titleFontSize,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                        maxLines: AppBreakpoints.isMobile(context) ? 1 : 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: verticalSpacing),
+
+                  // Recipe count
+                  Flexible(
+                    flex: 1,
+                    child: FittedBox(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.book,
+                            size: countIconSize,
+                            color: Colors.grey.shade600,
+                          ),
+                          SizedBox(width: AppSpacing.xs),
+                          Text(
+                            '${collection.recipes.length} ${collection.recipes.length == 1 ? 'recipe' : 'recipes'}',
+                            style: TextStyle(
+                              fontSize: countFontSize,
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const Spacer(),
-              Text(
-                collection.name,
-                style: Theme.of(context).textTheme.headlineSmall,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(Icons.book, size: 16, color: Colors.grey.shade600),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${collection.recipes.length} ${collection.recipes.length == 1 ? 'recipe' : 'recipes'}',
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

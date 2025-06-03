@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme.dart';
 
 class HomeButton extends StatefulWidget {
   final VoidCallback? onPressed;
@@ -78,7 +79,7 @@ class _HomeButtonState extends State<HomeButton>
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
-              margin: const EdgeInsets.all(16),
+              margin: EdgeInsets.all(AppSpacing.responsive(context)),
               clipBehavior: Clip.antiAlias,
               width: widget.size,
               height: widget.size,
@@ -92,8 +93,30 @@ class _HomeButtonState extends State<HomeButton>
                             color: backgroundColor.withValues(
                               alpha: _isHovered ? 0.3 : 0.2,
                             ),
-                            blurRadius: _isHovered ? 8 : 5,
-                            offset: Offset(0, _isHovered ? 3 : 2),
+                            blurRadius:
+                                _isHovered
+                                    ? AppElevation.responsive(
+                                      context,
+                                      mobile: 6,
+                                      tablet: 8,
+                                      desktop: 10,
+                                    )
+                                    : AppElevation.responsive(
+                                      context,
+                                      mobile: 3,
+                                      tablet: 5,
+                                      desktop: 7,
+                                    ),
+                            offset: Offset(
+                              0,
+                              _isHovered
+                                  ? AppBreakpoints.isMobile(context)
+                                      ? 2
+                                      : 3
+                                  : AppBreakpoints.isMobile(context)
+                                  ? 1
+                                  : 2,
+                            ),
                           ),
                         ]
                         : null,
@@ -107,7 +130,9 @@ class _HomeButtonState extends State<HomeButton>
                       style: ButtonStyle(
                         shape: WidgetStateProperty.all(
                           RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              AppBreakpoints.isMobile(context) ? 8 : 10,
+                            ),
                           ),
                         ),
                       ),

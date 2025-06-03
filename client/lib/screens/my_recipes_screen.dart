@@ -7,8 +7,10 @@ import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/recipe_card.dart';
 import 'package:recipease/components/floating_home_button.dart';
 import 'package:recipease/components/floating_add_button.dart';
-import 'package:recipease/components/recipe_filter_bar.dart';
+import 'package:recipease/components/compact_filter_bar.dart';
+import 'package:recipease/components/pagination_bar.dart';
 import 'package:recipease/mixins/recipe_filter_mixin.dart';
+import 'package:recipease/theme/theme.dart';
 
 class MyRecipesScreen extends StatefulWidget {
   const MyRecipesScreen({super.key});
@@ -24,7 +26,9 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
   String _searchQuery = '';
   String _selectedDifficulty = 'All';
   String _selectedTag = 'All';
-  double _filtersOpacity = 1.0;
+  int _currentPage = 1;
+  static const int _itemsPerPage = 12;
+  final List<String> _difficulties = ['All', 'Easy', 'Medium', 'Hard'];
   final List<String> _availableTags = [
     'All',
     'Breakfast',
@@ -42,66 +46,27 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
     'Asian',
     'Mediterranean',
   ];
-  final List<String> _difficulties = ['All', 'Easy', 'Medium', 'Hard'];
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_scrollListener);
     // Initial load of recipes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final recipeProvider = Provider.of<RecipeProvider>(
-        context,
-        listen: false,
-      );
-      recipeProvider.loadUserRecipes();
-      _updateAvailableTags(recipeProvider.userRecipes);
+      _loadRecipes();
     });
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _scrollListener() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      final recipeProvider = Provider.of<RecipeProvider>(
-        context,
-        listen: false,
-      );
-      if (recipeProvider.hasNextPage && !recipeProvider.isLoading) {
-        recipeProvider.loadNextPage();
-      }
-    }
-
-    // Calculate opacity based on scroll position for progressive fade
-    const fadeStartDistance = 0.0;
-    const fadeEndDistance = 120.0;
-    final scrollPosition = _scrollController.position.pixels;
-
-    double newOpacity;
-    if (scrollPosition <= fadeStartDistance) {
-      newOpacity = 1.0;
-    } else if (scrollPosition >= fadeEndDistance) {
-      newOpacity = 0.0;
-    } else {
-      // Linear interpolation between 1.0 and 0.0
-      newOpacity =
-          1.0 -
-          ((scrollPosition - fadeStartDistance) /
-              (fadeEndDistance - fadeStartDistance));
-    }
-
-    if ((newOpacity - _filtersOpacity).abs() > 0.01) {
-      setState(() {
-        _filtersOpacity = newOpacity;
-      });
-    }
+  Future<void> _loadRecipes() async {
+    final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
+    await recipeProvider.loadUserRecipes(page: _currentPage);
+    _updateAvailableTags(recipeProvider.userRecipes);
   }
 
   void _updateAvailableTags(List<Recipe> recipes) {
@@ -116,6 +81,45 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
     }
   }
 
+  // Reset all filters and go to page 1
+  void _resetFilters() {
+    setState(() {
+      _searchController.clear();
+      _searchQuery = '';
+      _selectedDifficulty = 'All';
+      _selectedTag = 'All';
+      _currentPage = 1;
+    });
+    _loadRecipes();
+  }
+
+  // Handle page navigation
+  void _goToPage(int page) {
+    setState(() {
+      _currentPage = page;
+    });
+    _loadRecipes();
+    // Scroll to top when changing pages
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _goToPreviousPage() {
+    if (_currentPage > 1) {
+      _goToPage(_currentPage - 1);
+    }
+  }
+
+  void _goToNextPage() {
+    final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
+    if (recipeProvider.hasNextPage) {
+      _goToPage(_currentPage + 1);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,131 +128,242 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
         children: [
           Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: RecipeFilterBar(
-                  searchController: _searchController,
-                  searchQuery: _searchQuery,
-                  selectedDifficulty: _selectedDifficulty,
-                  selectedTag: _selectedTag,
-                  difficulties: _difficulties,
-                  availableTags: _availableTags,
-                  filtersOpacity: _filtersOpacity,
-                  onSearchChanged: (value) {
-                    setState(() => _searchQuery = value);
-                  },
-                  onDifficultySelected: (difficulty) {
-                    setState(() => _selectedDifficulty = difficulty);
-                  },
-                  onTagSelected: (tag) {
-                    setState(() => _selectedTag = tag);
-                  },
-                ),
+              // Compact filter bar
+              CompactFilterBar(
+                searchController: _searchController,
+                searchQuery: _searchQuery,
+                selectedDifficulty: _selectedDifficulty,
+                selectedTag: _selectedTag,
+                difficulties: _difficulties,
+                availableTags: _availableTags,
+                onSearchChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                    _currentPage = 1;
+                  });
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    if (_searchQuery == value) {
+                      _loadRecipes();
+                    }
+                  });
+                },
+                onDifficultySelected: (difficulty) {
+                  setState(() {
+                    _selectedDifficulty = difficulty;
+                    _currentPage = 1;
+                  });
+                  _loadRecipes();
+                },
+                onTagSelected: (tag) {
+                  setState(() {
+                    _selectedTag = tag;
+                    _currentPage = 1;
+                  });
+                  _loadRecipes();
+                },
+                onResetFilters: _resetFilters,
+                showResetButton:
+                    _selectedDifficulty != 'All' ||
+                    _selectedTag != 'All' ||
+                    _searchQuery.isNotEmpty,
               ),
+
+              // Main content area
               Expanded(
                 child: Consumer<RecipeProvider>(
                   builder: (context, recipeProvider, _) {
-                    if (recipeProvider.isLoading &&
-                        recipeProvider.userRecipes.isEmpty) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    final List<Recipe> myRecipes = filterRecipes(
-                      recipeProvider.userRecipes,
+                    final List<Recipe> allRecipes = recipeProvider.userRecipes;
+                    final List<Recipe> filteredRecipes = filterRecipes(
+                      allRecipes,
                       searchQuery: _searchQuery,
                       selectedDifficulty: _selectedDifficulty,
                       selectedTag: _selectedTag,
                     );
 
-                    if (myRecipes.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.restaurant_menu,
-                              size: 64,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'No recipes found',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey,
+                    // Update available tags when recipes change
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _updateAvailableTags(allRecipes);
+                    });
+
+                    if (!recipeProvider.isLoading && filteredRecipes.isEmpty) {
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    allRecipes.isEmpty
+                                        ? Icons.restaurant_menu
+                                        : Icons.search_off,
+                                    size: 64,
+                                    color: Colors.grey,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    allRecipes.isEmpty
+                                        ? 'No recipes found'
+                                        : 'No matching recipes',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  if (allRecipes.isEmpty)
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/recipeEdit',
+                                        );
+                                      },
+                                      child: const Text(
+                                        'Create Your First Recipe',
+                                      ),
+                                    )
+                                  else
+                                    Text(
+                                      'Try adjusting your search or filters',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.pushNamed(context, '/recipeEdit');
-                              },
-                              child: const Text('Create Your First Recipe'),
+                          ),
+
+                          // Show pagination even when empty (in case of loading)
+                          if (recipeProvider.totalPages > 1)
+                            PaginationBar(
+                              currentPage: _currentPage,
+                              totalPages: recipeProvider.totalPages,
+                              hasNextPage: recipeProvider.hasNextPage,
+                              hasPreviousPage: recipeProvider.hasPrevPage,
+                              isLoading: recipeProvider.isLoading,
+                              onPreviousPage: _goToPreviousPage,
+                              onNextPage: _goToNextPage,
+                              onPageSelected: _goToPage,
+                              totalItems: recipeProvider.totalRecipes,
+                              itemsPerPage: _itemsPerPage,
                             ),
-                          ],
-                        ),
+                        ],
                       );
                     }
 
-                    return Scrollbar(
-                      controller: _scrollController,
-                      child: GridView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(16),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 0.75,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 16,
-                            ),
-                        itemCount:
-                            myRecipes.length +
-                            (recipeProvider.isLoading ||
-                                    recipeProvider.hasNextPage
-                                ? 1
-                                : 0),
-                        itemBuilder: (context, index) {
-                          if (index == myRecipes.length) {
-                            if (recipeProvider.isLoading) {
-                              return const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16.0),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            }
-                            if (!recipeProvider.hasNextPage) {
-                              return const SizedBox.shrink();
-                            }
-                            return const SizedBox.shrink();
-                          }
-
-                          final recipe = myRecipes[index];
-                          return RecipeCard(
-                            recipe: recipe,
-                            showEditButton: true,
-                            showRemoveButton: true,
-                            onTap:
-                                () => Navigator.pushNamed(
+                    return Column(
+                      children: [
+                        // Recipe grid with loading overlay
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              Padding(
+                                padding: AppSpacing.horizontalResponsive(
                                   context,
-                                  '/recipeDetail',
-                                  arguments: recipe,
                                 ),
-                            onRecipeUpdated: (updatedRecipe) {
-                              // Update the recipe in the list
-                              setState(() {
-                                final index = myRecipes.indexWhere(
-                                  (r) => r.id == updatedRecipe.id,
-                                );
-                                if (index != -1) {
-                                  myRecipes[index] = updatedRecipe;
-                                }
-                              });
-                            },
-                          );
-                        },
-                      ),
+                                child: GridView.builder(
+                                  controller: _scrollController,
+                                  itemBuilder: (context, index) {
+                                    final recipe = filteredRecipes[index];
+                                    return RecipeCard(
+                                      recipe: recipe,
+                                      showEditButton: true,
+                                      showRemoveButton: true,
+                                      onTap:
+                                          () => Navigator.pushNamed(
+                                            context,
+                                            '/recipeDetail',
+                                            arguments: recipe,
+                                          ),
+                                      onRecipeUpdated: (updatedRecipe) {
+                                        // Update the recipe in the list
+                                        setState(() {
+                                          final index = allRecipes.indexWhere(
+                                            (r) => r.id == updatedRecipe.id,
+                                          );
+                                          if (index != -1) {
+                                            allRecipes[index] = updatedRecipe;
+                                          }
+                                        });
+                                      },
+                                    );
+                                  },
+                                  itemCount: filteredRecipes.length,
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount:
+                                            AppSizing.responsiveGridCount(
+                                              context,
+                                            ),
+                                        childAspectRatio:
+                                            AppSizing.responsiveAspectRatio(
+                                              context,
+                                            ),
+                                        crossAxisSpacing: AppSpacing.responsive(
+                                          context,
+                                        ),
+                                        mainAxisSpacing: AppSpacing.responsive(
+                                          context,
+                                        ),
+                                      ),
+                                ),
+                              ),
+
+                              // Loading overlay only on the recipe grid
+                              if (recipeProvider.isLoading)
+                                Container(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surface.withValues(alpha: 0.8),
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        CircularProgressIndicator(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'Loading recipes...',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium?.copyWith(
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
+                        // Pagination bar - always visible when needed
+                        if (recipeProvider.totalPages > 1)
+                          PaginationBar(
+                            currentPage: _currentPage,
+                            totalPages: recipeProvider.totalPages,
+                            hasNextPage: recipeProvider.hasNextPage,
+                            hasPreviousPage: recipeProvider.hasPrevPage,
+                            isLoading: recipeProvider.isLoading,
+                            onPreviousPage: _goToPreviousPage,
+                            onNextPage: _goToNextPage,
+                            onPageSelected: _goToPage,
+                            totalItems: recipeProvider.totalRecipes,
+                            itemsPerPage: _itemsPerPage,
+                          ),
+                      ],
                     );
                   },
                 ),

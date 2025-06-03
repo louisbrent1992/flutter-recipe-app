@@ -10,7 +10,6 @@ import 'package:recipease/screens/favorite_recipes_screen.dart';
 import 'package:recipease/screens/generate_recipe_screen.dart';
 import 'package:recipease/screens/home_screen.dart';
 import 'package:recipease/screens/recipe_edit_screen.dart';
-import 'package:recipease/screens/import_list.dart';
 import 'package:recipease/screens/import_recipe_screen.dart';
 import 'package:recipease/screens/recipe_detail_screen.dart';
 import 'package:recipease/screens/settings_screen.dart';
@@ -32,7 +31,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:recipease/services/permission_service.dart';
 import 'screens/generated_recipes_screen.dart';
-import 'screens/imported_recipes_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -200,9 +198,6 @@ class _MyAppState extends State<MyApp> {
                           ModalRoute.of(context)?.settings.arguments as String?,
                     ),
                   ),
-              '/importList':
-                  (context) =>
-                      const PersistentBannerLayout(child: ImportListScreen()),
               '/recipeEdit':
                   (context) => PersistentBannerLayout(
                     child: RecipeEditScreen(
@@ -238,10 +233,6 @@ class _MyAppState extends State<MyApp> {
               '/generatedRecipes':
                   (context) => const PersistentBannerLayout(
                     child: GeneratedRecipesScreen(),
-                  ),
-              '/importedRecipes':
-                  (context) => const PersistentBannerLayout(
-                    child: ImportedRecipesScreen(),
                   ),
               '/subscription':
                   (context) =>

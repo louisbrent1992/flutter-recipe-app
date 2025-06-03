@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme.dart';
 
 class ScreenDescriptionCard extends StatelessWidget {
   final String title;
@@ -20,27 +21,58 @@ class ScreenDescriptionCard extends StatelessWidget {
         children: [
           if (imageUrl != null)
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(
+                AppBreakpoints.isMobile(context) ? 8 : 12,
+              ),
               child: Image.network(
                 imageUrl!,
                 width: double.infinity,
-                height: 200,
+                height: AppSizing.responsiveIconSize(
+                  context,
+                  mobile: 160,
+                  tablet: 200,
+                  desktop: 240,
+                ),
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     width: double.infinity,
-                    height: 200,
+                    height: AppSizing.responsiveIconSize(
+                      context,
+                      mobile: 160,
+                      tablet: 200,
+                      desktop: 240,
+                    ),
                     color: Colors.grey[300],
-                    child: const Icon(Icons.restaurant, color: Colors.grey),
+                    child: Icon(
+                      Icons.restaurant,
+                      color: Colors.grey,
+                      size: AppSizing.responsiveIconSize(
+                        context,
+                        mobile: 40,
+                        tablet: 48,
+                        desktop: 56,
+                      ),
+                    ),
                   );
                 },
               ),
             ),
-          const SizedBox(height: 16),
-          Text(title, style: Theme.of(context).textTheme.headlineLarge),
-          const SizedBox(height: 8),
-          Text(description),
-          const SizedBox(height: 16),
+          SizedBox(height: AppSpacing.responsive(context)),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              fontSize: AppTypography.responsiveHeadingSize(context),
+            ),
+          ),
+          SizedBox(height: AppSpacing.sm),
+          Text(
+            description,
+            style: TextStyle(
+              fontSize: AppTypography.responsiveFontSize(context),
+            ),
+          ),
+          SizedBox(height: AppSpacing.responsive(context)),
         ],
       ),
     );

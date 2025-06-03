@@ -151,25 +151,49 @@ class _SettingsScreenState extends State<SettingsScreen>
         return AlertDialog(
           title: Row(
             children: [
-              Icon(Icons.warning_rounded, color: Colors.red, size: 28),
-              const SizedBox(width: 12),
-              const Text('Delete Account'),
+              Icon(
+                Icons.warning_rounded,
+                color: Colors.red,
+                size: AppSizing.responsiveIconSize(
+                  context,
+                  mobile: 24,
+                  tablet: 28,
+                  desktop: 32,
+                ),
+              ),
+              SizedBox(width: AppSpacing.md),
+              Text(
+                'Delete Account',
+                style: TextStyle(
+                  fontSize: AppTypography.responsiveHeadingSize(
+                    context,
+                    mobile: 18.0,
+                    tablet: 20.0,
+                    desktop: 22.0,
+                  ),
+                ),
+              ),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Are you sure you want to permanently delete your account?',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: AppTypography.responsiveFontSize(context),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: AppSpacing.md),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: Colors.red.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(
+                    AppBreakpoints.isMobile(context) ? 6 : 8,
+                  ),
                   border: Border.all(
                     color: Colors.red.withValues(alpha: 0.3),
                     width: 1,
@@ -183,19 +207,41 @@ class _SettingsScreenState extends State<SettingsScreen>
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: Colors.red.shade700,
+                        fontSize: AppTypography.responsiveFontSize(context),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text('• Your account and profile'),
-                    const Text('• All your saved recipes'),
-                    const Text('• Your recipe collections'),
-                    const Text('• All app preferences and data'),
-                    const SizedBox(height: 8),
+                    SizedBox(height: AppSpacing.sm),
+                    Text(
+                      '• Your account and profile',
+                      style: TextStyle(
+                        fontSize: AppTypography.responsiveFontSize(context),
+                      ),
+                    ),
+                    Text(
+                      '• All your saved recipes',
+                      style: TextStyle(
+                        fontSize: AppTypography.responsiveFontSize(context),
+                      ),
+                    ),
+                    Text(
+                      '• Your recipe collections',
+                      style: TextStyle(
+                        fontSize: AppTypography.responsiveFontSize(context),
+                      ),
+                    ),
+                    Text(
+                      '• All app preferences and data',
+                      style: TextStyle(
+                        fontSize: AppTypography.responsiveFontSize(context),
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.sm),
                     Text(
                       'This action cannot be undone.',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: Colors.red.shade700,
+                        fontSize: AppTypography.responsiveFontSize(context),
                       ),
                     ),
                   ],
@@ -382,20 +428,20 @@ class _SettingsScreenState extends State<SettingsScreen>
           SingleChildScrollView(
             controller: _scrollController,
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: AppSpacing.allResponsive(context),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Profile Header
                   _buildProfileHeader(colorScheme),
 
-                  const SizedBox(height: 32),
+                  SizedBox(height: AppSpacing.xxl),
 
                   // Profile Fields
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
-                    padding: EdgeInsets.all(_isEditing ? 16 : 0),
+                    padding: EdgeInsets.all(_isEditing ? AppSpacing.md : 0),
                     decoration: BoxDecoration(
                       color:
                           _isEditing
@@ -403,17 +449,25 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 alpha: 0.3,
                               )
                               : Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(
+                        AppBreakpoints.isMobile(context) ? 12 : 16,
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (_isEditing)
                           Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
+                            padding: EdgeInsets.only(bottom: AppSpacing.md),
                             child: Text(
                               'Edit Profile',
-                              style: theme.textTheme.headlineMedium?.copyWith(
+                              style: TextStyle(
+                                fontSize: AppTypography.responsiveHeadingSize(
+                                  context,
+                                  mobile: 20.0,
+                                  tablet: 24.0,
+                                  desktop: 28.0,
+                                ),
                                 color: colorScheme.primary,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -428,7 +482,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                           icon: Icons.person_rounded,
                         ),
 
-                        const SizedBox(height: 16),
+                        SizedBox(height: AppSpacing.md),
 
                         _buildAnimatedTextField(
                           controller: _emailController,
@@ -441,9 +495,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ),
 
-                  const SizedBox(height: 32),
+                  SizedBox(height: AppSpacing.xxl),
                   const Divider(height: 1, thickness: 0.1),
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
 
                   // Appearance Section
                   _buildSectionHeader(
@@ -452,7 +506,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     colorScheme: colorScheme,
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
 
                   Consumer<ThemeProvider>(
                     builder: (context, themeProvider, _) {
@@ -473,9 +527,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     },
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
                   const Divider(height: 1, thickness: 0.1),
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
 
                   // Notifications Section
                   _buildSectionHeader(
@@ -484,7 +538,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     colorScheme: colorScheme,
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
 
                   Consumer<NotificationProvider>(
                     builder: (context, notificationProvider, _) {
@@ -501,7 +555,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                             color: Colors.teal,
                           ),
 
-                          const SizedBox(height: 8),
+                          SizedBox(height: AppSpacing.sm),
 
                           _buildAnimatedSwitchTile(
                             title: 'Weekly Digest',
@@ -514,7 +568,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                             color: Colors.purple,
                           ),
 
-                          const SizedBox(height: 8),
+                          SizedBox(height: AppSpacing.sm),
 
                           _buildAnimatedSwitchTile(
                             title: 'New Recipes',
@@ -531,9 +585,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     },
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.xxl),
                   const Divider(height: 1, thickness: 0.1),
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
 
                   // Premium Features Section
                   _buildSectionHeader(
@@ -541,7 +595,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     icon: Icons.star_rounded,
                     colorScheme: colorScheme,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
                   Consumer<SubscriptionProvider>(
                     builder: (context, subscriptionProvider, _) {
                       return _buildAnimatedListTile(
@@ -567,9 +621,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     },
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.xxl),
                   const Divider(height: 1, thickness: 0.1),
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
 
                   // Links Section
                   _buildSectionHeader(
@@ -578,7 +632,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     colorScheme: colorScheme,
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
 
                   _buildAnimatedListTile(
                     title: 'Favorite Recipes',
@@ -587,7 +641,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     onTap: () => Navigator.pushNamed(context, '/favorites'),
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
                   _buildAnimatedListTile(
                     title: 'My Recipes',
                     icon: Icons.restaurant_menu,
@@ -595,7 +649,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     onTap: () => Navigator.pushNamed(context, '/my_recipes'),
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
                   _buildAnimatedListTile(
                     title: 'Discover Recipes',
                     icon: Icons.explore,
@@ -603,16 +657,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                     onTap: () => Navigator.pushNamed(context, '/discover'),
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.xxl),
                   const Divider(height: 1, thickness: 0.1),
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
                   // Contact Section
                   _buildSectionHeader(
                     title: 'Contact Us',
                     icon: Icons.contact_support_rounded,
                     colorScheme: colorScheme,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
 
                   // Support Inquiries
                   _buildAnimatedListTile(
@@ -645,7 +699,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     },
                   ),
 
-                  const SizedBox(height: 12),
+                  SizedBox(height: AppSpacing.md),
 
                   // General Inquiries
                   _buildAnimatedListTile(
@@ -669,7 +723,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     },
                   ),
 
-                  const SizedBox(height: 12),
+                  SizedBox(height: AppSpacing.md),
 
                   // Billing Support
                   _buildAnimatedListTile(
@@ -693,7 +747,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     },
                   ),
 
-                  const SizedBox(height: 12),
+                  SizedBox(height: AppSpacing.md),
 
                   // Business Inquiries
                   _buildAnimatedListTile(
@@ -716,10 +770,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                       }
                     },
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.xxl),
 
                   const Divider(height: 1, thickness: 0.1),
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
 
                   // Links Section
                   _buildSectionHeader(
@@ -728,7 +782,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     colorScheme: colorScheme,
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
 
                   _buildAnimatedListTile(
                     title: 'Sign Out',
@@ -737,7 +791,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     onTap: _signOut,
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppSpacing.md),
 
                   _buildAnimatedListTile(
                     title: 'Delete Account',
@@ -747,7 +801,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     onTap: _showDeleteAccountDialog,
                   ),
 
-                  const SizedBox(height: 24),
+                  SizedBox(height: AppSpacing.xxl),
                 ],
               ),
             ),
@@ -872,7 +926,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         controller: controller,
         enabled: enabled,
         style: TextStyle(
-          fontSize: 16,
+          fontSize: AppTypography.responsiveFontSize(context),
           fontWeight: enabled ? FontWeight.normal : FontWeight.bold,
         ),
         decoration: InputDecoration(
@@ -880,7 +934,9 @@ class _SettingsScreenState extends State<SettingsScreen>
           hintText: hint,
           prefixIcon: Icon(icon),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(
+              AppBreakpoints.isMobile(context) ? 8 : 12,
+            ),
             borderSide: enabled ? const BorderSide() : BorderSide.none,
           ),
           filled: !enabled,
@@ -889,15 +945,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ? Colors.transparent
                   : Theme.of(context).colorScheme.surface,
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(
+              AppBreakpoints.isMobile(context) ? 8 : 12,
+            ),
             borderSide: BorderSide(
               color: Theme.of(context).colorScheme.primary,
             ),
           ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
+          contentPadding: AppSpacing.allResponsive(context),
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../theme/theme.dart';
 
 class NavDrawer extends StatefulWidget {
   const NavDrawer({super.key});
@@ -49,7 +50,9 @@ class _NavDrawerState extends State<NavDrawer> {
                             ? user!.displayName![0].toUpperCase()
                             : 'R',
                         style: TextStyle(
-                          fontSize: 32,
+                          fontSize: AppTypography.responsiveHeadingSize(
+                            context,
+                          ),
                           fontWeight: FontWeight.bold,
                           color: colorScheme.tertiary,
                         ),
@@ -58,11 +61,20 @@ class _NavDrawerState extends State<NavDrawer> {
             ),
             accountName: Text(
               user?.displayName ?? 'Recipe Enthusiast',
-              style: theme.textTheme.titleLarge,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontSize: AppTypography.responsiveFontSize(
+                  context,
+                  mobile: 16,
+                  tablet: 18,
+                  desktop: 20,
+                ),
+              ),
             ),
             accountEmail: Text(
               user?.email ?? '',
-              style: theme.textTheme.titleSmall,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontSize: AppTypography.responsiveCaptionSize(context),
+              ),
             ),
           ),
           Expanded(
@@ -106,16 +118,17 @@ class _NavDrawerState extends State<NavDrawer> {
                   ),
                   const Divider(),
                   Padding(
-                    padding: const EdgeInsets.only(
-                      left: 16.0,
-                      top: 8.0,
-                      bottom: 8.0,
+                    padding: EdgeInsets.only(
+                      left: AppSpacing.responsive(context),
+                      top: AppSpacing.sm,
+                      bottom: AppSpacing.sm,
                     ),
                     child: Text(
                       'Recipe Tools',
                       style: TextStyle(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.bold,
+                        fontSize: AppTypography.responsiveFontSize(context),
                       ),
                     ),
                   ),
@@ -144,11 +157,16 @@ class _NavDrawerState extends State<NavDrawer> {
           ),
           // App version at the bottom
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: EdgeInsets.symmetric(
+              vertical: AppSpacing.responsive(context),
+            ),
             alignment: Alignment.center,
             child: Text(
               'RecipEase v1.0.1',
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: AppTypography.responsiveCaptionSize(context),
+              ),
             ),
           ),
         ],
@@ -166,12 +184,17 @@ class _NavDrawerState extends State<NavDrawer> {
     final theme = Theme.of(context);
 
     return ListTile(
-      leading: Icon(icon, color: isActive ? theme.colorScheme.primary : null),
+      leading: Icon(
+        icon,
+        color: isActive ? theme.colorScheme.primary : null,
+        size: AppSizing.responsiveIconSize(context),
+      ),
       title: Text(
         title,
         style: TextStyle(
           fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
           color: isActive ? theme.colorScheme.primary : null,
+          fontSize: AppTypography.responsiveFontSize(context),
         ),
       ),
       onTap: () {
@@ -186,9 +209,21 @@ class _NavDrawerState extends State<NavDrawer> {
               : null,
       shape:
           isActive
-              ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+              ? RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  AppBreakpoints.isMobile(context) ? 8 : 12,
+                ),
+              )
               : null,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.responsive(
+          context,
+          mobile: AppSpacing.lg,
+          tablet: AppSpacing.xl,
+          desktop: AppSpacing.xxl,
+        ),
+        vertical: AppSpacing.sm,
+      ),
     );
   }
 }

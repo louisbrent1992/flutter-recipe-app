@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:recipease/components/floating_save_button.dart';
 import 'package:recipease/components/html_description.dart';
+import 'package:recipease/providers/recipe_provider.dart';
 import '../models/recipe.dart';
 import '../components/custom_app_bar.dart';
 import 'package:url_launcher/link.dart';
@@ -8,6 +10,7 @@ import '../providers/user_profile_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../components/floating_home_button.dart';
 import '../components/floating_edit_button.dart';
+import '../theme/theme.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   final Recipe recipe;
@@ -26,12 +29,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     super.initState();
     _currentRecipe = widget.recipe;
     _checkFavoriteStatus();
+    _checkSavedStatus();
   }
 
   Future<void> _checkFavoriteStatus() async {
     if (widget.recipe.id.isEmpty) return;
     context.read<UserProfileProvider>();
     if (mounted) setState(() {});
+  }
+
+  bool _checkSavedStatus() {
+    if (widget.recipe.id.isEmpty) return false;
+    return context.read<RecipeProvider>().userRecipes.first.id ==
+        widget.recipe.id;
   }
 
   Widget _buildSourceLink() {
@@ -69,18 +79,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     if (sourceUrl == null) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (recipe.source != null) ...[
             Text(
               recipe.source!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: TextStyle(
+                fontSize: AppTypography.responsiveFontSize(context),
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: AppSpacing.xs),
           ],
           Link(
             uri: Uri.parse(sourceUrl),
@@ -92,15 +103,21 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   children: [
                     Icon(
                       icon,
-                      size: 20,
+                      size: AppSizing.responsiveIconSize(
+                        context,
+                        mobile: 18,
+                        tablet: 20,
+                        desktop: 22,
+                      ),
                       color: Theme.of(context).colorScheme.primary,
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: AppSpacing.sm),
                     Text(
                       displayText!,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.primary,
                         decoration: TextDecoration.underline,
+                        fontSize: AppTypography.responsiveFontSize(context),
                       ),
                     ),
                   ],
@@ -159,7 +176,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           CustomScrollView(
             slivers: [
               SliverAppBar(
-                expandedHeight: 200,
+                expandedHeight: AppBreakpoints.isMobile(context) ? 180 : 220,
                 automaticallyImplyLeading: false,
                 flexibleSpace: FlexibleSpaceBar(
                   background: AspectRatio(
@@ -179,117 +196,223 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: AppSpacing.allResponsive(context),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         textAlign: TextAlign.center,
                         recipe.title,
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: AppTypography.responsiveHeadingSize(
+                            context,
+                            mobile: 22.0,
+                            tablet: 26.0,
+                            desktop: 30.0,
+                          ),
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: AppSpacing.sm),
                       Wrap(
+                        spacing: AppSpacing.responsive(context),
+                        runSpacing: AppSpacing.xs,
                         children: [
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.timer,
-                                size: 16,
+                                size: AppSizing.responsiveIconSize(
+                                  context,
+                                  mobile: 16,
+                                  tablet: 18,
+                                  desktop: 20,
+                                ),
                                 color: Theme.of(context).colorScheme.primary,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: AppSpacing.xs),
                               Text(
                                 _formatCookingTime(recipe.cookingTime),
-                                style: Theme.of(context).textTheme.bodyMedium,
+                                style: TextStyle(
+                                  fontSize: AppTypography.responsiveFontSize(
+                                    context,
+                                  ),
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
                               ),
                             ],
                           ),
 
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.people,
-                                size: 16,
+                                size: AppSizing.responsiveIconSize(
+                                  context,
+                                  mobile: 16,
+                                  tablet: 18,
+                                  desktop: 20,
+                                ),
                                 color: Theme.of(context).colorScheme.primary,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: AppSpacing.xs),
                               Text(
                                 recipe.servings,
-                                style: Theme.of(context).textTheme.bodyMedium,
+                                style: TextStyle(
+                                  fontSize: AppTypography.responsiveFontSize(
+                                    context,
+                                  ),
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
                               ),
                             ],
                           ),
 
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.restaurant,
-                                size: 16,
+                                size: AppSizing.responsiveIconSize(
+                                  context,
+                                  mobile: 16,
+                                  tablet: 18,
+                                  desktop: 20,
+                                ),
                                 color: Theme.of(context).colorScheme.primary,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: AppSpacing.xs),
                               Text(
                                 recipe.difficulty,
-                                style: Theme.of(context).textTheme.bodyMedium,
+                                style: TextStyle(
+                                  fontSize: AppTypography.responsiveFontSize(
+                                    context,
+                                  ),
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
                               ),
                             ],
                           ),
                         ],
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: AppSpacing.lg),
 
                       Text(
                         'Description',
-                        style: Theme.of(context).textTheme.headlineMedium,
+                        style: TextStyle(
+                          fontSize: AppTypography.responsiveHeadingSize(
+                            context,
+                            mobile: 18.0,
+                            tablet: 20.0,
+                            desktop: 22.0,
+                          ),
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: AppSpacing.sm),
                       HtmlDescription(
                         htmlContent: recipe.description,
-                        style: Theme.of(context).textTheme.bodyLarge,
+                        style: TextStyle(
+                          fontSize: AppTypography.responsiveFontSize(context),
+                          color: Theme.of(context).colorScheme.onSurface,
+                          height: 1.5,
+                        ),
                       ),
 
                       _buildSourceLink(),
-                      const SizedBox(height: 24),
+                      SizedBox(height: AppSpacing.xl),
                       Text(
                         'Ingredients',
-                        style: Theme.of(context).textTheme.headlineMedium,
+                        style: TextStyle(
+                          fontSize: AppTypography.responsiveHeadingSize(
+                            context,
+                            mobile: 18.0,
+                            tablet: 20.0,
+                            desktop: 22.0,
+                          ),
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: AppSpacing.sm),
                       ...recipe.ingredients.map(
                         (ingredient) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppSpacing.xs,
+                          ),
                           child: Row(
                             children: [
-                              const Icon(Icons.circle, size: 8),
-                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.circle,
+                                size: AppSizing.responsiveIconSize(
+                                  context,
+                                  mobile: 6,
+                                  tablet: 8,
+                                  desktop: 8,
+                                ),
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              SizedBox(width: AppSpacing.sm),
                               Expanded(
                                 child: Text(
                                   ingredient,
-                                  style: Theme.of(context).textTheme.bodyMedium,
+                                  style: TextStyle(
+                                    fontSize: AppTypography.responsiveFontSize(
+                                      context,
+                                    ),
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: AppSpacing.xl),
                       Text(
                         'Instructions',
-                        style: Theme.of(context).textTheme.headlineMedium,
+                        style: TextStyle(
+                          fontSize: AppTypography.responsiveHeadingSize(
+                            context,
+                            mobile: 18.0,
+                            tablet: 20.0,
+                            desktop: 22.0,
+                          ),
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: AppSpacing.sm),
                       ...recipe.instructions.asMap().entries.map(
                         (entry) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppSpacing.sm,
+                          ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
-                                width: 24,
-                                height: 24,
+                                width: AppSizing.responsiveIconSize(
+                                  context,
+                                  mobile: 24,
+                                  tablet: 28,
+                                  desktop: 32,
+                                ),
+                                height: AppSizing.responsiveIconSize(
+                                  context,
+                                  mobile: 24,
+                                  tablet: 28,
+                                  desktop: 32,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).colorScheme.primary,
                                   shape: BoxShape.circle,
@@ -303,15 +426,29 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                             context,
                                           ).colorScheme.onPrimary,
                                       fontWeight: FontWeight.bold,
+                                      fontSize:
+                                          AppTypography.responsiveFontSize(
+                                            context,
+                                            mobile: 12.0,
+                                            tablet: 14.0,
+                                            desktop: 16.0,
+                                          ),
                                     ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: AppSpacing.md),
                               Expanded(
                                 child: Text(
                                   entry.value,
-                                  style: Theme.of(context).textTheme.bodyMedium,
+                                  style: TextStyle(
+                                    fontSize: AppTypography.responsiveFontSize(
+                                      context,
+                                    ),
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                    height: 1.4,
+                                  ),
                                 ),
                               ),
                             ],
@@ -319,24 +456,48 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         ),
                       ),
                       if (recipe.tags.isNotEmpty) ...[
-                        const SizedBox(height: 24),
+                        SizedBox(height: AppSpacing.xl),
                         Text(
                           'Tags',
-                          style: Theme.of(context).textTheme.headlineMedium,
+                          style: TextStyle(
+                            fontSize: AppTypography.responsiveHeadingSize(
+                              context,
+                              mobile: 18.0,
+                              tablet: 20.0,
+                              desktop: 22.0,
+                            ),
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: AppSpacing.sm),
                         Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.sm,
                           children:
                               recipe.tags
                                   .map(
                                     (tag) => Chip(
-                                      label: Text(tag),
+                                      label: Text(
+                                        tag,
+                                        style: TextStyle(
+                                          fontSize:
+                                              AppTypography.responsiveFontSize(
+                                                context,
+                                                mobile: 12.0,
+                                                tablet: 14.0,
+                                                desktop: 16.0,
+                                              ),
+                                        ),
+                                      ),
                                       backgroundColor:
                                           Theme.of(
                                             context,
                                           ).colorScheme.surfaceContainerHighest,
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: AppSpacing.sm,
+                                        vertical: AppSpacing.xs,
+                                      ),
                                     ),
                                   )
                                   .toList(),
@@ -349,20 +510,28 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             ],
           ),
           const FloatingHomeButton(),
-          FloatingEditButton(
-            onPressed: () async {
-              final result = await Navigator.pushNamed(
-                context,
-                '/recipeEdit',
-                arguments: _currentRecipe.copyWith(toEdit: true),
-              );
-              if (result != null && result is Recipe) {
-                setState(() {
-                  _currentRecipe = result;
-                });
-              }
-            },
-          ),
+          _checkSavedStatus()
+              ? FloatingEditButton(
+                onPressed: () async {
+                  final result = await Navigator.pushNamed(
+                    context,
+                    '/recipeEdit',
+                    arguments: _currentRecipe.copyWith(toEdit: true),
+                  );
+                  if (result != null && result is Recipe) {
+                    setState(() {
+                      _currentRecipe = result;
+                    });
+                  }
+                },
+              )
+              : FloatingSaveButton(
+                onPressed: () {
+                  context.read<RecipeProvider>().createUserRecipe(
+                    widget.recipe,
+                  );
+                },
+              ),
         ],
       ),
     );

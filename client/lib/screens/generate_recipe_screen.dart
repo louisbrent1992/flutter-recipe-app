@@ -6,6 +6,7 @@ import 'package:recipease/components/checkbox_list.dart';
 import 'package:recipease/components/screen_description_card.dart';
 import 'package:recipease/components/floating_home_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:recipease/theme/theme.dart';
 import '../components/error_display.dart';
 
 class GenerateRecipeScreen extends StatefulWidget {
@@ -180,7 +181,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
 
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: AppSpacing.allResponsive(context),
                   child: Consumer<RecipeProvider>(
                     builder: (context, recipeProvider, _) {
                       return Column(
@@ -191,19 +192,41 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                             description:
                                 'Enter your ingredients, dietary preferences, and cooking time to generate personalized recipes.',
                           ),
-                          const SizedBox(height: 24),
+                          SizedBox(height: AppSpacing.responsive(context)),
                           Text(
                             'Ingredients:',
-                            style: Theme.of(context).textTheme.headlineMedium,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall?.copyWith(
+                              fontSize: AppTypography.responsiveHeadingSize(
+                                context,
+                                mobile: 18,
+                                tablet: 20,
+                                desktop: 22,
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: AppSpacing.sm),
                           TextField(
                             controller: _ingredientController,
+                            style: TextStyle(
+                              fontSize: AppTypography.responsiveFontSize(
+                                context,
+                              ),
+                            ),
                             decoration: InputDecoration(
                               hintText:
                                   'Enter any ingredients or preferences you have (e.g. gluten-free, vegan, eggs etc.)',
+                              hintStyle: TextStyle(
+                                fontSize: AppTypography.responsiveCaptionSize(
+                                  context,
+                                ),
+                              ),
                               suffixIcon: IconButton(
-                                icon: const Icon(Icons.add),
+                                icon: Icon(
+                                  Icons.add,
+                                  size: AppSizing.responsiveIconSize(context),
+                                ),
                                 onPressed: _addIngredient,
                               ),
                             ),
@@ -229,7 +252,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           const SizedBox(height: 24),
                           Text(
                             'Dietary Preferences:',
-                            style: Theme.of(context).textTheme.headlineMedium,
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           DietaryPreferenceCheckboxList(
                             label: 'Select Preferences',
@@ -239,7 +262,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           const SizedBox(height: 24),
                           Text(
                             'Cuisine Type:',
-                            style: Theme.of(context).textTheme.headlineMedium,
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(
@@ -299,7 +322,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                           const SizedBox(height: 24),
                           Text(
                             'Cooking Time:',
-                            style: Theme.of(context).textTheme.headlineMedium,
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           Slider.adaptive(
                             value: _cookingTime,

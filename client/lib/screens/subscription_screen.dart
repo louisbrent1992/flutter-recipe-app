@@ -179,18 +179,31 @@ class SubscriptionScreen extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
+      padding: EdgeInsets.only(bottom: AppSpacing.responsive(context)),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(
+              AppSpacing.responsive(
+                context,
+                mobile: AppSpacing.sm,
+                tablet: AppSpacing.md,
+                desktop: AppSpacing.lg,
+              ),
+            ),
             decoration: BoxDecoration(
               color: colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(
+                AppBreakpoints.isMobile(context) ? 8 : 12,
+              ),
             ),
-            child: Icon(icon, color: colorScheme.primary),
+            child: Icon(
+              icon,
+              color: colorScheme.primary,
+              size: AppSizing.responsiveIconSize(context),
+            ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: AppSpacing.responsive(context)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,13 +212,15 @@ class SubscriptionScreen extends StatelessWidget {
                   title,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
+                    fontSize: AppTypography.responsiveFontSize(context),
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: AppSpacing.xs),
                 Text(
                   description,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurface.withValues(alpha: 0.7),
+                    fontSize: AppTypography.responsiveCaptionSize(context),
                   ),
                 ),
               ],
@@ -225,19 +240,30 @@ class SubscriptionScreen extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: EdgeInsets.only(
+        bottom: AppSpacing.responsive(
+          context,
+          mobile: AppSpacing.sm,
+          tablet: AppSpacing.md,
+          desktop: AppSpacing.lg,
+        ),
+      ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(
+            AppBreakpoints.isMobile(context) ? 8 : 12,
+          ),
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: AppSizing.responsiveCardPadding(context),
             decoration: BoxDecoration(
               border: Border.all(
                 color: colorScheme.primary.withValues(alpha: 0.2),
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(
+                AppBreakpoints.isMobile(context) ? 8 : 12,
+              ),
             ),
             child: Row(
               children: [
@@ -249,24 +275,29 @@ class SubscriptionScreen extends StatelessWidget {
                         product.title,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
+                          fontSize: AppTypography.responsiveFontSize(context),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: AppSpacing.xs),
                       Text(
                         product.description,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: colorScheme.onSurface.withValues(alpha: 0.7),
+                          fontSize: AppTypography.responsiveCaptionSize(
+                            context,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: AppSpacing.responsive(context)),
                 Text(
                   product.price,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: colorScheme.primary,
                     fontWeight: FontWeight.bold,
+                    fontSize: AppTypography.responsiveFontSize(context),
                   ),
                 ),
               ],

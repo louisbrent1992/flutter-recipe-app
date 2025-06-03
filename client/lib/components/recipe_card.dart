@@ -254,27 +254,48 @@ Shared from Recipe App
       message: tooltip,
       child: InkWell(
         onTap: isLoading ? null : onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          AppBreakpoints.isMobile(context) ? 12 : 16,
+        ),
         child: Container(
-          padding: const EdgeInsets.all(6),
+          padding: EdgeInsets.all(AppSpacing.xs),
           decoration: BoxDecoration(
             color: Colors.black.withAlpha(153), // 0.6 alpha
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(
+              AppBreakpoints.isMobile(context) ? 12 : 16,
+            ),
           ),
           child:
               isLoading
-                  ? const SizedBox(
-                    width: 16,
-                    height: 16,
+                  ? SizedBox(
+                    width: AppSizing.responsiveIconSize(
+                      context,
+                      mobile: 14,
+                      tablet: 16,
+                      desktop: 18,
+                    ),
+                    height: AppSizing.responsiveIconSize(
+                      context,
+                      mobile: 14,
+                      tablet: 16,
+                      desktop: 18,
+                    ),
                     child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth: AppBreakpoints.isMobile(context) ? 1.5 : 2,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Colors.white,
+                      ),
                     ),
                   )
                   : Icon(
                     icon,
                     color: iconColor ?? Theme.of(context).colorScheme.primary,
-                    size: 16,
+                    size: AppSizing.responsiveIconSize(
+                      context,
+                      mobile: 14,
+                      tablet: 16,
+                      desktop: 18,
+                    ),
                   ),
         ),
       ),
@@ -291,19 +312,31 @@ Shared from Recipe App
       child: Padding(
         padding: const EdgeInsets.only(top: 4),
         child: Wrap(
-          spacing: 16,
+          spacing: AppSpacing.responsive(context),
           alignment: WrapAlignment.spaceBetween,
           children: [
             if (widget.showCookingTime)
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.timer_outlined, size: 14, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.timer_outlined,
+                    size: AppSizing.responsiveIconSize(
+                      context,
+                      mobile: 12,
+                      tablet: 14,
+                      desktop: 16,
+                    ),
+                    color: Colors.grey[600],
+                  ),
+                  SizedBox(width: AppSpacing.xs),
                   Expanded(
                     child: Text(
                       _formatCookingTime(widget.recipe.cookingTime),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: AppTypography.responsiveCaptionSize(context),
+                        color: Colors.grey[600],
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -314,12 +347,24 @@ Shared from Recipe App
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.people, size: 14, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.people,
+                    size: AppSizing.responsiveIconSize(
+                      context,
+                      mobile: 12,
+                      tablet: 14,
+                      desktop: 16,
+                    ),
+                    color: Colors.grey[600],
+                  ),
+                  SizedBox(width: AppSpacing.xs),
                   Expanded(
                     child: Text(
                       '${widget.recipe.servings} servings',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: AppTypography.responsiveCaptionSize(context),
+                        color: Colors.grey[600],
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -331,14 +376,22 @@ Shared from Recipe App
               children: [
                 Icon(
                   Icons.restaurant_outlined,
-                  size: 14,
+                  size: AppSizing.responsiveIconSize(
+                    context,
+                    mobile: 12,
+                    tablet: 14,
+                    desktop: 16,
+                  ),
                   color: Colors.grey[600],
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Text(
                     widget.recipe.difficulty,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: AppTypography.responsiveCaptionSize(context),
+                      color: Colors.grey[600],
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -388,8 +441,12 @@ Shared from Recipe App
 
     return Card(
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: AppElevation.card,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(
+          AppBreakpoints.isMobile(context) ? 12 : 16,
+        ),
+      ),
+      elevation: AppElevation.responsive(context),
       child: InkWell(
         onTap: () {
           Navigator.pushNamed(
@@ -406,15 +463,15 @@ Shared from Recipe App
               children: [
                 AspectRatio(
                   aspectRatio: widget.aspectRatio ?? 16 / 9,
-
                   child: Container(
-                    padding: const EdgeInsets.all(4.0),
+                    padding: EdgeInsets.all(AppSpacing.xs),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(
+                        AppBreakpoints.isMobile(context) ? 8 : 12,
+                      ),
                       child: CachedNetworkImage(
                         imageUrl: widget.recipe.imageUrl,
                         fit: BoxFit.cover,
-
                         placeholder:
                             (context, url) => const Center(
                               child: CircularProgressIndicator(),
@@ -424,7 +481,12 @@ Shared from Recipe App
                               color: theme.colorScheme.surfaceContainerHighest,
                               child: Icon(
                                 Icons.restaurant,
-                                size: 48,
+                                size: AppSizing.responsiveIconSize(
+                                  context,
+                                  mobile: 40,
+                                  tablet: 48,
+                                  desktop: 56,
+                                ),
                                 color: theme.colorScheme.primary,
                               ),
                             ),
@@ -460,7 +522,7 @@ Shared from Recipe App
                               widget.showSaveButton ||
                               widget.showFavoriteButton ||
                               widget.showShareButton))
-                        const SizedBox(width: 8),
+                        SizedBox(width: AppSpacing.xs),
                       if (widget.showFavoriteButton)
                         _buildActionButton(
                           icon:
@@ -482,7 +544,7 @@ Shared from Recipe App
                           (widget.showRemoveButton ||
                               widget.showSaveButton ||
                               widget.showShareButton))
-                        const SizedBox(width: 8),
+                        SizedBox(width: AppSpacing.xs),
                       if (widget.showShareButton)
                         _buildActionButton(
                           icon: Icons.share_outlined,
@@ -492,7 +554,7 @@ Shared from Recipe App
                         ),
                       if (widget.showShareButton &&
                           (widget.showRemoveButton || widget.showSaveButton))
-                        const SizedBox(width: 8),
+                        SizedBox(width: AppSpacing.xs),
                       if (widget.showRemoveButton)
                         _buildActionButton(
                           icon: Icons.remove_circle_outline,
@@ -500,7 +562,7 @@ Shared from Recipe App
                           tooltip: 'Remove recipe',
                         ),
                       if (widget.showRemoveButton && widget.showSaveButton)
-                        const SizedBox(width: 8),
+                        SizedBox(width: AppSpacing.xs),
                       if (widget.showSaveButton && widget.onSave != null)
                         _buildActionButton(
                           icon: Icons.save_outlined,
@@ -515,16 +577,28 @@ Shared from Recipe App
 
             // Recipe details
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.responsive(context),
+                AppSpacing.responsive(context),
+                AppSpacing.responsive(context),
+                AppSpacing.xs,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     widget.recipe.title,
-                    style: theme.textTheme.headlineMedium?.copyWith(
+                    style: TextStyle(
+                      fontSize: AppTypography.responsiveHeadingSize(
+                        context,
+                        mobile: 16.0,
+                        tablet: 18.0,
+                        desktop: 20.0,
+                      ),
                       fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                    maxLines: 1,
+                    maxLines: AppBreakpoints.isMobile(context) ? 1 : 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   _buildRecipeInfo(),

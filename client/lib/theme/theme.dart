@@ -16,6 +16,187 @@ const Color darkAccentColor = Color(0xFF4AFFB3); // Brighter mint
 const Color darkNeutralColor = Color(0xFFD4B17A); // Brighter peach
 const Color darkPurpleColor = Color(0xFF9A0AA2); // Brighter purple
 
+/// Responsive breakpoints for consistent screen size handling
+class AppBreakpoints {
+  static const double mobile = 480;
+  static const double tablet = 768;
+  static const double desktop = 1024;
+  static const double ultraWide = 1440;
+
+  // Legacy breakpoints for backwards compatibility
+  static const double small = 400;
+  static const double medium = 600;
+  static const double large = 900;
+
+  /// Check if current screen is mobile size
+  static bool isMobile(BuildContext context) {
+    return MediaQuery.of(context).size.width < mobile;
+  }
+
+  /// Check if current screen is tablet size
+  static bool isTablet(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return width >= mobile && width < desktop;
+  }
+
+  /// Check if current screen is desktop size
+  static bool isDesktop(BuildContext context) {
+    return MediaQuery.of(context).size.width >= desktop;
+  }
+
+  /// Get the current screen category
+  static ScreenSize getScreenSize(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width < mobile) return ScreenSize.mobile;
+    if (width < desktop) return ScreenSize.tablet;
+    return ScreenSize.desktop;
+  }
+}
+
+/// Screen size enumeration
+enum ScreenSize { mobile, tablet, desktop }
+
+/// Responsive spacing system
+class AppSpacing {
+  // Base spacing units
+  static const double xs = 4.0;
+  static const double sm = 8.0;
+  static const double md = 16.0;
+  static const double lg = 24.0;
+  static const double xl = 32.0;
+  static const double xxl = 48.0;
+
+  /// Get responsive spacing based on screen size
+  static double responsive(
+    BuildContext context, {
+    double mobile = md,
+    double tablet = lg,
+    double desktop = xl,
+  }) {
+    if (AppBreakpoints.isMobile(context)) return mobile;
+    if (AppBreakpoints.isTablet(context)) return tablet;
+    return desktop;
+  }
+
+  /// Get responsive horizontal padding
+  static EdgeInsets horizontalResponsive(BuildContext context) {
+    return EdgeInsets.symmetric(
+      horizontal: responsive(context, mobile: md, tablet: lg, desktop: xl),
+    );
+  }
+
+  /// Get responsive all-around padding
+  static EdgeInsets allResponsive(BuildContext context) {
+    return EdgeInsets.all(
+      responsive(context, mobile: md, tablet: lg, desktop: xl),
+    );
+  }
+}
+
+/// Responsive typography system
+class AppTypography {
+  /// Get responsive font size
+  static double responsiveFontSize(
+    BuildContext context, {
+    double mobile = 14.0,
+    double tablet = 16.0,
+    double desktop = 18.0,
+  }) {
+    if (AppBreakpoints.isMobile(context)) return mobile;
+    if (AppBreakpoints.isTablet(context)) return tablet;
+    return desktop;
+  }
+
+  /// Get responsive heading font size
+  static double responsiveHeadingSize(
+    BuildContext context, {
+    double mobile = 20.0,
+    double tablet = 24.0,
+    double desktop = 28.0,
+  }) {
+    if (AppBreakpoints.isMobile(context)) return mobile;
+    if (AppBreakpoints.isTablet(context)) return tablet;
+    return desktop;
+  }
+
+  /// Get responsive caption font size
+  static double responsiveCaptionSize(
+    BuildContext context, {
+    double mobile = 11.0,
+    double tablet = 12.0,
+    double desktop = 14.0,
+  }) {
+    if (AppBreakpoints.isMobile(context)) return mobile;
+    if (AppBreakpoints.isTablet(context)) return tablet;
+    return desktop;
+  }
+}
+
+/// Responsive sizing utilities
+class AppSizing {
+  /// Get responsive icon size
+  static double responsiveIconSize(
+    BuildContext context, {
+    double mobile = 20.0,
+    double tablet = 24.0,
+    double desktop = 28.0,
+  }) {
+    if (AppBreakpoints.isMobile(context)) return mobile;
+    if (AppBreakpoints.isTablet(context)) return tablet;
+    return desktop;
+  }
+
+  /// Get responsive card padding
+  static EdgeInsets responsiveCardPadding(BuildContext context) {
+    final size = AppBreakpoints.getScreenSize(context);
+    switch (size) {
+      case ScreenSize.mobile:
+        return const EdgeInsets.all(12.0);
+      case ScreenSize.tablet:
+        return const EdgeInsets.all(16.0);
+      case ScreenSize.desktop:
+        return const EdgeInsets.all(20.0);
+    }
+  }
+
+  /// Get responsive grid cross axis count
+  static int responsiveGridCount(
+    BuildContext context, {
+    int mobile = 2,
+    int tablet = 3,
+    int desktop = 4,
+  }) {
+    if (AppBreakpoints.isMobile(context)) return mobile;
+    if (AppBreakpoints.isTablet(context)) return tablet;
+    return desktop;
+  }
+
+  /// Get responsive grid aspect ratio
+  static double responsiveAspectRatio(
+    BuildContext context, {
+    double mobile = 0.75,
+    double tablet = 0.8,
+    double desktop = 0.85,
+  }) {
+    if (AppBreakpoints.isMobile(context)) return mobile;
+    if (AppBreakpoints.isTablet(context)) return tablet;
+    return desktop;
+  }
+
+  /// Get responsive container max width
+  static double responsiveMaxWidth(BuildContext context) {
+    final size = AppBreakpoints.getScreenSize(context);
+    switch (size) {
+      case ScreenSize.mobile:
+        return double.infinity;
+      case ScreenSize.tablet:
+        return 600.0;
+      case ScreenSize.desktop:
+        return 1200.0;
+    }
+  }
+}
+
 /// Elevation system for consistent shadow depths throughout the app
 /// Following Material Design 3 elevation guidelines
 class AppElevation {
@@ -35,6 +216,18 @@ class AppElevation {
   static const double dialog = level5;
   static const double bottomSheet = level4;
   static const double menu = level3;
+
+  /// Get responsive elevation
+  static double responsive(
+    BuildContext context, {
+    double mobile = level2,
+    double tablet = level3,
+    double desktop = level4,
+  }) {
+    if (AppBreakpoints.isMobile(context)) return mobile;
+    if (AppBreakpoints.isTablet(context)) return tablet;
+    return desktop;
+  }
 }
 
 class AppTheme {
@@ -65,7 +258,7 @@ class AppTheme {
         color: secondaryColor,
       ),
       headlineSmall: GoogleFonts.playfairDisplay(
-        fontSize: 20,
+        fontSize: 16,
         fontWeight: FontWeight.bold,
         color: secondaryColor,
       ),
@@ -137,7 +330,7 @@ class AppTheme {
         color: backgroundColor,
       ),
       headlineSmall: GoogleFonts.playfairDisplay(
-        fontSize: 20,
+        fontSize: 16,
         fontWeight: FontWeight.bold,
         color: backgroundColor,
       ),

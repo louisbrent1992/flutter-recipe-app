@@ -8,6 +8,7 @@ import '../models/recipe.dart';
 import '../components/error_display.dart';
 import 'package:recipease/components/banner_ad.dart';
 import '../services/recipe_service.dart';
+import '../theme/theme.dart';
 
 class GeneratedRecipesScreen extends StatefulWidget {
   const GeneratedRecipesScreen({super.key});
@@ -123,18 +124,19 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
               }
 
               return SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
+                padding: AppSpacing.allResponsive(context),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Generated Recipes:',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    Text(
+                      'Enjoy your ${recipeProvider.generatedRecipes[0].cuisineType} recipes!',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineLarge?.copyWith(
+                        fontSize: AppTypography.responsiveHeadingSize(context),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: AppSpacing.sm),
                     ...recipeProvider.generatedRecipes.map(
                       (recipe) => RecipeCard(
                         recipe: recipe,
@@ -144,7 +146,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
                         onRemove: () => _handleRecipeAction(recipe),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: AppSpacing.responsive(context)),
                   ],
                 ),
               );
