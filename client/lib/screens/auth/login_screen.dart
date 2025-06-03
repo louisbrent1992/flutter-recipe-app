@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/providers/auth_provider.dart';
+import '../../theme/theme.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -166,6 +167,116 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _showForgotPasswordDialog() {
+    final resetEmailController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(
+              'Reset Password',
+              style: TextStyle(
+                fontSize: AppTypography.responsiveHeadingSize(
+                  context,
+                  mobile: 20.0,
+                  tablet: 22.0,
+                  desktop: 24.0,
+                ),
+              ),
+            ),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Enter your email address and we\'ll send you a link to reset your password.',
+                    style: TextStyle(
+                      fontSize: AppTypography.responsiveFontSize(
+                        context,
+                        mobile: 14.0,
+                        tablet: 15.0,
+                        desktop: 16.0,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.responsive(context)),
+                  TextFormField(
+                    controller: resetEmailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      if (!value.contains('@')) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            contentPadding: AppSpacing.allResponsive(context),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Cancel'),
+              ),
+              Consumer<AuthService>(
+                builder: (context, authService, child) {
+                  return ElevatedButton(
+                    onPressed:
+                        authService.isLoading
+                            ? null
+                            : () async {
+                              if (formKey.currentState!.validate()) {
+                                final success = await authService
+                                    .sendPasswordResetEmail(
+                                      resetEmailController.text.trim(),
+                                    );
+
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+
+                                  if (success) {
+                                    _showSnackBar(
+                                      'Password reset email sent! Check your inbox.',
+                                    );
+                                  } else {
+                                    _showSnackBar(
+                                      authService.error ??
+                                          'Failed to send reset email.',
+                                      isError: true,
+                                    );
+                                  }
+                                }
+                              }
+                            },
+                    child:
+                        authService.isLoading
+                            ? const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Text('Send Reset Link'),
+                  );
+                },
+              ),
+            ],
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
@@ -231,7 +342,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscureText: _obscurePassword,
                     validator: _validatePassword,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _showForgotPasswordDialog,
+                      child: const Text(
+                        'Forgot Password?',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed:
                         authService.isLoading

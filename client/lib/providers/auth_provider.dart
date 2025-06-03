@@ -235,6 +235,41 @@ class AuthService with ChangeNotifier {
     }
   }
 
+  // Send password reset email
+  Future<bool> sendPasswordResetEmail(String email) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      return true;
+    } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException: ${e.code} - ${e.message}');
+      switch (e.code) {
+        case 'user-not-found':
+          _error = 'No account found with this email address.';
+          break;
+        case 'invalid-email':
+          _error = 'Please enter a valid email address.';
+          break;
+        case 'network-request-failed':
+          _error = 'Network error. Please check your internet connection.';
+          break;
+        default:
+          _error = 'Failed to send password reset email. Please try again.';
+      }
+      return false;
+    } catch (e) {
+      print('Unexpected error sending password reset email: $e');
+      _error = 'An unexpected error occurred. Please try again.';
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // Delete account
   Future<void> deleteAccount() async {
     try {

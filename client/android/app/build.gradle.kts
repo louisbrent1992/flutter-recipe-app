@@ -44,13 +44,6 @@ android {
         targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-
-        // Enable incremental annotation processing
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments["dagger.incremental"] = "true"
-            }
-        }
     }
 
     signingConfigs {
