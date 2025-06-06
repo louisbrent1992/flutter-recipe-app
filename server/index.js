@@ -72,7 +72,7 @@ app.use((req, res) => {
 app.use(errorHandler.globalHandler);
 
 // Schedule a daily job to fetch recipes from Spoonacular
-cron.schedule("00 20 * * *", async () => {
+cron.schedule("59 23 * * *", async () => {
 	console.log("Running scheduled recipe fetch job...");
 	try {
 		const db = admin.firestore();
@@ -206,10 +206,9 @@ cron.schedule("00 20 * * *", async () => {
 				const doc = await docRef.get();
 
 				if (!doc.exists) {
-					// Also check for duplicates by title and description
+					// Also check for duplicates by title only (description can be too large for Firestore queries)
 					const duplicateQuery = await recipesRef
 						.where("title", "==", recipe.title)
-						.where("description", "==", recipe.description)
 						.limit(1)
 						.get();
 

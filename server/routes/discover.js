@@ -14,32 +14,27 @@ router.get("/search", auth, async (req, res) => {
 	try {
 		const { query, difficulty, tag } = req.query;
 		const page = parseInt(req.query.page) || 1;
-		const limit = Math.min(parseInt(req.query.limit) || 10, 100); // Ensure limit is between 1 and 100
-		const startAt = (page - 1) * limit;
+		const limit = Math.min(parseInt(req.query.limit) || 10, 100);
 
 		// Build Firestore query
 		let recipesRef = db.collection("recipes");
 
 		if (query) {
 			console.log("Search query:", query);
-			// Create a compound query to search across multiple fields
 			const searchTerms = query
 				.toLowerCase()
-				.split(/\s+/) // Split on any whitespace
+				.split(/\s+/)
 				.filter((term) => term.length > 0);
 			console.log("Search terms:", searchTerms);
 
-			// Start with the base query
 			recipesRef = db.collection("recipes");
 
-			// Create a compound query that matches any of the search terms
 			const searchQueries = searchTerms.map((term) => {
 				return db
 					.collection("recipes")
 					.where("searchableFields", "array-contains", term);
 			});
 
-			// If we have search terms, use the first query as base
 			if (searchQueries.length > 0) {
 				recipesRef = searchQueries[0];
 			}
@@ -59,36 +54,66 @@ router.get("/search", auth, async (req, res) => {
 			);
 		}
 
-		// Get total count for pagination
+		// Get total count for pagination (before deduplication)
 		const totalQuery = await recipesRef.count().get();
 		const totalRecipes = totalQuery.data().count;
 		console.log("Total recipes found:", totalRecipes);
 
-		// Fetch paginated recipes
+		// Fetch more recipes to account for potential duplicates (reduced since DB is now clean)
+		const bufferMultiplier = 1.5; // Reduced from 3x since we cleaned up duplicates
+		const fetchLimit = Math.min(limit * bufferMultiplier, 200); // Reduced cap since less buffer needed
+		const startAt = Math.max(0, (page - 1) * limit);
+
+		// Fetch recipes with smaller buffer for deduplication
 		const snapshot = await recipesRef
 			.orderBy("createdAt", "desc")
-			.limit(limit)
+			.limit(fetchLimit)
 			.offset(startAt)
 			.get();
 
-		const recipes = [];
+		// Collect all recipes
+		const allRecipes = [];
 		snapshot.forEach((doc) => {
 			const data = doc.data();
-
-			recipes.push({
+			allRecipes.push({
 				id: doc.id,
 				...data,
 			});
 		});
 
+		// Server-side deduplication (should be minimal now after cleanup)
+		const uniqueRecipesMap = new Map();
+		for (const recipe of allRecipes) {
+			const key = `${recipe.title?.toLowerCase() || ""}|${
+				recipe.description?.toLowerCase() || ""
+			}`;
+			if (!uniqueRecipesMap.has(key)) {
+				uniqueRecipesMap.set(key, recipe);
+			}
+		}
+
+		// Convert back to array and apply pagination to deduplicated results
+		const deduplicatedRecipes = Array.from(uniqueRecipesMap.values());
+		const paginatedRecipes = deduplicatedRecipes.slice(0, limit);
+
+		console.log(
+			`Fetched ${allRecipes.length} recipes, deduplicated to ${deduplicatedRecipes.length}, returning ${paginatedRecipes.length}`
+		);
+
+		// Calculate pagination info based on deduplicated results
+		// More accurate now since we have fewer duplicates
+		const estimatedTotalPages = Math.ceil((totalRecipes * 0.95) / limit); // Assume ~5% duplicates now
+		const hasMore =
+			deduplicatedRecipes.length > limit || page * limit < totalRecipes;
+
 		res.json({
-			recipes,
+			recipes: paginatedRecipes,
 			pagination: {
-				total: totalRecipes,
+				total: Math.floor(totalRecipes * 0.95), // Estimated total after minimal deduplication
 				page,
 				limit,
-				totalPages: Math.ceil(totalRecipes / limit),
-				hasNextPage: startAt + limit < totalRecipes,
+				totalPages: estimatedTotalPages,
+				hasNextPage: hasMore && page < estimatedTotalPages,
 				hasPrevPage: page > 1,
 			},
 		});
