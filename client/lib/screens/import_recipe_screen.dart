@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/floating_bottom_bar.dart';
+import 'package:recipease/components/floating_button.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/theme/theme.dart';
@@ -645,6 +646,16 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                 ),
               ),
               FloatingBottomBar(),
+              FloatingButton(
+                tooltip: 'New Recipe',
+                onPressed:
+                    () => Navigator.pushNamed(
+                      context,
+                      '/recipeEdit',
+                      arguments: Recipe(title: 'New Recipe', toEdit: false),
+                    ),
+                icon: Icons.add_rounded,
+              ),
             ],
           );
         },
