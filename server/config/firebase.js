@@ -5,6 +5,8 @@
  */
 
 const { initializeApp, cert } = require("firebase-admin/app");
+const fs = require("fs");
+const path = require("path");
 
 // Initialize Firebase Admin
 const initFirebase = () => {
@@ -16,8 +18,13 @@ const initFirebase = () => {
 			);
 		}
 
-		// Parse the service account JSON
-		const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+		// Read and parse the service account JSON file
+		const serviceAccountPath = path.resolve(
+			process.env.FIREBASE_SERVICE_ACCOUNT
+		);
+		const serviceAccount = JSON.parse(
+			fs.readFileSync(serviceAccountPath, "utf8")
+		);
 
 		// Initialize the app
 		initializeApp({
