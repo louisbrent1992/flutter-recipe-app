@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
+import 'package:recipease/components/floating_bottom_bar.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/components/checkbox_list.dart';
 import 'package:recipease/components/screen_description_card.dart';
-import 'package:recipease/components/floating_home_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:recipease/theme/theme.dart';
 import '../components/error_display.dart';
@@ -163,25 +163,96 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
           CustomScrollView(
             controller: _scrollController,
             slivers: [
-              SliverAppBar(
-                expandedHeight: 200,
-                automaticallyImplyLeading: false,
-                flexibleSpace: CachedNetworkImage(
-                  imageUrl:
-                      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmVjaXBlJTIwZ2VuZXJhdGlvbnxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80',
-                  fit: BoxFit.cover,
-                  placeholder:
-                      (context, url) =>
-                          const Center(child: CircularProgressIndicator()),
-                  errorWidget:
-                      (context, url, error) =>
-                          const Icon(Icons.error, color: Colors.red),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.responsive(context)),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Stack(
+                      alignment: Alignment.bottomLeft,
+                      children: [
+                        // Background image
+                        AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: CachedNetworkImage(
+                            imageUrl:
+                                'https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmVjaXBlJTIwZ2VuZXJhdGlvbnxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80',
+                            fit: BoxFit.cover,
+                            placeholder:
+                                (context, url) => Container(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ),
+                            errorWidget:
+                                (context, url, error) =>
+                                    const Icon(Icons.error, color: Colors.red),
+                          ),
+                        ),
+                        // Gradient overlay
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surface.withValues(alpha: 0.85),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Text overlay
+                        Padding(
+                          padding: AppSpacing.allResponsive(context),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'AI Recipe Generator',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineLarge?.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Create personalized recipes with AI',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
 
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: AppSpacing.allResponsive(context),
+                  padding: EdgeInsetsGeometry.fromLTRB(
+                    AppSpacing.responsive(context),
+                    AppSpacing.responsive(context),
+                    AppSpacing.responsive(context),
+                    100,
+                  ),
                   child: Consumer<RecipeProvider>(
                     builder: (context, recipeProvider, _) {
                       return Column(
@@ -215,8 +286,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                               ),
                             ),
                             decoration: InputDecoration(
-                              hintText:
-                                  'Enter any ingredients or preferences you have (e.g. gluten-free, vegan, eggs etc.)',
+                              hintText: 'gluten-free, chicken, eggs',
                               hintStyle: TextStyle(
                                 fontSize: AppTypography.responsiveCaptionSize(
                                   context,
@@ -224,7 +294,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  Icons.add,
+                                  Icons.add_circle_rounded,
                                   size: AppSizing.responsiveIconSize(context),
                                 ),
                                 onPressed: _addIngredient,
@@ -351,7 +421,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Icon(
-                                  Icons.auto_awesome_outlined,
+                                  Icons.auto_awesome_rounded,
                                   color: Colors.white,
                                 ),
                                 const SizedBox(width: 8),
@@ -373,7 +443,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
               ),
             ],
           ),
-          const FloatingHomeButton(),
+          FloatingBottomBar(),
         ],
       ),
     );

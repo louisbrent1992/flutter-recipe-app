@@ -3,13 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import '../providers/recipe_provider.dart';
 import '../components/recipe_card.dart';
-import '../components/floating_home_button.dart';
 import '../components/compact_filter_bar.dart';
-import '../components/pagination_bar.dart';
 import '../mixins/recipe_filter_mixin.dart';
 import '../models/recipe.dart';
 import '../components/error_display.dart';
 import '../theme/theme.dart';
+import '../components/floating_bottom_bar.dart';
 
 class DiscoverRecipesScreen extends StatefulWidget {
   const DiscoverRecipesScreen({super.key});
@@ -109,40 +108,84 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
   Future<void> _handleRecipeAction(Recipe recipe) async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
 
-    // Check for duplicates before saving
-    if (recipeProvider.isDuplicateRecipe(recipe)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('This recipe is already in your collection'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-      return;
-    }
+    // Check if recipe is already saved
+    final userRecipeIds = recipeProvider.userRecipes.map((r) => r.id).toSet();
+    final userRecipeKeys =
+        recipeProvider.userRecipes
+            .map(
+              (r) => '${r.title.toLowerCase()}|${r.description.toLowerCase()}',
+            )
+            .toSet();
 
-    // Save to collection using RecipeProvider
-    final savedRecipe = await recipeProvider.createUserRecipe(recipe);
-    if (savedRecipe != null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Recipe saved to your collection!'),
-            backgroundColor: Colors.green,
-          ),
+    final recipeKey =
+        '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
+    final isAlreadySaved =
+        userRecipeIds.contains(recipe.id) || userRecipeKeys.contains(recipeKey);
+
+    if (isAlreadySaved) {
+      // Remove from collection - find the actual user recipe ID
+      Recipe? userRecipe = recipeProvider.userRecipes.firstWhere(
+        (r) =>
+            r.id == recipe.id ||
+            (r.title.toLowerCase() == recipe.title.toLowerCase() &&
+                r.description.toLowerCase() ==
+                    recipe.description.toLowerCase()),
+        orElse: () => Recipe(), // Return empty recipe if not found
+      );
+
+      if (userRecipe.id.isNotEmpty) {
+        final success = await recipeProvider.deleteUserRecipe(
+          userRecipe.id,
+          context,
         );
-        // Trigger a rebuild to refresh the filtered list
-        setState(() {});
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Recipe removed from your collection!'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
       }
     } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to save recipe'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      // Save to collection using RecipeProvider
+      final savedRecipe = await recipeProvider.createUserRecipe(
+        recipe,
+        context,
+      );
+      if (savedRecipe != null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Recipe saved to your collection!'),
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: 'Go to My Recipes',
+                onPressed: () {
+                  Navigator.pushNamed(context, '/myRecipes');
+                },
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          // Check if it's a duplicate error or other error
+          if (recipeProvider.error != null) {
+            final errorMessage =
+                recipeProvider.error!.message ?? 'Failed to save recipe';
+            final isDuplicate = errorMessage.contains('already exists');
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: isDuplicate ? Colors.orange : Colors.red,
+              ),
+            );
+            recipeProvider.clearError();
+          }
+        }
       }
     }
   }
@@ -221,19 +264,10 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
 
                     final allRecipes = recipeProvider.generatedRecipes;
 
-                    // First, deduplicate the recipes based on title and description
-                    final Map<String, Recipe> uniqueRecipesMap = {};
-                    for (final recipe in allRecipes) {
-                      final key =
-                          '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
-                      if (!uniqueRecipesMap.containsKey(key)) {
-                        uniqueRecipesMap[key] = recipe;
-                      }
-                    }
-                    final deduplicatedRecipes =
-                        uniqueRecipesMap.values.toList();
+                    // Server now handles deduplication, so we can use recipes directly
+                    final displayRecipes = allRecipes;
 
-                    // Then filter out recipes that are already in user's collection
+                    // Keep all recipes but track which ones are already saved
                     final userRecipeIds =
                         recipeProvider.userRecipes.map((r) => r.id).toSet();
                     final userRecipeKeys =
@@ -244,15 +278,15 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                             )
                             .toSet();
 
-                    final newRecipes =
-                        deduplicatedRecipes.where((recipe) {
-                          final recipeKey =
-                              '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
-                          return !userRecipeIds.contains(recipe.id) &&
-                              !userRecipeKeys.contains(recipeKey);
-                        }).toList();
+                    // Helper function to check if a recipe is already saved
+                    bool isRecipeSaved(Recipe recipe) {
+                      final recipeKey =
+                          '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
+                      return userRecipeIds.contains(recipe.id) ||
+                          userRecipeKeys.contains(recipeKey);
+                    }
 
-                    if (!recipeProvider.isLoading && newRecipes.isEmpty) {
+                    if (!recipeProvider.isLoading && displayRecipes.isEmpty) {
                       return Column(
                         children: [
                           Expanded(
@@ -268,9 +302,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    allRecipes.isEmpty
-                                        ? 'No recipes found'
-                                        : 'No new recipes found',
+                                    'No recipes found',
                                     style:
                                         Theme.of(
                                           context,
@@ -278,9 +310,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    allRecipes.isEmpty
-                                        ? 'Try adjusting your search or filters'
-                                        : 'You\'ve already saved all matching recipes!',
+                                    'Try adjusting your search or filters',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium?.copyWith(
@@ -294,50 +324,38 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                               ),
                             ),
                           ),
-
-                          // Show pagination even when empty (in case of loading)
-                          PaginationBar(
-                            currentPage: _currentPage,
-                            totalPages: recipeProvider.totalPages,
-                            hasNextPage: recipeProvider.hasNextPage,
-                            hasPreviousPage: recipeProvider.hasPrevPage,
-                            isLoading: recipeProvider.isLoading,
-                            onPreviousPage: _goToPreviousPage,
-                            onNextPage: _goToNextPage,
-                            onPageSelected: _goToPage,
-                            totalItems: recipeProvider.totalRecipes,
-                            itemsPerPage: _itemsPerPage,
-                          ),
                         ],
                       );
                     }
 
-                    return Column(
-                      children: [
-                        // Recipe grid with loading overlay
-                        Expanded(
-                          child: Stack(
-                            children: [
-                              Padding(
-                                padding: AppSpacing.horizontalResponsive(
-                                  context,
-                                ),
-                                child: GridView.builder(
+                    return Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpacing.responsive(context),
+                        AppSpacing.responsive(context),
+                        AppSpacing.responsive(context),
+                        0,
+                      ),
+                      child: Column(
+                        children: [
+                          // Recipe grid with loading overlay
+                          Expanded(
+                            child: Stack(
+                              children: [
+                                GridView.builder(
                                   controller: _scrollController,
+                                  padding: EdgeInsets.only(bottom: 100),
                                   itemBuilder: (context, index) {
-                                    final recipe = newRecipes[index];
+                                    final recipe = displayRecipes[index];
                                     return RecipeCard(
                                       recipe: recipe,
-                                      showSaveButton:
-                                          true, // Always show save button since these are new recipes
-                                      showRemoveButton:
-                                          false, // Never show remove button since they're not saved
+                                      showSaveButton: !isRecipeSaved(recipe),
+                                      showRemoveButton: isRecipeSaved(recipe),
                                       onSave: () => _handleRecipeAction(recipe),
                                       onRemove:
                                           () => _handleRecipeAction(recipe),
                                     );
                                   },
-                                  itemCount: newRecipes.length,
+                                  itemCount: displayRecipes.length,
                                   gridDelegate:
                                       SliverGridDelegateWithFixedCrossAxisCount(
                                         crossAxisCount:
@@ -356,66 +374,66 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                         ),
                                       ),
                                 ),
-                              ),
 
-                              // Loading overlay only on the recipe grid
-                              if (recipeProvider.isLoading)
-                                Container(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.surface.withValues(alpha: 0.8),
-                                  child: Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        CircularProgressIndicator(
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.primary,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          'Loading recipes...',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodyMedium?.copyWith(
+                                // Loading overlay only on the recipe grid
+                                if (recipeProvider.isLoading)
+                                  Container(
+                                    color: Theme.of(context).colorScheme.surface
+                                        .withValues(alpha: 0.8),
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          CircularProgressIndicator(
                                             color:
                                                 Theme.of(
                                                   context,
-                                                ).colorScheme.onSurface,
+                                                ).colorScheme.primary,
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            'Loading recipes...',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium?.copyWith(
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).colorScheme.onSurface,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
 
-                        // Pagination bar - always visible
-                        PaginationBar(
-                          currentPage: _currentPage,
-                          totalPages: recipeProvider.totalPages,
-                          hasNextPage: recipeProvider.hasNextPage,
-                          hasPreviousPage: recipeProvider.hasPrevPage,
-                          isLoading: recipeProvider.isLoading,
-                          onPreviousPage: _goToPreviousPage,
-                          onNextPage: _goToNextPage,
-                          onPageSelected: _goToPage,
-                          totalItems: recipeProvider.totalRecipes,
-                          itemsPerPage: _itemsPerPage,
-                        ),
-                      ],
+                          // Pagination bar - always visible
+                        ],
+                      ),
                     );
                   },
                 ),
               ),
             ],
           ),
-          const FloatingHomeButton(),
+          Consumer<RecipeProvider>(
+            builder: (context, recipeProvider, _) {
+              return FloatingBottomBar(
+                showPagination: true,
+                currentPage: _currentPage,
+                totalPages: recipeProvider.totalPages,
+                hasNextPage: recipeProvider.hasNextPage,
+                hasPreviousPage: recipeProvider.hasPrevPage,
+                isLoading: recipeProvider.isLoading,
+                onPreviousPage: _goToPreviousPage,
+                onNextPage: _goToNextPage,
+              );
+            },
+          ),
         ],
       ),
     );

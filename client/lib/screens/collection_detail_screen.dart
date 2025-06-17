@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/custom_app_bar.dart';
-import 'package:recipease/components/floating_add_button.dart';
+import 'package:recipease/components/floating_bottom_bar.dart';
+import 'package:recipease/components/floating_button.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
 import 'package:recipease/screens/add_recipes_to_collection_screen.dart';
 import '../components/recipe_card.dart';
-import '../components/floating_home_button.dart';
 
 class CollectionDetailScreen extends StatefulWidget {
   final RecipeCollection collection;
@@ -26,6 +26,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
   bool _isLoading = false;
   List<Recipe> _filteredRecipes = [];
   String _searchQuery = '';
+  late CollectionService _collectionService;
 
   @override
   void initState() {
@@ -75,7 +76,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
     print("Refreshing collection: ${_collection.id}");
     setState(() => _isLoading = true);
     try {
-      final updatedCollection = await CollectionService.getCollection(
+      final updatedCollection = await _collectionService.getCollection(
         _collection.id,
       );
       print("Updated collection: ${updatedCollection?.recipes.length} recipes");
@@ -155,7 +156,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
     if (result != null && mounted) {
       setState(() => _isLoading = true);
       try {
-        final updatedCollection = await CollectionService.updateCollection(
+        final updatedCollection = await _collectionService.updateCollection(
           _collection.id,
           name: result['name'],
         );
@@ -215,7 +216,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
     if (confirm == true && mounted) {
       setState(() => _isLoading = true);
       try {
-        final success = await CollectionService.removeRecipeFromCollection(
+        final success = await _collectionService.removeRecipeFromCollection(
           _collection.id,
           recipe.id,
         );
@@ -230,7 +231,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                 action: SnackBarAction(
                   label: 'Undo',
                   onPressed: () async {
-                    await CollectionService.addRecipeToCollection(
+                    await _collectionService.addRecipeToCollection(
                       _collection.id,
                       recipe,
                     );
@@ -282,10 +283,10 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: _collection.name,
+        title: '${_collection.name} Recipes',
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
+            icon: const Icon(Icons.edit_note_rounded),
             onPressed: _editCollection,
             tooltip: 'Edit collection',
           ),
@@ -378,10 +379,14 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                   ],
                 ),
               ),
-          const FloatingHomeButton(),
-          FloatingAddButton(
-            onPressed: _searchAllRecipes,
-            tooltip: 'Add recipes to collection',
+          FloatingBottomBar(),
+          FloatingButton(
+            onPressed:
+                widget.collection.name == 'Favorites'
+                    ? () => Navigator.pushNamed(context, '/myRecipes')
+                    : _searchAllRecipes,
+            tooltip: 'Add Recipes',
+            icon: Icons.add_rounded,
           ),
         ],
       ),

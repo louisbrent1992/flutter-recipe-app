@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:recipease/components/floating_save_button.dart';
+import 'package:recipease/components/floating_button.dart';
 import 'package:recipease/components/html_description.dart';
 import 'package:recipease/providers/recipe_provider.dart';
+import 'package:recipease/screens/recipe_edit_screen.dart';
 import '../models/recipe.dart';
 import '../components/custom_app_bar.dart';
 import 'package:url_launcher/link.dart';
 import '../providers/user_profile_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../components/floating_home_button.dart';
-import '../components/floating_edit_button.dart';
+import '../components/floating_bottom_bar.dart';
 import '../theme/theme.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
@@ -22,12 +22,11 @@ class RecipeDetailScreen extends StatefulWidget {
 }
 
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
-  late Recipe _currentRecipe;
+  bool _isSaved = false;
 
   @override
   void initState() {
     super.initState();
-    _currentRecipe = widget.recipe;
     _checkFavoriteStatus();
     _checkSavedStatus();
   }
@@ -38,10 +37,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     if (mounted) setState(() {});
   }
 
-  bool _checkSavedStatus() {
-    if (widget.recipe.id.isEmpty) return false;
-    return context.read<RecipeProvider>().userRecipes.first.id ==
-        widget.recipe.id;
+  void _checkSavedStatus() {
+    if (widget.recipe.id.isEmpty) return;
+    final userRecipes = context.read<RecipeProvider>().userRecipes;
+    setState(() {
+      _isSaved = userRecipes.any((recipe) => recipe.id == widget.recipe.id);
+    });
   }
 
   Widget _buildSourceLink() {
@@ -196,7 +197,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: AppSpacing.allResponsive(context),
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.responsive(context),
+                    AppSpacing.responsive(context),
+                    AppSpacing.responsive(context),
+                    60,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -217,7 +223,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       SizedBox(height: AppSpacing.sm),
                       Wrap(
                         spacing: AppSpacing.responsive(context),
+
                         runSpacing: AppSpacing.xs,
+
                         children: [
                           Row(
                             mainAxisSize: MainAxisSize.min,
@@ -509,29 +517,56 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               ),
             ],
           ),
-          const FloatingHomeButton(),
-          _checkSavedStatus()
-              ? FloatingEditButton(
-                onPressed: () async {
-                  final result = await Navigator.pushNamed(
-                    context,
-                    '/recipeEdit',
-                    arguments: _currentRecipe.copyWith(toEdit: true),
-                  );
-                  if (result != null && result is Recipe) {
+          FloatingBottomBar(),
+          if (_isSaved)
+            FloatingButton(
+              tooltip: 'Edit Recipe',
+              icon: Icons.edit,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RecipeEditScreen(recipe: recipe),
+                  ),
+                );
+              },
+            )
+          else
+            FloatingButton(
+              tooltip: 'Save Recipe',
+              icon: Icons.save,
+              onPressed: () async {
+                final recipeProvider = context.read<RecipeProvider>();
+                final savedRecipe = await recipeProvider.createUserRecipe(
+                  recipe,
+                  context,
+                );
+                if (context.mounted) {
+                  if (savedRecipe != null) {
                     setState(() {
-                      _currentRecipe = result;
+                      _isSaved = true;
                     });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Recipe saved successfully!'),
+                        duration: Duration(seconds: 4),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          recipeProvider.error?.message ??
+                              'Failed to save recipe',
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
                   }
-                },
-              )
-              : FloatingSaveButton(
-                onPressed: () {
-                  context.read<RecipeProvider>().createUserRecipe(
-                    widget.recipe,
-                  );
-                },
-              ),
+                }
+              },
+            ),
         ],
       ),
     );

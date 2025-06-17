@@ -17,16 +17,16 @@ class ApiClient {
 
   /// Base URL for API requests
   String get baseUrl {
-    if (Platform.isAndroid) {
-      // Use 10.0.2.2 for Android emulator to connect to localhost
-      return 'http://172.16.1.2:3001/api';
-    } else if (Platform.isIOS) {
-      // Use localhost for iOS simulator
-      return 'http://localhost:3001/api';
-    } else {
-      // Default for web or other platforms
-      return 'http://localhost:3001/api';
-    }
+    final String productionUrl = 'https://your-production-domain.com/api';
+    final String developmentUrl =
+        Platform.isAndroid
+            ? 'http://172.16.1.2:3001/api'
+            : 'http://localhost:3001/api';
+
+    // Use production URL in release mode, development URL otherwise
+    return const bool.fromEnvironment('dart.vm.product')
+        ? productionUrl
+        : developmentUrl;
   }
 
   /// Get headers with Firebase authentication token

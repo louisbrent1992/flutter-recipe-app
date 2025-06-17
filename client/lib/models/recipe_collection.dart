@@ -37,9 +37,11 @@ class RecipeCollection {
 
   // Convert from JSON
   factory RecipeCollection.fromJson(Map<String, dynamic> json) {
+    final name = json['name'] as String;
+
     return RecipeCollection(
       id: json['id'],
-      name: json['name'],
+      name: name,
       recipes:
           (json['recipes'] as List?)
               ?.map((recipeJson) => Recipe.fromJson(recipeJson))
@@ -48,12 +50,8 @@ class RecipeCollection {
       color:
           json['color'] != null
               ? Color(json['color'] as int)
-              : _getDefaultColor(json['name'] as String),
-      icon: _createIconData(
-        json['iconCodePoint'] as int? ?? 0xe318, // Default to restaurant icon
-        json['iconFontFamily'] as String?,
-        json['iconFontPackage'] as String?,
-      ),
+              : _getDefaultColor(name),
+      icon: _getDefaultIcon(name), // Always use predefined icons
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -65,9 +63,7 @@ class RecipeCollection {
     'name': name,
     'recipes': recipes.map((recipe) => recipe.toJson()).toList(),
     'color': color.toARGB32(),
-    'iconCodePoint': icon.codePoint,
-    'iconFontFamily': icon.fontFamily,
-    'iconFontPackage': icon.fontPackage,
+    // Icon is always determined by name, so no need to store icon data
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
   };
@@ -106,32 +102,61 @@ class RecipeCollection {
   // Helper to get default icon based on category name
   static IconData _getDefaultIcon(String category) {
     final Map<String, IconData> categoryIcons = {
-      'Breakfast': Icons.breakfast_dining,
+      'Breakfast': Icons.free_breakfast,
       'Lunch': Icons.lunch_dining,
       'Dinner': Icons.dinner_dining,
       'Snacks': Icons.cookie,
+      'Drinks': Icons.local_bar,
+      'Baked Goods': Icons.bakery_dining,
+      'Appetizers': Icons.kebab_dining,
       'Desserts': Icons.cake,
       'Vegetarian': Icons.spa,
-      'Vegan': Icons.grass,
+      'Vegan': Icons.cruelty_free,
       'Gluten-Free': Icons.not_interested,
-      'Dairy-Free': Icons.no_drinks,
-      'Quick Meals': Icons.timer,
+      'Dairy-Free': Icons.format_color_reset,
+      'Quick Meals': Icons.ramen_dining,
       'Holiday Specials': Icons.celebration,
       'Favorites': Icons.favorite,
-      'Recently Added': Icons.new_releases,
+      'Recently Added': Icons.schedule,
+      // Cuisines
+      'Italian': Icons.local_pizza,
+      'Mexican': Icons.whatshot,
+      'Chinese': Icons.ramen_dining,
+      'Japanese': Icons.set_meal,
+      'Indian': Icons.local_fire_department,
+      'Thai': Icons.restaurant_menu_rounded,
+      'French': Icons.wine_bar,
+      'American': Icons.lunch_dining,
+      'Mediterranean': Icons.local_florist,
+      'Korean': Icons.ramen_dining,
+      'Greek': Icons.local_florist,
+      'Spanish': Icons.tapas,
+      'British': Icons.local_cafe,
+      'German': Icons.sports_bar,
+      'Turkish': Icons.kebab_dining,
     };
 
-    return categoryIcons[category] ?? Icons.restaurant;
+    // Check if category name contains any of the key values (case-insensitive)
+    final lowerCaseCategory = category.toLowerCase();
+    for (final entry in categoryIcons.entries) {
+      if (lowerCaseCategory.contains(entry.key.toLowerCase())) {
+        return entry.value;
+      }
+    }
+
+    return Icons.restaurant;
   }
 
   // Helper to get default color based on category name
   static Color _getDefaultColor(String category) {
     final Map<String, Color> categoryColors = {
-      'Breakfast': Colors.amber.shade200,
+      'Breakfast': Colors.amber.shade500,
       'Lunch': Colors.green.shade200,
       'Dinner': Colors.indigo.shade200,
       'Snacks': Colors.orange.shade200,
       'Desserts': Colors.pink.shade200,
+      'Baked Goods': Colors.brown.shade200,
+      'Appetizers': Colors.teal.shade200,
       'Vegetarian': Colors.teal.shade200,
       'Vegan': Colors.lightGreen.shade200,
       'Gluten-Free': Colors.purple.shade200,
@@ -140,9 +165,33 @@ class RecipeCollection {
       'Holiday Specials': Colors.deepPurple.shade200,
       'Favorites': Colors.red.shade200,
       'Recently Added': Colors.cyan.shade200,
+      // Cuisines
+      'Italian': Colors.green.shade300,
+      'Mexican': Colors.orange.shade300,
+      'Chinese': Colors.red.shade300,
+      'Japanese': Colors.pink.shade300,
+      'Indian': Colors.deepOrange.shade300,
+      'Thai': Colors.lime.shade300,
+      'French': Colors.indigo.shade300,
+      'American': Colors.blue.shade300,
+      'Mediterranean': Colors.lightBlue.shade300,
+      'Korean': Colors.purple.shade300,
+      'Greek': Colors.cyan.shade300,
+      'Spanish': Colors.amber.shade300,
+      'British': Colors.brown.shade300,
+      'German': Colors.grey.shade400,
+      'Turkish': Colors.teal.shade300,
     };
 
-    return categoryColors[category] ?? Colors.grey.shade200;
+    // Check if category name contains any of the key values (case-insensitive)
+    final lowerCaseCategory = category.toLowerCase();
+    for (final entry in categoryColors.entries) {
+      if (lowerCaseCategory.contains(entry.key.toLowerCase())) {
+        return entry.value;
+      }
+    }
+
+    return Colors.grey.shade200;
   }
 
   // Create a copy of this collection with updated fields
@@ -150,64 +199,17 @@ class RecipeCollection {
     String? name,
     List<Recipe>? recipes,
     Color? color,
-    IconData? icon,
   }) {
     return RecipeCollection(
       id: id,
       name: name ?? this.name,
       recipes: recipes ?? this.recipes,
       color: color ?? this.color,
-      icon: icon ?? this.icon,
+      icon: _getDefaultIcon(
+        name ?? this.name,
+      ), // Always use predefined icon based on name
       createdAt: createdAt,
       updatedAt: DateTime.now(),
     );
-  }
-
-  // Add this static method inside the RecipeCollection class
-  // Place it near the other static helper methods (around line 120)
-  static IconData _createIconData(
-    int codePoint,
-    String? fontFamily,
-    String? fontPackage,
-  ) {
-    if (fontFamily == 'MaterialIcons') {
-      // Check common Material icon code points
-      switch (codePoint) {
-        case 0xe318:
-          return Icons.restaurant;
-        case 0xe42e:
-          return Icons.breakfast_dining;
-        case 0xe1fc:
-          return Icons.lunch_dining;
-        case 0xe153:
-          return Icons.dinner_dining;
-        case 0xe11b:
-          return Icons.cookie;
-        case 0xe08d:
-          return Icons.cake;
-        case 0xe576:
-          return Icons.spa;
-        case 0xe2bf:
-          return Icons.grass;
-        case 0xead7:
-          return Icons.not_interested;
-        case 0xe381:
-          return Icons.no_drinks;
-        case 0xe425:
-          return Icons.timer;
-        case 0xe0c8:
-          return Icons.celebration;
-        case 0xe25b:
-          return Icons.favorite;
-        case 0xe05b:
-          return Icons.new_releases;
-        default:
-          // Return a default icon when code point is not recognized
-          return Icons.restaurant;
-      }
-    } else {
-      // Handle unknown font families with a default icon
-      return Icons.restaurant;
-    }
   }
 }

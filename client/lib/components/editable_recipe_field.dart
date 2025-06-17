@@ -20,7 +20,7 @@ class EditableRecipeField extends StatefulWidget {
     required this.onSave,
     this.isMultiline = false,
     this.customDisplay,
-    this.icon = Icons.edit_note_outlined,
+    this.icon = Icons.edit_note_rounded,
   });
 
   @override

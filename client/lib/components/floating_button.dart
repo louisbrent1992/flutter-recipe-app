@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:recipease/components/home_button.dart';
+import 'package:recipease/components/button.dart';
 
-class FloatingSaveButton extends StatelessWidget {
+class FloatingButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final Color? backgroundColor;
   final Color? iconColor;
@@ -9,9 +9,10 @@ class FloatingSaveButton extends StatelessWidget {
   final double iconSize;
   final bool showShadow;
   final String? tooltip;
+  final IconData? icon;
   final bool isLoading;
 
-  const FloatingSaveButton({
+  const FloatingButton({
     super.key,
     this.onPressed,
     this.backgroundColor,
@@ -20,6 +21,7 @@ class FloatingSaveButton extends StatelessWidget {
     this.iconSize = 24,
     this.showShadow = true,
     this.tooltip,
+    this.icon,
     this.isLoading = false,
   });
 
@@ -27,27 +29,31 @@ class FloatingSaveButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned(
       right: 16,
-      bottom: 16,
+      bottom: 48,
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 12,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: HomeButton(
-          onPressed: isLoading ? null : onPressed,
+        child: Button(
+          onPressed:
+              onPressed ??
+              () {
+                Navigator.pushNamed(context, '/home');
+              },
           backgroundColor: backgroundColor,
           iconColor: iconColor,
-          tooltip: tooltip ?? 'Save recipe',
+          tooltip: tooltip,
           size: size,
           iconSize: iconSize,
-          showShadow: false, // We handle shadow in the container
-          icon: isLoading ? Icons.hourglass_empty : Icons.save,
+          showShadow: true, // We handle shadow in the container
+          icon: isLoading ? Icons.hourglass_empty : icon ?? Icons.home_rounded,
         ),
       ),
     );

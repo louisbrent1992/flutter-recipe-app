@@ -7,9 +7,9 @@ import '../providers/theme_provider.dart';
 import '../providers/notification_provider.dart';
 import '../providers/subscription_provider.dart';
 import '../theme/theme.dart';
-import '../components/floating_home_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../components/floating_bottom_bar.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -405,18 +405,18 @@ class _SettingsScreenState extends State<SettingsScreen>
         actions: [
           if (_isEditing) ...[
             IconButton(
-              icon: const Icon(Icons.cancel_outlined),
+              icon: const Icon(Icons.cancel_rounded),
               onPressed: _toggleEditing,
               tooltip: 'Cancel editing',
             ),
             IconButton(
-              icon: const Icon(Icons.save_outlined),
+              icon: const Icon(Icons.save_rounded),
               onPressed: _updateProfile,
               tooltip: 'Save changes',
             ),
           ] else ...[
             IconButton(
-              icon: const Icon(Icons.edit_outlined),
+              icon: const Icon(Icons.edit_note_rounded),
               onPressed: _toggleEditing,
               tooltip: 'Edit profile',
             ),
@@ -428,7 +428,12 @@ class _SettingsScreenState extends State<SettingsScreen>
           SingleChildScrollView(
             controller: _scrollController,
             child: Padding(
-              padding: AppSpacing.allResponsive(context),
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.responsive(context),
+                AppSpacing.responsive(context),
+                AppSpacing.responsive(context),
+                30,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -502,7 +507,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   // Appearance Section
                   _buildSectionHeader(
                     title: 'Appearance',
-                    icon: Icons.palette_outlined,
+                    icon: Icons.palette_rounded,
                     colorScheme: colorScheme,
                   ),
 
@@ -534,7 +539,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   // Notifications Section
                   _buildSectionHeader(
                     title: 'Notifications',
-                    icon: Icons.notifications_outlined,
+                    icon: Icons.notifications_rounded,
                     colorScheme: colorScheme,
                   ),
 
@@ -577,7 +582,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                             onChanged:
                                 (value) => notificationProvider
                                     .setNewRecipesNotification(value),
-                            icon: Icons.restaurant_rounded,
+                            icon: Icons.restaurant_menu_rounded,
                             color: theme.colorScheme.onTertiary,
                           ),
                         ],
@@ -628,30 +633,31 @@ class _SettingsScreenState extends State<SettingsScreen>
                   // Links Section
                   _buildSectionHeader(
                     title: 'Quick Links',
-                    icon: Icons.link_rounded,
+                    icon: Icons.restaurant_menu_rounded,
                     colorScheme: colorScheme,
-                  ),
-
-                  SizedBox(height: AppSpacing.md),
-
-                  _buildAnimatedListTile(
-                    title: 'Favorite Recipes',
-                    icon: Icons.favorite_rounded,
-                    color: Colors.red,
-                    onTap: () => Navigator.pushNamed(context, '/favorites'),
                   ),
 
                   SizedBox(height: AppSpacing.md),
                   _buildAnimatedListTile(
                     title: 'My Recipes',
-                    icon: Icons.restaurant_menu,
+                    subtitle: 'Explore your recipes',
+                    icon: Icons.restaurant_menu_rounded,
                     color: Colors.orange,
                     onTap: () => Navigator.pushNamed(context, '/my_recipes'),
                   ),
 
                   SizedBox(height: AppSpacing.md),
                   _buildAnimatedListTile(
+                    title: 'Favorite Recipes',
+                    subtitle: 'View your favorite recipes',
+                    icon: Icons.favorite_rounded,
+                    color: Colors.red,
+                    onTap: () => Navigator.pushNamed(context, '/favorites'),
+                  ),
+                  SizedBox(height: AppSpacing.md),
+                  _buildAnimatedListTile(
                     title: 'Discover Recipes',
+                    subtitle: 'Find new recipe ideas',
                     icon: Icons.explore,
                     color: Colors.blue,
                     onTap: () => Navigator.pushNamed(context, '/discover'),
@@ -806,7 +812,8 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
             ),
           ),
-          const FloatingHomeButton(),
+
+          FloatingBottomBar(),
         ],
       ),
     );
@@ -899,14 +906,14 @@ class _SettingsScreenState extends State<SettingsScreen>
   }) {
     return Row(
       children: [
-        Icon(icon, color: colorScheme.primary, size: 22),
+        Icon(icon, color: colorScheme.secondary, size: 22),
         const SizedBox(width: 8),
         Text(
           title,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: colorScheme.primary,
+            color: colorScheme.secondary,
           ),
         ),
       ],

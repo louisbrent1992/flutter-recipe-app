@@ -18,6 +18,7 @@ import 'package:recipease/screens/auth/register_screen.dart';
 import 'package:recipease/screens/recipe_collections_screen.dart';
 import 'package:recipease/screens/collection_detail_screen.dart';
 import 'package:recipease/screens/subscription_screen.dart';
+import 'package:recipease/screens/add_recipes_to_collection_screen.dart';
 import 'package:recipease/theme/theme.dart';
 import 'package:recipease/providers/auth_provider.dart';
 import 'package:recipease/providers/user_profile_provider.dart';
@@ -27,6 +28,7 @@ import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/providers/subscription_provider.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
+import 'package:recipease/services/collection_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:recipease/services/permission_service.dart';
@@ -160,6 +162,7 @@ class _MyAppState extends State<MyApp> {
         ),
         ChangeNotifierProvider(create: (_) => RecipeProvider()),
         ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
+        ChangeNotifierProvider(create: (_) => CollectionService()),
       ],
       child: Consumer2<AuthService, ThemeProvider>(
         builder: (context, authService, themeProvider, _) {
@@ -225,6 +228,14 @@ class _MyAppState extends State<MyApp> {
               '/collectionDetail':
                   (context) => PersistentBannerLayout(
                     child: CollectionDetailScreen(
+                      collection:
+                          ModalRoute.of(context)!.settings.arguments
+                              as RecipeCollection,
+                    ),
+                  ),
+              '/addRecipesToCollection':
+                  (context) => PersistentBannerLayout(
+                    child: AddRecipesToCollectionScreen(
                       collection:
                           ModalRoute.of(context)!.settings.arguments
                               as RecipeCollection,

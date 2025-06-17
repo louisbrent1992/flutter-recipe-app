@@ -103,7 +103,7 @@ class SubscriptionScreen extends StatelessWidget {
                   ),
                   _buildFeatureItem(
                     context,
-                    icon: Icons.restaurant_menu,
+                    icon: Icons.restaurant_menu_rounded,
                     title: 'Exclusive Recipes',
                     description: 'Access to premium and exclusive recipes',
                   ),

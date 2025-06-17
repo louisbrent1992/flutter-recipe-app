@@ -12,8 +12,6 @@
     
     <!-- Storage -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" /> <!-- For Android 13+ -->
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" /> <!-- For Android 13+ -->
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" /> <!-- For Android 13+ -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" /> <!-- For Android 12 and lower -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" /> <!-- For Android 10 and lower -->
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" /> <!-- For limited access feature -->

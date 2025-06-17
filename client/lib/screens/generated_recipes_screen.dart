@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:recipease/components/floating_home_button.dart';
+import 'package:recipease/components/floating_button.dart';
 import '../providers/recipe_provider.dart';
 import '../components/recipe_card.dart';
 import '../components/custom_app_bar.dart';
@@ -43,7 +43,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
       setState(() {
         _savedRecipes[recipe.id] = false;
       });
-      await recipeProvider.deleteUserRecipe(recipe.id);
+      await recipeProvider.deleteUserRecipe(recipe.id, context);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -152,7 +152,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
               );
             },
           ),
-          const FloatingHomeButton(),
+          const FloatingButton(),
           const BannerAdWidget(),
         ],
       ),

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
-import 'package:recipease/components/floating_add_button.dart';
-import 'package:recipease/components/floating_home_button.dart';
+import 'package:recipease/components/floating_bottom_bar.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/theme/theme.dart';
@@ -193,8 +192,9 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                     desktop: 90,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: colorScheme.primaryContainer
-                                        .withAlpha(77), // 0.3 alpha
+                                    color: Colors.green.withAlpha(
+                                      77,
+                                    ), // 0.3 alpha
                                     borderRadius: BorderRadius.circular(
                                       AppBreakpoints.isMobile(context)
                                           ? 16
@@ -202,14 +202,14 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                     ),
                                   ),
                                   child: Icon(
-                                    Icons.restaurant_rounded,
+                                    Icons.ios_share_rounded,
                                     size: AppSizing.responsiveIconSize(
                                       context,
                                       mobile: 35,
                                       tablet: 40,
                                       desktop: 45,
                                     ),
-                                    color: colorScheme.primary,
+                                    color: Colors.green,
                                   ),
                                 ),
                               ),
@@ -392,7 +392,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                                   .surfaceContainerHighest
                                                   .withAlpha(
                                                     128,
-                                                  ) // Using surfaceVariant as fallback
+                                                  ) // Using surfaceContainerHighest as fallback
                                               : Colors.white,
                                       prefixIcon: Icon(
                                         Icons.link_rounded,
@@ -644,9 +644,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                   ),
                 ),
               ),
-              const FloatingAddButton(),
-
-              const FloatingHomeButton(),
+              FloatingBottomBar(),
             ],
           );
         },

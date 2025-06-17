@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
-import 'package:recipease/components/floating_home_button.dart';
+import 'package:recipease/components/floating_bottom_bar.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/providers/recipe_provider.dart';
@@ -112,6 +112,7 @@ class _AddRecipesToCollectionScreenState
   }
 
   Future<void> _addSelectedRecipesToCollection() async {
+    final collectionService = context.read<CollectionService>();
     if (_selectedRecipes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -132,7 +133,7 @@ class _AddRecipesToCollectionScreenState
       // Add each selected recipe to the collection
       for (final recipe in _selectedRecipes) {
         print("Adding recipe: ${recipe.id} - ${recipe.title}");
-        final result = await CollectionService.addRecipeToCollection(
+        final result = await collectionService.addRecipeToCollection(
           _collection.id,
           recipe,
         );
@@ -302,9 +303,14 @@ class _AddRecipesToCollectionScreenState
                                                     Container(
                                                       width: 60,
                                                       height: 60,
-                                                      color: Colors.grey[300],
-                                                      child: const Icon(
-                                                        Icons.broken_image,
+                                                      color: Colors.black54,
+                                                      child: Icon(
+                                                        color:
+                                                            Theme.of(context)
+                                                                .colorScheme
+                                                                .primary,
+                                                        Icons
+                                                            .restaurant_rounded,
                                                         size: 30,
                                                       ),
                                                     ),
@@ -347,7 +353,7 @@ class _AddRecipesToCollectionScreenState
                         ),
                       ],
                     ),
-                    const FloatingHomeButton(),
+                    const FloatingBottomBar(),
                   ],
                 ),
               ),
@@ -357,7 +363,7 @@ class _AddRecipesToCollectionScreenState
               : FloatingActionButton.extended(
                 onPressed: _addSelectedRecipesToCollection,
                 label: const Text('Add to Collection'),
-                icon: const Icon(Icons.add),
+                icon: const Icon(Icons.add_circle_rounded),
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
               ),

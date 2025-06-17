@@ -412,7 +412,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Row(
         children: [
           Icon(
-            isMet ? Icons.check_circle : Icons.circle_outlined,
+            isMet ? Icons.check_circle : Icons.circle_rounded,
             size: 16,
             color: isMet ? Colors.green : Colors.grey,
           ),

@@ -87,7 +87,7 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
     }
 
     return Positioned(
-      bottom: 0,
+      top: 0,
       left: 0,
       right: 0,
       child: SafeArea(

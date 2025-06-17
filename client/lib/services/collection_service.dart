@@ -6,10 +6,15 @@ import '../models/recipe_collection.dart';
 import '../services/recipe_service.dart';
 import '../services/api_client.dart';
 
-class CollectionService {
+class CollectionService extends ChangeNotifier {
   static final logger = Logger();
   static final ApiClient _api = ApiClient();
   static final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Cache to prevent repeated API calls
+  static List<RecipeCollection>? _cachedCollections;
+  static DateTime? _lastCacheTime;
+  static const Duration _cacheTimeout = Duration(minutes: 2);
 
   // Default collections that all users start with
   static final List<RecipeCollection> _defaultCollections = [
@@ -17,13 +22,31 @@ class CollectionService {
     RecipeCollection.withName('Recently Added'),
   ];
 
-  // Get all collections
-  static Future<List<RecipeCollection>> getCollections() async {
+  // Centralized method to update collections
+  Future<List<RecipeCollection>> updateCollections({
+    bool forceRefresh = false,
+    bool updateSpecialCollections = true,
+  }) async {
     try {
       final user = _auth.currentUser;
       if (user == null) {
         logger.e('No authenticated user found');
         return _defaultCollections;
+      }
+
+      // Always clear cache when force refresh is requested
+      if (forceRefresh) {
+        _clearCache();
+      }
+
+      // Check cache first
+      if (!forceRefresh &&
+          _cachedCollections != null &&
+          _lastCacheTime != null) {
+        final timeSinceCache = DateTime.now().difference(_lastCacheTime!);
+        if (timeSinceCache < _cacheTimeout) {
+          return _cachedCollections!;
+        }
       }
 
       final response = await _api.authenticatedGet<List<dynamic>>(
@@ -35,7 +58,7 @@ class CollectionService {
         if (response.data!.isEmpty) {
           // No collections found, create default collections
           collections = _defaultCollections;
-          await _saveCollections(collections);
+          await saveCollections(collections);
         } else {
           collections =
               response.data!
@@ -57,28 +80,55 @@ class CollectionService {
 
           // Save if we added any missing collections
           if (!hasFavorites || !hasRecentlyAdded) {
-            await _saveCollections(collections);
+            await saveCollections(collections);
           }
         }
       } else {
         logger.e('Error getting collections: ${response.message}');
         collections = _defaultCollections;
-        await _saveCollections(collections);
+        await saveCollections(collections);
       }
 
-      // Update the recently added collection with current data
-      await _updateRecentlyAddedCollection(collections);
-      await _updateFavoritesCollection(collections);
+      // Only update special collections if explicitly requested
+      if (updateSpecialCollections) {
+        // Update the recently added collection with current data
+        await updateRecentlyAddedCollection(collections);
+        await updateFavoritesCollection(collections);
+      }
+
+      // Cache the result AFTER all updates are complete
+      _cachedCollections = collections;
+      _lastCacheTime = DateTime.now();
+
+      // Notify listeners of the update
+      notifyListeners();
 
       return collections;
     } catch (e) {
-      logger.e('Error getting collections: $e');
+      logger.e('Error updating collections: $e');
       return _defaultCollections;
     }
   }
 
+  // Get all collections with caching
+  Future<List<RecipeCollection>> getCollections({
+    bool forceRefresh = false,
+    bool updateSpecialCollections = true,
+  }) async {
+    return updateCollections(
+      forceRefresh: forceRefresh,
+      updateSpecialCollections: updateSpecialCollections,
+    );
+  }
+
+  // Clear cache when collections are modified
+  static void _clearCache() {
+    _cachedCollections = null;
+    _lastCacheTime = null;
+  }
+
   // Get a specific collection by ID
-  static Future<RecipeCollection?> getCollection(String id) async {
+  Future<RecipeCollection?> getCollection(String id) async {
     try {
       final user = _auth.currentUser;
       if (user == null) {
@@ -103,11 +153,7 @@ class CollectionService {
   }
 
   // Create a new collection
-  static Future<RecipeCollection?> createCollection(
-    String name, {
-    Color? color,
-    IconData? icon,
-  }) async {
+  Future<RecipeCollection?> createCollection(String name) async {
     try {
       logger.i('Creating collection: $name');
       final user = _auth.currentUser;
@@ -116,7 +162,7 @@ class CollectionService {
         return null;
       }
 
-      // Create a map with only non-null values
+      // Create a collection with predefined icon (and optionally custom color)
       final Map<String, dynamic> body =
           RecipeCollection.withName(name).toJson();
 
@@ -126,6 +172,8 @@ class CollectionService {
       );
 
       if (response.success && response.data != null) {
+        // Update collections after creating a new one
+        await updateCollections(forceRefresh: true);
         return RecipeCollection.fromJson(response.data!);
       } else {
         throw Exception(response.message ?? 'Failed to create collection');
@@ -137,11 +185,10 @@ class CollectionService {
   }
 
   // Update an existing collection
-  static Future<RecipeCollection?> updateCollection(
+  Future<RecipeCollection?> updateCollection(
     String id, {
     String? name,
     Color? color,
-    IconData? icon,
   }) async {
     try {
       logger.i('Updating collection: $id');
@@ -155,13 +202,6 @@ class CollectionService {
       final Map<String, dynamic> body = {};
       if (name != null) body['name'] = name;
       if (color != null) body['color'] = color.toARGB32();
-      if (icon != null) {
-        body['icon'] = {
-          'codePoint': icon.codePoint,
-          'fontFamily': icon.fontFamily,
-          'fontPackage': icon.fontPackage,
-        };
-      }
 
       final response = await _api.authenticatedPut<Map<String, dynamic>>(
         'collections/$id',
@@ -169,6 +209,8 @@ class CollectionService {
       );
 
       if (response.success && response.data != null) {
+        // Update collections after modifying one
+        await updateCollections(forceRefresh: true);
         return RecipeCollection.fromJson(response.data!);
       } else {
         throw Exception(response.message ?? 'Failed to update collection');
@@ -180,7 +222,7 @@ class CollectionService {
   }
 
   // Delete a collection
-  static Future<bool> deleteCollection(String id) async {
+  Future<bool> deleteCollection(String id) async {
     try {
       final user = _auth.currentUser;
       if (user == null) {
@@ -189,6 +231,10 @@ class CollectionService {
       }
 
       final response = await _api.authenticatedDelete('collections/$id');
+      if (response.success) {
+        // Update collections after deleting one
+        await updateCollections(forceRefresh: true);
+      }
       return response.success;
     } catch (e) {
       logger.e('Error deleting collection: $e');
@@ -197,10 +243,7 @@ class CollectionService {
   }
 
   // Add a recipe to a collection
-  static Future<bool> addRecipeToCollection(
-    String collectionId,
-    Recipe recipe,
-  ) async {
+  Future<bool> addRecipeToCollection(String collectionId, Recipe recipe) async {
     try {
       final user = _auth.currentUser;
       if (user == null) {
@@ -208,8 +251,8 @@ class CollectionService {
         return false;
       }
 
-      // Get all collections to find the favorites collection
-      final collections = await getCollections();
+      // Get all collections to find the favorites collection (use cached version)
+      final collections = await getCollections(updateSpecialCollections: false);
       final favoritesCollection = collections.firstWhere(
         (c) => c.name == 'Favorites',
         orElse: () => RecipeCollection.withName('Favorites'),
@@ -226,6 +269,8 @@ class CollectionService {
       );
 
       if (response.success) {
+        // Update collections after adding a recipe
+        await updateCollections(forceRefresh: true);
         return true;
       } else {
         throw Exception(
@@ -239,7 +284,7 @@ class CollectionService {
   }
 
   // Remove a recipe from a collection
-  static Future<bool> removeRecipeFromCollection(
+  Future<bool> removeRecipeFromCollection(
     String collectionId,
     String recipeId,
   ) async {
@@ -250,8 +295,8 @@ class CollectionService {
         return false;
       }
 
-      // Get all collections to find the favorites collection
-      final collections = await getCollections();
+      // Get all collections to find the favorites collection (use cached version)
+      final collections = await getCollections(updateSpecialCollections: false);
       final favoritesCollection = collections.firstWhere(
         (c) => c.name == 'Favorites',
         orElse: () => RecipeCollection.withName('Favorites'),
@@ -266,6 +311,10 @@ class CollectionService {
         'collections/$collectionId/recipes/$recipeId',
       );
 
+      if (response.success) {
+        // Update collections after removing a recipe
+        await updateCollections(forceRefresh: true);
+      }
       return response.success;
     } catch (e) {
       logger.e('Error removing recipe from collection: $e');
@@ -274,9 +323,7 @@ class CollectionService {
   }
 
   // Helper method to save collections to server
-  static Future<void> _saveCollections(
-    List<RecipeCollection> collections,
-  ) async {
+  Future<void> saveCollections(List<RecipeCollection> collections) async {
     try {
       final user = _auth.currentUser;
       if (user == null) {
@@ -295,9 +342,9 @@ class CollectionService {
   }
 
   // Reset to default collections (for testing/development)
-  static Future<bool> resetToDefaults() async {
+  Future<bool> resetToDefaults() async {
     try {
-      await _saveCollections(_defaultCollections);
+      await saveCollections(_defaultCollections);
       return true;
     } catch (e) {
       logger.e('Error resetting collections: $e');
@@ -305,8 +352,8 @@ class CollectionService {
     }
   }
 
-  // Update the "Recently Added" collection with recipes from the last 7 days
-  static Future<void> _updateRecentlyAddedCollection(
+  // Update the "Recently Added" collection with the last 50 recipes
+  Future<void> updateRecentlyAddedCollection(
     List<RecipeCollection> collections,
   ) async {
     try {
@@ -321,7 +368,7 @@ class CollectionService {
         return;
       }
 
-      // Get recipes from last 7 days
+      // Get the last 50 recipes
       final recentRecipesResponse =
           await RecipeService.getRecentlyAddedRecipes();
 
@@ -341,11 +388,26 @@ class CollectionService {
         // Update the collection in the list
         collections[recentlyAddedIndex] = updatedCollection;
 
-        // Update the collection on the server
-        await updateCollection(
-          updatedCollection.id,
-          name: updatedCollection.name,
-        );
+        // Only update the collection on the server if there are actual changes
+        final currentCollection = collections[recentlyAddedIndex];
+        final hasChanged =
+            currentCollection.recipes.length != recentRecipes.length ||
+            !currentCollection.recipes.every(
+              (recipe) => recentRecipes.any((recent) => recent.id == recipe.id),
+            );
+
+        if (hasChanged) {
+          // Update the collection on the server with the full collection data
+          final tempCache = _cachedCollections;
+          final tempCacheTime = _lastCacheTime;
+          await _api.authenticatedPut(
+            'collections/${updatedCollection.id}',
+            body: updatedCollection.toJson(),
+          );
+          // Restore cache since this is an internal update
+          _cachedCollections = tempCache;
+          _lastCacheTime = tempCacheTime;
+        }
       } else {
         // Log the error but don't throw - just keep the existing collection
         logger.e(
@@ -358,7 +420,7 @@ class CollectionService {
     }
   }
 
-  static Future<void> _updateFavoritesCollection(
+  Future<void> updateFavoritesCollection(
     List<RecipeCollection> collections,
   ) async {
     try {
@@ -430,11 +492,26 @@ class CollectionService {
           // Update the collection in the list
           collections[favoritesIndex] = updatedCollection;
 
-          // Update the collection on the server
-          await updateCollection(
-            updatedCollection.id,
-            name: updatedCollection.name,
-          );
+          // Only update the collection on the server if there are actual changes
+          final currentCollection = collections[favoritesIndex];
+          final hasChanged =
+              currentCollection.recipes.length != favoriteRecipes.length ||
+              !currentCollection.recipes.every(
+                (recipe) => favoriteRecipes.any((fav) => fav.id == recipe.id),
+              );
+
+          if (hasChanged) {
+            // Update the collection on the server with the full collection data
+            final tempCache = _cachedCollections;
+            final tempCacheTime = _lastCacheTime;
+            await _api.authenticatedPut(
+              'collections/${updatedCollection.id}',
+              body: updatedCollection.toJson(),
+            );
+            // Restore cache since this is an internal update
+            _cachedCollections = tempCache;
+            _lastCacheTime = tempCacheTime;
+          }
         } else {
           logger.e('Failed to get favorites: ${favoritesResponse.message}');
         }
@@ -449,7 +526,7 @@ class CollectionService {
   }
 
   // Update a collection directly with the given recipes
-  static Future<bool> updateCollectionRecipes(
+  Future<bool> updateCollectionRecipes(
     String collectionName,
     List<Recipe> recipes,
   ) async {
@@ -478,7 +555,7 @@ class CollectionService {
 
         // Add to collections and save
         collections.add(updatedCollection);
-        await _saveCollections(collections);
+        await saveCollections(collections);
         return true;
       }
 
@@ -504,9 +581,7 @@ class CollectionService {
   }
 
   // Refresh collections after recipe deletion to ensure consistency
-  static Future<void> refreshCollectionsAfterRecipeDeletion(
-    String recipeId,
-  ) async {
+  Future<void> refreshCollectionsAfterRecipeDeletion(String recipeId) async {
     try {
       final user = _auth.currentUser;
       if (user == null) {
@@ -514,25 +589,9 @@ class CollectionService {
         return;
       }
 
-      // Get all collections and update them to remove the deleted recipe
-      final collections = await getCollections();
-
-      for (var collection in collections) {
-        // Check if this collection contains the deleted recipe
-        final hasRecipe = collection.recipes.any((r) => r.id == recipeId);
-
-        if (hasRecipe) {
-          // Remove the recipe from this collection
-          final updatedRecipes =
-              collection.recipes.where((r) => r.id != recipeId).toList();
-
-          // Update the collection on the server
-          await updateCollectionRecipes(collection.name, updatedRecipes);
-          logger.i(
-            'Removed deleted recipe $recipeId from collection ${collection.name}',
-          );
-        }
-      }
+      // Update collections after recipe deletion
+      await updateCollections(forceRefresh: true);
+      logger.i('Collections updated after recipe $recipeId deletion');
     } catch (e) {
       logger.e('Error refreshing collections after recipe deletion: $e');
       // Continue silently - this is a cleanup operation

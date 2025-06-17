@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/editable_recipe_field.dart';
+import 'package:recipease/components/floating_button.dart';
 import 'package:recipease/components/recipe_tags.dart';
-import 'package:recipease/components/floating_home_button.dart';
-import 'package:recipease/components/floating_save_button.dart';
 import 'package:recipease/models/recipe.dart';
-import 'package:recipease/screens/my_recipes_screen.dart';
 import 'package:recipease/components/html_description.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
@@ -16,6 +14,8 @@ import '../providers/recipe_provider.dart';
 import '../components/error_display.dart';
 import '../models/api_response.dart';
 import '../theme/theme.dart';
+import 'package:recipease/components/floating_bottom_bar.dart';
+import '../utils/image_utils.dart';
 
 class RecipeEditScreen extends StatefulWidget {
   final Recipe? recipe;
@@ -32,7 +32,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   late TextEditingController _descriptionController;
   late TextEditingController _instructionsController;
   late TextEditingController _ingredientsController;
-  bool _isLoading = false;
   ApiResponse<Recipe>? _error;
   Recipe currentRecipe = Recipe();
   final TextEditingController _imageController = TextEditingController();
@@ -114,8 +113,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   Future<void> _saveRecipe() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
-
     try {
       final recipeProvider = Provider.of<RecipeProvider>(
         context,
@@ -150,12 +147,58 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
       if (widget.recipe?.toEdit == true) {
         final updatedRecipe = await recipeProvider.updateUserRecipe(recipe);
         if (updatedRecipe != null && mounted) {
-          Navigator.pop(context, updatedRecipe);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              action: SnackBarAction(
+                label: 'View Recipe',
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/recipeDetails',
+                    arguments: updatedRecipe,
+                  );
+                },
+              ),
+              content: Text(
+                'Recipe updated successfully. View it now or continue editing.',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
         }
       } else {
-        final newRecipe = await recipeProvider.createUserRecipe(recipe);
+        final newRecipe = await recipeProvider.createUserRecipe(
+          recipe,
+          context,
+        );
         if (newRecipe != null && mounted) {
-          Navigator.pop(context, newRecipe);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              action: SnackBarAction(
+                label: 'View Recipe',
+
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/recipeDetails',
+                    arguments: newRecipe,
+                  );
+                },
+              ),
+              content: Text(
+                'Recipe created successfully. You can view it now.',
+                style: TextStyle(color: Colors.white),
+              ),
+              duration: Duration(seconds: 5),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+              ),
+            ),
+          );
         }
       }
     } catch (e) {
@@ -165,9 +208,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
         });
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) {}
     }
   }
 
@@ -277,7 +318,12 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
               child: SingleChildScrollView(
                 controller: _scrollController,
                 child: Padding(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.responsive(context),
+                    AppSpacing.responsive(context),
+                    AppSpacing.responsive(context),
+                    60,
+                  ),
                   child: Consumer<RecipeProvider>(
                     builder: (context, recipeProvider, _) {
                       if (recipeProvider.error != null) {
@@ -328,71 +374,40 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                                         CircularProgressIndicator(),
                                                   ),
                                                 )
-                                                : Image.network(
-                                                  currentRecipe.imageUrl,
+                                                : ImageUtils.buildRecipeImage(
+                                                  imageUrl:
+                                                      currentRecipe.imageUrl,
+                                                  width: double.infinity,
+                                                  height: 250,
                                                   fit: BoxFit.cover,
-                                                  errorBuilder: (
-                                                    context,
-                                                    error,
-                                                    stackTrace,
-                                                  ) {
-                                                    return Container(
-                                                      width: double.infinity,
-                                                      height: 250,
-                                                      color: Colors.grey[300],
-                                                      child: Column(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          const Icon(
-                                                            Icons.broken_image,
-                                                            size: 64,
-                                                            color: Colors.grey,
-                                                          ),
-                                                          const SizedBox(
-                                                            height: 8,
-                                                          ),
-                                                          Text(
-                                                            'Failed to load image',
-                                                            style: TextStyle(
-                                                              color:
-                                                                  Colors
-                                                                      .grey[600],
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    );
-                                                  },
-                                                  loadingBuilder: (
-                                                    context,
-                                                    child,
-                                                    loadingProgress,
-                                                  ) {
-                                                    if (loadingProgress ==
-                                                        null) {
-                                                      return child;
-                                                    }
-                                                    return Container(
-                                                      width: double.infinity,
-                                                      height: 250,
-                                                      color: Colors.grey[200],
-                                                      child: Center(
-                                                        child: CircularProgressIndicator(
-                                                          value:
-                                                              loadingProgress
-                                                                          .expectedTotalBytes !=
-                                                                      null
-                                                                  ? loadingProgress
-                                                                          .cumulativeBytesLoaded /
-                                                                      loadingProgress
-                                                                          .expectedTotalBytes!
-                                                                  : null,
+                                                  errorWidget: Container(
+                                                    width: double.infinity,
+                                                    height: 250,
+                                                    color: Colors.grey[300],
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        const Icon(
+                                                          Icons.restaurant,
+                                                          size: 64,
+                                                          color: Colors.grey,
                                                         ),
-                                                      ),
-                                                    );
-                                                  },
+                                                        const SizedBox(
+                                                          height: 8,
+                                                        ),
+                                                        Text(
+                                                          'Failed to load image',
+                                                          style: TextStyle(
+                                                            color:
+                                                                Colors
+                                                                    .grey[600],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
                                                 ),
                                       ),
                                     ),
@@ -414,18 +429,18 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                               color:
                                                   Theme.of(
                                                     context,
-                                                  ).colorScheme.secondary,
+                                                  ).colorScheme.primary,
                                               shape: BoxShape.circle,
                                             ),
                                             child: Icon(
                                               _isUploading
                                                   ? Icons.upload
-                                                  : Icons.camera_alt_rounded,
+                                                  : Icons.add_a_photo_rounded,
                                               size: 24,
                                               color:
                                                   Theme.of(
                                                     context,
-                                                  ).colorScheme.onSecondary,
+                                                  ).colorScheme.onPrimary,
                                             ),
                                           ),
                                         ),
@@ -695,13 +710,9 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                   if (currentRecipe.id.isNotEmpty)
                                     ElevatedButton(
                                       onPressed:
-                                          () => Navigator.push(
+                                          () => Navigator.pushNamed(
                                             context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (context) =>
-                                                      const MyRecipesScreen(),
-                                            ),
+                                            '/myRecipes',
                                           ),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor:
@@ -724,8 +735,12 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
               ),
             ),
           ),
-          const FloatingHomeButton(),
-          FloatingSaveButton(onPressed: _saveRecipe, isLoading: _isLoading),
+          FloatingBottomBar(),
+          FloatingButton(
+            onPressed: () => _saveRecipe(),
+            tooltip: 'Save Recipe',
+            icon: Icons.save,
+          ),
         ],
       ),
     );

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/theme.dart';
 
-class HomeButton extends StatefulWidget {
+class Button extends StatefulWidget {
   final VoidCallback? onPressed;
   final Color? backgroundColor;
   final Color? iconColor;
@@ -10,8 +10,9 @@ class HomeButton extends StatefulWidget {
   final bool showShadow;
   final IconData icon;
   final String? tooltip;
+  final String? position;
 
-  const HomeButton({
+  const Button({
     super.key,
     this.onPressed,
     this.backgroundColor,
@@ -21,14 +22,14 @@ class HomeButton extends StatefulWidget {
     this.showShadow = true,
     this.icon = Icons.home_rounded,
     this.tooltip,
+    this.position,
   });
 
   @override
-  State<HomeButton> createState() => _HomeButtonState();
+  State<Button> createState() => _ButtonState();
 }
 
-class _HomeButtonState extends State<HomeButton>
-    with SingleTickerProviderStateMixin {
+class _ButtonState extends State<Button> with SingleTickerProviderStateMixin {
   bool _isHovered = false;
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -66,9 +67,8 @@ class _HomeButtonState extends State<HomeButton>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final backgroundColor =
-        widget.backgroundColor ?? theme.colorScheme.secondary;
-    final iconColor = widget.iconColor ?? theme.colorScheme.primary;
+    final backgroundColor = widget.backgroundColor ?? theme.colorScheme.primary;
+    final iconColor = widget.iconColor ?? theme.colorScheme.onPrimary;
 
     return MouseRegion(
       onEnter: (_) => _handleHover(true),

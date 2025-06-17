@@ -272,26 +272,25 @@ class RecipeService {
     }
   }
 
-  /// Get recipes added in the last 7 days
+  /// Get the last 50 recipes added to the user's collection
   static Future<ApiResponse<List<Recipe>>> getRecentlyAddedRecipes() async {
     try {
       // Get all user recipes first
       final response = await getUserRecipes(
-        limit: 20,
-      ); // Use a larger limit to get most recipes
+        limit: 50, // Get the last 50 recipes
+      );
 
       if (response.success && response.data != null) {
         final recipesList = response.data!['recipes'] as List<Recipe>;
-        final now = DateTime.now();
-        final oneWeekAgo = now.subtract(const Duration(days: 7));
 
-        // Filter recipes created in the last 7 days
+        // Sort recipes by creation date in descending order (newest first)
         final recentRecipes =
-            recipesList
-                .where((recipe) => recipe.createdAt.isAfter(oneWeekAgo))
-                .toList();
+            // ignore: unnecessary_null_comparison
+            recipesList.where((recipe) => recipe.createdAt != null).toList()
+              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-        return ApiResponse.success(recentRecipes);
+        // Take only the first 50 recipes
+        return ApiResponse.success(recentRecipes.take(50).toList());
       }
 
       return ApiResponse.error(

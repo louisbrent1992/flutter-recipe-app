@@ -41,18 +41,18 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       title:
           useLogo
-              ? Image.asset('icons/logo.png', height: logoHeight)
+              ? Image.asset('assets/icons/logo.png', height: logoHeight)
               : Text(
                 title,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: foregroundColor ?? theme.colorScheme.onPrimary,
+                  color: foregroundColor ?? theme.colorScheme.onSurface,
                 ),
               ),
       centerTitle: centerTitle,
       automaticallyImplyLeading: automaticallyImplyLeading,
-      backgroundColor: backgroundColor ?? theme.colorScheme.primary,
-      foregroundColor: foregroundColor ?? theme.colorScheme.onPrimary,
+
+      foregroundColor: foregroundColor ?? theme.colorScheme.onSurface,
       elevation: elevation,
       flexibleSpace: flexibleSpace,
       bottom: bottom,
@@ -63,7 +63,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
       actions: actions,
       iconTheme: IconThemeData(
-        color: foregroundColor ?? theme.colorScheme.onPrimary,
+        color: foregroundColor ?? theme.colorScheme.onSurface,
       ),
       // Add support for system UI overlay
       systemOverlayStyle:

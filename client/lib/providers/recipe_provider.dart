@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/recipe.dart';
 import '../models/api_response.dart';
 import '../services/recipe_service.dart';
@@ -227,18 +228,32 @@ class RecipeProvider extends ChangeNotifier {
   }
 
   // Create a new user recipe
-  Future<Recipe?> createUserRecipe(Recipe recipe) async {
+  Future<Recipe?> createUserRecipe(Recipe recipe, BuildContext context) async {
+    // Check for duplicates before attempting to save
+    if (isDuplicateRecipe(recipe)) {
+      _setError('This recipe already exists in your collection');
+      return null;
+    }
+
     _setLoading(true);
     clearError();
 
     try {
       final response = await RecipeService.createUserRecipe(recipe);
 
-      if (response.success && response.data != null) {
-        final newRecipe = response.data;
-        _userRecipes.add(newRecipe!);
-        notifyListeners();
-        return newRecipe;
+      if (context.mounted) {
+        final collectionService = context.read<CollectionService>();
+
+        if (response.success && response.data != null) {
+          final newRecipe = response.data;
+          _userRecipes.add(newRecipe!);
+
+          // Force refresh collections to update recently added
+          await collectionService.getCollections(forceRefresh: true);
+
+          notifyListeners();
+          return newRecipe;
+        }
       } else {
         _setError(response.message ?? 'Failed to create recipe');
         return null;
@@ -249,6 +264,7 @@ class RecipeProvider extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+    return null;
   }
 
   // Update an existing user recipe
@@ -289,32 +305,36 @@ class RecipeProvider extends ChangeNotifier {
   }
 
   // Delete a user recipe
-  Future<bool> deleteUserRecipe(String id) async {
+  Future<bool> deleteUserRecipe(String id, BuildContext context) async {
     _setLoading(true);
     clearError();
 
     try {
       final response = await RecipeService.deleteUserRecipe(id);
 
-      if (response.success) {
-        // Remove from all local lists
-        _userRecipes.removeWhere((recipe) => recipe.id == id);
-        _favoriteRecipes.removeWhere((recipe) => recipe.id == id);
-        _generatedRecipes.removeWhere((recipe) => recipe.id == id);
+      if (context.mounted) {
+        final collectionService = context.read<CollectionService>();
 
-        // Clear imported recipe if it matches
-        if (_importedRecipe?.id == id) {
-          _importedRecipe = null;
+        if (response.success) {
+          // Remove from all local lists
+          _userRecipes.removeWhere((recipe) => recipe.id == id);
+          _favoriteRecipes.removeWhere((recipe) => recipe.id == id);
+          _generatedRecipes.removeWhere((recipe) => recipe.id == id);
+
+          // Clear imported recipe if it matches
+          if (_importedRecipe?.id == id) {
+            _importedRecipe = null;
+          }
+
+          // Refresh collections to ensure the deleted recipe is removed from all collections
+          await collectionService.refreshCollectionsAfterRecipeDeletion(id);
+
+          notifyListeners();
+          return true;
+        } else {
+          _setError(response.message ?? 'Failed to delete recipe');
+          return false;
         }
-
-        // Refresh collections to ensure the deleted recipe is removed from all collections
-        await CollectionService.refreshCollectionsAfterRecipeDeletion(id);
-
-        notifyListeners();
-        return true;
-      } else {
-        _setError(response.message ?? 'Failed to delete recipe');
-        return false;
       }
     } catch (e) {
       _setError(e.toString());
@@ -322,52 +342,73 @@ class RecipeProvider extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+    return false;
   }
 
   // Toggle favorite status
-  Future<bool> toggleFavorite(String id, bool isFavorite) async {
+  Future<bool> toggleFavorite(
+    String id,
+    bool isFavorite,
+    BuildContext context,
+  ) async {
     clearError();
 
     try {
       final response = await RecipeService.toggleFavoriteStatus(id, isFavorite);
 
-      if (response.success) {
-        // Update in user recipes list - handle string/number ID comparison
-        final index = _userRecipes.indexWhere(
-          (r) => r.id.toString() == id.toString(),
-        );
-        if (index != -1) {
-          _userRecipes[index] = _userRecipes[index].copyWith(
-            isFavorite: isFavorite,
+      if (context.mounted) {
+        final collectionService = context.read<CollectionService>();
+
+        if (response.success) {
+          // Update in user recipes list - handle string/number ID comparison
+          final index = _userRecipes.indexWhere(
+            (r) => r.id.toString() == id.toString(),
           );
-        }
-
-        // Update favorites list
-        if (isFavorite) {
-          // If not already in favorites and marking as favorite, add it
-          if (!_favoriteRecipes.any((r) => r.id.toString() == id.toString()) &&
-              index != -1) {
-            _favoriteRecipes.add(_userRecipes[index]);
+          if (index != -1) {
+            _userRecipes[index] = _userRecipes[index].copyWith(
+              isFavorite: isFavorite,
+            );
           }
+
+          // Update favorites list
+          if (isFavorite) {
+            // If not already in favorites and marking as favorite, add it
+            if (!_favoriteRecipes.any(
+                  (r) => r.id.toString() == id.toString(),
+                ) &&
+                index != -1) {
+              final recipeToAdd = _userRecipes[index];
+              _favoriteRecipes.add(recipeToAdd);
+              // Add to favorites collection using the correct recipe
+              await collectionService.addRecipeToCollection(
+                'Favorites',
+                recipeToAdd,
+              );
+            }
+          } else {
+            // If removing from favorites, remove from list
+            _favoriteRecipes.removeWhere(
+              (r) => r.id.toString() == id.toString(),
+            );
+            // Remove from favorites collection
+            await collectionService.removeRecipeFromCollection('Favorites', id);
+          }
+
+          // Force refresh the favorites collection to ensure it's in sync
+          await collectionService.getCollections(forceRefresh: true);
+
+          notifyListeners();
+          return true;
         } else {
-          // If removing from favorites, remove from list
-          _favoriteRecipes.removeWhere((r) => r.id.toString() == id.toString());
+          _setError(response.message ?? 'Failed to toggle favorite status');
+          return false;
         }
-
-        notifyListeners();
-
-        // Refresh the favorites from the server to ensure collections are updated
-        await loadFavoriteRecipes();
-
-        return true;
-      } else {
-        _setError(response.message ?? 'Failed to update favorite status');
-        return false;
       }
     } catch (e) {
       _setError(e.toString());
       return false;
     }
+    return false;
   }
 
   // Load favorite recipes

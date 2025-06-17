@@ -34,7 +34,7 @@ class RecipeCard extends StatefulWidget {
     this.showCookingTime = true,
     this.showServings = true,
     this.showEditButton = false,
-    this.showFavoriteButton = true,
+    this.showFavoriteButton = false,
     this.showShareButton = true,
     this.onRecipeUpdated,
   });
@@ -93,6 +93,7 @@ class _RecipeCardState extends State<RecipeCard> {
         await recipeProvider.toggleFavorite(
           widget.recipe.id,
           !isCurrentlyFavorite,
+          context,
         );
 
         if (mounted) {
@@ -112,6 +113,7 @@ class _RecipeCardState extends State<RecipeCard> {
                           await recipeProvider.toggleFavorite(
                             widget.recipe.id,
                             true,
+                            context,
                           );
                         },
                         textColor: Colors.white,
@@ -214,7 +216,7 @@ Shared from Recipe App
 
     if (confirm == true && mounted) {
       final profile = context.read<RecipeProvider>();
-      await profile.deleteUserRecipe(widget.recipe.id);
+      await profile.deleteUserRecipe(widget.recipe.id, context);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -320,7 +322,7 @@ Shared from Recipe App
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.timer_outlined,
+                    Icons.timer_rounded,
                     size: AppSizing.responsiveIconSize(
                       context,
                       mobile: 12,
@@ -375,7 +377,7 @@ Shared from Recipe App
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.restaurant_outlined,
+                  Icons.restaurant_menu_rounded,
                   size: AppSizing.responsiveIconSize(
                     context,
                     mobile: 12,
@@ -501,7 +503,7 @@ Shared from Recipe App
                     children: [
                       if (widget.showEditButton)
                         _buildActionButton(
-                          icon: Icons.edit_outlined,
+                          icon: Icons.edit_note_rounded,
                           onTap: () async {
                             final result = await Navigator.pushNamed(
                               context,
@@ -547,7 +549,7 @@ Shared from Recipe App
                         SizedBox(width: AppSpacing.xs),
                       if (widget.showShareButton)
                         _buildActionButton(
-                          icon: Icons.share_outlined,
+                          icon: Icons.share_rounded,
                           onTap: _shareRecipe,
                           tooltip: 'Share recipe',
                           isLoading: _isShareLoading,
@@ -565,7 +567,7 @@ Shared from Recipe App
                         SizedBox(width: AppSpacing.xs),
                       if (widget.showSaveButton && widget.onSave != null)
                         _buildActionButton(
-                          icon: Icons.save_outlined,
+                          icon: Icons.save_rounded,
                           onTap: widget.onSave!,
                           tooltip: 'Save recipe',
                         ),

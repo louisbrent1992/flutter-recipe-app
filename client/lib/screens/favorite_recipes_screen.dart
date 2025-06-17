@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
+import 'package:recipease/components/floating_button.dart';
 import 'package:recipease/providers/auth_provider.dart';
 import '../providers/recipe_provider.dart';
 import '../components/recipe_card.dart';
-import '../components/floating_home_button.dart';
+import '../components/floating_bottom_bar.dart';
 
 class FavoriteRecipesScreen extends StatefulWidget {
   const FavoriteRecipesScreen({super.key});
@@ -97,7 +98,12 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
               ),
             ],
           ),
-          const FloatingHomeButton(),
+          FloatingBottomBar(),
+          FloatingButton(
+            onPressed: () => Navigator.pushNamed(context, '/myRecipes'),
+            tooltip: 'My Recipes',
+            icon: Icons.add_rounded,
+          ),
         ],
       ),
     );

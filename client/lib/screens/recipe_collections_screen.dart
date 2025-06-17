@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
-import 'package:recipease/components/floating_add_button.dart';
-import 'package:recipease/components/floating_home_button.dart';
+import 'package:recipease/components/floating_bottom_bar.dart';
+import 'package:recipease/components/floating_button.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
 import '../theme/theme.dart';
@@ -36,12 +37,20 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     _loadCollections();
   }
 
-  Future<void> _loadCollections() async {
+  Future<void> _loadCollections({bool forceRefresh = false}) async {
+    final collectionService = Provider.of<CollectionService>(
+      context,
+      listen: false,
+    );
     setState(() => _isLoading = true);
 
     try {
       // Fetch collections using the service
-      final collections = await CollectionService.getCollections();
+      final collections = await collectionService.getCollections(
+        forceRefresh: forceRefresh,
+        updateSpecialCollections:
+            forceRefresh, // Only update special collections when explicitly refreshing
+      );
 
       if (mounted) {
         setState(() {
@@ -111,11 +120,15 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
 
   Future<void> _addCategory(String name) async {
     if (name.isEmpty) return;
+    final collectionService = Provider.of<CollectionService>(
+      context,
+      listen: false,
+    );
 
     setState(() => _isLoading = true);
 
     try {
-      final newCollection = await CollectionService.createCollection(name);
+      final newCollection = await collectionService.createCollection(name);
 
       if (newCollection != null) {
         // Refresh collections to show the new one
@@ -148,6 +161,10 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
   }
 
   Future<void> _deleteCategory(String id, String name) async {
+    final collectionService = Provider.of<CollectionService>(
+      context,
+      listen: false,
+    );
     final confirm = await showDialog<bool>(
       context: context,
       builder:
@@ -177,7 +194,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     if (confirm == true && mounted) {
       setState(() => _isLoading = true);
       try {
-        final success = await CollectionService.deleteCollection(id);
+        final success = await collectionService.deleteCollection(id);
         if (success) {
           await _loadCollections();
           if (mounted) {
@@ -188,7 +205,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                 action: SnackBarAction(
                   label: 'Undo',
                   onPressed: () async {
-                    await CollectionService.createCollection(name);
+                    await collectionService.createCollection(name);
                     await _loadCollections();
                   },
                   textColor: Colors.white,
@@ -222,6 +239,12 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     super.dispose();
   }
 
+  // Helper method to check if a collection is a default collection
+  bool _isDefaultCollection(RecipeCollection collection) {
+    final defaultCollectionNames = ['Favorites', 'Recently Added'];
+    return defaultCollectionNames.contains(collection.name);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -253,11 +276,16 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : RefreshIndicator(
-                  onRefresh: _loadCollections,
+                  onRefresh: () => _loadCollections(forceRefresh: true),
                   child: SingleChildScrollView(
                     controller: _scrollController,
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpacing.responsive(context),
+                        AppSpacing.responsive(context),
+                        AppSpacing.responsive(context),
+                        70,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -274,9 +302,13 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                   ),
                 ),
 
-            // Add category FAB
-            FloatingAddButton(onPressed: _showAddCategoryDialog),
-            const FloatingHomeButton(),
+            // Floating bottom bar with add action
+            FloatingBottomBar(),
+            FloatingButton(
+              onPressed: () => _showAddCategoryDialog(),
+              tooltip: 'Add Collection',
+              icon: Icons.add_rounded,
+            ),
           ],
         ),
       ),
@@ -360,7 +392,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.folder_outlined,
+              Icons.folder_rounded,
               size: AppSizing.responsiveIconSize(
                 context,
                 mobile: 48,
@@ -501,20 +533,25 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Delete button in top right corner
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: IconButton(
-                      icon: Icon(Icons.delete_outline, size: deleteButtonSize),
-                      onPressed:
-                          () => _deleteCategory(collection.id, collection.name),
-                      tooltip: 'Delete category',
-                      color: Colors.grey.shade600,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      visualDensity: VisualDensity.compact,
+                  // Delete button in top right corner (only for user-created collections)
+                  if (!_isDefaultCollection(collection))
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.delete_outline,
+                          size: deleteButtonSize,
+                        ),
+                        onPressed:
+                            () =>
+                                _deleteCategory(collection.id, collection.name),
+                        tooltip: 'Delete category',
+                        color: Colors.grey.shade600,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        visualDensity: VisualDensity.compact,
+                      ),
                     ),
-                  ),
 
                   // Flexible space for icon
                   Expanded(
