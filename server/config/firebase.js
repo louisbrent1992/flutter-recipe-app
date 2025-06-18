@@ -19,9 +19,8 @@ const initFirebase = () => {
 		}
 
 		// Read and parse the service account JSON file
-		const serviceAccountPath = path.resolve(
-			process.env.FIREBASE_SERVICE_ACCOUNT
-		);
+		const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT;
+
 		const serviceAccount = JSON.parse(
 			fs.readFileSync(serviceAccountPath, "utf8")
 		);
