@@ -53,6 +53,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/collections", collectionRoutes);
 app.use("/api", dataDeletionRoutes);
 
+// Server homepage
+app.get("/", (req, res) => {
+	res.sendFile(require("path").join(__dirname, "public", "index.html"));
+});
+
 // Serve the data deletion page (for Google Play Console compliance)
 app.get("/data-deletion", (req, res) => {
 	res.sendFile(require("path").join(__dirname, "public", "data-deletion.html"));

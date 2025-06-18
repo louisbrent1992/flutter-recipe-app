@@ -17,7 +17,7 @@ class ApiClient {
 
   /// Base URL for API requests
   String get baseUrl {
-    final String productionUrl = 'https://your-production-domain.com/api';
+    final String productionUrl = 'https://flutter-recipe-app.onrender.com/api';
     final String developmentUrl =
         Platform.isAndroid
             ? 'http://172.16.1.2:3001/api'

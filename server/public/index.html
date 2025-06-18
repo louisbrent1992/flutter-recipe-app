@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>RecipEase API Server</title>
+		<style>
+			:root {
+				--primary-color: #4caf50;
+				--secondary-color: #2196f3;
+				--background-color: #f5f5f5;
+				--text-color: #333;
+				--card-background: #ffffff;
+			}
+
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+				line-height: 1.6;
+				color: var(--text-color);
+				background-color: var(--background-color);
+			}
+
+			.container {
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: 2rem;
+			}
+
+			header {
+				text-align: center;
+				padding: 2rem 0;
+				background-color: var(--card-background);
+				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+				margin-bottom: 2rem;
+			}
+
+			.logo {
+				max-width: 150px;
+				margin-bottom: 1rem;
+			}
+
+			h1 {
+				color: var(--primary-color);
+				margin-bottom: 0.5rem;
+			}
+
+			.subtitle {
+				color: #666;
+				font-size: 1.2rem;
+			}
+
+			.endpoints {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+				gap: 1.5rem;
+				margin-top: 2rem;
+			}
+
+			.endpoint-card {
+				background: var(--card-background);
+				padding: 1.5rem;
+				border-radius: 8px;
+				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+				transition: transform 0.2s;
+			}
+
+			.endpoint-card:hover {
+				transform: translateY(-5px);
+			}
+
+			.endpoint-card h3 {
+				color: var(--secondary-color);
+				margin-bottom: 1rem;
+			}
+
+			.endpoint-card p {
+				color: #666;
+				margin-bottom: 1rem;
+			}
+
+			.endpoint-url {
+				background: #f8f9fa;
+				padding: 0.5rem;
+				border-radius: 4px;
+				font-family: monospace;
+				word-break: break-all;
+			}
+
+			.status {
+				display: inline-block;
+				padding: 0.25rem 0.5rem;
+				border-radius: 4px;
+				font-size: 0.9rem;
+				margin-top: 1rem;
+			}
+
+			.status.ok {
+				background-color: #e8f5e9;
+				color: #2e7d32;
+			}
+
+			footer {
+				text-align: center;
+				margin-top: 3rem;
+				padding: 2rem 0;
+				color: #666;
+			}
+
+			@media (max-width: 768px) {
+				.container {
+					padding: 1rem;
+				}
+
+				.endpoints {
+					grid-template-columns: 1fr;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<header>
+			<div class="container">
+				<img src="/logo.png" alt="RecipEase Logo" class="logo" />
+				<h1>RecipEase API Server</h1>
+				<p class="subtitle">Your Recipe Management Backend</p>
+			</div>
+		</header>
+
+		<main class="container">
+			<div class="endpoints">
+				<div class="endpoint-card">
+					<h3>AI Recipe Generation</h3>
+					<p>Generate personalized recipes using AI</p>
+					<div class="endpoint-url">/api/ai/recipes</div>
+				</div>
+
+				<div class="endpoint-card">
+					<h3>Discover Recipes</h3>
+					<p>Browse and search through recipe collection</p>
+					<div class="endpoint-url">/api/discover</div>
+				</div>
+
+				<div class="endpoint-card">
+					<h3>User Management</h3>
+					<p>Handle user profiles and preferences</p>
+					<div class="endpoint-url">/api/users</div>
+				</div>
+
+				<div class="endpoint-card">
+					<h3>Authentication</h3>
+					<p>Secure user authentication endpoints</p>
+					<div class="endpoint-url">/api/auth</div>
+				</div>
+
+				<div class="endpoint-card">
+					<h3>Collections</h3>
+					<p>Manage recipe collections and favorites</p>
+					<div class="endpoint-url">/api/collections</div>
+				</div>
+
+				<div class="endpoint-card">
+					<h3>Health Check</h3>
+					<p>Monitor server status and uptime</p>
+					<div class="endpoint-url">/health</div>
+					<div class="status ok">Status: OK</div>
+				</div>
+			</div>
+		</main>
+
+		<footer>
+			<div class="container">
+				<p>RecipEase API Server v1.0.0</p>
+				<p>Built with ❤️ for food lovers</p>
+			</div>
+		</footer>
+
+		<script>
+			// Check server health
+			fetch("/health")
+				.then((response) => response.json())
+				.then((data) => {
+					const statusElement = document.querySelector(".status");
+					if (data.status === "ok") {
+						statusElement.textContent = `Status: OK (Last checked: ${new Date().toLocaleTimeString()})`;
+					} else {
+						statusElement.textContent = "Status: Error";
+						statusElement.classList.remove("ok");
+					}
+				})
+				.catch((error) => {
+					const statusElement = document.querySelector(".status");
+					statusElement.textContent = "Status: Error";
+					statusElement.classList.remove("ok");
+				});
+		</script>
+	</body>
+</html>
