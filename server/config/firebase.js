@@ -18,7 +18,7 @@ const initFirebase = () => {
 			);
 		}
 
-		const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+		const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 		// Initialize the app
 		initializeApp({
