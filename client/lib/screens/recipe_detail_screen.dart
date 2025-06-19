@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:recipease/components/floating_button.dart';
 import 'package:recipease/components/html_description.dart';
 import 'package:recipease/providers/recipe_provider.dart';
+import 'package:recipease/screens/my_recipes_screen.dart';
 import 'package:recipease/screens/recipe_edit_screen.dart';
 import '../models/recipe.dart';
 import '../components/custom_app_bar.dart';
@@ -52,25 +53,42 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     String? sourceUrl;
     String? displayText;
     IconData? icon;
+    bool isClickable = true;
 
-    if (recipe.instagram != null && recipe.instagram!.shortcode != null) {
+    // Store values in local variables to avoid race conditions
+    final instagram = recipe.instagram;
+    final tiktok = recipe.tiktok;
+    final youtube = recipe.youtube;
+    final source = recipe.source;
+
+    print('recipe: ${recipe.aiGenerated}');
+
+    if (instagram?.shortcode != null) {
       sourceUrl =
           recipe.sourceUrl ??
-          'https://www.instagram.com/p/${recipe.instagram!.shortcode}/';
+          'https://www.instagram.com/p/${instagram!.shortcode}/';
       displayText = 'View Post';
       icon = Icons.photo_camera;
-    } else if (recipe.tiktok != null && recipe.tiktok!.videoId != null) {
+    } else if (tiktok?.videoId != null && tiktok?.username != null) {
       sourceUrl =
           recipe.sourceUrl ??
-          'https://www.tiktok.com/@${recipe.tiktok!.username}/video/${recipe.tiktok!.videoId}';
+          'https://www.tiktok.com/@${tiktok!.username}/video/${tiktok.videoId}';
       displayText = 'View Video';
       icon = Icons.video_library;
-    } else if (recipe.youtube != null && recipe.youtube!.videoId != null) {
+    } else if (youtube?.videoId != null) {
       sourceUrl =
           recipe.sourceUrl ??
-          'https://www.youtube.com/watch?v=${recipe.youtube!.videoId}';
+          'https://www.youtube.com/watch?v=${youtube!.videoId}';
       displayText = 'Watch Video';
       icon = Icons.play_circle_outline;
+    } else if (recipe.aiGenerated == true) {
+      displayText = 'AI-Generated';
+      icon = Icons.auto_awesome;
+      isClickable = false; // AI-generated recipes don't have external links
+    } else if (source != null) {
+      sourceUrl = recipe.sourceUrl ?? source;
+      displayText = source;
+      icon = Icons.web;
     } else {
       return const SizedBox.shrink();
     }
@@ -80,9 +98,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (recipe.source != null) ...[
+          if (source != null) ...[
             Text(
-              recipe.source!,
+              source,
               style: TextStyle(
                 fontSize: AppTypography.responsiveFontSize(context),
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -90,38 +108,64 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             ),
             SizedBox(height: AppSpacing.xs),
           ],
-          Link(
-            uri: Uri.parse(sourceUrl),
-            target: LinkTarget.blank,
-            builder: (BuildContext context, FollowLink? openLink) {
-              return InkWell(
-                onTap: openLink,
-                child: Row(
-                  children: [
-                    Icon(
-                      icon,
-                      size: AppSizing.responsiveIconSize(
-                        context,
-                        mobile: 18,
-                        tablet: 20,
-                        desktop: 22,
-                      ),
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    SizedBox(width: AppSpacing.sm),
-                    Text(
-                      displayText!,
-                      style: TextStyle(
+          if (isClickable && sourceUrl != null) ...[
+            Link(
+              uri: Uri.parse(sourceUrl),
+              target: LinkTarget.blank,
+              builder: (BuildContext context, FollowLink? openLink) {
+                return InkWell(
+                  onTap: openLink,
+                  child: Row(
+                    children: [
+                      Icon(
+                        icon!,
+                        size: AppSizing.responsiveIconSize(
+                          context,
+                          mobile: 18,
+                          tablet: 20,
+                          desktop: 22,
+                        ),
                         color: Theme.of(context).colorScheme.primary,
-                        decoration: TextDecoration.underline,
-                        fontSize: AppTypography.responsiveFontSize(context),
                       ),
-                    ),
-                  ],
+                      SizedBox(width: AppSpacing.sm),
+                      Text(
+                        displayText!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                          fontSize: AppTypography.responsiveFontSize(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ] else ...[
+            // Non-clickable indicator for AI-generated recipes
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: AppSizing.responsiveIconSize(
+                    context,
+                    mobile: 18,
+                    tablet: 20,
+                    desktop: 22,
+                  ),
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-              );
-            },
-          ),
+                SizedBox(width: AppSpacing.sm),
+                Text(
+                  displayText,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: AppTypography.responsiveFontSize(context),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -543,9 +587,20 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       _isSaved = true;
                     });
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text('Recipe saved successfully!'),
                         duration: Duration(seconds: 4),
+                        action: SnackBarAction(
+                          label: 'View Recipes',
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const MyRecipesScreen(),
+                              ),
+                            );
+                          },
+                        ),
                         backgroundColor: Colors.green,
                       ),
                     );

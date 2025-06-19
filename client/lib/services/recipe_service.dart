@@ -321,28 +321,6 @@ class RecipeService {
     );
   }
 
-  /// Save AI-generated recipe to user collection
-  static Future<ApiResponse<Recipe>> saveAiRecipeToUserCollection(
-    Recipe recipe,
-  ) async {
-    final response = await _api.authenticatedPost<Map<String, dynamic>>(
-      'user/recipes/save-from-ai',
-      body: {'recipe': recipe.toJson()},
-    );
-
-    if (response.success && response.data != null) {
-      return ApiResponse.success(
-        Recipe.fromJson(response.data!),
-        message: 'Recipe saved to your collection',
-      );
-    }
-
-    return ApiResponse.error(
-      response.message ?? 'Failed to save AI recipe',
-      statusCode: response.statusCode,
-    );
-  }
-
   /// Search for recipes from external API
   static Future<ApiResponse<Map<String, dynamic>>> searchExternalRecipes({
     String? query,

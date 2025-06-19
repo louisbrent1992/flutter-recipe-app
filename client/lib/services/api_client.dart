@@ -72,6 +72,7 @@ class ApiClient {
     try {
       final headers = await _authHeaders;
       final response = await _post(endpoint, headers, body);
+
       return _handleResponse<T>(response, fromJson: fromJson);
     } catch (e) {
       return _handleError<T>(e, 'POST $endpoint');
@@ -129,6 +130,7 @@ class ApiClient {
   }) async {
     try {
       final response = await _post(endpoint, _standardHeaders, body);
+      print('response: ${response.body}');
       return _handleResponse<T>(response, fromJson: fromJson);
     } catch (e) {
       return _handleError<T>(e, 'POST $endpoint');

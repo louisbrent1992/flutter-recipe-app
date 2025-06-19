@@ -20,7 +20,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
   final TextEditingController _ingredientController = TextEditingController();
   final List<String> _ingredients = [];
   final List<String> _dietaryRestrictions = [];
-  String _cuisineType = 'American';
+  String _cuisineType = 'Random';
   double _cookingTime = 30;
   final ScrollController _scrollController = ScrollController();
 
@@ -350,6 +350,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                               },
                               items:
                                   <String>[
+                                    'Random',
                                     'American',
                                     'Italian',
                                     'Chinese',

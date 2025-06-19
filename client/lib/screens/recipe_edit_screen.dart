@@ -154,7 +154,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                 onPressed: () {
                   Navigator.pushNamed(
                     context,
-                    '/recipeDetails',
+                    '/recipeDetail',
                     arguments: updatedRecipe,
                   );
                 },
@@ -181,7 +181,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                 onPressed: () {
                   Navigator.pushNamed(
                     context,
-                    '/recipeDetails',
+                    '/recipeDetail',
                     arguments: newRecipe,
                   );
                 },

@@ -24,6 +24,7 @@ class Recipe {
   final TikTokData? tiktok;
   final YouTubeData? youtube;
   final bool toEdit;
+  final bool aiGenerated;
 
   Recipe({
     this.id = '',
@@ -50,6 +51,7 @@ class Recipe {
     this.tiktok,
     this.youtube,
     this.toEdit = false,
+    this.aiGenerated = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Helper method to parse DateTime from various formats
@@ -160,6 +162,7 @@ class Recipe {
               )
               : null,
       toEdit: json['toEdit'] ?? false,
+      aiGenerated: json['aiGenerated'] ?? false,
     );
   }
 
@@ -188,6 +191,7 @@ class Recipe {
     'tiktok': tiktok?.toJson(),
     'youtube': youtube?.toJson(),
     'toEdit': toEdit,
+    'aiGenerated': aiGenerated,
   };
 
   // Create a copy of the recipe with updated values
@@ -215,6 +219,7 @@ class Recipe {
     TikTokData? tiktok,
     YouTubeData? youtube,
     bool? toEdit,
+    bool? aiGenerated,
   }) {
     return Recipe(
       id: id ?? this.id,
@@ -240,6 +245,7 @@ class Recipe {
       tiktok: tiktok ?? this.tiktok,
       youtube: youtube ?? this.youtube,
       toEdit: toEdit ?? this.toEdit,
+      aiGenerated: aiGenerated ?? this.aiGenerated,
     );
   }
 

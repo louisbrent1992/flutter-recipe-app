@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:recipease/components/floating_button.dart';
+import 'package:recipease/components/floating_bottom_bar.dart';
 import '../providers/recipe_provider.dart';
 import '../components/recipe_card.dart';
 import '../components/custom_app_bar.dart';
 import '../models/recipe.dart';
 import '../components/error_display.dart';
-import 'package:recipease/components/banner_ad.dart';
 import '../services/recipe_service.dart';
 import '../theme/theme.dart';
 
@@ -129,7 +128,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Enjoy your ${recipeProvider.generatedRecipes[0].cuisineType} recipes!',
+                      'Enjoy your recipes!',
                       style: Theme.of(
                         context,
                       ).textTheme.headlineLarge?.copyWith(
@@ -152,8 +151,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
               );
             },
           ),
-          const FloatingButton(),
-          const BannerAdWidget(),
+          const FloatingBottomBar(),
         ],
       ),
     );

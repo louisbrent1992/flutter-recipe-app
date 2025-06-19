@@ -34,7 +34,7 @@ import 'package:share_handler/share_handler.dart';
 import 'package:recipease/services/permission_service.dart';
 import 'screens/generated_recipes_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -133,14 +133,32 @@ class _MyAppState extends State<MyApp> {
   // Handle the shared media
   void _handleSharedMedia(SharedMedia sharedMedia) {
     if (sharedMedia.content != null && sharedMedia.content!.isNotEmpty) {
-      // Navigate to import screen with URL
+      // Directly trigger import recipe function instead of navigating to import screen
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _navigateToImportScreen(sharedMedia.content!);
+        _importRecipeFromSharedMedia(sharedMedia.content!);
       });
     }
   }
 
-  // Navigate to the import screen with the shared URL
+  // Import recipe directly from shared media
+  void _importRecipeFromSharedMedia(String url) {
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      final recipeProvider = Provider.of<RecipeProvider>(
+        context,
+        listen: false,
+      );
+      recipeProvider.importRecipeFromUrl(url, context).then((recipe) {
+        if (recipe != null && context.mounted) {
+          // Navigate to recipe edit screen with the imported recipe
+          Navigator.pushNamed(context, '/recipeEdit', arguments: recipe);
+        }
+      });
+    }
+  }
+
+  // Navigate to the import screen with the shared URL (kept for manual import)
   void _navigateToImportScreen(String url) {
     navigatorKey.currentState?.pushNamed('/import', arguments: url);
   }
@@ -173,7 +191,7 @@ class _MyAppState extends State<MyApp> {
             darkTheme: AppTheme.darkTheme,
             themeMode:
                 themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-            debugShowCheckedModeBanner: false,
+            debugShowCheckedModeBanner: kDebugMode ? true : false,
             home:
                 authService.user != null
                     ? const PersistentBannerLayout(child: HomeScreen())

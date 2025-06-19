@@ -250,6 +250,11 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    // Check if "Recently Added" collection exists
+    final hasRecentlyAddedCollection = _collections.any(
+      (collection) => collection.name == 'Recently Added',
+    );
+
     return SafeArea(
       child: Scaffold(
         appBar: const CustomAppBar(title: 'Recipe Collections'),
@@ -304,11 +309,14 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
 
             // Floating bottom bar with add action
             FloatingBottomBar(),
-            FloatingButton(
-              onPressed: () => _showAddCategoryDialog(),
-              tooltip: 'Add Collection',
-              icon: Icons.add_rounded,
-            ),
+
+            // Only show floating button if "Recently Added" collection doesn't exist
+            if (!hasRecentlyAddedCollection)
+              FloatingButton(
+                onPressed: () => _showAddCategoryDialog(),
+                tooltip: 'Add Collection',
+                icon: Icons.add_rounded,
+              ),
           ],
         ),
       ),
