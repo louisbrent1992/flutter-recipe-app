@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:recipease/components/floating_button.dart';
 import 'package:recipease/components/html_description.dart';
 import 'package:recipease/providers/recipe_provider.dart';
-import 'package:recipease/screens/favorite_recipes_screen.dart';
 import 'package:recipease/screens/recipe_edit_screen.dart';
 import '../models/recipe.dart';
 import '../components/custom_app_bar.dart';
@@ -568,19 +567,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 }
               },
             ),
-          FloatingButton(
-            position: 'left',
-            tooltip: 'Favorite Recipes',
-            icon: Icons.favorite,
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FavoriteRecipesScreen(),
-                ),
-              );
-            },
-          ),
         ],
       ),
     );

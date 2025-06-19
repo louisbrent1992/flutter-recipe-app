@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class HtmlDescription extends StatefulWidget {
   final String htmlContent;
@@ -55,11 +54,6 @@ class _HtmlDescriptionState extends State<HtmlDescription> {
               textDecoration: TextDecoration.underline,
             ),
           },
-          onAnchorTap: (url, attributes, element) {
-            if (url != null) {
-              _launchURL(url);
-            }
-          },
         ),
       );
     }
@@ -93,21 +87,7 @@ class _HtmlDescriptionState extends State<HtmlDescription> {
             textDecoration: TextDecoration.underline,
           ),
         },
-        onAnchorTap: (url, attributes, element) {
-          if (url != null) {
-            _launchURL(url);
-          }
-        },
       ),
     );
-  }
-
-  Future<void> _launchURL(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      debugPrint('Could not launch $url');
-    }
   }
 }
