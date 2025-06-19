@@ -10,7 +10,7 @@ const Color purpleColor = Color(0xFF6A0572); // Rich Purple
 
 // Dark theme colors
 const Color darkPrimaryColor = Color(0xFFE07A5F); // Keep primary color
-const Color darkSecondaryColor = Color(0xFFA5B4D9); // Lighter navy
+const Color darkSecondaryColor = Colors.white; // Lighter navy
 const Color darkBackgroundColor = Color(0xFF1A1B2E); // Darker navy background
 const Color darkAccentColor = Color(0xFF4AFFB3); // Brighter mint
 const Color darkNeutralColor = Color(0xFFD4B17A); // Brighter peach
