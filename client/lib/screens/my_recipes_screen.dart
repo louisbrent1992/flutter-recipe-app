@@ -211,20 +211,8 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                                   ),
                                   const SizedBox(height: 8),
                                   if (allRecipes.isEmpty)
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.pushNamed(
-                                          context,
-                                          '/recipeEdit',
-                                        );
-                                      },
-                                      child: const Text(
-                                        'Create Your First Recipe',
-                                      ),
-                                    )
-                                  else
                                     Text(
-                                      'Try adjusting your search or filters',
+                                      'Add your first recipe to get started',
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: Colors.grey.shade600,
