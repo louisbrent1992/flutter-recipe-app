@@ -918,11 +918,17 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                       const SizedBox(height: 8),
                       Text(
                         '• Recipe Difficulty: ${_getAverageDifficultyText()}',
-                        style: const TextStyle(fontSize: 12),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                       Text(
                         '• Saved Recipes: $savedRecipesCount',
-                        style: const TextStyle(fontSize: 12),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
