@@ -11,6 +11,7 @@ class FloatingButton extends StatelessWidget {
   final String? tooltip;
   final IconData? icon;
   final bool isLoading;
+  final String position;
 
   const FloatingButton({
     super.key,
@@ -23,12 +24,14 @@ class FloatingButton extends StatelessWidget {
     this.tooltip,
     this.icon,
     this.isLoading = false,
+    this.position = 'right',
   });
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      right: 16,
+      right: position == 'right' ? 16 : null,
+      left: position == 'left' ? 16 : null,
       bottom: 48,
       child: Container(
         decoration: BoxDecoration(

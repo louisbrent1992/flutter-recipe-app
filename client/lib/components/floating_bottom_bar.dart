@@ -32,9 +32,12 @@ class FloatingBottomBar extends StatelessWidget {
         Navigator.pushNamed(context, '/discover');
         break;
       case 2:
-        Navigator.pushNamed(context, '/favorites');
+        Navigator.pushNamed(context, '/myRecipes');
         break;
       case 3:
+        Navigator.pushNamed(context, '/generate');
+        break;
+      case 4:
         Navigator.pushNamed(context, '/settings');
         break;
     }
@@ -49,8 +52,10 @@ class FloatingBottomBar extends StatelessWidget {
       case 1:
         return currentRoute == '/discover';
       case 2:
-        return currentRoute == '/favorites';
+        return currentRoute == '/myRecipes';
       case 3:
+        return currentRoute == '/generate';
+      case 4:
         return currentRoute == '/settings';
       default:
         return false;
@@ -107,15 +112,21 @@ class FloatingBottomBar extends StatelessWidget {
       ),
       _buildMinimalNavIcon(
         context,
-        icon: Icons.favorite_rounded,
+        icon: Icons.restaurant_rounded,
         isSelected: _isNavSelected(context, 2),
         onTap: () => _handleNavigation(context, 2),
       ),
       _buildMinimalNavIcon(
         context,
-        icon: Icons.person_rounded,
+        icon: Icons.auto_awesome_rounded,
         isSelected: _isNavSelected(context, 3),
         onTap: () => _handleNavigation(context, 3),
+      ),
+      _buildMinimalNavIcon(
+        context,
+        icon: Icons.person_rounded,
+        isSelected: _isNavSelected(context, 4),
+        onTap: () => _handleNavigation(context, 4),
       ),
     ];
 

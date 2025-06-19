@@ -52,9 +52,9 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                   case 'easy':
                     return 1.0;
                   case 'medium':
-                    return 2.0;
+                    return 1.5;
                   case 'hard':
-                    return 3.0;
+                    return 2.0;
                   default:
                     return 1.0;
                 }
