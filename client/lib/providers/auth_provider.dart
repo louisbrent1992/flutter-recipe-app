@@ -3,12 +3,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../services/api_client.dart';
+import '../services/collection_service.dart';
 
 class AuthService with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final ApiClient _apiClient = ApiClient();
+  final CollectionService _collectionService = CollectionService();
 
   User? _user;
   bool _isLoading = false;
@@ -42,13 +44,26 @@ class AuthService with ChangeNotifier {
 
       // Check if document exists
       final docSnapshot = await userDoc.get();
-      if (!docSnapshot.exists) {
+      final isNewUser = !docSnapshot.exists;
+
+      if (isNewUser) {
         // If document doesn't exist, add createdAt
         userData['createdAt'] = FieldValue.serverTimestamp();
       }
 
       // Update or create the document
       await userDoc.set(userData, SetOptions(merge: true));
+
+      // If this is a new user, create default collections
+      if (isNewUser) {
+        try {
+          await _collectionService.createDefaultCollections();
+          print('Default collections created for new user: ${user.uid}');
+        } catch (e) {
+          print('Error creating default collections: $e');
+          // Don't fail the registration if collections creation fails
+        }
+      }
     } catch (e) {
       print('Error creating/updating user profile: $e');
       rethrow;

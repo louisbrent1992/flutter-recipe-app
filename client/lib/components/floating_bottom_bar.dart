@@ -154,15 +154,21 @@ class FloatingBottomBar extends StatelessWidget {
       ),
       _buildMinimalNavIcon(
         context,
-        icon: Icons.favorite_rounded,
+        icon: Icons.restaurant_rounded,
         isSelected: _isNavSelected(context, 2),
         onTap: () => _handleNavigation(context, 2),
       ),
       _buildMinimalNavIcon(
         context,
-        icon: Icons.person_rounded,
+        icon: Icons.auto_awesome_rounded,
         isSelected: _isNavSelected(context, 3),
         onTap: () => _handleNavigation(context, 3),
+      ),
+      _buildMinimalNavIcon(
+        context,
+        icon: Icons.person_rounded,
+        isSelected: _isNavSelected(context, 4),
+        onTap: () => _handleNavigation(context, 4),
       ),
     ];
 

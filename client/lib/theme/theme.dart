@@ -99,8 +99,8 @@ class AppTypography {
   static double responsiveFontSize(
     BuildContext context, {
     double mobile = 14.0,
-    double tablet = 16.0,
-    double desktop = 18.0,
+    double tablet = 18.0,
+    double desktop = 20.0,
   }) {
     if (AppBreakpoints.isMobile(context)) return mobile;
     if (AppBreakpoints.isTablet(context)) return tablet;
@@ -163,8 +163,8 @@ class AppSizing {
   static int responsiveGridCount(
     BuildContext context, {
     int mobile = 2,
-    int tablet = 3,
-    int desktop = 4,
+    int tablet = 2,
+    int desktop = 3,
   }) {
     if (AppBreakpoints.isMobile(context)) return mobile;
     if (AppBreakpoints.isTablet(context)) return tablet;

@@ -31,7 +31,7 @@ class CollectionService extends ChangeNotifier {
       final user = _auth.currentUser;
       if (user == null) {
         logger.e('No authenticated user found');
-        return _defaultCollections;
+        return [];
       }
 
       // Always clear cache when force refresh is requested
@@ -55,38 +55,30 @@ class CollectionService extends ChangeNotifier {
 
       List<RecipeCollection> collections;
       if (response.success && response.data != null) {
-        if (response.data!.isEmpty) {
-          // No collections found, create default collections
-          collections = _defaultCollections;
-          await saveCollections(collections);
-        } else {
-          collections =
-              response.data!
-                  .map((json) => RecipeCollection.fromJson(json))
-                  .toList();
+        collections =
+            response.data!
+                .map((json) => RecipeCollection.fromJson(json))
+                .toList();
 
-          // Ensure special collections exist
-          final hasFavorites = collections.any((c) => c.name == 'Favorites');
-          final hasRecentlyAdded = collections.any(
-            (c) => c.name == 'Recently Added',
-          );
+        // Ensure special collections exist (but don't create them if they don't exist)
+        final hasFavorites = collections.any((c) => c.name == 'Favorites');
+        final hasRecentlyAdded = collections.any(
+          (c) => c.name == 'Recently Added',
+        );
 
+        // Only add missing collections if the user has any collections at all
+        // This prevents creating default collections for users who haven't created any yet
+        if (collections.isNotEmpty) {
           if (!hasFavorites) {
             collections.add(RecipeCollection.withName('Favorites'));
           }
           if (!hasRecentlyAdded) {
             collections.add(RecipeCollection.withName('Recently Added'));
           }
-
-          // Save if we added any missing collections
-          if (!hasFavorites || !hasRecentlyAdded) {
-            await saveCollections(collections);
-          }
         }
       } else {
         logger.e('Error getting collections: ${response.message}');
-        collections = _defaultCollections;
-        await saveCollections(collections);
+        collections = [];
       }
 
       // Only update special collections if explicitly requested
@@ -106,7 +98,7 @@ class CollectionService extends ChangeNotifier {
       return collections;
     } catch (e) {
       logger.e('Error updating collections: $e');
-      return _defaultCollections;
+      return [];
     }
   }
 
@@ -322,8 +314,8 @@ class CollectionService extends ChangeNotifier {
     }
   }
 
-  // Helper method to save collections to server
-  Future<void> saveCollections(List<RecipeCollection> collections) async {
+  // Helper method to create default collections for a new user
+  Future<void> createDefaultCollections() async {
     try {
       final user = _auth.currentUser;
       if (user == null) {
@@ -331,24 +323,20 @@ class CollectionService extends ChangeNotifier {
         return;
       }
 
-      // Create each collection
-      for (var collection in collections) {
+      logger.i('Creating default collections for new user: ${user.uid}');
+
+      // Create each default collection
+      for (var collection in _defaultCollections) {
         await _api.authenticatedPost('collections', body: collection.toJson());
       }
-    } catch (e) {
-      logger.e('Error saving collections: $e');
-      rethrow;
-    }
-  }
 
-  // Reset to default collections (for testing/development)
-  Future<bool> resetToDefaults() async {
-    try {
-      await saveCollections(_defaultCollections);
-      return true;
+      // Clear cache to force refresh
+      _clearCache();
+
+      logger.i('Default collections created successfully');
     } catch (e) {
-      logger.e('Error resetting collections: $e');
-      return false;
+      logger.e('Error creating default collections: $e');
+      rethrow;
     }
   }
 
@@ -361,12 +349,6 @@ class CollectionService extends ChangeNotifier {
       final recentlyAddedIndex = collections.indexWhere(
         (collection) => collection.name == 'Recently Added',
       );
-
-      if (recentlyAddedIndex == -1) {
-        // If not found, create it
-        collections.add(RecipeCollection.withName('Recently Added'));
-        return;
-      }
 
       // Get the last 50 recipes
       final recentRecipesResponse =
@@ -428,12 +410,6 @@ class CollectionService extends ChangeNotifier {
       final favoritesIndex = collections.indexWhere(
         (collection) => collection.name == 'Favorites',
       );
-
-      if (favoritesIndex == -1) {
-        // If not found, create it
-        collections.add(RecipeCollection.withName('Favorites'));
-        return;
-      }
 
       // Get all recipes from the database
       final allRecipesResponse = await RecipeService.getUserRecipes();
@@ -553,10 +529,19 @@ class CollectionService extends ChangeNotifier {
           updatedCollection = updatedCollection.addRecipe(recipe);
         }
 
-        // Add to collections and save
-        collections.add(updatedCollection);
-        await saveCollections(collections);
-        return true;
+        // Create the collection using the API
+        final response = await _api.authenticatedPost<Map<String, dynamic>>(
+          'collections',
+          body: updatedCollection.toJson(),
+        );
+
+        if (response.success) {
+          // Update collections after creating a new one
+          await updateCollections(forceRefresh: true);
+          return true;
+        } else {
+          throw Exception(response.message ?? 'Failed to create collection');
+        }
       }
 
       // Update existing collection - replace all recipes

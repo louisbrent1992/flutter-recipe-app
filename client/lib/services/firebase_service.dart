@@ -1,12 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'collection_service.dart';
 
 class FirebaseService {
   static final FirebaseService _instance = FirebaseService._internal();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final CollectionService _collectionService = CollectionService();
 
   factory FirebaseService() {
     return _instance;
@@ -53,6 +55,15 @@ class FirebaseService {
 
     // Update display name
     await result.user!.updateDisplayName(displayName);
+
+    // Create default collections for new user
+    try {
+      await _collectionService.createDefaultCollections();
+      print('Default collections created for new user: ${result.user!.uid}');
+    } catch (e) {
+      print('Error creating default collections: $e');
+      // Don't fail the registration if collections creation fails
+    }
 
     return result;
   }

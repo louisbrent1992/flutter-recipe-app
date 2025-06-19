@@ -288,7 +288,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
   ) {
     // Responsive header height
     final double headerHeight =
-        isMobile ? (screenHeight < 600 ? 140.0 : 160.0) : 180.0;
+        isMobile ? (screenHeight < 600 ? 190.0 : 210.0) : 230.0;
 
     return AnimatedBuilder(
       animation: Listenable.merge([_fadeController, _slideController]),
@@ -398,8 +398,8 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                               isDark,
                               isMobile,
                             ),
-                            if (!isMobile || screenHeight > 650) ...[
-                              SizedBox(height: isMobile ? 6 : 8),
+                            if (!isMobile || screenHeight > 400) ...[
+                              SizedBox(height: isMobile ? 8 : 10),
                               _buildQuickStats(
                                 context,
                                 colorScheme,
@@ -597,6 +597,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               Icons.restaurant_menu_rounded,
               isDark,
               isMobile,
+              () {
+                // Navigate to the recipes page
+                Navigator.pushNamed(context, '/myRecipes');
+              },
             ),
             _buildStatChip(
               totalCookingTime,
@@ -604,6 +608,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               Icons.schedule,
               isDark,
               isMobile,
+              null,
             ),
             _buildStatChip(
               collectionsCount.toString(),
@@ -611,6 +616,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               Icons.collections_bookmark,
               isDark,
               isMobile,
+              () {
+                // Navigate to the collecitons page
+                Navigator.pushNamed(context, '/collections');
+              },
             ),
           ],
         );
@@ -652,65 +661,69 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     IconData icon,
     bool isDark,
     bool isMobile,
+    GestureTapCallback? onTap,
   ) {
     return Flexible(
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 6 : 10,
-          vertical: isMobile ? 3 : 5,
-        ),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(isMobile ? 14 : 18),
-          color: Colors.white.withValues(alpha: 0.2),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.4),
-            width: 1,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 6 : 10,
+            vertical: isMobile ? 3 : 5,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(isMobile ? 14 : 18),
+            color: Colors.white.withValues(alpha: 0.2),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.4),
+              width: 1,
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: isMobile ? 10 : 14, color: Colors.white),
-            SizedBox(height: isMobile ? 1 : 2),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: isMobile ? 9 : 11,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    offset: const Offset(0, 1),
-                    blurRadius: 2,
-                  ),
-                ],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
               ),
-            ),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: isMobile ? 7 : 9,
-                color: Colors.white.withValues(alpha: 0.9),
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    offset: const Offset(0, 1),
-                    blurRadius: 2,
-                  ),
-                ],
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: isMobile ? 10 : 14, color: Colors.white),
+              SizedBox(height: isMobile ? 1 : 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: isMobile ? 9 : 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      offset: const Offset(0, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: isMobile ? 7 : 9,
+                  color: Colors.white.withValues(alpha: 0.9),
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      offset: const Offset(0, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -71,13 +71,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           'https://www.youtube.com/watch?v=${recipe.youtube!.videoId}';
       displayText = 'Watch Video';
       icon = Icons.play_circle_outline;
-    } else if (recipe.sourceUrl != null && recipe.sourceUrl!.isNotEmpty) {
-      sourceUrl = recipe.sourceUrl;
-      displayText = 'View Source';
-      icon = Icons.link;
+    } else {
+      return const SizedBox.shrink();
     }
-
-    if (sourceUrl == null) return const SizedBox.shrink();
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),

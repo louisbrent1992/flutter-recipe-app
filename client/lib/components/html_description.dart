@@ -49,10 +49,7 @@ class _HtmlDescriptionState extends State<HtmlDescription> {
               textOverflow: widget.overflow,
             ),
             'b': Style(fontWeight: FontWeight.bold),
-            'a': Style(
-              color: Theme.of(context).colorScheme.primary,
-              textDecoration: TextDecoration.underline,
-            ),
+            'a': Style(color: Theme.of(context).colorScheme.primary),
           },
         ),
       );
@@ -82,10 +79,7 @@ class _HtmlDescriptionState extends State<HtmlDescription> {
                     : FontWeight.normal,
           ),
           'b': Style(fontWeight: FontWeight.bold),
-          'a': Style(
-            color: Theme.of(context).colorScheme.primary,
-            textDecoration: TextDecoration.underline,
-          ),
+          'a': Style(color: Theme.of(context).colorScheme.primary),
         },
       ),
     );
