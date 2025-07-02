@@ -187,7 +187,7 @@ router.post("/generate", async (req, res) => {
 				difficulty: recipeData.difficulty || "medium",
 				servings: recipeData.servings || "4",
 				tags: recipeData.tags || [],
-				source: "ai-generated",
+				aiGenerated: true,
 				createdAt: new Date().toISOString(),
 			}))
 		);
@@ -241,6 +241,20 @@ const processSocialMedia = async (url, type, getDataFn) => {
 	}
 
 	return socialData;
+};
+
+// Helper function to extract site name from URL
+const extractSiteName = (url) => {
+	try {
+		const urlObj = new URL(url);
+		const hostname = urlObj.hostname;
+		// Remove www. prefix and get the main domain
+		const siteName = hostname.replace(/^www\./, "").split(".")[0];
+		// Capitalize first letter
+		return siteName.charAt(0).toUpperCase() + siteName.slice(1);
+	} catch (error) {
+		return "Web";
+	}
 };
 
 // Helper function for recipe data processing
@@ -331,15 +345,8 @@ const processRecipeData = async (
 			? `TikTok: @${socialData?.author?.username}`
 			: isYouTube
 			? `YouTube: ${socialData?.channelTitle}`
-			: "Web",
+			: `${extractSiteName(url).toUpperCase()}`,
 		sourceUrl: url,
-		sourcePlatform: isInstagram
-			? "instagram"
-			: isTikTok
-			? "tiktok"
-			: isYouTube
-			? "youtube"
-			: "web",
 		author:
 			socialData?.username ||
 			socialData?.author?.username ||
@@ -419,7 +426,9 @@ router.post("/import", async (req, res) => {
 			);
 			pageContent = socialData.description;
 		} else {
-			return res.status(500).json({ error: "Unsupported URL type" });
+			const textUrl = `https://textfrom.website/${url}`;
+			const { data } = await axios.get(textUrl);
+			pageContent = data;
 		}
 
 		if (!pageContent) {

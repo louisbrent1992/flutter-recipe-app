@@ -67,9 +67,11 @@ class DefaultFirebaseOptions {
     projectId: 'recipe-app-c2fcc',
     databaseURL: 'https://recipe-app-c2fcc-default-rtdb.firebaseio.com',
     storageBucket: 'recipe-app-c2fcc.appspot.com',
-    androidClientId: '826154873845-2uber91hjcgap6qr688uo3lqeim47mjj.apps.googleusercontent.com',
-    iosClientId: '826154873845-4904phdrsiv04juljvs6n2reirpje1qg.apps.googleusercontent.com',
-    iosBundleId: 'com.example.client',
+    androidClientId:
+        '826154873845-2uber91hjcgap6qr688uo3lqeim47mjj.apps.googleusercontent.com',
+    iosClientId:
+        '826154873845-4904phdrsiv04juljvs6n2reirpje1qg.apps.googleusercontent.com',
+    iosBundleId: 'com.recipease.kitchen',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -79,9 +81,11 @@ class DefaultFirebaseOptions {
     projectId: 'recipe-app-c2fcc',
     databaseURL: 'https://recipe-app-c2fcc-default-rtdb.firebaseio.com',
     storageBucket: 'recipe-app-c2fcc.appspot.com',
-    androidClientId: '826154873845-2uber91hjcgap6qr688uo3lqeim47mjj.apps.googleusercontent.com',
-    iosClientId: '826154873845-4904phdrsiv04juljvs6n2reirpje1qg.apps.googleusercontent.com',
-    iosBundleId: 'com.example.client',
+    androidClientId:
+        '826154873845-2uber91hjcgap6qr688uo3lqeim47mjj.apps.googleusercontent.com',
+    iosClientId:
+        '826154873845-4904phdrsiv04juljvs6n2reirpje1qg.apps.googleusercontent.com',
+    iosBundleId: 'com.recipease.kitchen',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

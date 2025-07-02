@@ -133,6 +133,10 @@ router.post("/recipes", auth, async (req, res) => {
 			sourceUrl = null,
 			author = null,
 			instagram = null,
+			tiktok = null,
+			youtube = null,
+			aiGenerated = false,
+			toEdit = false,
 		} = req.body;
 
 		if (!title) {
@@ -167,6 +171,10 @@ router.post("/recipes", auth, async (req, res) => {
 			sourceUrl,
 			author,
 			instagram,
+			tiktok,
+			youtube,
+			aiGenerated,
+			toEdit,
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 			isFavorite: false,

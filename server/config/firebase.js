@@ -18,7 +18,14 @@ const initFirebase = () => {
 			);
 		}
 
-		const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+		const serviceAccountPath = path.join(
+			__dirname,
+			"firebase-service-account.json"
+		);
+
+		const serviceAccount = JSON.parse(
+			fs.readFileSync(serviceAccountPath, "utf8")
+		);
 
 		// Initialize the app
 		initializeApp({
