@@ -34,6 +34,7 @@ import 'package:share_handler/share_handler.dart';
 import 'package:recipease/services/permission_service.dart';
 import 'screens/generated_recipes_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -82,7 +83,17 @@ void main() async {
   await Hive.initFlutter();
   await Hive.openBox('preferences');
 
-  runApp(MyApp(Key('key')));
+  // Use DevicePreview only in debug mode
+  if (kDebugMode) {
+    runApp(
+      DevicePreview(
+        enabled: true, // Enable device preview in debug mode
+        builder: (context) => MyApp(Key('key')),
+      ),
+    );
+  } else {
+    runApp(MyApp(Key('key')));
+  }
 }
 
 class MyApp extends StatefulWidget {
@@ -186,12 +197,71 @@ class _MyAppState extends State<MyApp> {
         builder: (context, authService, themeProvider, _) {
           return MaterialApp(
             navigatorKey: navigatorKey,
-            title: 'Recipe App',
+            title: 'Recipease',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode:
                 themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-            debugShowCheckedModeBanner: kDebugMode ? true : false,
+            debugShowCheckedModeBanner: false, // Cleaner debug experience
+            showSemanticsDebugger: false, // Disable semantics debugger
+            showPerformanceOverlay:
+                false, // Disable performance overlay by default
+            checkerboardRasterCacheImages:
+                false, // Disable raster cache checkerboard
+            checkerboardOffscreenLayers:
+                false, // Disable offscreen layers checkerboard
+            // Enhanced user experience configurations
+            locale: DevicePreview.locale(context), // Use device preview locale
+            supportedLocales: const [
+              Locale('en', 'US'),
+              Locale('en', 'GB'),
+              Locale('es', 'ES'),
+              Locale('fr', 'FR'),
+            ],
+            // Localization delegates for future internationalization
+            localizationsDelegates: const [
+              // Add when implementing internationalization
+              // GlobalMaterialLocalizations.delegate,
+              // GlobalWidgetsLocalizations.delegate,
+              // GlobalCupertinoLocalizations.delegate,
+            ],
+            // Performance and accessibility configurations
+            scrollBehavior: const MaterialScrollBehavior().copyWith(
+              physics: const BouncingScrollPhysics(),
+            ),
+            // Error handling and debugging
+            builder: (context, child) {
+              // Add error boundary for better error handling
+              ErrorWidget.builder = (FlutterErrorDetails errorDetails) {
+                return Scaffold(
+                  body: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 60,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Something went wrong!',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        if (kDebugMode)
+                          Text(
+                            errorDetails.exception.toString(),
+                            style: Theme.of(context).textTheme.bodySmall,
+                            textAlign: TextAlign.center,
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              };
+              return DevicePreview.appBuilder(context, child!);
+            },
             home:
                 authService.user != null
                     ? const PersistentBannerLayout(child: HomeScreen())
