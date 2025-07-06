@@ -9,7 +9,7 @@ jobs:
     runs-on: macos-latest
     defaults:
       run:
-        working-directory: client  # 👈 Set default working dir to client
+        working-directory: client
 
     steps:
       - uses: actions/checkout@v3
@@ -21,8 +21,16 @@ jobs:
 
       - run: flutter pub get
 
+      # 👇 Generate Podfile (if not present) without failing the build
+      - name: Generate Podfile
+        run: flutter build ios --no-codesign || true
+
+      # 👇 Patch Podfile to set iOS platform version to 13.0
+      - name: Patch Podfile to iOS 13.0
+        run: sed -i '' "s/platform :ios, .*/platform :ios, '13.0'/" ios/Podfile
+
       - run: pod repo update
-        working-directory: client/ios  # 👈 iOS folder inside client
+        working-directory: client/ios
 
       - run: flutter build ios --release --no-codesign
 
