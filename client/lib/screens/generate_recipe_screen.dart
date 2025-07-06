@@ -173,24 +173,18 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                       children: [
                         // Background image
                         AspectRatio(
-                          aspectRatio: 16 / 9,
-                          child: CachedNetworkImage(
-                            imageUrl:
-                                'https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cmVjaXBlJTIwZ2VuZXJhdGlvbnxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80',
+                          aspectRatio: 3 / 2,
+                          child: Image.asset(
+                            'assets/images/generate_recipe.jpg',
                             fit: BoxFit.cover,
-                            placeholder:
-                                (context, url) => Container(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.surfaceContainerHighest,
-                                  child: const Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                ),
-                            errorWidget:
-                                (context, url, error) =>
-                                    const Icon(Icons.error, color: Colors.red),
+                            filterQuality: FilterQuality.medium,
+                            cacheWidth: 800,
+                            cacheHeight: 450,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Theme.of(context).colorScheme.surface,
+                              );
+                            },
                           ),
                         ),
                         // Gradient overlay

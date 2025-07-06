@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/floating_bottom_bar.dart';
-import 'package:recipease/components/floating_button.dart';
+
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
@@ -291,6 +291,16 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
             tooltip: 'Edit collection',
           ),
         ],
+        floatingButtons: [
+          IconButton(
+            icon: const Icon(Icons.add_rounded),
+            tooltip: 'Add Recipes',
+            onPressed:
+                widget.collection.name == 'Favorites'
+                    ? () => Navigator.pushNamed(context, '/myRecipes')
+                    : _searchAllRecipes,
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -380,14 +390,6 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                 ),
               ),
           FloatingBottomBar(),
-          FloatingButton(
-            onPressed:
-                widget.collection.name == 'Favorites'
-                    ? () => Navigator.pushNamed(context, '/myRecipes')
-                    : _searchAllRecipes,
-            tooltip: 'Add Recipes',
-            icon: Icons.add_rounded,
-          ),
         ],
       ),
     );

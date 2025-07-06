@@ -16,6 +16,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool isTransparent;
   final bool useLogo;
   final double? logoHeight;
+  final List<Widget>? floatingButtons;
 
   const CustomAppBar({
     super.key,
@@ -32,6 +33,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.isTransparent = false,
     this.useLogo = false,
     this.logoHeight = 60.0,
+    this.floatingButtons,
   });
 
   @override
@@ -61,7 +63,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               ? Builder(builder: (BuildContext context) => leading!)
               : null,
 
-      actions: actions,
+      actions: [
+        if (floatingButtons != null) ...floatingButtons!,
+        if (actions != null) ...actions!,
+      ],
       iconTheme: IconThemeData(
         color: foregroundColor ?? theme.colorScheme.onSurface,
       ),

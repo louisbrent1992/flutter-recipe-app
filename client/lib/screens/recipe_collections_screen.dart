@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/floating_bottom_bar.dart';
-import 'package:recipease/components/floating_button.dart';
+
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
 import '../theme/theme.dart';
@@ -257,7 +257,17 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
 
     return SafeArea(
       child: Scaffold(
-        appBar: const CustomAppBar(title: 'Recipe Collections'),
+        appBar: CustomAppBar(
+          title: 'Recipe Collections',
+          floatingButtons: [
+            if (!hasRecentlyAddedCollection)
+              IconButton(
+                icon: const Icon(Icons.add_rounded),
+                tooltip: 'Add Collection',
+                onPressed: () => _showAddCategoryDialog(),
+              ),
+          ],
+        ),
         body: Stack(
           fit: StackFit.expand,
           children: [
@@ -309,14 +319,6 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
 
             // Floating bottom bar with add action
             FloatingBottomBar(),
-
-            // Only show floating button if "Recently Added" collection doesn't exist
-            if (!hasRecentlyAddedCollection)
-              FloatingButton(
-                onPressed: () => _showAddCategoryDialog(),
-                tooltip: 'Add Collection',
-                icon: Icons.add_rounded,
-              ),
           ],
         ),
       ),

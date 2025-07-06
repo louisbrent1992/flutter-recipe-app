@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/editable_recipe_field.dart';
-import 'package:recipease/components/floating_button.dart';
+
 import 'package:recipease/components/recipe_tags.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/components/html_description.dart';
@@ -309,6 +309,13 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
     return Scaffold(
       appBar: CustomAppBar(
         title: widget.recipe?.toEdit == true ? 'Edit Recipe' : 'New Recipe',
+        floatingButtons: [
+          IconButton(
+            icon: const Icon(Icons.save),
+            tooltip: 'Save Recipe',
+            onPressed: () => _saveRecipe(),
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -736,11 +743,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
             ),
           ),
           FloatingBottomBar(),
-          FloatingButton(
-            onPressed: () => _saveRecipe(),
-            tooltip: 'Save Recipe',
-            icon: Icons.save,
-          ),
         ],
       ),
     );

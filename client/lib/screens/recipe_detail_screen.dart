@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:recipease/components/floating_button.dart';
+
 import 'package:recipease/components/html_description.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/screens/my_recipes_screen.dart';
@@ -211,7 +211,72 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     final recipe = widget.recipe;
 
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Recipe Details'),
+      appBar: CustomAppBar(
+        title: 'Recipe Details',
+        floatingButtons: [
+          if (_isSaved)
+            IconButton(
+              icon: const Icon(Icons.edit),
+              tooltip: 'Edit Recipe',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) => RecipeEditScreen(recipe: widget.recipe),
+                  ),
+                );
+              },
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.save),
+              tooltip: 'Save Recipe',
+              onPressed: () async {
+                final recipeProvider = context.read<RecipeProvider>();
+                final savedRecipe = await recipeProvider.createUserRecipe(
+                  widget.recipe,
+                  context,
+                );
+                if (context.mounted) {
+                  if (savedRecipe != null) {
+                    setState(() {
+                      _isSaved = true;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Recipe saved successfully!'),
+                        duration: Duration(seconds: 4),
+                        action: SnackBarAction(
+                          label: 'View Recipes',
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const MyRecipesScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          recipeProvider.error?.message ??
+                              'Failed to save recipe',
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+        ],
+      ),
       body: Stack(
         children: [
           CustomScrollView(
@@ -558,66 +623,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             ],
           ),
           FloatingBottomBar(),
-          if (_isSaved)
-            FloatingButton(
-              tooltip: 'Edit Recipe',
-              icon: Icons.edit,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => RecipeEditScreen(recipe: recipe),
-                  ),
-                );
-              },
-            )
-          else
-            FloatingButton(
-              tooltip: 'Save Recipe',
-              icon: Icons.save,
-              onPressed: () async {
-                final recipeProvider = context.read<RecipeProvider>();
-                final savedRecipe = await recipeProvider.createUserRecipe(
-                  recipe,
-                  context,
-                );
-                if (context.mounted) {
-                  if (savedRecipe != null) {
-                    setState(() {
-                      _isSaved = true;
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Recipe saved successfully!'),
-                        duration: Duration(seconds: 4),
-                        action: SnackBarAction(
-                          label: 'View Recipes',
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const MyRecipesScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          recipeProvider.error?.message ??
-                              'Failed to save recipe',
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-            ),
         ],
       ),
     );

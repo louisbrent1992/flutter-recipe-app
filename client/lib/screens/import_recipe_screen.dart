@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/floating_bottom_bar.dart';
-import 'package:recipease/components/floating_button.dart';
+
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/theme/theme.dart';
@@ -124,7 +124,21 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Import Recipe'),
+      appBar: CustomAppBar(
+        title: 'Import Recipe',
+        floatingButtons: [
+          IconButton(
+            icon: const Icon(Icons.add_rounded),
+            tooltip: 'New Recipe',
+            onPressed:
+                () => Navigator.pushNamed(
+                  context,
+                  '/recipeEdit',
+                  arguments: Recipe(title: 'New Recipe', toEdit: false),
+                ),
+          ),
+        ],
+      ),
       body: Consumer<RecipeProvider>(
         builder: (context, recipeProvider, _) {
           return Stack(
@@ -646,16 +660,6 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                 ),
               ),
               FloatingBottomBar(),
-              FloatingButton(
-                tooltip: 'New Recipe',
-                onPressed:
-                    () => Navigator.pushNamed(
-                      context,
-                      '/recipeEdit',
-                      arguments: Recipe(title: 'New Recipe', toEdit: false),
-                    ),
-                icon: Icons.add_rounded,
-              ),
             ],
           );
         },

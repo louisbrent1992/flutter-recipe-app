@@ -58,8 +58,8 @@ class _HomeScreenState extends State<HomeScreen>
         // Load first batch of user's own recipes
         recipeProvider.loadUserRecipes(limit: 20);
 
-        // Fetch a small set of random recipes for discovery
-        recipeProvider.searchExternalRecipes(query: '', limit: 10);
+        // Fetch a larger set of random recipes for discovery to ensure we have enough after filtering
+        recipeProvider.searchExternalRecipes(query: '', limit: 50);
       }
     });
   }
@@ -211,18 +211,22 @@ class _HomeScreenState extends State<HomeScreen>
                         // --- Discover & Try carousel ---
                         Consumer<RecipeProvider>(
                           builder: (context, recipeProvider, _) {
-                            final random = recipeProvider.generatedRecipes
-                                .where(
-                                  (r) =>
-                                      !recipeProvider.userRecipes.any(
-                                        (u) => u.id == r.id,
-                                      ),
-                                );
+                            final random =
+                                recipeProvider.generatedRecipes
+                                    .where(
+                                      (r) =>
+                                          !recipeProvider.userRecipes.any(
+                                            (u) => u.id == r.id,
+                                          ),
+                                    )
+                                    .take(10)
+                                    .toList();
+
                             if (random.isEmpty) return const SizedBox();
                             return _buildRecipeCarousel(
                               context,
                               title: 'Discover & Try',
-                              recipes: random.take(10).toList(),
+                              recipes: random,
                             );
                           },
                         ),
@@ -270,10 +274,10 @@ class _HomeScreenState extends State<HomeScreen>
         children: [
           // Background image
           AspectRatio(
-            aspectRatio: 16 / 9,
+            aspectRatio: 3 / 2,
             child: Image.asset(
               _heroImageUrl,
-              fit: BoxFit.contain,
+              fit: BoxFit.cover,
               cacheWidth: 800, // Add cache width to optimize memory
               cacheHeight: 450, // Add cache height to optimize memory
               filterQuality:
