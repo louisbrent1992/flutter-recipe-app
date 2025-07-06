@@ -5,7 +5,6 @@ import 'package:recipease/components/floating_bottom_bar.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/components/checkbox_list.dart';
 import 'package:recipease/components/screen_description_card.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:recipease/theme/theme.dart';
 import '../components/error_display.dart';
 
