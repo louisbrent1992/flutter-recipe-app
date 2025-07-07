@@ -29,8 +29,10 @@ jobs:
       - name: Patch Podfile to iOS 13.0
         run: sed -i '' "s/platform :ios, .*/platform :ios, '13.0'/" ios/Podfile
 
-      - run: pod repo update
+      - name: Install CocoaPods dependencies (with repo update)
+        run: pod install --repo-update
         working-directory: client/ios
+
 
       - run: flutter build ios --release --no-codesign
 
