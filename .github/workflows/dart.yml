@@ -12,40 +12,34 @@ jobs:
         working-directory: client
 
     steps:
-      - uses: actions/checkout@v3
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
 
-      - uses: subosito/flutter-action@v2
+      - name: 💡 Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           architecture: x64
 
-      - name: Get Flutter packages
+      - name: 📦 Install Flutter dependencies
         run: flutter pub get
 
-      - name: Generate Podfile (first build)
-        run: flutter build ios --no-codesign || true
-
-      - name: Patch platform version in generated Podfile
-        run: |
-          sed -i '' "s/platform :ios, .*/platform :ios, '13.0'/" ios/Podfile || echo "No platform line to patch"
-          echo "✅ Patched Podfile to use iOS 13.0"
-
-      - name: Final iOS Build (no codesign)
+      - name: 🔧 Build iOS app (handles CocoaPods & Podfile)
         run: flutter build ios --release --no-codesign
 
-      - name: Create Payload directory
+      - name: 📁 Create Payload folder
         run: mkdir Payload
         working-directory: client/build/ios/iphoneos
 
-      - name: Move Runner.app into Payload
-        run: mv Runner.app/ Payload
+      - name: 📦 Move .app into Payload
+        run: mv Runner.app Payload
         working-directory: client/build/ios/iphoneos
 
-      - name: Zip Payload into .ipa
+      - name: 🗜️ Zip to .ipa
         run: zip -qq -r -9 FlutterIpaExport.ipa Payload
         working-directory: client/build/ios/iphoneos
 
-      - name: Upload .ipa to release
+      - name: 🚀 Upload .ipa to GitHub release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
