@@ -29,9 +29,9 @@ jobs:
 
           platform :ios, '13.0'
 
-          flutter_root = File.expand_path('..', __dir__)
+          flutter_root = File.expand_path('../..', __dir__)
           load File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
-
+          
           flutter_ios_podfile_setup
 
           target 'Runner' do
