@@ -28,7 +28,14 @@ jobs:
         run: pod repo update
         working-directory: client/ios
 
-      - name: 🔧 Build iOS app (handles CocoaPods & Podfile)
+      - name: 🛠️ Clear and setup CocoaPods repos
+        run: |
+          rm -rf ~/.cocoapods/repos
+          pod setup
+          pod repo update
+        working-directory: client/ios
+
+      - name: Build iOS app
         run: flutter build ios --release --no-codesign
 
       - name: 📁 Create Payload folder
