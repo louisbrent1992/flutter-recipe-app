@@ -30,10 +30,6 @@ jobs:
           sed -i '' "s/platform :ios, .*/platform :ios, '13.0'/" ios/Podfile || echo "No platform line to patch"
           echo "✅ Patched Podfile to use iOS 13.0"
 
-      - name: Install CocoaPods dependencies
-        run: pod install --repo-update
-        working-directory: client/ios
-
       - name: Final iOS Build (no codesign)
         run: flutter build ios --release --no-codesign
 
