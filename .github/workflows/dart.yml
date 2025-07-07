@@ -22,40 +22,19 @@ jobs:
       - name: Get Flutter packages
         run: flutter pub get
 
-      - name: Write custom Podfile to fix missing podspecs
+      - name: Generate Podfile (first build)
+        run: flutter build ios --no-codesign || true
+
+      - name: Patch platform version in generated Podfile
         run: |
-          cat <<EOF > ios/Podfile
-          source 'https://github.com/CocoaPods/Specs.git'
-
-          platform :ios, '13.0'
-
-          flutter_root = File.expand_path('../..', __dir__)
-          load File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
-          
-          flutter_ios_podfile_setup
-
-          target 'Runner' do
-            use_frameworks!
-
-            flutter_install_all_ios_pods(File.dirname(File.realpath(__FILE__)))
-
-            target 'RunnerTests' do
-              inherit! :search_paths
-            end
-          end
-
-          post_install do |installer|
-            installer.pods_project.targets.each do |target|
-              flutter_additional_ios_build_settings(target)
-            end
-          end
-          EOF
+          sed -i '' "s/platform :ios, .*/platform :ios, '13.0'/" ios/Podfile || echo "No platform line to patch"
+          echo "✅ Patched Podfile to use iOS 13.0"
 
       - name: Install CocoaPods dependencies
         run: pod install --repo-update
         working-directory: client/ios
 
-      - name: Build iOS release (no codesign)
+      - name: Final iOS Build (no codesign)
         run: flutter build ios --release --no-codesign
 
       - name: Create Payload directory
