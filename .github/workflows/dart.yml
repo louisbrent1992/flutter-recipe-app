@@ -24,6 +24,10 @@ jobs:
       - name: 📦 Install Flutter dependencies
         run: flutter pub get
 
+      - name: 🛠️ Update CocoaPods repo
+        run: pod repo update
+        working-directory: client/ios
+
       - name: 🔧 Build iOS app (handles CocoaPods & Podfile)
         run: flutter build ios --release --no-codesign
 
