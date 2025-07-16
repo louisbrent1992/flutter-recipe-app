@@ -309,7 +309,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                         ),
                                         WidgetSpan(
                                           child: Icon(
-                                            Icons.add_circle,
+                                            Icons.add,
                                             size: AppSizing.responsiveIconSize(
                                               context,
                                               mobile: 16,
@@ -321,7 +321,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                         ),
                                         const TextSpan(
                                           text:
-                                              ' button at the bottom of your screen.',
+                                              ' button at the top of your screen.',
                                         ),
                                       ],
                                     ),
