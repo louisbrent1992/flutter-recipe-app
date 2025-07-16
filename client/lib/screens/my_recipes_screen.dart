@@ -315,26 +315,25 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                           ),
                         ),
                       ),
+                    // Floating bottom bar
+                    Consumer<RecipeProvider>(
+                      builder: (context, recipeProvider, _) {
+                        return FloatingBottomBar(
+                          showPagination: true,
+                          currentPage: _currentPage,
+                          totalPages: recipeProvider.totalPages,
+                          hasNextPage: recipeProvider.hasNextPage,
+                          hasPreviousPage: recipeProvider.hasPrevPage,
+                          isLoading: recipeProvider.isLoading,
+                          onPreviousPage: _goToPreviousPage,
+                          onNextPage: _goToNextPage,
+                        );
+                      },
+                    ),
                   ],
                 );
               },
             ),
-          ),
-
-          // Floating bottom bar
-          Consumer<RecipeProvider>(
-            builder: (context, recipeProvider, _) {
-              return FloatingBottomBar(
-                showPagination: true,
-                currentPage: _currentPage,
-                totalPages: recipeProvider.totalPages,
-                hasNextPage: recipeProvider.hasNextPage,
-                hasPreviousPage: recipeProvider.hasPrevPage,
-                isLoading: recipeProvider.isLoading,
-                onPreviousPage: _goToPreviousPage,
-                onNextPage: _goToNextPage,
-              );
-            },
           ),
         ],
       ),
