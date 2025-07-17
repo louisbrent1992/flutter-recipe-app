@@ -1,10 +1,14 @@
 platform :ios, '14.0'
 
-# Define the path to your Flutter project root
 flutter_application_path = File.expand_path('..', __dir__)
+podhelper_path = File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb')
 
-# Load Flutter CocoaPods helper
-load File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb')
+if File.exist?(podhelper_path)
+  load podhelper_path
+else
+  puts "Warning: podhelper.rb not found. Run 'flutter build ios' first."
+end
+
 
 target 'Runner' do
   use_frameworks!
