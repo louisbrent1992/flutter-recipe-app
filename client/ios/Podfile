@@ -11,7 +11,7 @@ target 'Runner' do
     load podhelper_path
     install_all_flutter_pods(flutter_application_path)
   else
-    puts "Warning: podhelper.rb not found. Skipping plugin pod installation."
+    puts "Warning: podhelper.rb not found. Run 'flutter build ios' first."
   end
 end
 
