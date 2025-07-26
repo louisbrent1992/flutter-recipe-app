@@ -74,8 +74,8 @@ class _RecipeCardState extends State<RecipeCard> {
                       ElevatedButton(
                         onPressed: () => Navigator.pop(context, true),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
+                          backgroundColor: Theme.of(context).colorScheme.warning,
+                          foregroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
                         ),
                         child: const Text('Remove'),
                       ),
@@ -104,7 +104,9 @@ class _RecipeCardState extends State<RecipeCard> {
                     ? 'Removed "${widget.recipe.title}" from favorites'
                     : 'Added "${widget.recipe.title}" to favorites',
               ),
-              backgroundColor: isCurrentlyFavorite ? Colors.orange : Colors.red,
+              backgroundColor: isCurrentlyFavorite 
+                  ? Theme.of(context).colorScheme.warning 
+                  : Theme.of(context).colorScheme.error,
               action:
                   isCurrentlyFavorite
                       ? SnackBarAction(
@@ -116,14 +118,14 @@ class _RecipeCardState extends State<RecipeCard> {
                             context,
                           );
                         },
-                        textColor: Colors.white,
+                        textColor: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
                       )
                       : SnackBarAction(
                         label: 'Go to favorites',
                         onPressed: () async {
                           Navigator.pushNamed(context, '/favorites');
                         },
-                        textColor: Colors.white,
+                        textColor: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
                       ),
             ),
           );
@@ -205,8 +207,8 @@ Shared from Recipe App
               ElevatedButton(
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
+                          backgroundColor: Theme.of(context).colorScheme.error,
+        foregroundColor: Theme.of(context).colorScheme.onError,
                 ),
                 child: const Text('Delete'),
               ),
@@ -230,14 +232,14 @@ Shared from Recipe App
                 );
                 if (response.success && mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text('Recipe restored'),
-                      backgroundColor: Colors.green,
+                      backgroundColor: Theme.of(context).colorScheme.success,
                     ),
                   );
                 }
               },
-              textColor: Colors.white,
+                                      textColor: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
             ),
           ),
         );
@@ -262,7 +264,7 @@ Shared from Recipe App
         child: Container(
           padding: EdgeInsets.all(AppSpacing.xs),
           decoration: BoxDecoration(
-            color: Colors.black.withAlpha(153), // 0.6 alpha
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(
               AppBreakpoints.isMobile(context) ? 12 : 16,
             ),
@@ -284,8 +286,8 @@ Shared from Recipe App
                     ),
                     child: CircularProgressIndicator(
                       strokeWidth: AppBreakpoints.isMobile(context) ? 1.5 : 2,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Colors.white,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
                       ),
                     ),
                   )
@@ -538,7 +540,7 @@ Shared from Recipe App
                                   : 'Add to favorites',
                           iconColor:
                               widget.recipe.isFavorite
-                                  ? Colors.red
+                                  ? Theme.of(context).colorScheme.error
                                   : Theme.of(context).colorScheme.primary,
                           isLoading: _isFavoriteLoading,
                         ),

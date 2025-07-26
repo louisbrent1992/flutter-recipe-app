@@ -69,7 +69,6 @@ class SubscriptionScreen extends StatelessWidget {
                         Text(
                           'Upgrade to Premium',
                           style: theme.textTheme.headlineMedium?.copyWith(
-                            color: colorScheme.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -78,7 +77,7 @@ class SubscriptionScreen extends StatelessWidget {
                           'Unlock all features and enjoy an ad-free experience',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.onSurface.withValues(alpha: 0.7),
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -156,7 +155,7 @@ class SubscriptionScreen extends StatelessWidget {
                       'By subscribing, you agree to our Terms of Service and Privacy Policy',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -192,7 +191,7 @@ class SubscriptionScreen extends StatelessWidget {
               ),
             ),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.1),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: Theme.of(context).colorScheme.overlayMedium),
               borderRadius: BorderRadius.circular(
                 AppBreakpoints.isMobile(context) ? 8 : 12,
               ),
@@ -219,7 +218,7 @@ class SubscriptionScreen extends StatelessWidget {
                 Text(
                   description,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: Theme.of(context).colorScheme.alphaHigh),
                     fontSize: AppTypography.responsiveCaptionSize(context),
                   ),
                 ),
@@ -259,7 +258,7 @@ class SubscriptionScreen extends StatelessWidget {
             padding: AppSizing.responsiveCardPadding(context),
             decoration: BoxDecoration(
               border: Border.all(
-                color: colorScheme.primary.withValues(alpha: 0.2),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: Theme.of(context).colorScheme.overlayHeavy),
               ),
               borderRadius: BorderRadius.circular(
                 AppBreakpoints.isMobile(context) ? 8 : 12,
@@ -282,7 +281,7 @@ class SubscriptionScreen extends StatelessWidget {
                       Text(
                         product.description,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withValues(alpha: 0.7),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: Theme.of(context).colorScheme.alphaHigh),
                           fontSize: AppTypography.responsiveCaptionSize(
                             context,
                           ),

@@ -230,18 +230,17 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors:
-                isDark
-                    ? [
-                      const Color(0xFF1A1B2E),
-                      const Color(0xFF16213E),
-                      const Color(0xFF0F3460),
-                    ]
-                    : [
-                      const Color(0xFFFFF8F0),
-                      const Color(0xFFF7EDF0),
-                      const Color(0xFFFFE5CC),
-                    ],
+            colors: isDark
+                ? [
+                    colorScheme.surface,
+                    colorScheme.surfaceContainerHighest,
+                    colorScheme.secondary.withValues(alpha: 0.1),
+                  ]
+                : [
+                    colorScheme.surface,
+                    backgroundColor,
+                    neutralColor.withValues(alpha: 0.8),
+                  ],
             stops: const [0.0, 0.6, 1.0],
           ),
         ),
@@ -315,13 +314,13 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(isMobile ? 20 : 28),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
+                    color: colorScheme.onSurface.withValues(alpha: 0.15),
                     blurRadius: 24,
                     offset: const Offset(0, 12),
                     spreadRadius: -2,
                   ),
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: colorScheme.onSurface.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -455,7 +454,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                   ],
                 ),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
                   width: 3,
                 ),
                 boxShadow: [
@@ -465,7 +464,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                     offset: const Offset(0, 8),
                   ),
                   BoxShadow(
-                    color: Colors.white.withValues(alpha: 0.3),
+                                            color: colorScheme.surface.withValues(alpha: 0.3),
                     blurRadius: isMobile ? 8 : 12,
                     offset: const Offset(0, -2),
                   ),
@@ -510,7 +509,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
           style: TextStyle(
             fontSize: isMobile ? 20 : 28, // Reduced font sizes
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
             shadows: [
               Shadow(
                 color: Colors.black.withValues(alpha: 0.3),
@@ -537,7 +536,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
           style: TextStyle(
             fontSize: isMobile ? 16 : 20,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             shadows: [
               Shadow(
                 color: Colors.black.withValues(alpha: 0.7),
@@ -1045,26 +1044,26 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
         children: [
           SizedBox(height: isMobile ? 8 : 12),
           _buildFloatingNavSection(context, colorScheme, isDark, 'Navigation', [
-            _NavItem(Icons.home_rounded, 'Home', '/home', primaryColor, 0),
+            _NavItem(Icons.home_rounded, 'Home', '/home', colorScheme.primary, 0),
             _NavItem(
               Icons.restaurant_menu_rounded,
               'My Recipes',
               '/myRecipes',
-              const Color(0xFFE17055),
+              colorScheme.warning,
               2,
             ),
             _NavItem(
               Icons.collections_bookmark_rounded,
               'Collections',
               '/collections',
-              const Color(0xFF00B894),
+              colorScheme.success,
               3,
             ),
             _NavItem(
               Icons.favorite_rounded,
               'Favorites',
               '/favorites',
-              const Color(0xFFE84393),
+              colorScheme.tertiary,
               4,
             ),
           ]),
@@ -1079,21 +1078,21 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                 Icons.explore_rounded,
                 'Discover',
                 '/discover',
-                const Color(0xFF00CEC9),
+                colorScheme.info,
                 7,
               ),
               _NavItem(
                 Icons.add_box_rounded,
                 'Import Recipe',
                 '/import',
-                const Color(0xFF0984E3),
+                colorScheme.secondary,
                 5,
               ),
               _NavItem(
                 Icons.auto_awesome_rounded,
                 'AI Generate Recipe (Beta)',
                 '/generateRecipe',
-                const Color(0xFFFD79A8),
+                colorScheme.onTertiary,
                 6,
               ),
             ],
@@ -1104,7 +1103,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               Icons.settings_rounded,
               'Settings',
               '/settings',
-              const Color(0xFF636E72),
+              colorScheme.outline,
               8,
             ),
           ]),

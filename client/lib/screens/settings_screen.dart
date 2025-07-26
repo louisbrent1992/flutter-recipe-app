@@ -190,12 +190,12 @@ class _SettingsScreenState extends State<SettingsScreen>
               Container(
                 padding: EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.1),
+                  color: Theme.of(context).colorScheme.error.withValues(alpha: Theme.of(context).colorScheme.overlayMedium),
                   borderRadius: BorderRadius.circular(
                     AppBreakpoints.isMobile(context) ? 6 : 8,
                   ),
                   border: Border.all(
-                    color: Colors.red.withValues(alpha: 0.3),
+                    color: Theme.of(context).colorScheme.error.withValues(alpha: Theme.of(context).colorScheme.alphaMedium),
                     width: 1,
                   ),
                 ),
@@ -257,8 +257,8 @@ class _SettingsScreenState extends State<SettingsScreen>
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+                          backgroundColor: Theme.of(context).colorScheme.error,
+          foregroundColor: Theme.of(context).colorScheme.onError,
               ),
               child: const Text('Delete Account'),
             ),
@@ -319,9 +319,9 @@ class _SettingsScreenState extends State<SettingsScreen>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: const Row(
+            content: Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.white),
+                Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onSuccess),
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -350,8 +350,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.error, color: Colors.white),
-                const SizedBox(width: 12),
+                Icon(Icons.error, color: Theme.of(context).colorScheme.onError),
+                SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Error deleting account: $e',
@@ -400,8 +400,8 @@ class _SettingsScreenState extends State<SettingsScreen>
       appBar: AppBar(
         title: const Text('Settings'),
         elevation: AppElevation.appBar,
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurface,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         actions: [
           if (_isEditing) ...[
             IconButton(
@@ -482,7 +482,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         _buildAnimatedTextField(
                           controller: _nameController,
                           enabled: _isEditing,
-                          label: 'Display Name:',
+                          label: 'Recipe Name:',
                           hint: user?.displayName ?? 'Your name',
                           icon: Icons.person_rounded,
                         ),
@@ -526,8 +526,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 : Icons.light_mode_rounded,
                         color:
                             themeProvider.isDarkMode
-                                ? Colors.indigo
-                                : Colors.amber,
+                                        ? Theme.of(context).colorScheme.info
+        : Theme.of(context).colorScheme.warning,
                       );
                     },
                   ),
@@ -557,7 +557,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 (value) => notificationProvider
                                     .setDailyRecipeReminder(value),
                             icon: Icons.schedule_rounded,
-                            color: Colors.teal,
+                            color: Theme.of(context).colorScheme.info,
                           ),
 
                           SizedBox(height: AppSpacing.sm),
@@ -618,7 +618,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 : Icons.star_outline_rounded,
                         color:
                             subscriptionProvider.isPremium
-                                ? Colors.amber
+                                ? Theme.of(context).colorScheme.warning
                                 : colorScheme.primary,
                         onTap:
                             () => Navigator.pushNamed(context, '/subscription'),
@@ -642,7 +642,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     title: 'My Recipes',
                     subtitle: 'Explore your recipes',
                     icon: Icons.restaurant_menu_rounded,
-                    color: Colors.orange,
+                    color: Theme.of(context).colorScheme.warning,
                     onTap: () => Navigator.pushNamed(context, '/my_recipes'),
                   ),
 
@@ -736,7 +736,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     title: 'Billing Support',
                     subtitle: 'Payments and invoices',
                     icon: Icons.payment_rounded,
-                    color: Colors.green,
+                    color: Theme.of(context).colorScheme.success,
                     onTap: () async {
                       final Uri emailLaunchUri = Uri(
                         scheme: 'mailto',
@@ -867,13 +867,13 @@ class _SettingsScreenState extends State<SettingsScreen>
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: colorScheme.secondary,
+                        color: Theme.of(context).colorScheme.error.withValues(alpha: Theme.of(context).colorScheme.overlayMedium),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.camera_alt_rounded,
                         size: 20,
-                        color: colorScheme.onSecondary,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: Theme.of(context).colorScheme.alphaHigh),
                       ),
                     ),
                   ),
@@ -891,9 +891,10 @@ class _SettingsScreenState extends State<SettingsScreen>
             user?.email ?? '',
             style: TextStyle(
               fontSize: 14,
-              color: colorScheme.onSurface.withValues(alpha: 0.7),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: Theme.of(context).colorScheme.alphaHigh),
             ),
           ),
+        
         ],
       ),
     );
@@ -906,14 +907,14 @@ class _SettingsScreenState extends State<SettingsScreen>
   }) {
     return Row(
       children: [
-        Icon(icon, color: colorScheme.secondary, size: 22),
+        Icon(icon, color: Theme.of(context).colorScheme.onSurface, size: 22),
         const SizedBox(width: 8),
         Text(
           title,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: colorScheme.secondary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
@@ -927,40 +928,58 @@ class _SettingsScreenState extends State<SettingsScreen>
     required String hint,
     required IconData icon,
   }) {
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 200),
-      child: TextField(
-        controller: controller,
-        enabled: enabled,
-        style: TextStyle(
-          fontSize: AppTypography.responsiveFontSize(context),
-          fontWeight: enabled ? FontWeight.normal : FontWeight.bold,
-        ),
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          prefixIcon: Icon(icon),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              AppBreakpoints.isMobile(context) ? 8 : 12,
-            ),
-            borderSide: enabled ? const BorderSide() : BorderSide.none,
-          ),
-          filled: !enabled,
-          fillColor:
-              enabled
-                  ? Colors.transparent
-                  : Theme.of(context).colorScheme.surface,
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(
-              AppBreakpoints.isMobile(context) ? 8 : 12,
-            ),
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.primary,
+    return Container(
+      margin: EdgeInsets.only(top: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: AppTypography.responsiveFontSize(context),
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ),
-          contentPadding: AppSpacing.allResponsive(context),
-        ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            child: TextField(
+              controller: controller,
+              enabled: enabled,
+              style: TextStyle(
+                fontSize: AppTypography.responsiveFontSize(context),
+                fontWeight: enabled ? FontWeight.normal : FontWeight.bold,
+              ),
+              decoration: InputDecoration(
+                hintText: hint,
+                prefixIcon: Icon(icon),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppBreakpoints.isMobile(context) ? 8 : 12,
+                  ),
+                  borderSide: enabled ? const BorderSide() : BorderSide.none,
+                ),
+                filled: !enabled,
+                fillColor:
+                    enabled
+                        ? Colors.transparent
+                        : Theme.of(context).colorScheme.surface,
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppBreakpoints.isMobile(context) ? 8 : 12,
+                  ),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                contentPadding: AppSpacing.allResponsive(context),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -977,7 +996,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
-        color: value ? color.withValues(alpha: 0.1) : Colors.transparent,
+        color: value ? color.withValues(alpha: Theme.of(context).colorScheme.alphaMedium) : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
       ),
       child: SwitchListTile(
@@ -996,7 +1015,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           decoration: BoxDecoration(
             color:
                 value
-                    ? color.withValues(alpha: 0.1)
+                    ? color.withValues(alpha: Theme.of(context).colorScheme.alphaMedium)
                     : Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -1005,9 +1024,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             color:
                 value
                     ? color
-                    : Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: Theme.of(context).colorScheme.alphaHigh),
           ),
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1031,7 +1048,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
+            color: color.withValues(alpha: Theme.of(context).colorScheme.alphaMedium),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -1039,7 +1056,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withValues(alpha: Theme.of(context).colorScheme.alphaMedium),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color),
@@ -1059,7 +1076,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                     if (subtitle != null) ...[
                       const SizedBox(height: 4),
-                      Text(subtitle),
+                      Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: Theme.of(context).colorScheme.alphaHigh))),
                     ],
                   ],
                 ),

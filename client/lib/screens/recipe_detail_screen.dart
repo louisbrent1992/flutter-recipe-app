@@ -258,7 +258,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             );
                           },
                         ),
-                        backgroundColor: Colors.green,
+                        backgroundColor: Theme.of(context).colorScheme.success,
                       ),
                     );
                   } else {
@@ -268,7 +268,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           recipeProvider.error?.message ??
                               'Failed to save recipe',
                         ),
-                        backgroundColor: Colors.red,
+                        backgroundColor: Theme.of(context).colorScheme.error,
                       ),
                     );
                   }
@@ -295,7 +295,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                               const Center(child: CircularProgressIndicator()),
                       errorWidget:
                           (context, url, error) =>
-                              const Icon(Icons.error, color: Colors.red),
+                              Icon(Icons.error, color: Theme.of(context).colorScheme.error),
                     ),
                   ),
                 ),

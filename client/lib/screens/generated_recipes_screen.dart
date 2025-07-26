@@ -47,7 +47,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Recipe removed from your collection'),
-            backgroundColor: Colors.orange,
+            backgroundColor: Theme.of(context).colorScheme.warning,
             action: SnackBarAction(
               label: 'Go to My Recipes',
               onPressed: () {
@@ -68,7 +68,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Recipe saved to your collection!'),
-              backgroundColor: Colors.green,
+              backgroundColor: Theme.of(context).colorScheme.success,
               action: SnackBarAction(
                 label: 'Go to My Recipes',
                 onPressed: () {
@@ -81,7 +81,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(response.message ?? 'Failed to save recipe'),
-              backgroundColor: Colors.red,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
           // Revert the saved state if save failed

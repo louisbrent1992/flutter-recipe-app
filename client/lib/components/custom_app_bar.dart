@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+
 /// A customizable app bar component that supports multiple styles and configurations.
 /// This component is designed to be reused across the application for consistent UI.
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -41,6 +42,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final theme = Theme.of(context);
 
     return AppBar(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       title:
           useLogo
               ? Image.asset('assets/icons/logo.png', height: logoHeight)
@@ -48,13 +50,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 title,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: foregroundColor ?? theme.colorScheme.onSurface,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
       centerTitle: centerTitle,
       automaticallyImplyLeading: automaticallyImplyLeading,
 
-      foregroundColor: foregroundColor ?? theme.colorScheme.onSurface,
+      foregroundColor: Theme.of(context).colorScheme.onSurface,
       elevation: elevation,
       flexibleSpace: flexibleSpace,
       bottom: bottom,

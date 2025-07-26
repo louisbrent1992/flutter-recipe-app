@@ -30,14 +30,14 @@ class ErrorDisplay extends StatelessWidget {
           // Error Title
           Text(
             _getErrorTitle(),
-            style: const TextStyle(fontSize: 18, color: Colors.grey),
+            style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           // Error Message
           Text(
             message,
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.outline),
             textAlign: TextAlign.center,
           ),
           // Retry Button (if provided)

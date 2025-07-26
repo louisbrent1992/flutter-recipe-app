@@ -161,7 +161,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
               ),
               content: Text(
                 'Recipe updated successfully. View it now or continue editing.',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh)),
               ),
               backgroundColor: Colors.green,
             ),
@@ -188,7 +188,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
               ),
               content: Text(
                 'Recipe created successfully. You can view it now.',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh)),
               ),
               duration: Duration(seconds: 5),
               backgroundColor: Colors.green,
@@ -685,10 +685,10 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                             context,
                                           ).colorScheme.secondary,
                                     ),
-                                    child: const Text(
-                                      'Cancel',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
+                                                                          child: Text(
+                                        'Cancel',
+                                        style: TextStyle(color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh)),
+                                      ),
                                   ),
                                   ElevatedButton(
                                     onPressed: () => _saveRecipe(),
@@ -710,7 +710,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                                         .computeLuminance() >
                                                     0.5
                                                 ? Colors.black
-                                                : Colors.white,
+                                                : Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
                                       ),
                                     ),
                                   ),

@@ -63,7 +63,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.error_outline, color: Colors.white),
+                Icon(Icons.error_outline, color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh)),
                 const SizedBox(width: 12),
                 Expanded(child: Text('Error loading collections: $e')),
               ],
@@ -183,7 +183,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
+                                          foregroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
                 ),
                 child: const Text('Delete'),
               ),
@@ -208,7 +208,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                     await collectionService.createCollection(name);
                     await _loadCollections();
                   },
-                  textColor: Colors.white,
+                                          textColor: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
                 ),
               ),
             );

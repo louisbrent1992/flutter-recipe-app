@@ -41,13 +41,13 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             Icon(
               isError ? Icons.error_outline : Icons.check_circle_outline,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
             ),
             const SizedBox(width: 8),
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: isError ? Colors.red : Colors.green,
+                  backgroundColor: isError ? Theme.of(context).colorScheme.error : lightSuccessColor,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 4),
         margin: const EdgeInsets.all(8),
@@ -57,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
             isError
                 ? SnackBarAction(
                   label: 'Dismiss',
-                  textColor: Colors.white,
+                  textColor: Theme.of(context).colorScheme.onError,
                   onPressed: () {
                     ScaffoldMessenger.of(context).hideCurrentSnackBar();
                   },

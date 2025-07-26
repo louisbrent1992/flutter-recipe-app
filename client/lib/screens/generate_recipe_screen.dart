@@ -414,10 +414,10 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
-                                  Icons.auto_awesome_rounded,
-                                  color: Colors.white,
-                                ),
+                                                                  Icon(
+                                    Icons.auto_awesome_rounded,
+                                    color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
+                                  ),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Generate Recipes',

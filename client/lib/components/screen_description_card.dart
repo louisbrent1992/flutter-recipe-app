@@ -43,10 +43,10 @@ class ScreenDescriptionCard extends StatelessWidget {
                       tablet: 200,
                       desktop: 240,
                     ),
-                    color: Colors.grey[300],
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     child: Icon(
                       Icons.restaurant,
-                      color: Colors.grey,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       size: AppSizing.responsiveIconSize(
                         context,
                         mobile: 40,

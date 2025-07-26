@@ -408,7 +408,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                                   .withAlpha(
                                                     128,
                                                   ) // Using surfaceContainerHighest as fallback
-                                              : Colors.white,
+                                              : Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
                                       prefixIcon: Icon(
                                         Icons.link_rounded,
                                         color: colorScheme.primary,
@@ -547,9 +547,9 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
                                                 valueColor:
-                                                    const AlwaysStoppedAnimation<
+                                                    AlwaysStoppedAnimation<
                                                       Color
-                                                    >(Colors.white),
+                                                    >(Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh)),
                                               ),
                                             )
                                             : Icon(
@@ -579,7 +579,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                       ),
                                     ),
                                     style: ElevatedButton.styleFrom(
-                                      foregroundColor: Colors.white,
+                                      foregroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
                                       backgroundColor: colorScheme.primary,
                                       elevation: AppElevation.responsive(
                                         context,

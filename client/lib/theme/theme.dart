@@ -10,11 +10,29 @@ const Color purpleColor = Color(0xFF6A0572); // Rich Purple
 
 // Dark theme colors
 const Color darkPrimaryColor = Color(0xFFE07A5F); // Keep primary color
-const Color darkSecondaryColor = Colors.white; // Lighter navy
+const Color darkSecondaryColor = Color(0xFF2A2B3F); // Darker version of secondary color
 const Color darkBackgroundColor = Color(0xFF1A1B2E); // Darker navy background
 const Color darkAccentColor = Color(0xFF4AFFB3); // Brighter mint
 const Color darkNeutralColor = Color(0xFFD4B17A); // Brighter peach
 const Color darkPurpleColor = Color(0xFF9A0AA2); // Brighter purple
+
+// Semantic colors for light theme
+const Color lightSuccessColor = Color(0xFF4CAF50); // Green
+const Color lightWarningColor = Color(0xFFFF9800); // Orange
+const Color lightInfoColor = Color(0xFF2196F3); // Blue
+const Color lightErrorColor = Color(0xFFF44336); // Red
+const Color lightOnSurfaceColor = Color(0xFF1C1B1F); // Dark text
+const Color lightOutlineColor = Color(0xFF79747E); // Border/outline
+const Color lightSurfaceVariantColor = Color(0xFFF3EDF7); // Surface variant
+
+// Semantic colors for dark theme
+const Color darkSuccessColor = Color(0xFF81C784); // Light green
+const Color darkWarningColor = Color(0xFFFFB74D); // Light orange
+const Color darkInfoColor = Color(0xFF64B5F6); // Light blue
+const Color darkErrorColor = Color(0xFFEF5350); // Light red
+const Color darkOnSurfaceColor = Color(0xFFE6E1E5); // Light text
+const Color darkOutlineColor = Color(0xFF938F99); // Light border/outline
+const Color darkSurfaceVariantColor = Color(0xFF49454F); // Dark surface variant
 
 /// Responsive breakpoints for consistent screen size handling
 class AppBreakpoints {
@@ -230,67 +248,114 @@ class AppElevation {
   }
 }
 
+/// Semantic color extension for theme
+extension AppColors on ColorScheme {
+  Color get success => brightness == Brightness.light ? lightSuccessColor : darkSuccessColor;
+  Color get warning => brightness == Brightness.light ? lightWarningColor : darkWarningColor;
+  Color get info => brightness == Brightness.light ? lightInfoColor : darkInfoColor;
+  Color get successContainer => success.withValues(alpha: 0.1);
+  Color get warningContainer => warning.withValues(alpha: 0.1);
+  Color get infoContainer => info.withValues(alpha: 0.1);
+  Color get onSuccess => brightness == Brightness.light ? lightOnSurfaceColor : darkOnSurfaceColor;
+  Color get onWarning => brightness == Brightness.light ? lightOnSurfaceColor : darkOnSurfaceColor;
+  Color get onInfo => brightness == Brightness.light ? lightOnSurfaceColor : darkOnSurfaceColor;
+  
+  /// Get appropriate text color for different emphasis levels
+  Color get textPrimary => onSurface;
+  Color get textSecondary => onSurfaceVariant;
+  Color get textTertiary => outline;
+  
+  /// Get appropriate background colors for different surface levels
+  Color get surfaceContainer => surfaceContainerHighest;
+  Color get surfaceContainerLow => surface.withValues(alpha: 0.8);
+  
+  /// Theme-aware alpha values that adjust based on brightness
+  double get alphaLow => brightness == Brightness.light ? 0.1 : 0.2;
+  double get alphaMedium => brightness == Brightness.light ? 0.3 : 0.5;
+  double get alphaHigh => brightness == Brightness.light ? 0.6 : 0.8;
+  double get alphaVeryHigh => brightness == Brightness.light ? 0.8 : 0.9;
+  
+  /// Theme-aware overlay alphas
+  double get overlayLight => brightness == Brightness.light ? 0.05 : 0.1;
+  double get overlayMedium => brightness == Brightness.light ? 0.1 : 0.2;
+  double get overlayHeavy => brightness == Brightness.light ? 0.2 : 0.4;
+  
+  /// Theme-aware shadow alphas
+  double get shadowLight => brightness == Brightness.light ? 0.08 : 0.15;
+  double get shadowMedium => brightness == Brightness.light ? 0.15 : 0.3;
+  double get shadowHeavy => brightness == Brightness.light ? 0.3 : 0.5;
+  
+  /// Theme-aware surface alphas
+  double get surfaceLight => brightness == Brightness.light ? 0.3 : 0.5;
+  double get surfaceMedium => brightness == Brightness.light ? 0.5 : 0.7;
+  double get surfaceHeavy => brightness == Brightness.light ? 0.8 : 0.9;
+}
+
 class AppTheme {
   static final ThemeData lightTheme = ThemeData(
-    colorScheme: const ColorScheme(
+    colorScheme: ColorScheme.light(
       primary: primaryColor,
       secondary: secondaryColor,
       tertiary: accentColor,
       onTertiary: purpleColor,
       surface: backgroundColor,
-      error: Colors.red,
+      surfaceContainerHighest: lightSurfaceVariantColor,
+      onSurface: lightOnSurfaceColor,
+      onSurfaceVariant: lightOnSurfaceColor.withValues(alpha: 0.6),
+      outline: lightOutlineColor,
+      outlineVariant: lightOutlineColor.withValues(alpha: 0.3),
+      error: lightErrorColor,
       onPrimary: backgroundColor,
       onSecondary: backgroundColor,
-      onSurface: Colors.black,
       onError: backgroundColor,
       brightness: Brightness.light,
     ),
-    scaffoldBackgroundColor: backgroundColor,
+    scaffoldBackgroundColor: neutralColor,
     textTheme: TextTheme(
       headlineLarge: GoogleFonts.playfairDisplay(
         fontSize: 28,
         fontWeight: FontWeight.bold,
-        color: secondaryColor,
+        color: lightOnSurfaceColor,
       ),
       headlineMedium: GoogleFonts.playfairDisplay(
         fontSize: 24,
         fontWeight: FontWeight.bold,
-        color: secondaryColor,
+        color: lightOnSurfaceColor,
       ),
       headlineSmall: GoogleFonts.playfairDisplay(
         fontSize: 16,
         fontWeight: FontWeight.bold,
-        color: secondaryColor,
+        color: lightOnSurfaceColor,
       ),
       titleLarge: GoogleFonts.playfairDisplay(
         fontSize: 24,
         fontWeight: FontWeight.bold,
-        color: backgroundColor,
+        color: lightOnSurfaceColor,
       ),
       titleMedium: GoogleFonts.playfairDisplay(
         fontSize: 20,
         fontWeight: FontWeight.bold,
-        color: backgroundColor,
+        color: lightOnSurfaceColor,
       ),
       titleSmall: GoogleFonts.playfairDisplay(
         fontSize: 16,
         fontWeight: FontWeight.bold,
-        color: backgroundColor,
+        color: lightOnSurfaceColor,
       ),
-      bodyLarge: GoogleFonts.sourceSans3(fontSize: 16, color: Colors.black),
-      bodyMedium: GoogleFonts.sourceSans3(fontSize: 14, color: Colors.black),
-      bodySmall: GoogleFonts.sourceSans3(fontSize: 12, color: Colors.black),
+      bodyLarge: GoogleFonts.sourceSans3(fontSize: 16, color: lightOnSurfaceColor),
+      bodyMedium: GoogleFonts.sourceSans3(fontSize: 14, color: lightOnSurfaceColor),
+      bodySmall: GoogleFonts.sourceSans3(fontSize: 12, color: lightOnSurfaceColor),
       labelLarge: GoogleFonts.sourceSans3(
         fontSize: 16,
         fontWeight: FontWeight.bold,
-        color: Colors.black,
+        color: lightOnSurfaceColor,
       ),
       labelMedium: GoogleFonts.sourceSans3(
         fontSize: 14,
         fontWeight: FontWeight.bold,
-        color: secondaryColor,
+        color: lightOnSurfaceColor,
       ),
-      labelSmall: GoogleFonts.sourceSans3(fontSize: 12, color: backgroundColor),
+      labelSmall: GoogleFonts.sourceSans3(fontSize: 12, color: lightOnSurfaceColor),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -299,70 +364,74 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     ),
-    dividerColor: secondaryColor,
+    dividerColor: primaryColor,
     useMaterial3: true,
   );
 
   static final ThemeData darkTheme = ThemeData(
-    colorScheme: const ColorScheme(
+    colorScheme: ColorScheme.dark(
       primary: darkPrimaryColor,
       secondary: darkSecondaryColor,
       tertiary: darkAccentColor,
       onTertiary: darkPurpleColor,
       surface: darkBackgroundColor,
-      error: Colors.red,
+      surfaceContainerHighest: darkSurfaceVariantColor,
+      onSurface: darkOnSurfaceColor,
+      onSurfaceVariant: darkOnSurfaceColor.withValues(alpha: 0.6),
+      outline: darkOutlineColor,
+      outlineVariant: darkOutlineColor.withValues(alpha: 0.3),
+      error: darkErrorColor,
       onPrimary: backgroundColor,
-      onSecondary: Colors.black,
-      onSurface: backgroundColor,
+      onSecondary: lightOnSurfaceColor,
       onError: backgroundColor,
       brightness: Brightness.dark,
     ),
-    scaffoldBackgroundColor: darkBackgroundColor,
+    scaffoldBackgroundColor: darkSecondaryColor,
     textTheme: TextTheme(
       headlineLarge: GoogleFonts.playfairDisplay(
         fontSize: 28,
         fontWeight: FontWeight.bold,
-        color: backgroundColor,
+        color: darkOnSurfaceColor,
       ),
       headlineMedium: GoogleFonts.playfairDisplay(
         fontSize: 24,
         fontWeight: FontWeight.bold,
-        color: backgroundColor,
+        color: darkOnSurfaceColor,
       ),
       headlineSmall: GoogleFonts.playfairDisplay(
         fontSize: 16,
         fontWeight: FontWeight.bold,
-        color: backgroundColor,
+        color: darkOnSurfaceColor,
       ),
       titleLarge: GoogleFonts.playfairDisplay(
         fontSize: 24,
         fontWeight: FontWeight.bold,
-        color: backgroundColor,
+        color: darkOnSurfaceColor,
       ),
       titleMedium: GoogleFonts.playfairDisplay(
         fontSize: 20,
         fontWeight: FontWeight.bold,
-        color: backgroundColor,
+        color: darkOnSurfaceColor,
       ),
       titleSmall: GoogleFonts.playfairDisplay(
         fontSize: 16,
         fontWeight: FontWeight.bold,
-        color: backgroundColor,
+        color: darkOnSurfaceColor,
       ),
-      bodyLarge: GoogleFonts.sourceSans3(fontSize: 16, color: backgroundColor),
-      bodyMedium: GoogleFonts.sourceSans3(fontSize: 14, color: backgroundColor),
-      bodySmall: GoogleFonts.sourceSans3(fontSize: 12, color: backgroundColor),
+      bodyLarge: GoogleFonts.sourceSans3(fontSize: 16, color: darkOnSurfaceColor),
+      bodyMedium: GoogleFonts.sourceSans3(fontSize: 14, color: darkOnSurfaceColor),
+      bodySmall: GoogleFonts.sourceSans3(fontSize: 12, color: darkOnSurfaceColor),
       labelLarge: GoogleFonts.sourceSans3(
         fontSize: 16,
         fontWeight: FontWeight.bold,
-        color: darkSecondaryColor,
+        color: darkOnSurfaceColor,
       ),
       labelMedium: GoogleFonts.sourceSans3(
         fontSize: 14,
         fontWeight: FontWeight.bold,
-        color: darkSecondaryColor,
+        color: darkOnSurfaceColor,
       ),
-      labelSmall: GoogleFonts.sourceSans3(fontSize: 12, color: backgroundColor),
+      labelSmall: GoogleFonts.sourceSans3(fontSize: 12, color: darkOnSurfaceColor),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(

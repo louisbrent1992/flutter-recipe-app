@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/floating_bottom_bar.dart';
+import '../theme/theme.dart';
 
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
@@ -205,7 +206,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
+                                          foregroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
                 ),
                 child: const Text('Remove'),
               ),

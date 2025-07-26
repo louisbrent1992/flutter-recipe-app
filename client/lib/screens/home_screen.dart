@@ -73,8 +73,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     // Access the user data from the provider
     Provider.of<CollectionService>(context, listen: false);
 
@@ -91,73 +89,7 @@ class _HomeScreenState extends State<HomeScreen>
       appBar: CustomAppBar(
         title: 'RecipEase',
         useLogo: true,
-        leading: Container(
-          margin: AppSpacing.allResponsive(context),
-          clipBehavior: Clip.antiAlias,
-          width: AppSizing.responsiveIconSize(
-            context,
-            mobile: 40,
-            tablet: 44,
-            desktop: 48,
-          ),
-          height: AppSizing.responsiveIconSize(
-            context,
-            mobile: 40,
-            tablet: 44,
-            desktop: 48,
-          ),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: colorScheme.surface.withValues(alpha: 0.8),
-            border: Border.all(
-              color: colorScheme.outline.withValues(alpha: 0.2),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: colorScheme.shadow.withValues(alpha: 0.08),
-                blurRadius: 3,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Center(
-            child: IconButton(
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(Colors.transparent),
-                overlayColor: WidgetStateProperty.all(
-                  colorScheme.primary.withValues(alpha: 0.1),
-                ),
-                shape: WidgetStateProperty.all(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              ),
-              icon: Icon(
-                Icons.menu_rounded,
-                color: colorScheme.primary.withValues(alpha: 0.8),
-              ),
-              iconSize: AppSizing.responsiveIconSize(context),
-              padding: EdgeInsets.zero,
-              constraints: BoxConstraints(
-                minWidth: AppSizing.responsiveIconSize(
-                  context,
-                  mobile: 40,
-                  tablet: 44,
-                  desktop: 48,
-                ),
-                minHeight: AppSizing.responsiveIconSize(
-                  context,
-                  mobile: 40,
-                  tablet: 44,
-                  desktop: 48,
-                ),
-              ),
-              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-            ),
-          ),
-        ),
+        leading: _buildModernMenuButton(context),
       ),
       drawer: const NavDrawer(),
       body: Stack(
@@ -171,14 +103,7 @@ class _HomeScreenState extends State<HomeScreen>
 
                 return Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        colorScheme.surface,
-                        colorScheme.surface.withValues(alpha: 0.8),
-                      ],
-                    ),
+                    color: Theme.of(context).scaffoldBackgroundColor,
                   ),
                   child: Scrollbar(
                     controller: _scrollController,
@@ -266,7 +191,6 @@ class _HomeScreenState extends State<HomeScreen>
   /// Builds the top hero banner with an enticing recipe photo and overlay text.
   Widget _buildHeroSection(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: Stack(
@@ -288,11 +212,11 @@ class _HomeScreenState extends State<HomeScreen>
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.primary.withValues(alpha: 0.3),
-                        colorScheme.primary.withValues(alpha: 0.7),
-                        colorScheme.primary,
-                      ],
+                                              colors: [
+                          Theme.of(context).colorScheme.primary.withValues(alpha: Theme.of(context).colorScheme.alphaMedium),
+                          Theme.of(context).colorScheme.primary.withValues(alpha: Theme.of(context).colorScheme.alphaHigh),
+                          Theme.of(context).colorScheme.primary,
+                        ],
                     ),
                   ),
                   child: Center(
@@ -301,14 +225,14 @@ class _HomeScreenState extends State<HomeScreen>
                       children: [
                         Icon(
                           Icons.error_outline,
-                          color: colorScheme.onPrimary,
+                          color: Theme.of(context).colorScheme.onPrimary,
                           size: 48,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Failed to load image',
                           style: TextStyle(
-                            color: colorScheme.onPrimary,
+                            color: Theme.of(context).colorScheme.onPrimary,
                             fontSize: 16,
                           ),
                         ),
@@ -316,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen>
                         Text(
                           'Please check the image file',
                           style: TextStyle(
-                            color: colorScheme.onPrimary.withValues(alpha: 0.7),
+                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: Theme.of(context).colorScheme.alphaHigh),
                             fontSize: 12,
                           ),
                         ),
@@ -336,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen>
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    colorScheme.surface.withValues(alpha: 0.85),
+                    Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.surfaceHeavy),
                   ],
                 ),
               ),
@@ -351,21 +275,17 @@ class _HomeScreenState extends State<HomeScreen>
               children: [
                 Text(
                   'Welcome back,',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
+                  style: theme.textTheme.bodyLarge,
                 ),
                 Text(
                   username,
-                  style: theme.textTheme.headlineLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
+                  style: theme.textTheme.headlineLarge,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'What would you like to cook today?',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.8),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -401,9 +321,6 @@ class _HomeScreenState extends State<HomeScreen>
                     title,
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.secondary,
-
-                      decorationColor: theme.colorScheme.secondary,
                     ),
                   ),
                 ),
@@ -434,6 +351,7 @@ class _HomeScreenState extends State<HomeScreen>
       height: 100,
       width: 200,
       child: Card(
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: InkWell(
@@ -447,7 +365,7 @@ class _HomeScreenState extends State<HomeScreen>
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: cat.color.withValues(alpha: 0.15),
+                    color: cat.color.withValues(alpha: Theme.of(context).colorScheme.overlayMedium),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(cat.icon, color: cat.color, size: 20),
@@ -462,7 +380,7 @@ class _HomeScreenState extends State<HomeScreen>
                         cat.title,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurface,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -471,9 +389,7 @@ class _HomeScreenState extends State<HomeScreen>
                       Text(
                         _getCategoryDescription(cat.title),
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.6,
-                          ),
+                                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                           height: 1.3,
                         ),
                       ),
@@ -495,7 +411,7 @@ class _HomeScreenState extends State<HomeScreen>
         'My Recipes',
         Icons.restaurant_menu_rounded,
         '/myRecipes',
-        Colors.orange,
+                    Theme.of(context).colorScheme.warning,
       ),
       _CategoryItem(
         'My Collections',
@@ -507,19 +423,19 @@ class _HomeScreenState extends State<HomeScreen>
         'Discover Recipes',
         Icons.explore,
         '/discover',
-        Colors.blue,
+                    Theme.of(context).colorScheme.info,
       ),
       _CategoryItem(
         'Favorite Recipes',
         Icons.favorite,
         '/favorites',
-        Colors.red,
+                    Theme.of(context).colorScheme.error,
       ),
       _CategoryItem(
         'Import Recipe',
         Icons.ios_share_rounded,
         '/import',
-        Colors.green,
+                    Theme.of(context).colorScheme.success,
       ),
       _CategoryItem(
         'Generate Recipe',
@@ -580,18 +496,15 @@ class _HomeScreenState extends State<HomeScreen>
                 Expanded(
                   child: Text(
                     title,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.secondary,
-
-                      decorationColor: theme.colorScheme.secondary,
-                    ),
+                                          style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                   ),
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
                   size: 16,
-                  color: theme.colorScheme.secondary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ],
             ),
@@ -643,8 +556,8 @@ class _HomeScreenState extends State<HomeScreen>
                   fit: BoxFit.cover,
                   errorBuilder:
                       (_, __, ___) => Container(
-                        color: theme.colorScheme.secondary.withValues(
-                          alpha: 0.1,
+                        color: Theme.of(context).colorScheme.secondary.withValues(
+                          alpha: Theme.of(context).colorScheme.overlayMedium,
                         ),
                         child: Icon(
                           Icons.restaurant,
@@ -654,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen>
                             tablet: 48,
                             desktop: 56,
                           ),
-                          color: theme.colorScheme.primary,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                 ),
@@ -666,13 +579,13 @@ class _HomeScreenState extends State<HomeScreen>
                 bottom: 0,
                 height: 60,
                 child: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black54],
-                    ),
-                  ),
+                                        decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.54)],
+                        ),
+                      ),
                 ),
               ),
               // Title
@@ -719,15 +632,15 @@ class _HomeScreenState extends State<HomeScreen>
                     title,
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.secondary,
-                      decorationColor: theme.colorScheme.secondary,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      decorationColor: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
                   size: 16,
-                  color: theme.colorScheme.secondary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ],
             ),
@@ -819,7 +732,7 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
@@ -853,7 +766,7 @@ class _HomeScreenState extends State<HomeScreen>
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           shadows: [
                             Shadow(
                               color: Colors.black.withValues(alpha: 0.5),
@@ -870,13 +783,13 @@ class _HomeScreenState extends State<HomeScreen>
                           Icon(
                             Icons.restaurant_menu_rounded,
                             size: 14,
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${collection.recipes.length} ${collection.recipes.length == 1 ? 'recipe' : 'recipes'}',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.9),
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -986,6 +899,51 @@ class _HomeScreenState extends State<HomeScreen>
             color.withValues(alpha: 0.7),
             color,
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds a modern, theme-aligned menu button with refined styling.
+  Widget _buildModernMenuButton(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(AppSpacing.responsive(context, mobile: 8, tablet: 12, desktop: 16)),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _scaffoldKey.currentState?.openDrawer(),
+          child: Container(
+            width: AppSizing.responsiveIconSize(context, mobile: 36, tablet: 40, desktop: 44),
+            height: AppSizing.responsiveIconSize(context, mobile: 36, tablet: 40, desktop: 44),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaHigh),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withValues(
+                  alpha: Theme.of(context).colorScheme.overlayLight,
+                ),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).colorScheme.shadow.withValues(
+                    alpha: Theme.of(context).colorScheme.shadowLight,
+                  ),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                  spreadRadius: 0,
+                ),
+              ],
+            ),
+            child: Center(
+              child: Icon(
+                Icons.menu_rounded,
+                color: Theme.of(context).colorScheme.onSurface,
+                size: AppSizing.responsiveIconSize(context, mobile: 18, tablet: 20, desktop: 22),
+              ),
+            ),
+          ),
         ),
       ),
     );

@@ -1,4 +1,4 @@
-import 'package:firebase_app_check/firebase_app_check.dart';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -30,12 +30,12 @@ import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:share_handler/share_handler.dart';
+// import 'package:share_handler/share_handler.dart'; // TEMPORARILY COMMENTED OUT
 import 'package:recipease/services/permission_service.dart';
+import 'package:share_handler/share_handler.dart';
 import 'screens/generated_recipes_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:device_preview/device_preview.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -69,31 +69,12 @@ void main() async {
     ),
   );
 
-  // Initialize Firebase first
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Activate app check after initialization, but before
-  // usage of any Firebase services.
-  await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug,
-    appleProvider: AppleProvider.debug,
-    webProvider: kIsWeb ? ReCaptchaV3Provider(kWebRecaptchaSiteKey) : null,
-  );
 
   await Hive.initFlutter();
   await Hive.openBox('preferences');
 
-  // Use DevicePreview only in debug mode
-  if (kDebugMode) {
-    runApp(
-      DevicePreview(
-        enabled: true, // Enable device preview in debug mode
-        builder: (context) => MyApp(Key('key')),
-      ),
-    );
-  } else {
-    runApp(MyApp(Key('key')));
-  }
+  runApp(MyApp(Key('key')));
 }
 
 class MyApp extends StatefulWidget {
@@ -110,7 +91,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // Initialize share handler
     _initShareHandler();
 
     // Request necessary permissions when app starts
@@ -211,7 +191,6 @@ class _MyAppState extends State<MyApp> {
             checkerboardOffscreenLayers:
                 false, // Disable offscreen layers checkerboard
             // Enhanced user experience configurations
-            locale: DevicePreview.locale(context), // Use device preview locale
             supportedLocales: const [
               Locale('en', 'US'),
               Locale('en', 'GB'),
@@ -238,11 +217,11 @@ class _MyAppState extends State<MyApp> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: Colors.red,
-                          size: 60,
-                        ),
+                                                  Icon(
+                            Icons.error_outline,
+                            color: Theme.of(context).colorScheme.error,
+                            size: 60,
+                          ),
                         const SizedBox(height: 16),
                         Text(
                           'Something went wrong!',
@@ -260,7 +239,7 @@ class _MyAppState extends State<MyApp> {
                   ),
                 );
               };
-              return DevicePreview.appBuilder(context, child!);
+              return child!;
             },
             home:
                 authService.user != null

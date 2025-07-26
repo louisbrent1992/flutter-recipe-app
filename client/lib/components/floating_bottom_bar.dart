@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme.dart';
 
 class FloatingBottomBar extends StatelessWidget {
   // Pagination parameters
@@ -64,7 +65,6 @@ class FloatingBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
 
     // Determine if pagination should be shown (only if more than 1 page)
     final shouldShowPagination =
@@ -78,11 +78,11 @@ class FloatingBottomBar extends StatelessWidget {
         height: shouldShowPagination ? 72 : 40,
         margin: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface.withValues(alpha: 0.95),
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.surfaceHeavy),
           borderRadius: BorderRadius.circular(shouldShowPagination ? 16 : 20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: Theme.of(context).colorScheme.shadowLight),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -137,7 +137,6 @@ class FloatingBottomBar extends StatelessWidget {
   }
 
   Widget _buildWithPagination(BuildContext context) {
-    final theme = Theme.of(context);
 
     final iconsList = [
       _buildMinimalNavIcon(
@@ -187,7 +186,7 @@ class FloatingBottomBar extends StatelessWidget {
         Container(
           height: 0.5,
           margin: const EdgeInsets.symmetric(horizontal: 16),
-          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                      color: Theme.of(context).colorScheme.outline.withValues(alpha: Theme.of(context).colorScheme.overlayMedium),
         ),
 
         // Pagination row
@@ -235,10 +234,10 @@ class FloatingBottomBar extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: Theme.of(context).colorScheme.overlayMedium),
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
-              color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: Theme.of(context).colorScheme.overlayHeavy),
               width: 0.5,
             ),
           ),
@@ -258,7 +257,7 @@ class FloatingBottomBar extends StatelessWidget {
           child: Text(
             '/',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: Theme.of(context).colorScheme.alphaMedium),
               fontSize: 10,
             ),
           ),
@@ -268,7 +267,7 @@ class FloatingBottomBar extends StatelessWidget {
         Text(
           '${totalPages ?? 1}',
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: Theme.of(context).colorScheme.alphaHigh),
             fontSize: 10,
           ),
         ),
@@ -310,7 +309,7 @@ class FloatingBottomBar extends StatelessWidget {
             width: 12,
             child: CircularProgressIndicator(
               strokeWidth: 1,
-              color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: Theme.of(context).colorScheme.alphaMedium),
             ),
           ),
         ],
@@ -333,7 +332,7 @@ class FloatingBottomBar extends StatelessWidget {
         decoration: BoxDecoration(
           color:
               isSelected
-                  ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                  ? theme.colorScheme.primary.withValues(alpha: theme.colorScheme.overlayMedium)
                   : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
