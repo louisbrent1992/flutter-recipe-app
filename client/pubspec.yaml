@@ -85,17 +85,7 @@ flutter_launcher_icons:
   adaptive_icon_foreground: "assets/icons/logo.png"
 
   ios: true
-  remove_alpha_channel_ios: true
-
-  windows:
-    generate: false
-    image_path: "path/to/image.png"
-    icon_size: 48
-
-  macos:
-    generate: false
-    image_path: "path/to/image.png"
-
+  remove_alpha_ios: true
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
