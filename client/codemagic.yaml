@@ -1,0 +1,14 @@
+workflows:
+  flutter-ios-simulator:
+    name: Flutter iOS Simulator
+
+    environment:
+      flutter: 3.32.5
+
+      xcode: 16.4
+
+    scripts:
+      - flutter build ios --simulator --flavor production # --flavor is optional
+
+    artifacts:
+      - build/ios/iphonesimulator/Runner.app
