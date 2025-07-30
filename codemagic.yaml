@@ -1,14 +1,58 @@
 workflows:
-  flutter-ios-simulator:
-    name: Flutter iOS Simulator
-
+  ios-testflight-preview:
+    name: iOS TestFlight + Stellar Preview
+    max_build_duration: 60 # minutes
     environment:
-      flutter: 3.32.5
-
-      xcode: 16.4
-
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        # These are set as environment variables in Codemagic dashboard (not hardcoded here)
+        APP_STORE_KEY: Encrypted(...) # Your .p8 private key (encrypted)
+        APP_STORE_ISSUER: Encrypted(...) # Issuer ID
+        APP_STORE_KEY_ID: Encrypted(...) # Key ID
+    cache:
+      cache_paths:
+        - $HOME/.pub-cache
+        - $FLUTTER_ROOT/.pub-cache
+        - ios/Pods
+        - node_modules
     scripts:
-      - cd client && flutter build ios --debug --simulator # --flavor is optional
+      # Install dependencies
+      - name: Install Flutter dependencies
+        script: cd client && flutter pub get
+
+      # Optional: Clean old builds for safety (doesn't delete caches)
+      - name: Clean old build artifacts
+        script: flutter clean
+
+      # Build the iOS IPA (release)
+      - name: Build iOS IPA
+        script: flutter build ipa --release --no-codesign
+
+      # Code sign (handled by Codemagic's automatic signing)
+      - name: Code sign IPA
+        script: |
+          # Codemagic automatically signs when distributing to TestFlight
+          echo "Code signing handled via Codemagic"
 
     artifacts:
-      - build/ios/iphonesimulator/Runner.app
+      - build/ios/ipa/*.ipa
+
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_KEY
+        issuer_id: $APP_STORE_ISSUER
+        key_id: $APP_STORE_KEY_ID
+        submit_to_testflight: true # Automatically makes the build available to testers
+        beta_groups:
+          - RecipeEase Testing # Name of your TestFlight tester group
+
+      # Stellar preview distribution
+      stellar:
+        enabled: true # Generates a Stellar preview link for your team
+        notify:
+          email:
+            recipients:
+              - "louisbrent1992@gmail.com"
+            message: "New build is ready for preview & TestFlight testing!"
