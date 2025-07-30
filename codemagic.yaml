@@ -8,7 +8,7 @@ workflows:
       xcode: 16.4
 
     scripts:
-      - cd client && flutter build ios --release --simulator # --flavor is optional
+      - cd client && flutter build ios --debug --simulator # --flavor is optional
 
     artifacts:
       - build/ios/iphonesimulator/Runner.app
