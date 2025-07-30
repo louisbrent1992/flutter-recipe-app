@@ -47,12 +47,3 @@ workflows:
         submit_to_testflight: true # Automatically makes the build available to testers
         beta_groups:
           - RecipeEase Testing # Name of your TestFlight tester group
-
-      # Stellar preview distribution
-      stellar:
-        enabled: true # Generates a Stellar preview link for your team
-        notify:
-          email:
-            recipients:
-              - "louisbrent1992@gmail.com"
-            message: "New build is ready for preview & TestFlight testing!"
