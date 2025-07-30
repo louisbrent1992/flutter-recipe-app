@@ -6,11 +6,6 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      vars:
-        # These are set as environment variables in Codemagic dashboard (not hardcoded here)
-        APP_STORE_KEY: Encrypted(...) # Your .p8 private key (encrypted)
-        APP_STORE_ISSUER: Encrypted(...) # Issuer ID
-        APP_STORE_KEY_ID: Encrypted(...) # Key ID
     cache:
       cache_paths:
         - $HOME/.pub-cache
