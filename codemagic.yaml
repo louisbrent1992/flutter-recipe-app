@@ -19,7 +19,7 @@ workflows:
 
       # Remove problematic manual copy of ShareExtension.appex to avoid circular build errors
       - name: Remove manual copy of ShareExtension
-        script: cd client/ios && sed -i.bak '/ShareExtension.appex/d' ios/Runner.xcodeproj/project.pbxproj
+        script: cd client && sed -i.bak '/ShareExtension.appex/d' ios/Runner.xcodeproj/project.pbxproj
 
       # Optional: Clean old builds for safety (doesn't delete caches)
       - name: Clean old build artifacts
