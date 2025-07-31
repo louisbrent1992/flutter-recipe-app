@@ -27,7 +27,7 @@ workflows:
 
       # Build the iOS IPA (release)
       - name: Build iOS IPA
-        script: cd client && flutter build ipa --release --no-codesign
+        script: cd client && flutter build ipa --release
 
       # Code sign (handled by Codemagic's automatic signing)
       - name: Code sign IPA
