@@ -206,7 +206,11 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
-                                          foregroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
+                  foregroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surface.withValues(
+                    alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+                  ),
                 ),
                 child: const Text('Remove'),
               ),
@@ -277,6 +281,12 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
     }
   }
 
+  // Helper method to check if a collection is a default collection
+  bool _isDefaultCollection(RecipeCollection collection) {
+    final defaultCollectionNames = ['Favorites', 'Recently Added'];
+    return defaultCollectionNames.contains(collection.name);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -286,11 +296,12 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
       appBar: CustomAppBar(
         title: '${_collection.name} Recipes',
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_note_rounded),
-            onPressed: _editCollection,
-            tooltip: 'Edit collection',
-          ),
+          if (!_isDefaultCollection(_collection))
+            IconButton(
+              icon: const Icon(Icons.edit_note_rounded),
+              onPressed: _editCollection,
+              tooltip: 'Edit collection',
+            ),
         ],
         floatingButtons: [
           IconButton(

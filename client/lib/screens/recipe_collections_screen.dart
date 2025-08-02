@@ -63,7 +63,12 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.error_outline, color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh)),
+                Icon(
+                  Icons.error_outline,
+                  color: Theme.of(context).colorScheme.surface.withValues(
+                    alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(child: Text('Error loading collections: $e')),
               ],
@@ -183,7 +188,11 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
-                                          foregroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
+                  foregroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surface.withValues(
+                    alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+                  ),
                 ),
                 child: const Text('Delete'),
               ),
@@ -208,7 +217,9 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                     await collectionService.createCollection(name);
                     await _loadCollections();
                   },
-                                          textColor: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
+                  textColor: Theme.of(context).colorScheme.surface.withValues(
+                    alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+                  ),
                 ),
               ),
             );
@@ -482,6 +493,11 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     return Card(
       elevation: AppElevation.responsive(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color:
+          colorScheme.brightness == Brightness.dark
+              ? colorScheme.surface.withValues(alpha: 0.1)
+              : colorScheme.surface,
+
       child: InkWell(
         onTap: () {
           // Navigate to collection detail screen
@@ -538,110 +554,115 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
               desktop: 20.0,
             );
 
-            return Padding(
-              padding: AppSizing.responsiveCardPadding(context),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Delete button in top right corner (only for user-created collections)
-                  if (!_isDefaultCollection(collection))
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.delete_outline,
-                          size: deleteButtonSize,
-                        ),
-                        onPressed:
-                            () =>
-                                _deleteCategory(collection.id, collection.name),
-                        tooltip: 'Delete category',
-                        color: Colors.grey.shade600,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-
-                  // Flexible space for icon
-                  Expanded(
-                    flex: 3,
-                    child: Center(
-                      child: Container(
-                        width: iconContainerSize,
-                        height: iconContainerSize,
-                        padding: EdgeInsets.all(containerPadding),
-                        decoration: BoxDecoration(
-                          color: collection.color.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(borderRadius),
-                          border: Border.all(
-                            color: collection.color.withValues(alpha: 0.5),
-                            width: AppBreakpoints.isMobile(context) ? 1.5 : 2.0,
-                          ),
-                        ),
-                        child: FittedBox(
-                          child: Icon(
-                            collection.icon,
-                            color: collection.color,
-                            size: iconSize,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(height: verticalSpacing),
-
-                  // Collection name - flexible space
-                  Expanded(
-                    flex: 2,
-                    child: Center(
-                      child: Text(
-                        collection.name,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.headlineSmall?.copyWith(
-                          fontSize: titleFontSize,
-                          fontWeight: FontWeight.w600,
-                          height: 1.2,
-                        ),
-                        maxLines: AppBreakpoints.isMobile(context) ? 1 : 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(height: verticalSpacing),
-
-                  // Recipe count
-                  Flexible(
-                    flex: 1,
-                    child: FittedBox(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.book,
-                            size: countIconSize,
-                            color: Colors.grey.shade600,
-                          ),
-                          SizedBox(width: AppSpacing.xs),
-                          Text(
-                            '${collection.recipes.length} ${collection.recipes.length == 1 ? 'recipe' : 'recipes'}',
-                            style: TextStyle(
-                              fontSize: countFontSize,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
+            return Stack(
+              children: [
+                // Main content
+                Padding(
+                  padding: AppSizing.responsiveCardPadding(context),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Flexible space for icon
+                      Expanded(
+                        flex: 3,
+                        child: Center(
+                          child: Container(
+                            width: iconContainerSize,
+                            height: iconContainerSize,
+                            padding: EdgeInsets.all(containerPadding),
+                            decoration: BoxDecoration(
+                              color: collection.color.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(borderRadius),
+                              border: Border.all(
+                                color: collection.color.withValues(alpha: 0.5),
+                                width:
+                                    AppBreakpoints.isMobile(context)
+                                        ? 1.5
+                                        : 2.0,
+                              ),
+                            ),
+                            child: FittedBox(
+                              child: Icon(
+                                collection.icon,
+                                color: collection.color,
+                                size: iconSize,
+                              ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
+
+                      SizedBox(height: verticalSpacing),
+
+                      // Collection name - flexible space
+                      Expanded(
+                        flex: 2,
+                        child: Center(
+                          child: Text(
+                            collection.name,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall?.copyWith(
+                              fontSize: titleFontSize,
+                              fontWeight: FontWeight.w600,
+                              height: 1.2,
+                            ),
+                            maxLines: AppBreakpoints.isMobile(context) ? 1 : 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: verticalSpacing),
+
+                      // Recipe count
+                      Flexible(
+                        flex: 1,
+                        child: FittedBox(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.book,
+                                size: countIconSize,
+                                color: Colors.grey.shade600,
+                              ),
+                              SizedBox(width: AppSpacing.xs),
+                              Text(
+                                '${collection.recipes.length} ${collection.recipes.length == 1 ? 'recipe' : 'recipes'}',
+                                style: TextStyle(
+                                  fontSize: countFontSize,
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Delete button positioned absolutely in top right corner
+                if (!_isDefaultCollection(collection))
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: IconButton(
+                      icon: Icon(Icons.delete_outline, size: deleteButtonSize),
+                      onPressed:
+                          () => _deleteCategory(collection.id, collection.name),
+                      tooltip: 'Delete category',
+                      color: Colors.grey.shade600,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: VisualDensity.compact,
                     ),
                   ),
-                ],
-              ),
+              ],
             );
           },
         ),
