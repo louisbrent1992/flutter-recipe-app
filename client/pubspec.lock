@@ -817,18 +817,18 @@ packages:
     dependency: "direct main"
     description:
       name: share_handler
-      sha256: ea0c706810bb03fe60939568f00bd9458ebb745b194a0cc6ecdbef1b23f4b9cc
+      sha256: "0a6d007f0e44fbee27164adcd159ecbc88238864313f4e5c58161cae2180328d"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.23"
+    version: "0.0.25"
   share_handler_android:
     dependency: transitive
     description:
       name: share_handler_android
-      sha256: "298e3307bca595301694e81b9e9940b3dd188e333151109fc1cd4213aa282890"
+      sha256: caf555b933dc72783aa37fef75688c7b86bd6f7bc17d80fbf585bc42f123cc8d
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.10"
+    version: "0.0.11"
   share_handler_ios:
     dependency: transitive
     description:
