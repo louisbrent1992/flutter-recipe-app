@@ -679,9 +679,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                         ),
                                       ),
                                       backgroundColor:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.surfaceContainerHighest,
+                                          Theme.of(context).colorScheme.surface,
                                       padding: EdgeInsets.symmetric(
                                         horizontal: AppSpacing.sm,
                                         vertical: AppSpacing.xs,
