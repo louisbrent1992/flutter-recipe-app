@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 const Color primaryColor = Color(0xFFE07A5F); // Warm Terracotta
-const Color secondaryColor = Color(0xFF3D405B); // Deep Navy
+Color secondaryColor = Color(0xFF3D405B).withValues(alpha: 0.8); // Deep Navy
 const Color backgroundColor = Color(0xFFF7EDF0); // Soft Blush
 const Color accentColor = Color(0xFFA5FFD6); // Mint Green
 const Color neutralColor = Color(0xFFF2CC8F); // Muted Peach

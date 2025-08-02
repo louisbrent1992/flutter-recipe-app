@@ -190,12 +190,16 @@ class _SettingsScreenState extends State<SettingsScreen>
               Container(
                 padding: EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.error.withValues(alpha: Theme.of(context).colorScheme.overlayMedium),
+                  color: Theme.of(context).colorScheme.error.withValues(
+                    alpha: Theme.of(context).colorScheme.overlayMedium,
+                  ),
                   borderRadius: BorderRadius.circular(
                     AppBreakpoints.isMobile(context) ? 6 : 8,
                   ),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.error.withValues(alpha: Theme.of(context).colorScheme.alphaMedium),
+                    color: Theme.of(context).colorScheme.error.withValues(
+                      alpha: Theme.of(context).colorScheme.alphaMedium,
+                    ),
                     width: 1,
                   ),
                 ),
@@ -257,8 +261,8 @@ class _SettingsScreenState extends State<SettingsScreen>
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
               style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.error,
-          foregroundColor: Theme.of(context).colorScheme.onError,
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
               ),
               child: const Text('Delete Account'),
             ),
@@ -321,7 +325,10 @@ class _SettingsScreenState extends State<SettingsScreen>
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onSuccess),
+                Icon(
+                  Icons.check_circle,
+                  color: Theme.of(context).colorScheme.onSuccess,
+                ),
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -526,8 +533,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 : Icons.light_mode_rounded,
                         color:
                             themeProvider.isDarkMode
-                                        ? Theme.of(context).colorScheme.info
-        : Theme.of(context).colorScheme.warning,
+                                ? Theme.of(context).colorScheme.info
+                                : Theme.of(context).colorScheme.warning,
                       );
                     },
                   ),
@@ -867,13 +874,19 @@ class _SettingsScreenState extends State<SettingsScreen>
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.error.withValues(alpha: Theme.of(context).colorScheme.overlayMedium),
+                        color: Theme.of(context).colorScheme.error.withValues(
+                          alpha: Theme.of(context).colorScheme.overlayMedium,
+                        ),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.camera_alt_rounded,
                         size: 20,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: Theme.of(context).colorScheme.alphaHigh),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(
+                          alpha: Theme.of(context).colorScheme.alphaHigh,
+                        ),
                       ),
                     ),
                   ),
@@ -891,10 +904,11 @@ class _SettingsScreenState extends State<SettingsScreen>
             user?.email ?? '',
             style: TextStyle(
               fontSize: 14,
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: Theme.of(context).colorScheme.alphaHigh),
+              color: Theme.of(context).colorScheme.onSurface.withValues(
+                alpha: Theme.of(context).colorScheme.alphaHigh,
+              ),
             ),
           ),
-        
         ],
       ),
     );
@@ -907,14 +921,20 @@ class _SettingsScreenState extends State<SettingsScreen>
   }) {
     return Row(
       children: [
-        Icon(icon, color: Theme.of(context).colorScheme.onSurface, size: 22),
+        Icon(
+          icon,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+          size: 22,
+        ),
         const SizedBox(width: 8),
         Text(
           title,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.8),
           ),
         ),
       ],
@@ -996,7 +1016,12 @@ class _SettingsScreenState extends State<SettingsScreen>
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
-        color: value ? color.withValues(alpha: Theme.of(context).colorScheme.alphaMedium) : Colors.transparent,
+        color:
+            value
+                ? color.withValues(
+                  alpha: Theme.of(context).colorScheme.alphaLow,
+                )
+                : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
       ),
       child: SwitchListTile(
@@ -1004,7 +1029,12 @@ class _SettingsScreenState extends State<SettingsScreen>
           title,
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            color: value ? color : Theme.of(context).colorScheme.onSurface,
+            color:
+                value
+                    ? color
+                    : Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.8),
           ),
         ),
         subtitle: Text(subtitle),
@@ -1015,7 +1045,9 @@ class _SettingsScreenState extends State<SettingsScreen>
           decoration: BoxDecoration(
             color:
                 value
-                    ? color.withValues(alpha: Theme.of(context).colorScheme.alphaMedium)
+                    ? color.withValues(
+                      alpha: Theme.of(context).colorScheme.alphaMedium,
+                    )
                     : Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -1024,7 +1056,9 @@ class _SettingsScreenState extends State<SettingsScreen>
             color:
                 value
                     ? color
-                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: Theme.of(context).colorScheme.alphaHigh),
+                    : Theme.of(context).colorScheme.onSurface.withValues(
+                      alpha: Theme.of(context).colorScheme.alphaHigh,
+                    ),
           ),
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1048,7 +1082,10 @@ class _SettingsScreenState extends State<SettingsScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: Theme.of(context).colorScheme.alphaMedium),
+            color: color.withValues(
+              alpha: Theme.of(context).colorScheme.alphaLow,
+            ),
+
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -1056,7 +1093,9 @@ class _SettingsScreenState extends State<SettingsScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: Theme.of(context).colorScheme.alphaMedium),
+                  color: color.withValues(
+                    alpha: Theme.of(context).colorScheme.alphaMedium,
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color),
@@ -1076,7 +1115,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                     if (subtitle != null) ...[
                       const SizedBox(height: 4),
-                      Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: Theme.of(context).colorScheme.alphaHigh))),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(
+                            alpha: Theme.of(context).colorScheme.alphaHigh,
+                          ),
+                        ),
+                      ),
                     ],
                   ],
                 ),
