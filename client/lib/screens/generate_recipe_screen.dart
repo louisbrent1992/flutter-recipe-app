@@ -145,6 +145,10 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Generate Recipe',
@@ -157,289 +161,699 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(AppSpacing.responsive(context)),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Stack(
-                      alignment: Alignment.bottomLeft,
-                      children: [
-                        // Background image
-                        AspectRatio(
-                          aspectRatio: 3 / 2,
-                          child: Image.asset(
-                            'assets/images/generate_recipe.jpg',
-                            fit: BoxFit.cover,
-                            filterQuality: FilterQuality.medium,
-                            cacheWidth: 800,
-                            cacheHeight: 450,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Theme.of(context).colorScheme.surface,
-                              );
-                            },
-                          ),
-                        ),
-                        // Gradient overlay
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.surface.withValues(alpha: 0.85),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Text overlay
-                        Padding(
-                          padding: AppSpacing.allResponsive(context),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'AI Recipe Generator',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineLarge?.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Create personalized recipes with AI',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodyMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.8),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+      body: Consumer<RecipeProvider>(
+        builder: (context, recipeProvider, _) {
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              // Background decoration with pattern
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        colorScheme.surface,
+                        colorScheme.surface.withAlpha(204), // 0.8 alpha
                       ],
+                    ),
+                  ),
+                  child: CustomPaint(
+                    painter: _BackgroundPatternPainter(
+                      color: colorScheme.primary.withAlpha(8), // 0.03 alpha
                     ),
                   ),
                 ),
               ),
 
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsetsGeometry.fromLTRB(
-                    AppSpacing.responsive(context),
-                    AppSpacing.responsive(context),
-                    AppSpacing.responsive(context),
-                    100,
-                  ),
-                  child: Consumer<RecipeProvider>(
-                    builder: (context, recipeProvider, _) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              // Main content
+              Positioned.fill(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  controller: _scrollController,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight:
+                          MediaQuery.of(context).size.height -
+                          MediaQuery.of(context).padding.top -
+                          kToolbarHeight -
+                          MediaQuery.of(context).padding.bottom,
+                      maxWidth: AppSizing.responsiveMaxWidth(context),
+                    ),
+                    child: Padding(
+                      padding: AppSpacing.allResponsive(context),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          ScreenDescriptionCard(
-                            title: 'AI Recipe Generator',
-                            description:
-                                'Enter your ingredients, dietary preferences, and cooking time to generate personalized recipes.',
-                          ),
-                          SizedBox(height: AppSpacing.responsive(context)),
-                          Text(
-                            'Ingredients:',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.headlineSmall?.copyWith(
-                              fontSize: AppTypography.responsiveHeadingSize(
-                                context,
-                                mobile: 18,
-                                tablet: 20,
-                                desktop: 22,
+                          // Main content section
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SizedBox(height: size.height * 0.08),
+
+                              // Decorative Icon
+                              Container(
+                                width: AppSizing.responsiveIconSize(
+                                  context,
+                                  mobile: 70,
+                                  tablet: 80,
+                                  desktop: 90,
+                                ),
+                                height: AppSizing.responsiveIconSize(
+                                  context,
+                                  mobile: 70,
+                                  tablet: 80,
+                                  desktop: 90,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.deepPurple.withAlpha(
+                                    77,
+                                  ), // 0.3 alpha
+                                  borderRadius: BorderRadius.circular(
+                                    AppBreakpoints.isMobile(context) ? 16 : 20,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.auto_awesome_rounded,
+                                  size: AppSizing.responsiveIconSize(
+                                    context,
+                                    mobile: 35,
+                                    tablet: 40,
+                                    desktop: 45,
+                                  ),
+                                  color: Colors.deepPurple,
+                                ),
                               ),
-                            ),
-                          ),
-                          SizedBox(height: AppSpacing.sm),
-                          TextField(
-                            controller: _ingredientController,
-                            style: TextStyle(
-                              fontSize: AppTypography.responsiveFontSize(
-                                context,
+
+                              SizedBox(height: AppSpacing.lg),
+
+                              // Title
+                              Text(
+                                'AI Recipe Generator',
+                                style: TextStyle(
+                                  fontSize: AppTypography.responsiveHeadingSize(
+                                    context,
+                                    mobile: 26.0,
+                                    tablet: 32.0,
+                                    desktop: 36.0,
+                                  ),
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: -0.5,
+                                  color: colorScheme.onSurface,
+                                ),
                               ),
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'gluten-free, chicken, eggs',
-                              hintStyle: TextStyle(
-                                fontSize: AppTypography.responsiveCaptionSize(
+
+                              SizedBox(height: AppSpacing.md),
+
+                              // Subtitle
+                              Container(
+                                padding: AppSpacing.horizontalResponsive(
                                   context,
                                 ),
-                              ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  Icons.add_circle_rounded,
-                                  size: AppSizing.responsiveIconSize(context),
-                                ),
-                                onPressed: _addIngredient,
-                              ),
-                            ),
-                            onSubmitted: (value) => _addIngredient(),
-                          ),
-                          Wrap(
-                            spacing: 8.0,
-                            children:
-                                _ingredients
-                                    .map(
-                                      (ingredient) => Chip(
-                                        label: Text(ingredient),
-                                        backgroundColor: Colors.grey[350],
-                                        onDeleted: () {
-                                          setState(() {
-                                            _ingredients.remove(ingredient);
-                                          });
-                                        },
-                                      ),
-                                    )
-                                    .toList(),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Dietary Preferences:',
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          DietaryPreferenceCheckboxList(
-                            label: 'Select Preferences',
-                            selectedPreferences: _dietaryRestrictions,
-                            onChanged: _handleDietaryPreferences,
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Cuisine Type:',
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              16.0,
-                              0,
-                              16.0,
-                              0,
-                            ),
-                            child: DropdownButton<String>(
-                              value: _cuisineType,
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  _cuisineType = newValue!;
-                                });
-                              },
-                              items:
-                                  <String>[
-                                    'Random',
-                                    'American',
-                                    'Italian',
-                                    'Chinese',
-                                    'Mexican',
-                                    'Indian',
-                                    'Japanese',
-                                    'French',
-                                    'Spanish',
-                                    'Thai',
-                                    'Greek',
-                                    'Turkish',
-                                    'Vietnamese',
-                                    'Korean',
-                                    'German',
-                                    'Polish',
-                                    'Portuguese',
-                                    'Russian',
-                                    'Brazilian',
-                                    'Dutch',
-                                    'Belgian',
-                                    'Swedish',
-                                    'Norwegian',
-                                    'Danish',
-                                  ].map<DropdownMenuItem<String>>((
-                                    String value,
-                                  ) {
-                                    return DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Text(
-                                        value,
-                                        style:
-                                            Theme.of(
-                                              context,
-                                            ).textTheme.bodyMedium,
-                                      ),
-                                    );
-                                  }).toList(),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Cooking Time:',
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          Slider.adaptive(
-                            value: _cookingTime,
-                            min: 0,
-                            max: 120,
-                            divisions: 12,
-                            label: _cookingTime.round().toString(),
-                            onChanged: (double value) {
-                              setState(() {
-                                _cookingTime = value;
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 24),
-                          ElevatedButton(
-                            onPressed:
-                                recipeProvider.isLoading
-                                    ? null
-                                    : () => _loadRecipes(context),
-                            style: const ButtonStyle(
-                              backgroundColor: WidgetStatePropertyAll(
-                                Colors.deepPurple,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                                                  Icon(
-                                    Icons.auto_awesome_rounded,
-                                    color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
-                                  ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Generate Recipes',
+                                child: Text(
+                                  'Enter your ingredients, dietary preferences, and cooking time to generate personalized recipes.',
                                   style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.onPrimary,
+                                    fontSize: AppTypography.responsiveFontSize(
+                                      context,
+                                    ),
+                                    color: colorScheme.onSurface.withAlpha(
+                                      179,
+                                    ), // 0.7 alpha
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+
+                              SizedBox(height: AppSpacing.xxl),
+
+                              // Ingredients Input field
+                              Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(
+                                    AppBreakpoints.isMobile(context) ? 12 : 16,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withAlpha(
+                                        20,
+                                      ), // 0.08 alpha
+                                      blurRadius:
+                                          AppBreakpoints.isMobile(context)
+                                              ? 15
+                                              : 20,
+                                      offset: const Offset(0, 5),
+                                    ),
+                                  ],
+                                ),
+                                child: TextField(
+                                  controller: _ingredientController,
+                                  decoration: InputDecoration(
+                                    hintText: 'gluten-free, chicken, eggs',
+                                    labelText: 'Enter ingredients',
+                                    hintStyle: TextStyle(
+                                      color: colorScheme.onSurface.withAlpha(
+                                        102,
+                                      ), // 0.4 alpha
+                                      fontSize:
+                                          AppTypography.responsiveFontSize(
+                                            context,
+                                          ),
+                                    ),
+                                    labelStyle: TextStyle(
+                                      fontSize:
+                                          AppTypography.responsiveFontSize(
+                                            context,
+                                          ),
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        AppBreakpoints.isMobile(context)
+                                            ? 12
+                                            : 16,
+                                      ),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    filled: true,
+                                    fillColor:
+                                        theme.brightness == Brightness.dark
+                                            ? colorScheme
+                                                .surfaceContainerHighest
+                                                .withAlpha(
+                                                  128,
+                                                ) // Using surfaceContainerHighest as fallback
+                                            : Theme.of(
+                                              context,
+                                            ).colorScheme.surface.withValues(
+                                              alpha:
+                                                  Theme.of(
+                                                    context,
+                                                  ).colorScheme.alphaVeryHigh,
+                                            ),
+                                    prefixIcon: Icon(
+                                      Icons.restaurant_rounded,
+                                      color: colorScheme.primary,
+                                      size: AppSizing.responsiveIconSize(
+                                        context,
+                                        mobile: 20,
+                                        tablet: 22,
+                                        desktop: 24,
+                                      ),
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        Icons.add_circle_rounded,
+                                        size: AppSizing.responsiveIconSize(
+                                          context,
+                                          mobile: 20,
+                                          tablet: 22,
+                                          desktop: 24,
+                                        ),
+                                        color: colorScheme.primary,
+                                      ),
+                                      onPressed: _addIngredient,
+                                    ),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      vertical: AppSpacing.lg,
+                                      horizontal: AppSpacing.md,
+                                    ),
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.never,
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        AppBreakpoints.isMobile(context)
+                                            ? 12
+                                            : 16,
+                                      ),
+                                      borderSide: BorderSide(
+                                        color: colorScheme.outline.withAlpha(
+                                          26,
+                                        ), // 0.1 alpha
+                                        width: 1.0,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        AppBreakpoints.isMobile(context)
+                                            ? 12
+                                            : 16,
+                                      ),
+                                      borderSide: BorderSide(
+                                        color: colorScheme.primary.withAlpha(
+                                          128,
+                                        ), // 0.5 alpha
+                                        width: 2.0,
+                                      ),
+                                    ),
+                                  ),
+                                  onSubmitted: (value) => _addIngredient(),
+                                  onChanged: (value) => setState(() {}),
+                                  style: TextStyle(
+                                    fontSize: AppTypography.responsiveFontSize(
+                                      context,
+                                    ),
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+
+                              // Ingredients chips
+                              if (_ingredients.isNotEmpty) ...[
+                                SizedBox(height: AppSpacing.md),
+                                Wrap(
+                                  spacing: 8.0,
+                                  runSpacing: 8.0,
+                                  children:
+                                      _ingredients
+                                          .map(
+                                            (ingredient) => Chip(
+                                              label: Text(
+                                                ingredient,
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      AppTypography.responsiveFontSize(
+                                                        context,
+                                                        mobile: 12.0,
+                                                        tablet: 14.0,
+                                                        desktop: 16.0,
+                                                      ),
+                                                ),
+                                              ),
+                                              backgroundColor: colorScheme
+                                                  .primary
+                                                  .withAlpha(26), // 0.1 alpha
+                                              deleteIcon: Icon(
+                                                Icons.close,
+                                                size:
+                                                    AppSizing.responsiveIconSize(
+                                                      context,
+                                                      mobile: 16,
+                                                      tablet: 18,
+                                                      desktop: 20,
+                                                    ),
+                                              ),
+                                              onDeleted: () {
+                                                setState(() {
+                                                  _ingredients.remove(
+                                                    ingredient,
+                                                  );
+                                                });
+                                              },
+                                            ),
+                                          )
+                                          .toList(),
+                                ),
+                              ],
+
+                              SizedBox(height: AppSpacing.lg),
+
+                              // Dietary Preferences
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Dietary Preferences:',
+                                    style: TextStyle(
+                                      fontSize:
+                                          AppTypography.responsiveHeadingSize(
+                                            context,
+                                            mobile: 18.0,
+                                            tablet: 20.0,
+                                            desktop: 22.0,
+                                          ),
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  SizedBox(height: AppSpacing.sm),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(
+                                        AppBreakpoints.isMobile(context)
+                                            ? 12
+                                            : 16,
+                                      ),
+                                      color:
+                                          theme.brightness == Brightness.dark
+                                              ? colorScheme
+                                                  .surfaceContainerHighest
+                                                  .withAlpha(128)
+                                              : Theme.of(
+                                                context,
+                                              ).colorScheme.surface.withValues(
+                                                alpha:
+                                                    Theme.of(
+                                                      context,
+                                                    ).colorScheme.alphaVeryHigh,
+                                              ),
+                                    ),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.md,
+                                      vertical: AppSpacing.sm,
+                                    ),
+                                    child: DietaryPreferenceCheckboxList(
+                                      label: 'Select Preferences',
+                                      selectedPreferences: _dietaryRestrictions,
+                                      onChanged: _handleDietaryPreferences,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              SizedBox(height: AppSpacing.lg),
+
+                              // Cuisine Type
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Cuisine Type:',
+                                    style: TextStyle(
+                                      fontSize:
+                                          AppTypography.responsiveHeadingSize(
+                                            context,
+                                            mobile: 18.0,
+                                            tablet: 20.0,
+                                            desktop: 22.0,
+                                          ),
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  SizedBox(height: AppSpacing.sm),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(
+                                        AppBreakpoints.isMobile(context)
+                                            ? 12
+                                            : 16,
+                                      ),
+                                      color:
+                                          theme.brightness == Brightness.dark
+                                              ? colorScheme
+                                                  .surfaceContainerHighest
+                                                  .withAlpha(128)
+                                              : Theme.of(
+                                                context,
+                                              ).colorScheme.surface.withValues(
+                                                alpha:
+                                                    Theme.of(
+                                                      context,
+                                                    ).colorScheme.alphaVeryHigh,
+                                              ),
+                                    ),
+                                    child: DropdownButton<String>(
+                                      value: _cuisineType,
+                                      onChanged: (String? newValue) {
+                                        setState(() {
+                                          _cuisineType = newValue!;
+                                        });
+                                      },
+                                      items:
+                                          <String>[
+                                            'Random',
+                                            'American',
+                                            'Italian',
+                                            'Chinese',
+                                            'Mexican',
+                                            'Indian',
+                                            'Japanese',
+                                            'French',
+                                            'Spanish',
+                                            'Thai',
+                                            'Greek',
+                                            'Turkish',
+                                            'Vietnamese',
+                                            'Korean',
+                                            'German',
+                                            'Polish',
+                                            'Portuguese',
+                                            'Russian',
+                                            'Brazilian',
+                                            'Dutch',
+                                            'Belgian',
+                                            'Swedish',
+                                            'Norwegian',
+                                            'Danish',
+                                          ].map<DropdownMenuItem<String>>((
+                                            String value,
+                                          ) {
+                                            return DropdownMenuItem<String>(
+                                              value: value,
+                                              child: Text(
+                                                value,
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      AppTypography.responsiveFontSize(
+                                                        context,
+                                                      ),
+                                                  color: colorScheme.onSurface,
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                      isExpanded: true,
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: AppSpacing.md,
+                                        vertical: AppSpacing.sm,
+                                      ),
+                                      underline: Container(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              SizedBox(height: AppSpacing.lg),
+
+                              // Cooking Time
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Cooking Time: ${_cookingTime.round()} minutes',
+                                    style: TextStyle(
+                                      fontSize:
+                                          AppTypography.responsiveHeadingSize(
+                                            context,
+                                            mobile: 18.0,
+                                            tablet: 20.0,
+                                            desktop: 22.0,
+                                          ),
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  SizedBox(height: AppSpacing.sm),
+                                  Slider.adaptive(
+                                    value: _cookingTime,
+                                    min: 0,
+                                    max: 120,
+                                    divisions: 12,
+                                    activeColor: colorScheme.primary,
+                                    inactiveColor: colorScheme.primary
+                                        .withAlpha(51), // 0.2 alpha
+                                    onChanged: (double value) {
+                                      setState(() {
+                                        _cookingTime = value;
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+
+                              SizedBox(height: AppSpacing.xxl),
+
+                              // Generate button
+                              SizedBox(
+                                width:
+                                    AppBreakpoints.isMobile(context)
+                                        ? 200
+                                        : 240,
+                                height:
+                                    AppBreakpoints.isMobile(context) ? 50 : 56,
+                                child: ElevatedButton.icon(
+                                  onPressed:
+                                      recipeProvider.isLoading
+                                          ? null
+                                          : () => _loadRecipes(context),
+                                  icon:
+                                      recipeProvider.isLoading
+                                          ? SizedBox(
+                                            width: AppSizing.responsiveIconSize(
+                                              context,
+                                              mobile: 18,
+                                              tablet: 20,
+                                              desktop: 22,
+                                            ),
+                                            height:
+                                                AppSizing.responsiveIconSize(
+                                                  context,
+                                                  mobile: 18,
+                                                  tablet: 20,
+                                                  desktop: 22,
+                                                ),
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .surface
+                                                        .withValues(
+                                                          alpha:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .alphaVeryHigh,
+                                                        ),
+                                                  ),
+                                            ),
+                                          )
+                                          : Icon(
+                                            Icons.auto_awesome_rounded,
+                                            size: AppSizing.responsiveIconSize(
+                                              context,
+                                              mobile: 20,
+                                              tablet: 22,
+                                              desktop: 24,
+                                            ),
+                                          ),
+                                  label: Text(
+                                    recipeProvider.isLoading
+                                        ? 'Generating...'
+                                        : 'Generate Recipes',
+                                    style: TextStyle(
+                                      fontSize:
+                                          AppTypography.responsiveFontSize(
+                                            context,
+                                            mobile: 15.0,
+                                            tablet: 17.0,
+                                            desktop: 18.0,
+                                          ),
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    foregroundColor: Theme.of(
+                                      context,
+                                    ).colorScheme.surface.withValues(
+                                      alpha:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.alphaVeryHigh,
+                                    ),
+                                    backgroundColor: Colors.deepPurple,
+                                    elevation: AppElevation.responsive(context),
+                                    shadowColor: Colors.deepPurple.withAlpha(
+                                      102,
+                                    ), // 0.4 alpha
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        AppBreakpoints.isMobile(context)
+                                            ? 25
+                                            : 28,
+                                      ),
+                                    ),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: AppSpacing.md,
+                                      horizontal: AppSpacing.lg,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // Bottom section - pushed to bottom of screen
+                          Padding(
+                            padding: EdgeInsets.only(bottom: AppSpacing.md),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.help_outline,
+                                  size: AppSizing.responsiveIconSize(
+                                    context,
+                                    mobile: 14,
+                                    tablet: 16,
+                                    desktop: 18,
+                                  ),
+                                  color: colorScheme.onSurface.withAlpha(
+                                    102,
+                                  ), // 0.4 alpha
+                                ),
+                                SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: Text(
+                                    'AI will create recipes based on your preferences and available ingredients',
+                                    style: TextStyle(
+                                      fontSize:
+                                          AppTypography.responsiveCaptionSize(
+                                            context,
+                                          ),
+                                      color: colorScheme.onSurface.withAlpha(
+                                        128,
+                                      ), // 0.5 alpha
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                    textAlign: TextAlign.left,
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         ],
-                      );
-                    },
+                      ),
+                    ),
                   ),
                 ),
               ),
+              FloatingBottomBar(),
             ],
-          ),
-          FloatingBottomBar(),
-        ],
+          );
+        },
       ),
     );
   }
+}
+
+// Custom painter to draw a subtle pattern in the background
+class _BackgroundPatternPainter extends CustomPainter {
+  final Color color;
+
+  _BackgroundPatternPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint =
+        Paint()
+          ..color = color
+          ..strokeWidth = 1.0
+          ..style = PaintingStyle.stroke;
+
+    const spacing = 25.0;
+
+    // Draw small circles pattern
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        // Alternate between small circles and dots
+        if ((x ~/ spacing + y ~/ spacing) % 3 == 0) {
+          canvas.drawCircle(Offset(x, y), 2, paint);
+        } else if ((x ~/ spacing + y ~/ spacing) % 3 == 1) {
+          canvas.drawCircle(Offset(x, y), 1, paint);
+        } else {
+          canvas.drawCircle(Offset(x, y), 3, paint..style = PaintingStyle.fill);
+          canvas.drawCircle(
+            Offset(x, y),
+            3,
+            paint..style = PaintingStyle.stroke,
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_BackgroundPatternPainter oldDelegate) =>
+      color != oldDelegate.color;
 }
