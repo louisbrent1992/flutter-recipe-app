@@ -1,6 +1,6 @@
 workflows:
   ios-testflight-preview:
-    name: iOS TestFlight + Stellar Preview
+    name: iOS TestFlight
     max_build_duration: 60 # minutes
     environment:
       flutter: stable
