@@ -201,6 +201,7 @@ class _ExpandedImageViewState extends State<_ExpandedImageView>
                             child: CachedNetworkImage(
                               imageUrl: widget.imageUrl,
                               fit: BoxFit.contain,
+
                               placeholder:
                                   (context, url) => const Center(
                                     child: CircularProgressIndicator(

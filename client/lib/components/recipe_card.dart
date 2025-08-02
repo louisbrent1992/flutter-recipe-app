@@ -282,7 +282,13 @@ Shared from Recipe App
           decoration: BoxDecoration(
             color: Theme.of(
               context,
-            ).colorScheme.onSurface.withValues(alpha: 0.6),
+            ).colorScheme.secondary.withValues(alpha: 0.8),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.secondary.withValues(alpha: 0.5),
+              width: 0.2,
+            ),
             borderRadius: BorderRadius.circular(
               AppBreakpoints.isMobile(context) ? 12 : 16,
             ),
