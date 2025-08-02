@@ -304,8 +304,23 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                           ),
                                         ),
                                         const TextSpan(
+                                          text: ' share button (Android) or ',
+                                        ),
+                                        WidgetSpan(
+                                          child: Icon(
+                                            Icons.ios_share,
+                                            size: AppSizing.responsiveIconSize(
+                                              context,
+                                              mobile: 16,
+                                              tablet: 18,
+                                              desktop: 20,
+                                            ),
+                                            color: colorScheme.primary,
+                                          ),
+                                        ),
+                                        const TextSpan(
                                           text:
-                                              ' share button in your favorite social media app, or paste a recipe URL below to import recipes. You can also create a recipe manually using the ',
+                                              ' share button (iOS) in your favorite social media app, or paste a recipe URL below to import recipes. You can also create a recipe manually using the ',
                                         ),
                                         WidgetSpan(
                                           child: Icon(
@@ -408,7 +423,14 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                                   .withAlpha(
                                                     128,
                                                   ) // Using surfaceContainerHighest as fallback
-                                              : Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
+                                              : Theme.of(
+                                                context,
+                                              ).colorScheme.surface.withValues(
+                                                alpha:
+                                                    Theme.of(
+                                                      context,
+                                                    ).colorScheme.alphaVeryHigh,
+                                              ),
                                       prefixIcon: Icon(
                                         Icons.link_rounded,
                                         color: colorScheme.primary,
@@ -546,10 +568,19 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                                   ),
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
-                                                valueColor:
-                                                    AlwaysStoppedAnimation<
-                                                      Color
-                                                    >(Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh)),
+                                                valueColor: AlwaysStoppedAnimation<
+                                                  Color
+                                                >(
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .surface
+                                                      .withValues(
+                                                        alpha:
+                                                            Theme.of(context)
+                                                                .colorScheme
+                                                                .alphaVeryHigh,
+                                                      ),
+                                                ),
                                               ),
                                             )
                                             : Icon(
@@ -579,7 +610,14 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                       ),
                                     ),
                                     style: ElevatedButton.styleFrom(
-                                      foregroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
+                                      foregroundColor: Theme.of(
+                                        context,
+                                      ).colorScheme.surface.withValues(
+                                        alpha:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.alphaVeryHigh,
+                                      ),
                                       backgroundColor: colorScheme.primary,
                                       elevation: AppElevation.responsive(
                                         context,
