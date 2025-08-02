@@ -32,6 +32,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
   @override
   void initState() {
     super.initState();
+    _collectionService = CollectionService();
+    _collectionService.getCollection(widget.collection.id);
     _collection = widget.collection;
     _scrollController = ScrollController();
     _searchController = TextEditingController();
