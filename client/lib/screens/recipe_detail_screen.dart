@@ -9,9 +9,9 @@ import '../models/recipe.dart';
 import '../components/custom_app_bar.dart';
 import 'package:url_launcher/link.dart';
 import '../providers/user_profile_provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../components/floating_bottom_bar.dart';
 import '../theme/theme.dart';
+import '../components/expandable_image.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   final Recipe recipe;
@@ -361,17 +361,16 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 flexibleSpace: FlexibleSpaceBar(
                   background: AspectRatio(
                     aspectRatio: 16 / 9,
-                    child: CachedNetworkImage(
+                    child: ExpandableImage(
                       imageUrl: recipe.imageUrl,
                       fit: BoxFit.cover,
-                      placeholder:
-                          (context, url) =>
-                              const Center(child: CircularProgressIndicator()),
-                      errorWidget:
-                          (context, url, error) => Icon(
-                            Icons.error,
-                            color: Theme.of(context).colorScheme.error,
-                          ),
+                      placeholder: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      errorWidget: Icon(
+                        Icons.error,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ),
                 ),

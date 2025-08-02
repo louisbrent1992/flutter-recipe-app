@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/theme.dart';
+import 'expandable_image.dart';
 
 class ScreenDescriptionCard extends StatelessWidget {
   final String title;
@@ -20,12 +21,17 @@ class ScreenDescriptionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (imageUrl != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(
-                AppBreakpoints.isMobile(context) ? 8 : 12,
+            ExpandableImage(
+              imageUrl: imageUrl!,
+              width: double.infinity,
+              height: AppSizing.responsiveIconSize(
+                context,
+                mobile: 160,
+                tablet: 200,
+                desktop: 240,
               ),
-              child: Image.network(
-                imageUrl!,
+              fit: BoxFit.cover,
+              errorWidget: Container(
                 width: double.infinity,
                 height: AppSizing.responsiveIconSize(
                   context,
@@ -33,29 +39,17 @@ class ScreenDescriptionCard extends StatelessWidget {
                   tablet: 200,
                   desktop: 240,
                 ),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: double.infinity,
-                    height: AppSizing.responsiveIconSize(
-                      context,
-                      mobile: 160,
-                      tablet: 200,
-                      desktop: 240,
-                    ),
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: Icon(
-                      Icons.restaurant,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      size: AppSizing.responsiveIconSize(
-                        context,
-                        mobile: 40,
-                        tablet: 48,
-                        desktop: 56,
-                      ),
-                    ),
-                  );
-                },
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: Icon(
+                  Icons.restaurant,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  size: AppSizing.responsiveIconSize(
+                    context,
+                    mobile: 40,
+                    tablet: 48,
+                    desktop: 56,
+                  ),
+                ),
               ),
             ),
           SizedBox(height: AppSpacing.responsive(context)),
