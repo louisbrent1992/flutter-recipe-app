@@ -655,7 +655,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                 );
                               },
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Icon(
                                     Icons.help_outline,
@@ -673,7 +673,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                   Expanded(
                                     child: Center(
                                       child: Text(
-                                        'Supported sites: AllRecipes, Instagram, Food Network, BBC Food, and more!',
+                                        'Supported sites: AllRecipes, Instagram, TikTok, Food Network, BBC Food, and many more!',
                                         style: TextStyle(
                                           fontSize:
                                               AppTypography.responsiveCaptionSize(
