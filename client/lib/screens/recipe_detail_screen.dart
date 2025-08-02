@@ -46,6 +46,18 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     });
   }
 
+  /// Determines if a recipe is custom (user-created or imported) vs external API
+  bool _isCustomRecipe(Recipe recipe) {
+    // Custom recipes are those that:
+    // 1. Are AI-generated (user created with AI assistance)
+    // 2. Have no external source (user created manually)
+    // 3. Are imported from external sources (have source but are user-saved)
+    return recipe.aiGenerated ||
+        (recipe.source == null &&
+            recipe.sourceUrl == null &&
+            recipe.sourcePlatform == null);
+  }
+
   Widget _buildSourceLink() {
     if (widget.recipe.id.isEmpty) return const SizedBox.shrink();
 
@@ -214,7 +226,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       appBar: CustomAppBar(
         title: 'Recipe Details',
         floatingButtons: [
-          if (_isSaved)
+          // Show edit button only for custom recipes (user-created or imported)
+          if (_isSaved && _isCustomRecipe(recipe))
             IconButton(
               icon: const Icon(Icons.edit),
               tooltip: 'Edit Recipe',
@@ -227,8 +240,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   ),
                 );
               },
-            )
-          else
+            ),
+          // Show save button for unsaved recipes
+          if (!_isSaved)
             IconButton(
               icon: const Icon(Icons.save),
               tooltip: 'Save Recipe',
@@ -275,6 +289,66 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 }
               },
             ),
+          // Show delete button for all saved recipes
+          if (_isSaved)
+            IconButton(
+              icon: const Icon(Icons.delete),
+              tooltip: 'Delete Recipe',
+              onPressed: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder:
+                      (context) => AlertDialog(
+                        title: const Text('Delete Recipe'),
+                        content: const Text(
+                          'Are you sure you want to delete this recipe?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                );
+
+                if (confirmed == true && context.mounted) {
+                  final recipeProvider = context.read<RecipeProvider>();
+                  final success = await recipeProvider.deleteUserRecipe(
+                    widget.recipe.id,
+                    context,
+                  );
+                  if (context.mounted) {
+                    if (success) {
+                      setState(() {
+                        _isSaved = false;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Recipe deleted successfully!'),
+                          backgroundColor:
+                              Theme.of(context).colorScheme.success,
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            recipeProvider.error?.message ??
+                                'Failed to delete recipe',
+                          ),
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                        ),
+                      );
+                    }
+                  }
+                }
+              },
+            ),
         ],
       ),
       body: Stack(
@@ -294,8 +368,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           (context, url) =>
                               const Center(child: CircularProgressIndicator()),
                       errorWidget:
-                          (context, url, error) =>
-                              Icon(Icons.error, color: Theme.of(context).colorScheme.error),
+                          (context, url, error) => Icon(
+                            Icons.error,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                     ),
                   ),
                 ),
