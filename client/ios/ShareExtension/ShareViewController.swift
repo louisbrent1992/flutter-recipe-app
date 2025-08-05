@@ -57,8 +57,8 @@ class ShareViewController: UIViewController {
     }
     
     private func processSharedItems(_ items: [String]) {
-        // Create URL scheme to open the main app
-        let urlScheme = "ShareMedia-\(Bundle.main.bundleIdentifier ?? "com.recipease.kitchen")"
+        // Use a more reliable URL scheme - hardcode if known
+        let urlScheme = "recipease" // More reliable than dynamic construction
         
         // Encode the shared content
         let sharedContent = items.joined(separator: "\n")
@@ -66,18 +66,22 @@ class ShareViewController: UIViewController {
         
         // Create the URL to open the main app
         if let url = URL(string: "\(urlScheme)://share?content=\(encodedContent)") {
-            // Open the main app
-            _ = openURL(url)
+            // Open the main app on main thread
+            DispatchQueue.main.async {
+                _ = self.openURL(url)
+                self.completeRequest()
+            }
+        } else {
+            completeRequest()
         }
-        
-        completeRequest()
     }
     
-    private func openURL(_ url: URL) -> Bool {
+    @objc private func openURL(_ url: URL) -> Bool {
         var responder: UIResponder? = self
         while responder != nil {
             if let application = responder as? UIApplication {
-                return application.perform(#selector(openURL(_:)), with: url) != nil
+                application.open(url, options: [:], completionHandler: nil)
+                return true
             }
             responder = responder?.next
         }
