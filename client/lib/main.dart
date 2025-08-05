@@ -1,4 +1,3 @@
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -36,6 +35,7 @@ import 'package:share_handler/share_handler.dart';
 import 'screens/generated_recipes_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:recipease/services/deep_link_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -124,7 +124,10 @@ class _MyAppState extends State<MyApp> {
   // Handle the shared media
   void _handleSharedMedia(SharedMedia sharedMedia) {
     if (sharedMedia.content != null && sharedMedia.content!.isNotEmpty) {
-      // Directly trigger import recipe function instead of navigating to import screen
+      // Handle deep links from share extension
+      DeepLinkService.handleDeepLink(sharedMedia.content);
+
+      // Also handle as regular shared content for backward compatibility
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _navigateToImportScreen(sharedMedia.content!);
         _importRecipeFromSharedMedia(sharedMedia.content!);
@@ -217,11 +220,11 @@ class _MyAppState extends State<MyApp> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                                                  Icon(
-                            Icons.error_outline,
-                            color: Theme.of(context).colorScheme.error,
-                            size: 60,
-                          ),
+                        Icon(
+                          Icons.error_outline,
+                          color: Theme.of(context).colorScheme.error,
+                          size: 60,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'Something went wrong!',
