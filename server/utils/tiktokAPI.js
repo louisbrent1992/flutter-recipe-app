@@ -11,8 +11,9 @@ const axios = require("axios");
  * @returns {string|null} - The video ID or null if not found
  */
 function extractTikTokVideoId(url) {
+	// Handle both old format (/video/) and new short format (/t/)
 	const match = url.match(
-		/(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[\w.-]+\/video\/(\d+)(?:\?.*)?/i
+		/(?:https?:\/\/)?(?:www\.)?tiktok\.com\/(?:@[\w.-]+\/video\/|t\/)(\d+)(?:\?.*)?/i
 	);
 	return match ? match[1] : null;
 }
@@ -75,13 +76,22 @@ async function getVideoInfoById(videoId) {
  * @returns {Promise<Object>} - Video information
  */
 async function getTikTokVideoFromUrl(url) {
-	const videoId = extractTikTokVideoId(url);
+	try {
+		console.log("Processing TikTok URL:", url);
+		const videoId = extractTikTokVideoId(url);
 
-	if (!videoId) {
-		throw new Error("Invalid TikTok URL. Could not extract video ID.");
+		if (!videoId) {
+			throw new Error(
+				"Invalid TikTok URL. Could not extract video ID. Please check the URL format."
+			);
+		}
+
+		console.log("Extracted video ID:", videoId);
+		return await getVideoInfoById(videoId);
+	} catch (error) {
+		console.error("Error processing TikTok URL:", url, error);
+		throw new Error(`Failed to process TikTok URL: ${error.message}`);
 	}
-
-	return getVideoInfoById(videoId);
 }
 
 module.exports = {

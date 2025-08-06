@@ -24,19 +24,15 @@ router.get("/search", auth, async (req, res) => {
 			const searchTerms = query
 				.toLowerCase()
 				.split(/\s+/)
-				.filter((term) => term.length > 0);
+				.filter((term) => term.length > 0)
+				.slice(0, 3); // Limit to first 3 terms for performance
 			console.log("Search terms:", searchTerms);
 
-			recipesRef = db.collection("recipes");
-
-			const searchQueries = searchTerms.map((term) => {
-				return db
+			// Use the most relevant search term for the primary query
+			if (searchTerms.length > 0) {
+				recipesRef = db
 					.collection("recipes")
-					.where("searchableFields", "array-contains", term);
-			});
-
-			if (searchQueries.length > 0) {
-				recipesRef = searchQueries[0];
+					.where("searchableFields", "array-contains", searchTerms[0]);
 			}
 		}
 		if (difficulty) {
@@ -59,9 +55,9 @@ router.get("/search", auth, async (req, res) => {
 		const totalRecipes = totalQuery.data().count;
 		console.log("Total recipes found:", totalRecipes);
 
-		// Fetch more recipes to account for potential duplicates (reduced since DB is now clean)
-		const bufferMultiplier = 1.5; // Reduced from 3x since we cleaned up duplicates
-		const fetchLimit = Math.min(limit * bufferMultiplier, 200); // Reduced cap since less buffer needed
+		// Reduced buffer multiplier for better performance
+		const bufferMultiplier = 1.2; // Reduced from 1.5x
+		const fetchLimit = Math.min(limit * bufferMultiplier, 150); // Reduced cap
 		const startAt = Math.max(0, (page - 1) * limit);
 
 		// Fetch recipes with smaller buffer for deduplication

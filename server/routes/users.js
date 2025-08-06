@@ -44,13 +44,8 @@ router.get("/recipes", auth, async (req, res) => {
 		const limit = parseInt(req.query.limit) || 10;
 		const startAt = (page - 1) * limit;
 
+		// Use a single query with pagination instead of separate count query
 		const recipesRef = db.collection("recipes");
-		const totalQuery = await recipesRef
-			.where("userId", "==", userId)
-			.count()
-			.get();
-		const totalRecipes = totalQuery.data().count;
-
 		const snapshot = await recipesRef
 			.where("userId", "==", userId)
 			.orderBy("createdAt", "desc")
@@ -66,15 +61,31 @@ router.get("/recipes", auth, async (req, res) => {
 			});
 		});
 
+		// Get total count only if this is the first page or if we need pagination info
+		let totalRecipes = 0;
+		let totalPages = 0;
+		let hasNextPage = false;
+		let hasPrevPage = page > 1;
+
+		if (page === 1 || recipes.length === limit) {
+			const totalQuery = await recipesRef
+				.where("userId", "==", userId)
+				.count()
+				.get();
+			totalRecipes = totalQuery.data().count;
+			totalPages = Math.ceil(totalRecipes / limit);
+			hasNextPage = page * limit < totalRecipes;
+		}
+
 		res.json({
 			recipes,
 			pagination: {
 				total: totalRecipes,
 				page,
 				limit,
-				totalPages: Math.ceil(totalRecipes / limit),
-				hasNextPage: page * limit < totalRecipes,
-				hasPrevPage: page > 1,
+				totalPages,
+				hasNextPage,
+				hasPrevPage,
 			},
 		});
 	} catch (error) {

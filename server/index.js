@@ -15,6 +15,45 @@ const admin = require("firebase-admin");
 // Initialize Firebase
 require("./config/firebase").initFirebase();
 
+// Simple in-memory cache for performance
+const cache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Cache middleware
+const cacheMiddleware = (duration = CACHE_TTL) => {
+	return (req, res, next) => {
+		const key = `${req.method}:${req.originalUrl}`;
+		const cached = cache.get(key);
+
+		if (cached && Date.now() - cached.timestamp < duration) {
+			return res.json(cached.data);
+		}
+
+		// Store original send method
+		const originalSend = res.json;
+
+		// Override send method to cache response
+		res.json = function (data) {
+			cache.set(key, {
+				data,
+				timestamp: Date.now(),
+			});
+
+			// Clean up old cache entries
+			const now = Date.now();
+			for (const [cacheKey, value] of cache.entries()) {
+				if (now - value.timestamp > CACHE_TTL) {
+					cache.delete(cacheKey);
+				}
+			}
+
+			originalSend.call(this, data);
+		};
+
+		next();
+	};
+};
+
 // Import routes
 const aiRoutes = require("./routes/generatedRecipes");
 const discoverRoutes = require("./routes/discover");
@@ -24,12 +63,33 @@ const collectionRoutes = require("./routes/collections");
 const dataDeletionRoutes = require("./routes/data-deletion");
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 8080;
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+
+// Add request timeout middleware
+app.use((req, res, next) => {
+	// Set timeout for all requests
+	req.setTimeout(30000); // 30 seconds
+	res.setTimeout(30000); // 30 seconds
+
+	// Add timeout handler
+	const timeout = setTimeout(() => {
+		if (!res.headersSent) {
+			res.status(408).json({ error: "Request timeout" });
+		}
+	}, 30000);
+
+	// Clear timeout when response is sent
+	res.on("finish", () => {
+		clearTimeout(timeout);
+	});
+
+	next();
+});
 
 // Trust proxy for rate limiting and IP detection (needed for data deletion)
 app.set("trust proxy", 1);
@@ -47,7 +107,7 @@ if (process.env.NODE_ENV !== "production") {
 
 // API Routes with clean naming structure
 app.use("/api/ai/recipes", aiRoutes);
-app.use("/api/discover", discoverRoutes);
+app.use("/api/discover", cacheMiddleware(2 * 60 * 1000), discoverRoutes); // Cache discover routes for 2 minutes
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/collections", collectionRoutes);
