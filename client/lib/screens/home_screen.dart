@@ -210,8 +210,8 @@ class _HomeScreenState extends State<HomeScreen>
                 return Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                      begin: Alignment.bottomLeft,
+                      end: Alignment.topRight,
                       colors: [
                         Theme.of(context).colorScheme.primary.withValues(
                           alpha: Theme.of(context).colorScheme.alphaMedium,

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logger/logger.dart';
@@ -17,7 +18,8 @@ class ApiClient {
 
   /// Base URL for API requests
   String get baseUrl {
-    final String productionUrl = 'https://flutter-recipe-app.onrender.com/api';
+    final String productionUrl =
+        'https://recipease-api-280575606029.us-west1.run.app/api';
     final String developmentUrl =
         Platform.isAndroid
             ? 'http://172.16.1.2:3001/api'
@@ -148,7 +150,21 @@ class ApiClient {
     ).replace(queryParameters: queryParams);
 
     _logger.d('GET $uri');
-    return http.get(uri, headers: headers);
+
+    // Add timeout to requests
+    final response = await http
+        .get(uri, headers: headers)
+        .timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw TimeoutException(
+              'Request timed out',
+              const Duration(seconds: 30),
+            );
+          },
+        );
+
+    return response;
   }
 
   Future<http.Response> _post(
@@ -159,11 +175,25 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl/$endpoint');
 
     _logger.d('POST $uri with body: $body');
-    return http.post(
-      uri,
-      headers: headers,
-      body: body == null ? null : json.encode(body),
-    );
+
+    // Add timeout to requests
+    final response = await http
+        .post(
+          uri,
+          headers: headers,
+          body: body == null ? null : json.encode(body),
+        )
+        .timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw TimeoutException(
+              'Request timed out',
+              const Duration(seconds: 30),
+            );
+          },
+        );
+
+    return response;
   }
 
   Future<http.Response> _put(
@@ -174,11 +204,25 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl/$endpoint');
 
     _logger.d('PUT $uri with body: $body');
-    return http.put(
-      uri,
-      headers: headers,
-      body: body == null ? null : json.encode(body),
-    );
+
+    // Add timeout to requests
+    final response = await http
+        .put(
+          uri,
+          headers: headers,
+          body: body == null ? null : json.encode(body),
+        )
+        .timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw TimeoutException(
+              'Request timed out',
+              const Duration(seconds: 30),
+            );
+          },
+        );
+
+    return response;
   }
 
   Future<http.Response> _delete(
@@ -188,7 +232,21 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl/$endpoint');
 
     _logger.d('DELETE $uri');
-    return http.delete(uri, headers: headers);
+
+    // Add timeout to requests
+    final response = await http
+        .delete(uri, headers: headers)
+        .timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw TimeoutException(
+              'Request timed out',
+              const Duration(seconds: 30),
+            );
+          },
+        );
+
+    return response;
   }
 
   // Response handling
@@ -245,6 +303,10 @@ class ApiClient {
       return ApiResponse<T>.error(
         'Authentication error: ${error.message}',
         statusCode: 401,
+      );
+    } else if (error is TimeoutException) {
+      return ApiResponse<T>.error(
+        'Request timeout: Server took too long to respond',
       );
     } else {
       return ApiResponse<T>.error('Unexpected error: ${error.toString()}');

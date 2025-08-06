@@ -20,6 +20,59 @@ class ImageUtils {
             !path.startsWith('images/'));
   }
 
+  /// Get a fallback image URL when the original image fails to load
+  static String getFallbackImageUrl(String? originalUrl) {
+    if (originalUrl == null || originalUrl.isEmpty) {
+      return 'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Recipe+Image';
+    }
+
+    // If the original URL is already a placeholder, return it
+    if (originalUrl.contains('placeholder.com') ||
+        originalUrl.contains('via.placeholder.com')) {
+      return originalUrl;
+    }
+
+    // Return a placeholder image
+    return 'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Recipe+Image';
+  }
+
+  /// Check if an image URL is valid
+  static bool isValidImageUrl(String? url) {
+    if (url == null || url.isEmpty) return false;
+
+    // Check if it's a valid URL
+    try {
+      final uri = Uri.parse(url);
+      return uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https');
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Get a default recipe image based on cuisine type
+  static String getDefaultRecipeImage(String cuisineType) {
+    final cuisine = cuisineType.toLowerCase();
+
+    switch (cuisine) {
+      case 'italian':
+        return 'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Italian+Recipe';
+      case 'chinese':
+        return 'https://via.placeholder.com/400x300/4ECDC4/FFFFFF?text=Chinese+Recipe';
+      case 'mexican':
+        return 'https://via.placeholder.com/400x300/45B7D1/FFFFFF?text=Mexican+Recipe';
+      case 'indian':
+        return 'https://via.placeholder.com/400x300/96CEB4/FFFFFF?text=Indian+Recipe';
+      case 'japanese':
+        return 'https://via.placeholder.com/400x300/FFEAA7/000000?text=Japanese+Recipe';
+      case 'french':
+        return 'https://via.placeholder.com/400x300/DDA0DD/FFFFFF?text=French+Recipe';
+      case 'mediterranean':
+        return 'https://via.placeholder.com/400x300/98D8C8/FFFFFF?text=Mediterranean+Recipe';
+      default:
+        return 'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Recipe+Image';
+    }
+  }
+
   /// Builds the appropriate image widget based on the imageUrl
   static Widget buildRecipeImage({
     required String imageUrl,

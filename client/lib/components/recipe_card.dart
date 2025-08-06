@@ -5,6 +5,7 @@ import '../models/recipe.dart';
 import 'package:provider/provider.dart';
 import '../services/recipe_service.dart';
 import '../theme/theme.dart';
+import '../utils/image_utils.dart';
 import 'expandable_image.dart';
 
 class RecipeCard extends StatefulWidget {
@@ -496,7 +497,12 @@ Shared from Recipe App
                   child: Container(
                     padding: EdgeInsets.all(AppSpacing.xs),
                     child: ExpandableImage(
-                      imageUrl: widget.recipe.imageUrl,
+                      imageUrl:
+                          ImageUtils.isValidImageUrl(widget.recipe.imageUrl)
+                              ? widget.recipe.imageUrl
+                              : ImageUtils.getDefaultRecipeImage(
+                                widget.recipe.cuisineType,
+                              ),
                       fit: BoxFit.cover,
                       placeholder: const Center(
                         child: CircularProgressIndicator(),
