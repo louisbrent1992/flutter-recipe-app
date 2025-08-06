@@ -22,8 +22,8 @@ class ApiClient {
         'https://recipease-api-280575606029.us-west1.run.app/api';
     final String developmentUrl =
         Platform.isAndroid
-            ? 'http://172.16.1.2:3001/api'
-            : 'http://localhost:3001/api';
+            ? 'http://172.16.1.2:8080/api'
+            : 'http://localhost:8080/api';
 
     // Use production URL in release mode, development URL otherwise
     return const bool.fromEnvironment('dart.vm.product')
