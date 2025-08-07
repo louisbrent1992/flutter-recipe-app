@@ -63,6 +63,16 @@
 					<string>recipease</string>
 				</array>
 			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>signinwithapple</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>signinwithapple</string>
+				</array>
+			</dict>
 		</array>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>Photos can be shared to and used in this app</string>

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/theme.dart';
 
@@ -65,7 +66,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-                  backgroundColor: isError ? Theme.of(context).colorScheme.error : lightSuccessColor,
+        backgroundColor:
+            isError ? Theme.of(context).colorScheme.error : lightSuccessColor,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
       ),
@@ -202,6 +204,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       _showSnackBar(
         'Failed to sign up with Google. Please try again.',
+        isError: true,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _signUpWithApple() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final User? userData =
+          await context.read<AuthService>().signInWithApple();
+      if (mounted) {
+        _showSnackBar('Successfully signed up with Apple!');
+        Navigator.pushNamed(context, '/home', arguments: userData);
+      }
+    } on FirebaseAuthException catch (e) {
+      String message;
+      switch (e.code) {
+        case 'account-exists-with-different-credential':
+          message =
+              'An account already exists with this email using a different sign-in method.';
+          break;
+        case 'invalid-credential':
+          message = 'Invalid credentials. Please try again.';
+          break;
+        case 'operation-not-allowed':
+          message = 'Apple sign-in is not enabled.';
+          break;
+        case 'user-disabled':
+          message = 'This account has been disabled.';
+          break;
+        default:
+          message = 'An error occurred during Apple sign-up.';
+      }
+      _showSnackBar(message, isError: true);
+    } catch (e) {
+      _showSnackBar(
+        'Failed to sign up with Apple. Please try again.',
         isError: true,
       );
     } finally {
@@ -391,6 +435,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  // Apple Sign In button - only show on iOS
+                  if (Theme.of(context).platform == TargetPlatform.iOS)
+                    FutureBuilder<bool>(
+                      future: SignInWithApple.isAvailable(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const SizedBox.shrink();
+                        }
+
+                        if (snapshot.data == true) {
+                          return OutlinedButton.icon(
+                            onPressed: _isLoading ? null : _signUpWithApple,
+                            icon: const Icon(Icons.apple, size: 24),
+                            label: const Text('Sign up with Apple'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          );
+                        }
+
+                        return const SizedBox.shrink();
+                      },
+                    ),
                   const SizedBox(height: 24),
                   TextButton(
                     onPressed: () {

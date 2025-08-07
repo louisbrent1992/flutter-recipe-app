@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../services/api_client.dart';
 import '../services/collection_service.dart';
 
@@ -218,6 +219,62 @@ class AuthService with ChangeNotifier {
         await _createOrUpdateUserProfile(
           userCredential.user!,
           displayName: googleUser.displayName,
+        );
+      }
+
+      _user = userCredential.user;
+      return _user;
+    } catch (e) {
+      _error = e.toString();
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Sign in with Apple
+  Future<User?> signInWithApple() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      // Check if Apple Sign In is available
+      final isAvailable = await SignInWithApple.isAvailable();
+      if (!isAvailable) {
+        throw 'Apple Sign In is not available on this device';
+      }
+
+      // Request Apple Sign In
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      // Create OAuth provider credential
+      final oauthCredential = OAuthProvider('apple.com').credential(
+        idToken: credential.identityToken,
+        accessToken: credential.authorizationCode,
+      );
+
+      // Sign in to Firebase
+      UserCredential userCredential = await _auth.signInWithCredential(
+        oauthCredential,
+      );
+
+      // Create or update user profile in Firestore
+      if (userCredential.user != null) {
+        String? displayName;
+        if (credential.givenName != null && credential.familyName != null) {
+          displayName = '${credential.givenName} ${credential.familyName}';
+        }
+
+        await _createOrUpdateUserProfile(
+          userCredential.user!,
+          displayName: displayName,
         );
       }
 

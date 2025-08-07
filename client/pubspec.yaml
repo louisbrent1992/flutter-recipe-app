@@ -49,6 +49,7 @@ dependencies:
   cloud_firestore: ^5.6.5
   firebase_storage: ^12.4.5
   google_sign_in: ^6.2.1
+  sign_in_with_apple: ^7.0.1
   cached_network_image: ^3.3.1
 
   # Hive dependencies

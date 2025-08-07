@@ -41,6 +41,10 @@
         <meta-data
             android:name="com.google.firebase.auth.API_KEY"
             android:value="AIzaSyCh2vwuvWxGLlfbegNu73zPq0YOUssm0-0"/>
+        <!-- Firebase App Check configuration -->
+        <meta-data
+            android:name="firebase_appcheck_debug_token"
+            android:value="a3c75c86-5cb5-4a6f-9919-9e0831cee57c"/>
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"

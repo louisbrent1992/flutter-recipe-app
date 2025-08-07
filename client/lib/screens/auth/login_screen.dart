@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/providers/auth_provider.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../theme/theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -41,13 +42,16 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             Icon(
               isError ? Icons.error_outline : Icons.check_circle_outline,
-              color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
+              color: Theme.of(context).colorScheme.surface.withValues(
+                alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(child: Text(message)),
           ],
         ),
-                  backgroundColor: isError ? Theme.of(context).colorScheme.error : lightSuccessColor,
+        backgroundColor:
+            isError ? Theme.of(context).colorScheme.error : lightSuccessColor,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 4),
         margin: const EdgeInsets.all(8),
@@ -161,6 +165,29 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         _showSnackBar(
           'Failed to sign in with Google. Please try again.',
+          isError: true,
+        );
+      }
+    }
+  }
+
+  Future<void> _signInWithApple() async {
+    final authService = context.read<AuthService>();
+
+    try {
+      final user = await authService.signInWithApple();
+      if (mounted && user != null) {
+        _showSnackBar('Successfully signed in with Apple!');
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      } else if (mounted && authService.error != null) {
+        _showSnackBar(authService.error!, isError: true);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar(
+          'Failed to sign in with Apple. Please try again.',
           isError: true,
         );
       }
@@ -391,6 +418,32 @@ class _LoginScreenState extends State<LoginScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  // Apple Sign In button - only show on iOS
+                  if (Theme.of(context).platform == TargetPlatform.iOS)
+                    FutureBuilder<bool>(
+                      future: SignInWithApple.isAvailable(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const SizedBox.shrink();
+                        }
+
+                        if (snapshot.data == true) {
+                          return OutlinedButton.icon(
+                            onPressed:
+                                authService.isLoading ? null : _signInWithApple,
+                            icon: const Icon(Icons.apple, size: 24),
+                            label: const Text('Sign in with Apple'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          );
+                        }
+
+                        return const SizedBox.shrink();
+                      },
+                    ),
                   const SizedBox(height: 24),
                   TextButton(
                     onPressed: () {

@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/persistent_banner_layout.dart';
@@ -70,6 +71,23 @@ void main() async {
   );
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize Firebase App Check with proper configuration
+  if (kDebugMode) {
+    // Use debug provider for development
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.debug,
+      appleProvider: AppleProvider.debug,
+    );
+    print('Firebase App Check initialized in debug mode');
+  } else {
+    // Use device check provider for production
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.playIntegrity,
+      appleProvider: AppleProvider.deviceCheck,
+    );
+    print('Firebase App Check initialized in production mode');
+  }
 
   await Hive.initFlutter();
   await Hive.openBox('preferences');

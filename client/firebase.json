@@ -30,19 +30,10 @@
 		"rules": "firestore.rules",
 		"indexes": "firestore.indexes.json"
 	},
-	"functions": [
-		{
-			"source": "functions",
-			"codebase": "default",
-			"ignore": [
-				"venv",
-				".git",
-				"firebase-debug.log",
-				"firebase-debug.*.log",
-				"*.local"
-			],
-			"predeploy": ["npm --prefix \"$RESOURCE_DIR\" run lint"]
-		}
-	],
-	"appcheck": { "debug": { "token": "a3c75c86-5cb5-4a6f-9919-9e0831cee57c" } }
+	"appcheck": {
+		"debug": {
+			"token": "a3c75c86-5cb5-4a6f-9919-9e0831cee57c"
+		},
+		"enforcement": "ENFORCED"
+	}
 }
