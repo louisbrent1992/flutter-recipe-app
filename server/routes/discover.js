@@ -14,7 +14,8 @@ router.get("/search", auth, async (req, res) => {
 	try {
 		const { query, difficulty, tag } = req.query;
 		const page = parseInt(req.query.page) || 1;
-		const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+		const limitParam = parseInt(req.query.limit);
+		const limit = isNaN(limitParam) ? 10 : Math.min(limitParam, 100);
 
 		// Build Firestore query
 		let recipesRef = db.collection("recipes");
@@ -57,11 +58,10 @@ router.get("/search", auth, async (req, res) => {
 		// Get total count for pagination (before deduplication)
 		const totalQuery = await recipesRef.count().get();
 		const totalRecipes = totalQuery.data().count;
-		console.log("Total recipes found:", totalRecipes);
 
 		// Reduced buffer multiplier for better performance
 		const bufferMultiplier = 1.2; // Reduced from 1.5x
-		const fetchLimit = Math.min(limit * bufferMultiplier, 150); // Reduced cap
+		const fetchLimit = Math.min(Math.floor(limit * bufferMultiplier), 150); // Reduced cap
 		const startAt = Math.max(0, (page - 1) * limit);
 
 		// Fetch recipes with smaller buffer for deduplication
