@@ -24,15 +24,19 @@ router.get("/search", auth, async (req, res) => {
 			const searchTerms = query
 				.toLowerCase()
 				.split(/\s+/)
-				.filter((term) => term.length > 0)
-				.slice(0, 3); // Limit to first 3 terms for performance
+				.filter((term) => term.length > 0);
 			console.log("Search terms:", searchTerms);
 
-			// Use the most relevant search term for the primary query
-			if (searchTerms.length > 0) {
-				recipesRef = db
+			recipesRef = db.collection("recipes");
+
+			const searchQueries = searchTerms.map((term) => {
+				return db
 					.collection("recipes")
-					.where("searchableFields", "array-contains", searchTerms[0]);
+					.where("searchableFields", "array-contains", term);
+			});
+
+			if (searchQueries.length > 0) {
+				recipesRef = searchQueries[0];
 			}
 		}
 		if (difficulty) {

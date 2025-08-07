@@ -11,10 +11,10 @@ class RecipeService {
   static String get baseUrl {
     // Android emulator uses 10.0.2.2 to access host's localhost
     // iOS simulator can use localhost directly
-    if (kIsWeb) return 'http://localhost:3001/api';
+    if (kIsWeb) return 'http://localhost:8080/api';
     return Platform.isAndroid
-        ? 'http://10.0.2.2:3001/api'
-        : 'http://localhost:3001/api';
+        ? 'http://10.0.2.2:8080/api'
+        : 'http://localhost:8080/api';
   }
 
   //----------------------------------------
