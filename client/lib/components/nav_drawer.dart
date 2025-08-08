@@ -28,7 +28,9 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
   // Get actual user data from RecipeProvider
   int get savedRecipesCount {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    return recipeProvider.userRecipes.length;
+    // Prefer the server-reported total if available; fallback to currently loaded list length
+    final total = recipeProvider.totalRecipes;
+    return (total > 0) ? total : recipeProvider.userRecipes.length;
   }
 
   List<String> get recipeDifficulties {
@@ -592,11 +594,17 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
           recipeProvider.userRecipes,
         );
 
+        // Determine accurate saved recipe count using provider totals
+        final savedCount =
+            recipeProvider.totalRecipes > 0
+                ? recipeProvider.totalRecipes
+                : recipeProvider.userRecipes.length;
+
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildStatChip(
-              savedRecipesCount.toString(),
+              savedCount.toString(),
               'Recipes',
               Icons.restaurant_menu_rounded,
               isDark,
