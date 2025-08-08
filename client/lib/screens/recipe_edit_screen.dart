@@ -138,6 +138,19 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
         cookingTime: _cookingTimeController.text,
         servings: _servingsController.text,
         cuisineType: _cuisineTypeController.text,
+        // Preserve import metadata so source link renders on details screen
+        difficulty: currentRecipe.difficulty,
+        source:
+            (_sourceController.text.isNotEmpty
+                ? _sourceController.text
+                : currentRecipe.source),
+        sourceUrl: currentRecipe.sourceUrl,
+        sourcePlatform: currentRecipe.sourcePlatform,
+        author: currentRecipe.author,
+        instagram: currentRecipe.instagram,
+        tiktok: currentRecipe.tiktok,
+        youtube: currentRecipe.youtube,
+        aiGenerated: currentRecipe.aiGenerated,
         createdAt: widget.recipe?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
         toEdit: widget.recipe?.toEdit ?? false,
