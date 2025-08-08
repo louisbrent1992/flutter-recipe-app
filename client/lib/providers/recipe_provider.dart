@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:provider/provider.dart';
 import '../models/recipe.dart';
 import '../models/api_response.dart';
@@ -21,6 +22,22 @@ class RecipeProvider extends ChangeNotifier {
   bool _hasPrevPage = false;
   int _totalRecipes = 0;
 
+  // Lightweight in-memory caches to reduce network calls and jank
+  // Cache user recipes by page
+  final Map<int, List<Recipe>> _userRecipesCache = {};
+  final Map<int, Map<String, dynamic>> _userPaginationCache = {};
+
+  // Cache generated/external search results by a composite key and page
+  // key format: query=<q>|difficulty=<d>|tag=<t>|limit=<l>
+  final Map<String, Map<int, List<Recipe>>> _generatedRecipesCache = {};
+  final Map<String, Map<int, Map<String, dynamic>>> _generatedPaginationCache =
+      {};
+
+  // Cache favorite ids to avoid fetching repeatedly
+  Set<String> _favoriteIdsCache = <String>{};
+  DateTime? _favoritesLastFetchedAt;
+  static const Duration _favoritesTtl = Duration(seconds: 60);
+
   // Getters
   List<Recipe> get generatedRecipes => _generatedRecipes;
   Recipe? get importedRecipe => _importedRecipe;
@@ -36,8 +53,10 @@ class RecipeProvider extends ChangeNotifier {
 
   // Set loading state
   void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
+    if (_isLoading != loading) {
+      _isLoading = loading;
+      notifyListeners();
+    }
   }
 
   // Set error message
@@ -156,9 +175,34 @@ class RecipeProvider extends ChangeNotifier {
   //----------------------------------------
 
   // Load all user recipes with pagination
-  Future<void> loadUserRecipes({int page = 1, int limit = 10}) async {
-    _setLoading(true);
+  Future<void> loadUserRecipes({
+    int page = 1,
+    int limit = 10,
+    bool forceRefresh = false,
+  }) async {
     clearError();
+
+    // Serve from cache if available and not forced
+    if (!forceRefresh && _userRecipesCache.containsKey(page)) {
+      _userRecipes = _userRecipesCache[page] ?? [];
+      final pagination = _userPaginationCache[page];
+      if (pagination != null) {
+        _currentPage = pagination['page'] ?? page;
+        _totalPages = pagination['totalPages'] ?? _totalPages;
+        _hasNextPage = pagination['hasNextPage'] ?? _hasNextPage;
+        _hasPrevPage = pagination['hasPrevPage'] ?? _hasPrevPage;
+        _totalRecipes = pagination['total'] ?? _userRecipes.length;
+      }
+      notifyListeners();
+      // Ensure favorite flags are kept in sync using cached ids (non-blocking)
+      // Do not set loading to true to avoid jank when serving from cache
+      // Just refresh favorites in background if TTL expired
+      // fire and forget refresh of favorites
+      _ensureFavoriteIdsFresh().then((_) => _applyFavoriteFlagsFromCache());
+      return;
+    }
+
+    _setLoading(true);
 
     try {
       final response = await RecipeService.getUserRecipes(
@@ -185,6 +229,9 @@ class RecipeProvider extends ChangeNotifier {
 
         _userRecipes = recipesList.cast<Recipe>();
 
+        // Cache the page data
+        _userRecipesCache[page] = List<Recipe>.unmodifiable(_userRecipes);
+
         // Safely handle pagination data
         final pagination = data['pagination'];
         if (pagination != null && pagination is Map<String, dynamic>) {
@@ -193,6 +240,9 @@ class RecipeProvider extends ChangeNotifier {
           _hasNextPage = pagination['hasNextPage'] ?? false;
           _hasPrevPage = pagination['hasPrevPage'] ?? false;
           _totalRecipes = pagination['total'] ?? 0;
+
+          // Cache pagination per page
+          _userPaginationCache[page] = Map<String, dynamic>.from(pagination);
         } else {
           // Fallback values if pagination data is missing
           _currentPage = 1;
@@ -200,10 +250,18 @@ class RecipeProvider extends ChangeNotifier {
           _hasNextPage = false;
           _hasPrevPage = false;
           _totalRecipes = _userRecipes.length;
+          _userPaginationCache[page] = {
+            'page': _currentPage,
+            'totalPages': _totalPages,
+            'hasNextPage': _hasNextPage,
+            'hasPrevPage': _hasPrevPage,
+            'total': _totalRecipes,
+          };
         }
 
         // Update favorite status for loaded recipes
-        await _updateRecipeFavoriteStatus();
+        await _ensureFavoriteIdsFresh();
+        _applyFavoriteFlagsFromCache();
 
         notifyListeners();
       } else {
@@ -472,32 +530,8 @@ class RecipeProvider extends ChangeNotifier {
     }
   }
 
-  // Helper method to update favorite status for loaded recipes
-  Future<void> _updateRecipeFavoriteStatus() async {
-    try {
-      final favoritesResponse = await RecipeService.getFavoriteRecipes();
-
-      if (favoritesResponse.success && favoritesResponse.data != null) {
-        final favoriteIds = favoritesResponse.data ?? <String>[];
-
-        // Update isFavorite field for each recipe
-        for (int i = 0; i < _userRecipes.length; i++) {
-          final recipe = _userRecipes[i];
-          final recipeIdStr = recipe.id.toString();
-          final isFavorite = favoriteIds.any(
-            (favId) => favId.toString() == recipeIdStr,
-          );
-
-          if (recipe.isFavorite != isFavorite) {
-            _userRecipes[i] = recipe.copyWith(isFavorite: isFavorite);
-          }
-        }
-      }
-    } catch (e) {
-      // Silently continue if favorites check fails
-      debugPrint('Error updating recipe favorite status: $e');
-    }
-  }
+  // Deprecated: kept for reference during refactor
+  // Favorite flags are now applied from cached ids via _applyFavoriteFlagsFromCache()
 
   // Refresh all data
   Future<void> refreshAll() async {
@@ -531,9 +565,38 @@ class RecipeProvider extends ChangeNotifier {
     String? tag,
     int page = 1,
     int limit = 10,
+    bool forceRefresh = false,
   }) async {
-    _setLoading(true);
     clearError();
+
+    // Build a stable cache key for query+filters+limit
+    final String cacheKey = _buildSearchKey(
+      query: query,
+      difficulty: difficulty,
+      tag: tag,
+      limit: limit,
+    );
+
+    // Serve from cache if available
+    if (!forceRefresh &&
+        _generatedRecipesCache[cacheKey] != null &&
+        _generatedRecipesCache[cacheKey]![page] != null) {
+      _generatedRecipes = List<Recipe>.from(
+        _generatedRecipesCache[cacheKey]![page]!,
+      );
+      final pagination = _generatedPaginationCache[cacheKey]?[page];
+      if (pagination != null) {
+        _currentPage = pagination['page'] ?? page;
+        _totalPages = pagination['totalPages'] ?? _totalPages;
+        _hasNextPage = pagination['hasNextPage'] ?? _hasNextPage;
+        _hasPrevPage = pagination['hasPrevPage'] ?? _hasPrevPage;
+        _totalRecipes = pagination['total'] ?? _generatedRecipes.length;
+      }
+      notifyListeners();
+      return;
+    }
+
+    _setLoading(true);
 
     try {
       final response = await RecipeService.searchExternalRecipes(
@@ -569,6 +632,15 @@ class RecipeProvider extends ChangeNotifier {
         // Store both the generated recipes and the original set
         _generatedRecipes = recipes;
 
+        // Cache the page results
+        _generatedRecipesCache.putIfAbsent(
+          cacheKey,
+          () => <int, List<Recipe>>{},
+        );
+        _generatedRecipesCache[cacheKey]![page] = List<Recipe>.unmodifiable(
+          recipes,
+        );
+
         // Safely handle pagination data
         final pagination = data['pagination'];
         if (pagination != null && pagination is Map<String, dynamic>) {
@@ -577,6 +649,12 @@ class RecipeProvider extends ChangeNotifier {
           _hasNextPage = pagination['hasNextPage'] ?? false;
           _hasPrevPage = pagination['hasPrevPage'] ?? false;
           _totalRecipes = pagination['total'] ?? 0;
+          _generatedPaginationCache.putIfAbsent(
+            cacheKey,
+            () => <int, Map<String, dynamic>>{},
+          );
+          _generatedPaginationCache[cacheKey]![page] =
+              Map<String, dynamic>.from(pagination);
         } else {
           // Fallback values if pagination data is missing
           _currentPage = 1;
@@ -584,6 +662,17 @@ class RecipeProvider extends ChangeNotifier {
           _hasNextPage = false;
           _hasPrevPage = false;
           _totalRecipes = recipes.length;
+          _generatedPaginationCache.putIfAbsent(
+            cacheKey,
+            () => <int, Map<String, dynamic>>{},
+          );
+          _generatedPaginationCache[cacheKey]![page] = {
+            'page': _currentPage,
+            'totalPages': _totalPages,
+            'hasNextPage': _hasNextPage,
+            'hasPrevPage': _hasPrevPage,
+            'total': _totalRecipes,
+          };
         }
 
         notifyListeners();
@@ -596,6 +685,49 @@ class RecipeProvider extends ChangeNotifier {
       _generatedRecipes = [];
     } finally {
       _setLoading(false);
+    }
+  }
+
+  String _buildSearchKey({
+    String? query,
+    String? difficulty,
+    String? tag,
+    int? limit,
+  }) {
+    final q = (query ?? '').trim().toLowerCase();
+    final d = (difficulty ?? 'All').trim();
+    final t = (tag ?? 'All').trim();
+    final l = (limit ?? 10).toString();
+    return 'query=$q|difficulty=$d|tag=$t|limit=$l';
+  }
+
+  Future<void> _ensureFavoriteIdsFresh() async {
+    final now = DateTime.now();
+    final isStale =
+        _favoritesLastFetchedAt == null ||
+        now.difference(_favoritesLastFetchedAt!) > _favoritesTtl;
+    if (!isStale) return;
+
+    try {
+      final response = await RecipeService.getFavoriteRecipes();
+      if (response.success && response.data != null) {
+        _favoriteIdsCache = response.data!.map((e) => e.toString()).toSet();
+        _favoritesLastFetchedAt = now;
+      }
+    } catch (_) {
+      // ignore errors; we'll try again later
+    }
+  }
+
+  void _applyFavoriteFlagsFromCache() {
+    if (_favoriteIdsCache.isEmpty) return;
+    for (int i = 0; i < _userRecipes.length; i++) {
+      final recipe = _userRecipes[i];
+      final idStr = recipe.id.toString();
+      final isFav = _favoriteIdsCache.contains(idStr);
+      if (recipe.isFavorite != isFav) {
+        _userRecipes[i] = recipe.copyWith(isFavorite: isFav);
+      }
     }
   }
 }

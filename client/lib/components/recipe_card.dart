@@ -469,6 +469,8 @@ Shared from Recipe App
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final heroTag =
+        'recipe-image-${widget.recipe.id.isNotEmpty ? widget.recipe.id : widget.recipe.imageUrl}';
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -496,28 +498,31 @@ Shared from Recipe App
                   aspectRatio: widget.aspectRatio ?? 16 / 9,
                   child: Container(
                     padding: EdgeInsets.all(AppSpacing.xs),
-                    child: ExpandableImage(
-                      imageUrl:
-                          ImageUtils.isValidImageUrl(widget.recipe.imageUrl)
-                              ? widget.recipe.imageUrl
-                              : ImageUtils.getDefaultRecipeImage(
-                                widget.recipe.cuisineType,
-                              ),
-                      fit: BoxFit.cover,
-                      placeholder: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                      errorWidget: Container(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        child: Icon(
-                          Icons.restaurant,
-                          size: AppSizing.responsiveIconSize(
-                            context,
-                            mobile: 40,
-                            tablet: 48,
-                            desktop: 56,
+                    child: Hero(
+                      tag: heroTag,
+                      child: ExpandableImage(
+                        imageUrl:
+                            ImageUtils.isValidImageUrl(widget.recipe.imageUrl)
+                                ? widget.recipe.imageUrl
+                                : ImageUtils.getDefaultRecipeImage(
+                                  widget.recipe.cuisineType,
+                                ),
+                        fit: BoxFit.cover,
+                        placeholder: const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                        errorWidget: Container(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            Icons.restaurant,
+                            size: AppSizing.responsiveIconSize(
+                              context,
+                              mobile: 40,
+                              tablet: 48,
+                              desktop: 56,
+                            ),
+                            color: theme.colorScheme.primary,
                           ),
-                          color: theme.colorScheme.primary,
                         ),
                       ),
                     ),

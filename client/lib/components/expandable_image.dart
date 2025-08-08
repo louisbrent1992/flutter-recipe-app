@@ -35,6 +35,10 @@ class ExpandableImage extends StatelessWidget {
           width: width,
           height: height,
           fit: fit,
+          memCacheWidth: (width != null) ? width!.toInt() : null,
+          memCacheHeight: (height != null) ? height!.toInt() : null,
+          fadeInDuration: const Duration(milliseconds: 150),
+          fadeOutDuration: const Duration(milliseconds: 100),
           placeholder:
               (context, url) =>
                   placeholder ??

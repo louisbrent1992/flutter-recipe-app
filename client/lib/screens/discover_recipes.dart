@@ -342,6 +342,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                             child: Stack(
                               children: [
                                 GridView.builder(
+                                  key: const PageStorageKey('discover_grid'),
                                   controller: _scrollController,
                                   padding: EdgeInsets.only(bottom: 100),
                                   itemBuilder: (context, index) {

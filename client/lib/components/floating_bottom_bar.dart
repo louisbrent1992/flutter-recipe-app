@@ -25,21 +25,32 @@ class FloatingBottomBar extends StatelessWidget {
   });
 
   void _handleNavigation(BuildContext context, int index) {
+    final currentRoute = ModalRoute.of(context)?.settings.name;
     switch (index) {
       case 0:
-        Navigator.pushNamed(context, '/home');
+        if (currentRoute != '/home') {
+          Navigator.pushNamed(context, '/home');
+        }
         break;
       case 1:
-        Navigator.pushNamed(context, '/discover');
+        if (currentRoute != '/discover') {
+          Navigator.pushNamed(context, '/discover');
+        }
         break;
       case 2:
-        Navigator.pushNamed(context, '/myRecipes');
+        if (currentRoute != '/myRecipes') {
+          Navigator.pushNamed(context, '/myRecipes');
+        }
         break;
       case 3:
-        Navigator.pushNamed(context, '/generate');
+        if (currentRoute != '/generate') {
+          Navigator.pushNamed(context, '/generate');
+        }
         break;
       case 4:
-        Navigator.pushNamed(context, '/settings');
+        if (currentRoute != '/settings') {
+          Navigator.pushNamed(context, '/settings');
+        }
         break;
     }
   }
@@ -65,7 +76,6 @@ class FloatingBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     // Determine if pagination should be shown (only if more than 1 page)
     final shouldShowPagination =
         showPagination && totalPages != null && totalPages! > 1;
@@ -78,11 +88,15 @@ class FloatingBottomBar extends StatelessWidget {
         height: shouldShowPagination ? 72 : 40,
         margin: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.surfaceHeavy),
+          color: Theme.of(context).colorScheme.surface.withValues(
+            alpha: Theme.of(context).colorScheme.surfaceHeavy,
+          ),
           borderRadius: BorderRadius.circular(shouldShowPagination ? 16 : 20),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: Theme.of(context).colorScheme.shadowLight),
+              color: Theme.of(context).colorScheme.onSurface.withValues(
+                alpha: Theme.of(context).colorScheme.shadowLight,
+              ),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -137,7 +151,6 @@ class FloatingBottomBar extends StatelessWidget {
   }
 
   Widget _buildWithPagination(BuildContext context) {
-
     final iconsList = [
       _buildMinimalNavIcon(
         context,
@@ -186,7 +199,9 @@ class FloatingBottomBar extends StatelessWidget {
         Container(
           height: 0.5,
           margin: const EdgeInsets.symmetric(horizontal: 16),
-                      color: Theme.of(context).colorScheme.outline.withValues(alpha: Theme.of(context).colorScheme.overlayMedium),
+          color: Theme.of(context).colorScheme.outline.withValues(
+            alpha: Theme.of(context).colorScheme.overlayMedium,
+          ),
         ),
 
         // Pagination row
@@ -234,10 +249,14 @@ class FloatingBottomBar extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: Theme.of(context).colorScheme.overlayMedium),
+            color: Theme.of(context).colorScheme.primary.withValues(
+              alpha: Theme.of(context).colorScheme.overlayMedium,
+            ),
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
-                              color: Theme.of(context).colorScheme.primary.withValues(alpha: Theme.of(context).colorScheme.overlayHeavy),
+              color: Theme.of(context).colorScheme.primary.withValues(
+                alpha: Theme.of(context).colorScheme.overlayHeavy,
+              ),
               width: 0.5,
             ),
           ),
@@ -257,7 +276,9 @@ class FloatingBottomBar extends StatelessWidget {
           child: Text(
             '/',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: Theme.of(context).colorScheme.alphaMedium),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(
+                alpha: Theme.of(context).colorScheme.alphaMedium,
+              ),
               fontSize: 10,
             ),
           ),
@@ -267,7 +288,9 @@ class FloatingBottomBar extends StatelessWidget {
         Text(
           '${totalPages ?? 1}',
           style: theme.textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: Theme.of(context).colorScheme.alphaHigh),
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(
+              alpha: Theme.of(context).colorScheme.alphaHigh,
+            ),
             fontSize: 10,
           ),
         ),
@@ -309,7 +332,9 @@ class FloatingBottomBar extends StatelessWidget {
             width: 12,
             child: CircularProgressIndicator(
               strokeWidth: 1,
-                              color: Theme.of(context).colorScheme.primary.withValues(alpha: Theme.of(context).colorScheme.alphaMedium),
+              color: Theme.of(context).colorScheme.primary.withValues(
+                alpha: Theme.of(context).colorScheme.alphaMedium,
+              ),
             ),
           ),
         ],
@@ -332,7 +357,9 @@ class FloatingBottomBar extends StatelessWidget {
         decoration: BoxDecoration(
           color:
               isSelected
-                  ? theme.colorScheme.primary.withValues(alpha: theme.colorScheme.overlayMedium)
+                  ? theme.colorScheme.primary.withValues(
+                    alpha: theme.colorScheme.overlayMedium,
+                  )
                   : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),

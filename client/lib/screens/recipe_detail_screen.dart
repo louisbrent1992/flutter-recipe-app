@@ -361,15 +361,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 flexibleSpace: FlexibleSpaceBar(
                   background: AspectRatio(
                     aspectRatio: 16 / 9,
-                    child: ExpandableImage(
-                      imageUrl: recipe.imageUrl,
-                      fit: BoxFit.cover,
-                      placeholder: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                      errorWidget: Icon(
-                        Icons.error,
-                        color: Theme.of(context).colorScheme.error,
+                    child: Hero(
+                      tag:
+                          'recipe-image-${recipe.id.isNotEmpty ? recipe.id : recipe.imageUrl}',
+                      child: ExpandableImage(
+                        imageUrl: recipe.imageUrl,
+                        fit: BoxFit.cover,
+                        placeholder: const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                        errorWidget: Icon(
+                          Icons.error,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
                     ),
                   ),

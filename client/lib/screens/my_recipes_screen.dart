@@ -244,6 +244,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                 return Stack(
                   children: [
                     GridView.builder(
+                      key: const PageStorageKey('my_recipes_grid'),
                       padding: EdgeInsets.fromLTRB(
                         AppSpacing.responsive(context),
                         AppSpacing.responsive(context),
