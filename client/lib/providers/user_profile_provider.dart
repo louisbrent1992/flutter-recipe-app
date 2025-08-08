@@ -110,16 +110,15 @@ class UserProfileProvider with ChangeNotifier {
       throw Exception('User is not authenticated. Please sign in first.');
     }
 
-    // Verify the user's authentication state and get a fresh token
+    // Attempt to refresh auth state to ensure we have a valid token
     try {
       await user.reload();
-      if (!user.emailVerified) {
-        throw Exception(
-          'Please verify your email before uploading a profile picture.',
-        );
+    } on FirebaseAuthException catch (e) {
+      // Surface meaningful auth issues
+      if (e.code == 'requires-recent-login' || e.code == 'user-token-expired') {
+        throw Exception('Your session has expired. Please sign in again.');
       }
-    } catch (e) {
-      throw Exception('Authentication error. Please sign in again.');
+      rethrow;
     }
 
     _isLoading = true;
