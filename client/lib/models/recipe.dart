@@ -116,7 +116,7 @@ class Recipe {
       title: json['title']?.toString() ?? 'Untitled Recipe',
       ingredients: parseIngredients(json['ingredients']),
       instructions:
-          json['instructions'] != null
+          json['instructions'] != null && json['instructions'] is List
               ? (json['instructions'] as List)
                   .map((item) => item.toString())
                   .toList()
@@ -131,7 +131,7 @@ class Recipe {
       sourcePlatform: json['sourcePlatform']?.toString(),
       author: json['author']?.toString(),
       tags:
-          json['tags'] != null
+          json['tags'] != null && json['tags'] is List
               ? (json['tags'] as List).map((item) => item.toString()).toList()
               : [],
       createdAt:

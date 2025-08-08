@@ -52,6 +52,9 @@
 		<array>
 			<string>INSendMessageIntent</string>
 		</array>
+		<!-- Explicitly set the App Group ID used by the share_handler plugin -->
+		<key>AppGroupId</key>
+		<string>group.com.recipease.kitchen</string>
 		<key>CFBundleURLTypes</key>
 		<array>
 			<dict>

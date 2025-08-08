@@ -168,12 +168,39 @@ class RecipeProvider extends ChangeNotifier {
 
       if (response.success && response.data != null) {
         final data = response.data!;
-        _userRecipes = (data['recipes'] as List).cast<Recipe>();
-        _currentPage = data['pagination']['page'];
-        _totalPages = data['pagination']['totalPages'];
-        _hasNextPage = data['pagination']['hasNextPage'];
-        _hasPrevPage = data['pagination']['hasPrevPage'];
-        _totalRecipes = data['pagination']['total'];
+
+        // Safely handle recipes array
+        final recipesList = data['recipes'];
+        if (recipesList == null) {
+          _userRecipes = [];
+          _setError('No recipes data received from server');
+          return;
+        }
+
+        if (recipesList is! List) {
+          _userRecipes = [];
+          _setError('Invalid recipes data format received from server');
+          return;
+        }
+
+        _userRecipes = recipesList.cast<Recipe>();
+
+        // Safely handle pagination data
+        final pagination = data['pagination'];
+        if (pagination != null && pagination is Map<String, dynamic>) {
+          _currentPage = pagination['page'] ?? 1;
+          _totalPages = pagination['totalPages'] ?? 1;
+          _hasNextPage = pagination['hasNextPage'] ?? false;
+          _hasPrevPage = pagination['hasPrevPage'] ?? false;
+          _totalRecipes = pagination['total'] ?? 0;
+        } else {
+          // Fallback values if pagination data is missing
+          _currentPage = 1;
+          _totalPages = 1;
+          _hasNextPage = false;
+          _hasPrevPage = false;
+          _totalRecipes = _userRecipes.length;
+        }
 
         // Update favorite status for loaded recipes
         await _updateRecipeFavoriteStatus();
@@ -519,19 +546,46 @@ class RecipeProvider extends ChangeNotifier {
 
       if (response.success && response.data != null) {
         final data = response.data!;
+
+        // Safely handle recipes array with null checking
+        final recipesList = data['recipes'];
+        if (recipesList == null) {
+          _generatedRecipes = [];
+          _setError('No recipes data received from server');
+          return;
+        }
+
+        if (recipesList is! List) {
+          _generatedRecipes = [];
+          _setError('Invalid recipes data format received from server');
+          return;
+        }
+
         final recipes =
-            (data['recipes'] as List)
+            recipesList
                 .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
                 .toList();
 
         // Store both the generated recipes and the original set
         _generatedRecipes = recipes;
 
-        _currentPage = data['pagination']['page'];
-        _totalPages = data['pagination']['totalPages'];
-        _hasNextPage = data['pagination']['hasNextPage'];
-        _hasPrevPage = data['pagination']['hasPrevPage'];
-        _totalRecipes = data['pagination']['total'];
+        // Safely handle pagination data
+        final pagination = data['pagination'];
+        if (pagination != null && pagination is Map<String, dynamic>) {
+          _currentPage = pagination['page'] ?? 1;
+          _totalPages = pagination['totalPages'] ?? 1;
+          _hasNextPage = pagination['hasNextPage'] ?? false;
+          _hasPrevPage = pagination['hasPrevPage'] ?? false;
+          _totalRecipes = pagination['total'] ?? 0;
+        } else {
+          // Fallback values if pagination data is missing
+          _currentPage = 1;
+          _totalPages = 1;
+          _hasNextPage = false;
+          _hasPrevPage = false;
+          _totalRecipes = recipes.length;
+        }
+
         notifyListeners();
       } else {
         _setError(response.message ?? 'Failed to search recipes');

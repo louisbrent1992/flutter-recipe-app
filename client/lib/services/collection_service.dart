@@ -416,8 +416,12 @@ class CollectionService extends ChangeNotifier {
 
       if (allRecipesResponse.success && allRecipesResponse.data != null) {
         // The data is already converted to Recipe objects by RecipeService
-        final List<Recipe> allRecipes =
-            allRecipesResponse.data!['recipes'] as List<Recipe>;
+        final recipesData = allRecipesResponse.data!['recipes'];
+        if (recipesData is! List) {
+          logger.e('Invalid response format: recipes is not a list');
+          return;
+        }
+        final List<Recipe> allRecipes = recipesData.cast<Recipe>();
 
         // Get all favorites from the database
         final favoritesResponse = await RecipeService.getFavoriteRecipes();

@@ -141,16 +141,49 @@ class _MyAppState extends State<MyApp> {
 
   // Handle the shared media
   void _handleSharedMedia(SharedMedia sharedMedia) {
-    if (sharedMedia.content != null && sharedMedia.content!.isNotEmpty) {
-      // Handle deep links from share extension
-      DeepLinkService.handleDeepLink(sharedMedia.content);
+    final maybeUrl = _extractUrlFromSharedMedia(sharedMedia);
+    if (maybeUrl != null && maybeUrl.isNotEmpty) {
+      debugPrint('share_handler: extracted URL => $maybeUrl');
+      // Handle deep links from share extension (no-op unless matches our custom scheme)
+      DeepLinkService.handleDeepLink(maybeUrl);
 
-      // Also handle as regular shared content for backward compatibility
+      // Navigate/import
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _navigateToImportScreen(sharedMedia.content!);
-        _importRecipeFromSharedMedia(sharedMedia.content!);
+        _navigateToImportScreen(maybeUrl);
+        _importRecipeFromSharedMedia(maybeUrl);
       });
+    } else {
+      debugPrint(
+        'share_handler: no URL content detected. SharedMedia: '
+        'content="${sharedMedia.content}", attachments=${sharedMedia.attachments?.length ?? 0}',
+      );
     }
+  }
+
+  // Try to extract a usable URL from SharedMedia (content or attachments)
+  String? _extractUrlFromSharedMedia(SharedMedia media) {
+    // Prefer plain text content if present
+    final content = media.content?.trim();
+    if (content != null && content.isNotEmpty) {
+      if (_looksLikeUrl(content)) return content;
+    }
+
+    // Fallback to attachments (some iOS shares provide a URL as an attachment)
+    final attachments = media.attachments ?? [];
+    for (final att in attachments) {
+      if (att == null) continue;
+      final path = att.path?.trim();
+      if (path == null || path.isEmpty) continue;
+      if (_looksLikeUrl(path)) return path;
+    }
+    return null;
+  }
+
+  bool _looksLikeUrl(String value) {
+    final v = value.toLowerCase();
+    return v.startsWith('http://') ||
+        v.startsWith('https://') ||
+        v.startsWith('www.');
   }
 
   // Import recipe directly from shared media

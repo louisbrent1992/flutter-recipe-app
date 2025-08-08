@@ -193,8 +193,11 @@ class UserProfileProvider with ChangeNotifier {
       Recipe? existingRecipe;
 
       if (userRecipesResponse.success && userRecipesResponse.data != null) {
-        final userRecipes =
-            userRecipesResponse.data!['recipes'] as List<Recipe>;
+        final recipesData = userRecipesResponse.data!['recipes'];
+        if (recipesData is! List) {
+          throw Exception('Invalid response format: recipes is not a list');
+        }
+        final userRecipes = recipesData.cast<Recipe>();
 
         // Check if recipe exists by comparing original ID or current ID
         existingRecipe = userRecipes.firstWhere(

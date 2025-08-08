@@ -44,8 +44,15 @@ class RecipeService {
     );
 
     if (response.success && response.data != null) {
+      final data = response.data;
+      if (data is! List) {
+        return ApiResponse.error(
+          'Invalid response format: expected list of recipes',
+        );
+      }
+
       final recipes =
-          (response.data as List)
+          data
               .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
               .toList();
       return ApiResponse.success(recipes);
@@ -281,7 +288,14 @@ class RecipeService {
       );
 
       if (response.success && response.data != null) {
-        final recipesList = response.data!['recipes'] as List<Recipe>;
+        final recipesData = response.data!['recipes'];
+        if (recipesData is! List) {
+          return ApiResponse.error(
+            'Invalid response format: recipes is not a list',
+          );
+        }
+
+        final recipesList = recipesData.cast<Recipe>();
 
         // Sort recipes by creation date in descending order (newest first)
         final recentRecipes =
