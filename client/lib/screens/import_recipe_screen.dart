@@ -168,530 +168,540 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
 
               // Main content
               Positioned.fill(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight:
-                          MediaQuery.of(context).size.height -
-                          MediaQuery.of(context).padding.top -
-                          kToolbarHeight -
-                          MediaQuery.of(context).padding.bottom,
-                      maxWidth: AppSizing.responsiveMaxWidth(context),
-                    ),
-                    child: Padding(
-                      padding: AppSpacing.allResponsive(context),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Main content section
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              SizedBox(height: size.height * 0.08),
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    // Clear the URL field and any imported recipe state
+                    _urlController.clear();
+                    if (mounted) setState(() {});
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight:
+                            MediaQuery.of(context).size.height -
+                            MediaQuery.of(context).padding.top -
+                            kToolbarHeight -
+                            MediaQuery.of(context).padding.bottom,
+                        maxWidth: AppSizing.responsiveMaxWidth(context),
+                      ),
+                      child: Padding(
+                        padding: AppSpacing.allResponsive(context),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Main content section
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                SizedBox(height: size.height * 0.08),
 
-                              // Decorative Icon
-                              FadeTransition(
-                                opacity: _fadeInAnimation,
-                                child: Container(
-                                  width: AppSizing.responsiveIconSize(
-                                    context,
-                                    mobile: 70,
-                                    tablet: 80,
-                                    desktop: 90,
-                                  ),
-                                  height: AppSizing.responsiveIconSize(
-                                    context,
-                                    mobile: 70,
-                                    tablet: 80,
-                                    desktop: 90,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.withAlpha(
-                                      77,
-                                    ), // 0.3 alpha
-                                    borderRadius: BorderRadius.circular(
-                                      AppBreakpoints.isMobile(context)
-                                          ? 16
-                                          : 20,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    Icons.ios_share_rounded,
-                                    size: AppSizing.responsiveIconSize(
+                                // Decorative Icon
+                                FadeTransition(
+                                  opacity: _fadeInAnimation,
+                                  child: Container(
+                                    width: AppSizing.responsiveIconSize(
                                       context,
-                                      mobile: 35,
-                                      tablet: 40,
-                                      desktop: 45,
+                                      mobile: 70,
+                                      tablet: 80,
+                                      desktop: 90,
                                     ),
-                                    color: Colors.green,
-                                  ),
-                                ),
-                              ),
-
-                              SizedBox(height: AppSpacing.lg),
-
-                              // Title animation
-                              FadeTransition(
-                                opacity: _fadeInAnimation,
-                                child: Text(
-                                  'Import a Recipe',
-                                  style: TextStyle(
-                                    fontSize:
-                                        AppTypography.responsiveHeadingSize(
-                                          context,
-                                          mobile: 26.0,
-                                          tablet: 32.0,
-                                          desktop: 36.0,
-                                        ),
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: -0.5,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-
-                              SizedBox(height: AppSpacing.md),
-
-                              // Subtitle animation with slight delay
-                              AnimatedBuilder(
-                                animation: _animationController,
-                                builder: (context, child) {
-                                  return Opacity(
-                                    opacity: (_animationController.value - 0.3)
-                                        .clamp(0.0, 1.0),
-                                    child: Transform.translate(
-                                      offset: Offset(
-                                        0,
-                                        30 *
-                                            (1 -
-                                                (_animationController.value -
-                                                        0.3)
-                                                    .clamp(0.0, 1.0)),
-                                      ),
-                                      child: child,
+                                    height: AppSizing.responsiveIconSize(
+                                      context,
+                                      mobile: 70,
+                                      tablet: 80,
+                                      desktop: 90,
                                     ),
-                                  );
-                                },
-                                child: Container(
-                                  padding: AppSpacing.horizontalResponsive(
-                                    context,
-                                  ),
-                                  child: RichText(
-                                    textAlign: TextAlign.center,
-                                    text: TextSpan(
-                                      style: TextStyle(
-                                        fontSize:
-                                            AppTypography.responsiveFontSize(
-                                              context,
-                                            ),
-                                        color: colorScheme.onSurface.withAlpha(
-                                          179,
-                                        ), // 0.7 alpha
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.withAlpha(
+                                        77,
+                                      ), // 0.3 alpha
+                                      borderRadius: BorderRadius.circular(
+                                        AppBreakpoints.isMobile(context)
+                                            ? 16
+                                            : 20,
                                       ),
-                                      children: [
-                                        const TextSpan(text: 'Tap the '),
-                                        WidgetSpan(
-                                          child: Icon(
-                                            Icons.share,
-                                            size: AppSizing.responsiveIconSize(
-                                              context,
-                                              mobile: 16,
-                                              tablet: 18,
-                                              desktop: 20,
-                                            ),
-                                            color: colorScheme.primary,
-                                          ),
-                                        ),
-                                        const TextSpan(
-                                          text: ' share button (Android) or ',
-                                        ),
-                                        WidgetSpan(
-                                          child: Icon(
-                                            Icons.ios_share,
-                                            size: AppSizing.responsiveIconSize(
-                                              context,
-                                              mobile: 16,
-                                              tablet: 18,
-                                              desktop: 20,
-                                            ),
-                                            color: colorScheme.primary,
-                                          ),
-                                        ),
-                                        const TextSpan(
-                                          text:
-                                              ' share button (iOS) in your favorite social media app, or paste a recipe URL below to import recipes. You can also create a recipe manually using the ',
-                                        ),
-                                        WidgetSpan(
-                                          child: Icon(
-                                            Icons.add,
-                                            size: AppSizing.responsiveIconSize(
-                                              context,
-                                              mobile: 16,
-                                              tablet: 18,
-                                              desktop: 20,
-                                            ),
-                                            color: colorScheme.primary,
-                                          ),
-                                        ),
-                                        const TextSpan(
-                                          text:
-                                              ' button at the top of your screen.',
-                                        ),
-                                      ],
+                                    ),
+                                    child: Icon(
+                                      Icons.ios_share_rounded,
+                                      size: AppSizing.responsiveIconSize(
+                                        context,
+                                        mobile: 35,
+                                        tablet: 40,
+                                        desktop: 45,
+                                      ),
+                                      color: Colors.green,
                                     ),
                                   ),
                                 ),
-                              ),
 
-                              SizedBox(height: AppSpacing.xxl),
+                                SizedBox(height: AppSpacing.lg),
 
-                              // URL Input field with animation
-                              AnimatedBuilder(
-                                animation: _animationController,
-                                builder: (context, child) {
-                                  return Opacity(
-                                    opacity: (_animationController.value - 0.4)
-                                        .clamp(0.0, 1.0),
-                                    child: Transform.translate(
-                                      offset: Offset(
-                                        0,
-                                        40 *
-                                            (1 -
-                                                (_animationController.value -
-                                                        0.4)
-                                                    .clamp(0.0, 1.0)),
-                                      ),
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(
-                                      AppBreakpoints.isMobile(context)
-                                          ? 12
-                                          : 16,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withAlpha(
-                                          20,
-                                        ), // 0.08 alpha
-                                        blurRadius:
-                                            AppBreakpoints.isMobile(context)
-                                                ? 15
-                                                : 20,
-                                        offset: const Offset(0, 5),
-                                      ),
-                                    ],
-                                  ),
-                                  child: TextField(
-                                    controller: _urlController,
-                                    decoration: InputDecoration(
-                                      hintText:
-                                          'https://www.example.com/recipe',
-                                      labelText: 'Paste recipe URL here',
-                                      hintStyle: TextStyle(
-                                        color: colorScheme.onSurface.withAlpha(
-                                          102,
-                                        ), // 0.4 alpha
-                                        fontSize:
-                                            AppTypography.responsiveFontSize(
-                                              context,
-                                            ),
-                                      ),
-                                      labelStyle: TextStyle(
-                                        fontSize:
-                                            AppTypography.responsiveFontSize(
-                                              context,
-                                            ),
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          AppBreakpoints.isMobile(context)
-                                              ? 12
-                                              : 16,
-                                        ),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      filled: true,
-                                      fillColor:
-                                          theme.brightness == Brightness.dark
-                                              ? colorScheme
-                                                  .surfaceContainerHighest
-                                                  .withAlpha(
-                                                    128,
-                                                  ) // Using surfaceContainerHighest as fallback
-                                              : Theme.of(
-                                                context,
-                                              ).colorScheme.surface.withValues(
-                                                alpha:
-                                                    Theme.of(
-                                                      context,
-                                                    ).colorScheme.alphaVeryHigh,
-                                              ),
-                                      prefixIcon: Icon(
-                                        Icons.link_rounded,
-                                        color: colorScheme.primary,
-                                        size: AppSizing.responsiveIconSize(
-                                          context,
-                                          mobile: 20,
-                                          tablet: 22,
-                                          desktop: 24,
-                                        ),
-                                      ),
-                                      suffixIcon:
-                                          _urlController.text.isNotEmpty
-                                              ? IconButton(
-                                                icon: Icon(
-                                                  Icons.clear,
-                                                  size:
-                                                      AppSizing.responsiveIconSize(
-                                                        context,
-                                                        mobile: 20,
-                                                        tablet: 22,
-                                                        desktop: 24,
-                                                      ),
-                                                ),
-                                                onPressed:
-                                                    () => setState(
-                                                      () =>
-                                                          _urlController
-                                                              .clear(),
-                                                    ),
-                                              )
-                                              : null,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        vertical: AppSpacing.lg,
-                                        horizontal: AppSpacing.md,
-                                      ),
-                                      floatingLabelBehavior:
-                                          FloatingLabelBehavior.never,
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          AppBreakpoints.isMobile(context)
-                                              ? 12
-                                              : 16,
-                                        ),
-                                        borderSide: BorderSide(
-                                          color: colorScheme.outline.withAlpha(
-                                            26,
-                                          ), // 0.1 alpha
-                                          width: 1.0,
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          AppBreakpoints.isMobile(context)
-                                              ? 12
-                                              : 16,
-                                        ),
-                                        borderSide: BorderSide(
-                                          color: colorScheme.primary.withAlpha(
-                                            128,
-                                          ), // 0.5 alpha
-                                          width: 2.0,
-                                        ),
-                                      ),
-                                    ),
-                                    onSubmitted:
-                                        (url) => _importRecipe(context, url),
-                                    onChanged: (value) => setState(() {}),
+                                // Title animation
+                                FadeTransition(
+                                  opacity: _fadeInAnimation,
+                                  child: Text(
+                                    'Import a Recipe',
                                     style: TextStyle(
                                       fontSize:
-                                          AppTypography.responsiveFontSize(
+                                          AppTypography.responsiveHeadingSize(
                                             context,
+                                            mobile: 26.0,
+                                            tablet: 32.0,
+                                            desktop: 36.0,
                                           ),
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: -0.5,
                                       color: colorScheme.onSurface,
                                     ),
                                   ),
                                 ),
-                              ),
 
-                              SizedBox(height: AppSpacing.md),
+                                SizedBox(height: AppSpacing.md),
 
-                              // Import button with animation
-                              AnimatedBuilder(
-                                animation: _animationController,
-                                builder: (context, child) {
-                                  return Opacity(
-                                    opacity: (_animationController.value - 0.6)
-                                        .clamp(0.0, 1.0),
-                                    child: Transform.translate(
-                                      offset: Offset(
-                                        0,
-                                        30 *
-                                            (1 -
-                                                (_animationController.value -
-                                                        0.6)
-                                                    .clamp(0.0, 1.0)),
+                                // Subtitle animation with slight delay
+                                AnimatedBuilder(
+                                  animation: _animationController,
+                                  builder: (context, child) {
+                                    return Opacity(
+                                      opacity: (_animationController.value -
+                                              0.3)
+                                          .clamp(0.0, 1.0),
+                                      child: Transform.translate(
+                                        offset: Offset(
+                                          0,
+                                          30 *
+                                              (1 -
+                                                  (_animationController.value -
+                                                          0.3)
+                                                      .clamp(0.0, 1.0)),
+                                        ),
+                                        child: child,
                                       ),
-                                      child: child,
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: AppSpacing.horizontalResponsive(
+                                      context,
                                     ),
-                                  );
-                                },
-                                child: SizedBox(
-                                  width:
-                                      AppBreakpoints.isMobile(context)
-                                          ? 200
-                                          : 240,
-                                  height:
-                                      AppBreakpoints.isMobile(context)
-                                          ? 50
-                                          : 56,
-                                  child: ElevatedButton.icon(
-                                    onPressed:
-                                        recipeProvider.isLoading ||
-                                                _urlController.text.isEmpty
-                                            ? null
-                                            : () => _importRecipe(
-                                              context,
-                                              _urlController.text,
-                                            ),
-                                    icon:
-                                        recipeProvider.isLoading
-                                            ? SizedBox(
-                                              width:
-                                                  AppSizing.responsiveIconSize(
-                                                    context,
-                                                    mobile: 18,
-                                                    tablet: 20,
-                                                    desktop: 22,
-                                                  ),
-                                              height:
-                                                  AppSizing.responsiveIconSize(
-                                                    context,
-                                                    mobile: 18,
-                                                    tablet: 20,
-                                                    desktop: 22,
-                                                  ),
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<
-                                                  Color
-                                                >(
-                                                  Theme.of(context)
-                                                      .colorScheme
-                                                      .surface
-                                                      .withValues(
-                                                        alpha:
-                                                            Theme.of(context)
-                                                                .colorScheme
-                                                                .alphaVeryHigh,
-                                                      ),
-                                                ),
+                                    child: RichText(
+                                      textAlign: TextAlign.center,
+                                      text: TextSpan(
+                                        style: TextStyle(
+                                          fontSize:
+                                              AppTypography.responsiveFontSize(
+                                                context,
                                               ),
-                                            )
-                                            : Icon(
-                                              Icons.download_rounded,
+                                          color: colorScheme.onSurface
+                                              .withAlpha(179), // 0.7 alpha
+                                        ),
+                                        children: [
+                                          const TextSpan(text: 'Tap the '),
+                                          WidgetSpan(
+                                            child: Icon(
+                                              Icons.share,
                                               size:
                                                   AppSizing.responsiveIconSize(
                                                     context,
-                                                    mobile: 20,
-                                                    tablet: 22,
-                                                    desktop: 24,
+                                                    mobile: 16,
+                                                    tablet: 18,
+                                                    desktop: 20,
                                                   ),
+                                              color: colorScheme.primary,
                                             ),
-                                    label: Text(
-                                      recipeProvider.isLoading
-                                          ? 'Importing...'
-                                          : 'Import Recipe',
-                                      style: TextStyle(
-                                        fontSize:
-                                            AppTypography.responsiveFontSize(
-                                              context,
-                                              mobile: 15.0,
-                                              tablet: 17.0,
-                                              desktop: 18.0,
+                                          ),
+                                          const TextSpan(
+                                            text: ' share button (Android) or ',
+                                          ),
+                                          WidgetSpan(
+                                            child: Icon(
+                                              Icons.ios_share,
+                                              size:
+                                                  AppSizing.responsiveIconSize(
+                                                    context,
+                                                    mobile: 16,
+                                                    tablet: 18,
+                                                    desktop: 20,
+                                                  ),
+                                              color: colorScheme.primary,
                                             ),
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      foregroundColor: Theme.of(
-                                        context,
-                                      ).colorScheme.surface.withValues(
-                                        alpha:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.alphaVeryHigh,
-                                      ),
-                                      backgroundColor: colorScheme.primary,
-                                      elevation: AppElevation.responsive(
-                                        context,
-                                      ),
-                                      shadowColor: colorScheme.primary
-                                          .withAlpha(102), // 0.4 alpha
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          AppBreakpoints.isMobile(context)
-                                              ? 25
-                                              : 28,
-                                        ),
-                                      ),
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: AppSpacing.md,
-                                        horizontal: AppSpacing.lg,
+                                          ),
+                                          const TextSpan(
+                                            text:
+                                                ' share button (iOS) in your favorite social media app, or paste a recipe URL below to import recipes. You can also create a recipe manually using the ',
+                                          ),
+                                          WidgetSpan(
+                                            child: Icon(
+                                              Icons.add,
+                                              size:
+                                                  AppSizing.responsiveIconSize(
+                                                    context,
+                                                    mobile: 16,
+                                                    tablet: 18,
+                                                    desktop: 20,
+                                                  ),
+                                              color: colorScheme.primary,
+                                            ),
+                                          ),
+                                          const TextSpan(
+                                            text:
+                                                ' button at the top of your screen.',
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
 
-                          // Bottom section - pushed to bottom of screen
-                          Padding(
-                            padding: EdgeInsets.only(bottom: AppSpacing.md),
-                            child: AnimatedBuilder(
-                              animation: _animationController,
-                              builder: (context, child) {
-                                return Opacity(
-                                  opacity: (_animationController.value - 0.7)
-                                      .clamp(0.0, 1.0),
-                                  child: child,
-                                );
-                              },
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(
-                                    Icons.help_outline,
-                                    size: AppSizing.responsiveIconSize(
-                                      context,
-                                      mobile: 14,
-                                      tablet: 16,
-                                      desktop: 18,
+                                SizedBox(height: AppSpacing.xxl),
+
+                                // URL Input field with animation
+                                AnimatedBuilder(
+                                  animation: _animationController,
+                                  builder: (context, child) {
+                                    return Opacity(
+                                      opacity: (_animationController.value -
+                                              0.4)
+                                          .clamp(0.0, 1.0),
+                                      child: Transform.translate(
+                                        offset: Offset(
+                                          0,
+                                          40 *
+                                              (1 -
+                                                  (_animationController.value -
+                                                          0.4)
+                                                      .clamp(0.0, 1.0)),
+                                        ),
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(
+                                        AppBreakpoints.isMobile(context)
+                                            ? 12
+                                            : 16,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withAlpha(
+                                            20,
+                                          ), // 0.08 alpha
+                                          blurRadius:
+                                              AppBreakpoints.isMobile(context)
+                                                  ? 15
+                                                  : 20,
+                                          offset: const Offset(0, 5),
+                                        ),
+                                      ],
                                     ),
-                                    color: colorScheme.onSurface.withAlpha(
-                                      102,
-                                    ), // 0.4 alpha
-                                  ),
-                                  SizedBox(width: AppSpacing.sm),
-                                  Expanded(
-                                    child: Center(
-                                      child: Text(
-                                        'Supported sites: AllRecipes, Instagram, TikTok, Food Network, BBC Food, and many more!',
-                                        style: TextStyle(
+                                    child: TextField(
+                                      controller: _urlController,
+                                      decoration: InputDecoration(
+                                        hintText:
+                                            'https://www.example.com/recipe',
+                                        labelText: 'Paste recipe URL here',
+                                        hintStyle: TextStyle(
+                                          color: colorScheme.onSurface
+                                              .withAlpha(102), // 0.4 alpha
                                           fontSize:
-                                              AppTypography.responsiveCaptionSize(
+                                              AppTypography.responsiveFontSize(
                                                 context,
                                               ),
-                                          color: colorScheme.onSurface
-                                              .withAlpha(128), // 0.5 alpha
-                                          fontStyle: FontStyle.italic,
                                         ),
-                                        textAlign: TextAlign.center,
+                                        labelStyle: TextStyle(
+                                          fontSize:
+                                              AppTypography.responsiveFontSize(
+                                                context,
+                                              ),
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            AppBreakpoints.isMobile(context)
+                                                ? 12
+                                                : 16,
+                                          ),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        filled: true,
+                                        fillColor:
+                                            theme.brightness == Brightness.dark
+                                                ? colorScheme
+                                                    .surfaceContainerHighest
+                                                    .withAlpha(
+                                                      128,
+                                                    ) // Using surfaceContainerHighest as fallback
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .surface
+                                                    .withValues(
+                                                      alpha:
+                                                          Theme.of(context)
+                                                              .colorScheme
+                                                              .alphaVeryHigh,
+                                                    ),
+                                        prefixIcon: Icon(
+                                          Icons.link_rounded,
+                                          color: colorScheme.primary,
+                                          size: AppSizing.responsiveIconSize(
+                                            context,
+                                            mobile: 20,
+                                            tablet: 22,
+                                            desktop: 24,
+                                          ),
+                                        ),
+                                        suffixIcon:
+                                            _urlController.text.isNotEmpty
+                                                ? IconButton(
+                                                  icon: Icon(
+                                                    Icons.clear,
+                                                    size:
+                                                        AppSizing.responsiveIconSize(
+                                                          context,
+                                                          mobile: 20,
+                                                          tablet: 22,
+                                                          desktop: 24,
+                                                        ),
+                                                  ),
+                                                  onPressed:
+                                                      () => setState(
+                                                        () =>
+                                                            _urlController
+                                                                .clear(),
+                                                      ),
+                                                )
+                                                : null,
+                                        contentPadding: EdgeInsets.symmetric(
+                                          vertical: AppSpacing.lg,
+                                          horizontal: AppSpacing.md,
+                                        ),
+                                        floatingLabelBehavior:
+                                            FloatingLabelBehavior.never,
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            AppBreakpoints.isMobile(context)
+                                                ? 12
+                                                : 16,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: colorScheme.outline
+                                                .withAlpha(26), // 0.1 alpha
+                                            width: 1.0,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            AppBreakpoints.isMobile(context)
+                                                ? 12
+                                                : 16,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: colorScheme.primary
+                                                .withAlpha(128), // 0.5 alpha
+                                            width: 2.0,
+                                          ),
+                                        ),
+                                      ),
+                                      onSubmitted:
+                                          (url) => _importRecipe(context, url),
+                                      onChanged: (value) => setState(() {}),
+                                      style: TextStyle(
+                                        fontSize:
+                                            AppTypography.responsiveFontSize(
+                                              context,
+                                            ),
+                                        color: colorScheme.onSurface,
                                       ),
                                     ),
                                   ),
-                                ],
+                                ),
+
+                                SizedBox(height: AppSpacing.md),
+
+                                // Import button with animation
+                                AnimatedBuilder(
+                                  animation: _animationController,
+                                  builder: (context, child) {
+                                    return Opacity(
+                                      opacity: (_animationController.value -
+                                              0.6)
+                                          .clamp(0.0, 1.0),
+                                      child: Transform.translate(
+                                        offset: Offset(
+                                          0,
+                                          30 *
+                                              (1 -
+                                                  (_animationController.value -
+                                                          0.6)
+                                                      .clamp(0.0, 1.0)),
+                                        ),
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: SizedBox(
+                                    width:
+                                        AppBreakpoints.isMobile(context)
+                                            ? 200
+                                            : 240,
+                                    height:
+                                        AppBreakpoints.isMobile(context)
+                                            ? 50
+                                            : 56,
+                                    child: ElevatedButton.icon(
+                                      onPressed:
+                                          recipeProvider.isLoading ||
+                                                  _urlController.text.isEmpty
+                                              ? null
+                                              : () => _importRecipe(
+                                                context,
+                                                _urlController.text,
+                                              ),
+                                      icon:
+                                          recipeProvider.isLoading
+                                              ? SizedBox(
+                                                width:
+                                                    AppSizing.responsiveIconSize(
+                                                      context,
+                                                      mobile: 18,
+                                                      tablet: 20,
+                                                      desktop: 22,
+                                                    ),
+                                                height:
+                                                    AppSizing.responsiveIconSize(
+                                                      context,
+                                                      mobile: 18,
+                                                      tablet: 20,
+                                                      desktop: 22,
+                                                    ),
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor: AlwaysStoppedAnimation<
+                                                    Color
+                                                  >(
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .surface
+                                                        .withValues(
+                                                          alpha:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .alphaVeryHigh,
+                                                        ),
+                                                  ),
+                                                ),
+                                              )
+                                              : Icon(
+                                                Icons.download_rounded,
+                                                size:
+                                                    AppSizing.responsiveIconSize(
+                                                      context,
+                                                      mobile: 20,
+                                                      tablet: 22,
+                                                      desktop: 24,
+                                                    ),
+                                              ),
+                                      label: Text(
+                                        recipeProvider.isLoading
+                                            ? 'Importing...'
+                                            : 'Import Recipe',
+                                        style: TextStyle(
+                                          fontSize:
+                                              AppTypography.responsiveFontSize(
+                                                context,
+                                                mobile: 15.0,
+                                                tablet: 17.0,
+                                                desktop: 18.0,
+                                              ),
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        foregroundColor: Theme.of(
+                                          context,
+                                        ).colorScheme.surface.withValues(
+                                          alpha:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.alphaVeryHigh,
+                                        ),
+                                        backgroundColor: colorScheme.primary,
+                                        elevation: AppElevation.responsive(
+                                          context,
+                                        ),
+                                        shadowColor: colorScheme.primary
+                                            .withAlpha(102), // 0.4 alpha
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            AppBreakpoints.isMobile(context)
+                                                ? 25
+                                                : 28,
+                                          ),
+                                        ),
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: AppSpacing.md,
+                                          horizontal: AppSpacing.lg,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            // Bottom section - pushed to bottom of screen
+                            Padding(
+                              padding: EdgeInsets.only(bottom: AppSpacing.md),
+                              child: AnimatedBuilder(
+                                animation: _animationController,
+                                builder: (context, child) {
+                                  return Opacity(
+                                    opacity: (_animationController.value - 0.7)
+                                        .clamp(0.0, 1.0),
+                                    child: child,
+                                  );
+                                },
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      Icons.help_outline,
+                                      size: AppSizing.responsiveIconSize(
+                                        context,
+                                        mobile: 14,
+                                        tablet: 16,
+                                        desktop: 18,
+                                      ),
+                                      color: colorScheme.onSurface.withAlpha(
+                                        102,
+                                      ), // 0.4 alpha
+                                    ),
+                                    SizedBox(width: AppSpacing.sm),
+                                    Expanded(
+                                      child: Center(
+                                        child: Text(
+                                          'Supported sites: AllRecipes, Instagram, TikTok, Food Network, BBC Food, and many more!',
+                                          style: TextStyle(
+                                            fontSize:
+                                                AppTypography.responsiveCaptionSize(
+                                                  context,
+                                                ),
+                                            color: colorScheme.onSurface
+                                                .withAlpha(128), // 0.5 alpha
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),

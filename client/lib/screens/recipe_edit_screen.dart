@@ -161,7 +161,11 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
               ),
               content: Text(
                 'Recipe updated successfully. View it now or continue editing.',
-                style: TextStyle(color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh)),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.surface.withValues(
+                    alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+                  ),
+                ),
               ),
               backgroundColor: Colors.green,
             ),
@@ -187,8 +191,12 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                 },
               ),
               content: Text(
-                'Recipe created successfully. You can view it now.',
-                style: TextStyle(color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh)),
+                'Recipe saved successfully.',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.surface.withValues(
+                    alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+                  ),
+                ),
               ),
               duration: Duration(seconds: 5),
               backgroundColor: Colors.green,
@@ -199,6 +207,9 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
               ),
             ),
           );
+
+          // After saving a new recipe, return to the Import screen to add a new one
+          Navigator.pushReplacementNamed(context, '/import');
         }
       }
     } catch (e) {
@@ -685,10 +696,19 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                             context,
                                           ).colorScheme.secondary,
                                     ),
-                                                                          child: Text(
-                                        'Cancel',
-                                        style: TextStyle(color: Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh)),
+                                    child: Text(
+                                      'Cancel',
+                                      style: TextStyle(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.surface.withValues(
+                                          alpha:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.alphaVeryHigh,
+                                        ),
                                       ),
+                                    ),
                                   ),
                                   ElevatedButton(
                                     onPressed: () => _saveRecipe(),
@@ -710,7 +730,15 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                                         .computeLuminance() >
                                                     0.5
                                                 ? Colors.black
-                                                : Theme.of(context).colorScheme.surface.withValues(alpha: Theme.of(context).colorScheme.alphaVeryHigh),
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .surface
+                                                    .withValues(
+                                                      alpha:
+                                                          Theme.of(context)
+                                                              .colorScheme
+                                                              .alphaVeryHigh,
+                                                    ),
                                       ),
                                     ),
                                   ),

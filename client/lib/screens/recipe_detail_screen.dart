@@ -7,7 +7,6 @@ import 'package:recipease/screens/my_recipes_screen.dart';
 import 'package:recipease/screens/recipe_edit_screen.dart';
 import '../models/recipe.dart';
 import '../components/custom_app_bar.dart';
-import 'package:url_launcher/link.dart';
 import '../providers/user_profile_provider.dart';
 import '../components/floating_bottom_bar.dart';
 import '../theme/theme.dart';
@@ -63,121 +62,131 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
     final recipe = widget.recipe;
     String? sourceUrl;
-    String? displayText;
-    IconData? icon;
-    bool isClickable = true;
+    String? platformLabel;
+    String? detailsLabel;
+    IconData icon = Icons.link;
 
-    // Store values in local variables to avoid race conditions
-    final instagram = recipe.instagram;
-    final tiktok = recipe.tiktok;
-    final youtube = recipe.youtube;
-    final source = recipe.source;
+    // Prefer explicit sourceUrl if present
+    if ((recipe.sourceUrl != null && recipe.sourceUrl!.isNotEmpty)) {
+      sourceUrl = recipe.sourceUrl;
+    }
 
-    print('recipe: ${recipe.aiGenerated}');
+    // If no explicit URL, try to build from social IDs
+    if (sourceUrl == null || sourceUrl.isEmpty) {
+      final instagram = recipe.instagram;
+      final tiktok = recipe.tiktok;
+      final youtube = recipe.youtube;
 
-    if (instagram?.shortcode != null) {
-      sourceUrl =
-          recipe.sourceUrl ??
-          'https://www.instagram.com/p/${instagram!.shortcode}/';
-      displayText = 'View Post';
+      if (instagram?.shortcode != null && instagram!.shortcode!.isNotEmpty) {
+        sourceUrl = 'https://www.instagram.com/p/${instagram.shortcode!}/';
+      } else if (tiktok?.videoId != null &&
+          tiktok!.videoId!.isNotEmpty &&
+          (tiktok.username != null && tiktok.username!.isNotEmpty)) {
+        sourceUrl =
+            'https://www.tiktok.com/@${tiktok.username!}/video/${tiktok.videoId!}';
+      } else if (youtube?.videoId != null && youtube!.videoId!.isNotEmpty) {
+        sourceUrl = 'https://www.youtube.com/watch?v=${youtube.videoId!}';
+      }
+    }
+
+    // If still no URL, see if recipe.source looks like a URL
+    if ((sourceUrl == null || sourceUrl.isEmpty) &&
+        recipe.source != null &&
+        recipe.source!.isNotEmpty) {
+      final s = recipe.source!.trim();
+      final looksLikeUrl =
+          s.startsWith('http://') ||
+          s.startsWith('https://') ||
+          s.startsWith('www.');
+      if (looksLikeUrl) {
+        sourceUrl = s.startsWith('http') ? s : 'https://$s';
+      }
+    }
+
+    // Determine platform/details labels
+    final lower = (sourceUrl ?? '').toLowerCase();
+    if (lower.contains('instagram.com')) {
       icon = Icons.photo_camera;
-    } else if (tiktok?.videoId != null && tiktok?.username != null) {
-      sourceUrl =
-          recipe.sourceUrl ??
-          'https://www.tiktok.com/@${tiktok!.username}/video/${tiktok.videoId}';
-      displayText = 'View Video';
+      platformLabel = 'Instagram';
+      detailsLabel =
+          recipe.instagram?.username != null &&
+                  recipe.instagram!.username!.isNotEmpty
+              ? '@${recipe.instagram!.username!}'
+              : 'Post';
+    } else if (lower.contains('tiktok.com')) {
       icon = Icons.video_library;
-    } else if (youtube?.videoId != null) {
-      sourceUrl =
-          recipe.sourceUrl ??
-          'https://www.youtube.com/watch?v=${youtube!.videoId}';
-      displayText = 'Watch Video';
+      platformLabel = 'TikTok';
+      detailsLabel =
+          recipe.tiktok?.username != null && recipe.tiktok!.username!.isNotEmpty
+              ? '@${recipe.tiktok!.username!}'
+              : 'Video';
+    } else if (lower.contains('youtube.com') || lower.contains('youtu.be')) {
       icon = Icons.play_circle_outline;
-    } else if (recipe.aiGenerated == true) {
-      displayText = 'AI-Generated';
+      platformLabel = 'YouTube';
+      detailsLabel =
+          recipe.youtube?.channelTitle != null &&
+                  recipe.youtube!.channelTitle!.isNotEmpty
+              ? recipe.youtube!.channelTitle!
+              : 'Video';
+    } else if (sourceUrl != null && sourceUrl.isNotEmpty) {
+      // Derive host from URL
+      try {
+        final uri = Uri.parse(sourceUrl);
+        var host = uri.host;
+        if (host.startsWith('www.')) host = host.substring(4);
+        platformLabel = host;
+      } catch (_) {
+        platformLabel = recipe.source?.trim();
+      }
+    } else if (recipe.sourcePlatform != null &&
+        recipe.sourcePlatform!.isNotEmpty) {
+      platformLabel = recipe.sourcePlatform!.trim();
+    } else if (recipe.source != null && recipe.source!.isNotEmpty) {
+      platformLabel = recipe.source!.trim();
+    }
+
+    // Fallback for AI generated without any source
+    if ((platformLabel == null || platformLabel.isEmpty) &&
+        recipe.aiGenerated == true) {
       icon = Icons.auto_awesome;
-      isClickable = false; // AI-generated recipes don't have external links
-    } else if (source != null) {
-      sourceUrl = recipe.sourceUrl ?? source;
-      displayText = source;
-      icon = Icons.web;
-    } else {
+      platformLabel = 'AI-Generated';
+      detailsLabel = null;
+    }
+
+    // If still no platform to show, render nothing
+    if (platformLabel == null || platformLabel.isEmpty) {
       return const SizedBox.shrink();
     }
 
+    // Render a simple non-clickable row (icon + text)
     return Padding(
       padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          if (source != null) ...[
-            Text(
-              source,
+          Icon(
+            icon,
+            size: AppSizing.responsiveIconSize(
+              context,
+              mobile: 18,
+              tablet: 20,
+              desktop: 22,
+            ),
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              detailsLabel != null && detailsLabel.isNotEmpty
+                  ? '$platformLabel · $detailsLabel'
+                  : platformLabel,
               style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
                 fontSize: AppTypography.responsiveFontSize(context),
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(height: AppSpacing.xs),
-          ],
-          if (isClickable && sourceUrl != null) ...[
-            Link(
-              uri: Uri.parse(sourceUrl),
-              target: LinkTarget.blank,
-              builder: (BuildContext context, FollowLink? openLink) {
-                return InkWell(
-                  onTap: openLink,
-                  child: Row(
-                    children: [
-                      Icon(
-                        icon!,
-                        size: AppSizing.responsiveIconSize(
-                          context,
-                          mobile: 18,
-                          tablet: 20,
-                          desktop: 22,
-                        ),
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      SizedBox(width: AppSpacing.sm),
-                      Text(
-                        displayText!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          decoration: TextDecoration.underline,
-                          fontSize: AppTypography.responsiveFontSize(context),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ] else ...[
-            // Non-clickable indicator for AI-generated recipes
-            Row(
-              children: [
-                Icon(
-                  icon,
-                  size: AppSizing.responsiveIconSize(
-                    context,
-                    mobile: 18,
-                    tablet: 20,
-                    desktop: 22,
-                  ),
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                SizedBox(width: AppSpacing.sm),
-                Text(
-                  displayText,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontSize: AppTypography.responsiveFontSize(context),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ],
       ),
     );

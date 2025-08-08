@@ -16,9 +16,8 @@ class CollectionService extends ChangeNotifier {
   static DateTime? _lastCacheTime;
   static const Duration _cacheTimeout = Duration(minutes: 2);
 
-  // Default collections that all users start with
+  // Default collections that all users start with (Favorites is no longer a default)
   static final List<RecipeCollection> _defaultCollections = [
-    RecipeCollection.withName('Favorites'),
     RecipeCollection.withName('Recently Added'),
   ];
 
@@ -60,21 +59,12 @@ class CollectionService extends ChangeNotifier {
                 .map((json) => RecipeCollection.fromJson(json))
                 .toList();
 
-        // Ensure special collections exist (but don't create them if they don't exist)
-        final hasFavorites = collections.any((c) => c.name == 'Favorites');
+        // Ensure special collections exist (but don't create Favorites automatically)
         final hasRecentlyAdded = collections.any(
           (c) => c.name == 'Recently Added',
         );
-
-        // Only add missing collections if the user has any collections at all
-        // This prevents creating default collections for users who haven't created any yet
-        if (collections.isNotEmpty) {
-          if (!hasFavorites) {
-            collections.add(RecipeCollection.withName('Favorites'));
-          }
-          if (!hasRecentlyAdded) {
-            collections.add(RecipeCollection.withName('Recently Added'));
-          }
+        if (collections.isNotEmpty && !hasRecentlyAdded) {
+          collections.add(RecipeCollection.withName('Recently Added'));
         }
       } else {
         logger.e('Error getting collections: ${response.message}');
@@ -85,7 +75,10 @@ class CollectionService extends ChangeNotifier {
       if (updateSpecialCollections) {
         // Update the recently added collection with current data
         await updateRecentlyAddedCollection(collections);
-        await updateFavoritesCollection(collections);
+        // Only update Favorites collection if it exists (not a default anymore)
+        if (collections.any((c) => c.name == 'Favorites')) {
+          await updateFavoritesCollection(collections);
+        }
       }
 
       // Cache the result AFTER all updates are complete
@@ -243,20 +236,32 @@ class CollectionService extends ChangeNotifier {
         return false;
       }
 
-      // Get all collections to find the favorites collection (use cached version)
+      // If adding to the Favorites collection, also toggle favorite flag in backend.
+      // We must compare by collection name when the caller passes a name instead of ID.
       final collections = await getCollections(updateSpecialCollections: false);
-      final favoritesCollection = collections.firstWhere(
+      final favorites = collections.firstWhere(
         (c) => c.name == 'Favorites',
         orElse: () => RecipeCollection.withName('Favorites'),
       );
 
-      // If adding to favorites collection, update the recipe's favorite status
-      if (collectionId == favoritesCollection.id) {
+      // Support callers passing either the real collection ID or the name 'Favorites'
+      final isFavoritesTarget =
+          (collections.any((c) => c.name == 'Favorites')) &&
+          (collectionId == favorites.id || collectionId == 'Favorites');
+
+      if (isFavoritesTarget) {
         await RecipeService.toggleFavoriteStatus(recipe.id, true);
       }
 
+      // Resolve real collection ID if a name was provided
+      final targetCollectionId =
+          collectionId == 'Favorites' &&
+                  collections.any((c) => c.name == 'Favorites')
+              ? favorites.id
+              : collectionId;
+
       final response = await _api.authenticatedPost(
-        'collections/$collectionId/recipes',
+        'collections/$targetCollectionId/recipes',
         body: {'recipe': recipe.toJson()},
       );
 
@@ -287,20 +292,30 @@ class CollectionService extends ChangeNotifier {
         return false;
       }
 
-      // Get all collections to find the favorites collection (use cached version)
+      // If removing from the Favorites collection, also toggle favorite flag in backend.
       final collections = await getCollections(updateSpecialCollections: false);
-      final favoritesCollection = collections.firstWhere(
+      final favorites = collections.firstWhere(
         (c) => c.name == 'Favorites',
         orElse: () => RecipeCollection.withName('Favorites'),
       );
 
-      // If removing from favorites collection, update the recipe's favorite status
-      if (collectionId == favoritesCollection.id) {
+      final isFavoritesTarget =
+          (collections.any((c) => c.name == 'Favorites')) &&
+          (collectionId == favorites.id || collectionId == 'Favorites');
+
+      if (isFavoritesTarget) {
         await RecipeService.toggleFavoriteStatus(recipeId, false);
       }
 
+      // Resolve real collection ID if a name was provided
+      final targetCollectionId =
+          collectionId == 'Favorites' &&
+                  collections.any((c) => c.name == 'Favorites')
+              ? favorites.id
+              : collectionId;
+
       final response = await _api.authenticatedDelete(
-        'collections/$collectionId/recipes/$recipeId',
+        'collections/$targetCollectionId/recipes/$recipeId',
       );
 
       if (response.success) {
@@ -357,10 +372,29 @@ class CollectionService extends ChangeNotifier {
       if (recentRecipesResponse.success && recentRecipesResponse.data != null) {
         final recentRecipes = recentRecipesResponse.data!;
 
-        // Start with an empty collection to properly replace all recipes
-        var updatedCollection = collections[recentlyAddedIndex].copyWith(
-          recipes: [],
-        );
+        // Capture current collection before modifying for change detection
+        if (recentlyAddedIndex == -1) {
+          // If the collection doesn't exist, create it locally and persist to server
+          var newCollection = RecipeCollection.withName(
+            'Recently Added',
+          ).copyWith(recipes: []);
+          for (final recipe in recentRecipes) {
+            newCollection = newCollection.addRecipe(recipe);
+          }
+          // Create on server
+          final response = await _api.authenticatedPost<Map<String, dynamic>>(
+            'collections',
+            body: newCollection.toJson(),
+          );
+          if (response.success && response.data != null) {
+            collections.add(RecipeCollection.fromJson(response.data!));
+          }
+          return; // Done; next refresh will pick it up
+        }
+
+        final priorCollection = collections[recentlyAddedIndex];
+        // Build updated collection deterministically
+        var updatedCollection = priorCollection.copyWith(recipes: []);
 
         // Add all recently added recipes to the collection
         for (final recipe in recentRecipes) {
@@ -371,10 +405,9 @@ class CollectionService extends ChangeNotifier {
         collections[recentlyAddedIndex] = updatedCollection;
 
         // Only update the collection on the server if there are actual changes
-        final currentCollection = collections[recentlyAddedIndex];
         final hasChanged =
-            currentCollection.recipes.length != recentRecipes.length ||
-            !currentCollection.recipes.every(
+            priorCollection.recipes.length != recentRecipes.length ||
+            !priorCollection.recipes.every(
               (recipe) => recentRecipes.any((recent) => recent.id == recipe.id),
             );
 

@@ -184,7 +184,8 @@ class RecipeProvider extends ChangeNotifier {
 
     // Serve from cache if available and not forced
     if (!forceRefresh && _userRecipesCache.containsKey(page)) {
-      _userRecipes = _userRecipesCache[page] ?? [];
+      final cached = _userRecipesCache[page];
+      _userRecipes = cached != null ? List<Recipe>.from(cached) : <Recipe>[];
       final pagination = _userPaginationCache[page];
       if (pagination != null) {
         _currentPage = pagination['page'] ?? page;
@@ -197,7 +198,6 @@ class RecipeProvider extends ChangeNotifier {
       // Ensure favorite flags are kept in sync using cached ids (non-blocking)
       // Do not set loading to true to avoid jank when serving from cache
       // Just refresh favorites in background if TTL expired
-      // fire and forget refresh of favorites
       _ensureFavoriteIdsFresh().then((_) => _applyFavoriteFlagsFromCache());
       return;
     }
@@ -227,7 +227,7 @@ class RecipeProvider extends ChangeNotifier {
           return;
         }
 
-        _userRecipes = recipesList.cast<Recipe>();
+        _userRecipes = List<Recipe>.from(recipesList as List<Recipe>);
 
         // Cache the page data
         _userRecipesCache[page] = List<Recipe>.unmodifiable(_userRecipes);
@@ -463,7 +463,8 @@ class RecipeProvider extends ChangeNotifier {
                 ) &&
                 index != -1) {
               final recipeToAdd = _userRecipes[index];
-              _favoriteRecipes.add(recipeToAdd);
+              _favoriteRecipes = List<Recipe>.from(_favoriteRecipes)
+                ..add(recipeToAdd);
               // Add to favorites collection using the correct recipe
               await collectionService.addRecipeToCollection(
                 'Favorites',
@@ -472,9 +473,8 @@ class RecipeProvider extends ChangeNotifier {
             }
           } else {
             // If removing from favorites, remove from list
-            _favoriteRecipes.removeWhere(
-              (r) => r.id.toString() == id.toString(),
-            );
+            _favoriteRecipes = List<Recipe>.from(_favoriteRecipes)
+              ..removeWhere((r) => r.id.toString() == id.toString());
             // Remove from favorites collection
             await collectionService.removeRecipeFromCollection('Favorites', id);
           }

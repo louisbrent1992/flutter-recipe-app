@@ -250,9 +250,11 @@ router.put("/recipes/:id", auth, async (req, res) => {
 
 		await recipeRef.update(updates);
 
+		// Return the fully updated document to ensure fields like createdAt are preserved
+		const updatedDoc = await recipeRef.get();
 		res.json({
-			id: recipeId,
-			...updates,
+			id: updatedDoc.id,
+			...updatedDoc.data(),
 		});
 	} catch (error) {
 		console.error("Error updating recipe:", error);
@@ -287,12 +289,16 @@ router.delete("/recipes/:id", auth, async (req, res) => {
 		// 1. Delete the recipe document
 		batch.delete(recipeRef);
 
-		// 2. Remove from user's favorites if present
+		// 2. Remove from user's favorites if present (create doc if missing)
 		const favoritesRef = db.collection("favorites").doc(userId);
-		batch.update(favoritesRef, {
-			recipes: FieldValue.arrayRemove(recipeId),
-			updatedAt: new Date().toISOString(),
-		});
+		batch.set(
+			favoritesRef,
+			{
+				recipes: FieldValue.arrayRemove(recipeId),
+				updatedAt: new Date().toISOString(),
+			},
+			{ merge: true }
+		);
 
 		// 3. Remove from all user's collections
 		const collectionsSnapshot = await db

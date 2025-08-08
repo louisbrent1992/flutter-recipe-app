@@ -62,9 +62,12 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
     super.dispose();
   }
 
-  Future<void> _loadRecipes() async {
+  Future<void> _loadRecipes({bool forceRefresh = false}) async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    await recipeProvider.loadUserRecipes(page: _currentPage);
+    await recipeProvider.loadUserRecipes(
+      page: _currentPage,
+      forceRefresh: forceRefresh,
+    );
     _updateAvailableTags(recipeProvider.userRecipes);
   }
 
@@ -243,49 +246,54 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
 
                 return Stack(
                   children: [
-                    GridView.builder(
-                      key: const PageStorageKey('my_recipes_grid'),
-                      padding: EdgeInsets.fromLTRB(
-                        AppSpacing.responsive(context),
-                        AppSpacing.responsive(context),
-                        AppSpacing.responsive(context),
-                        100,
-                      ),
-                      controller: _scrollController,
-                      itemBuilder: (context, index) {
-                        final recipe = filteredRecipes[index];
-                        return RecipeCard(
-                          recipe: recipe,
-                          showEditButton: true,
-                          showRemoveButton: true,
-                          showFavoriteButton: true,
-                          onTap:
-                              () => Navigator.pushNamed(
-                                context,
-                                '/recipeDetail',
-                                arguments: recipe,
-                              ),
-                          onRecipeUpdated: (updatedRecipe) {
-                            // Update the recipe in the list
-                            setState(() {
-                              final index = allRecipes.indexWhere(
-                                (r) => r.id == updatedRecipe.id,
-                              );
-                              if (index != -1) {
-                                allRecipes[index] = updatedRecipe;
-                              }
-                            });
-                          },
-                        );
-                      },
-                      itemCount: filteredRecipes.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: AppSizing.responsiveGridCount(context),
-                        childAspectRatio: AppSizing.responsiveAspectRatio(
-                          context,
+                    RefreshIndicator(
+                      onRefresh: () => _loadRecipes(forceRefresh: true),
+                      child: GridView.builder(
+                        key: const PageStorageKey('my_recipes_grid'),
+                        padding: EdgeInsets.fromLTRB(
+                          AppSpacing.responsive(context),
+                          AppSpacing.responsive(context),
+                          AppSpacing.responsive(context),
+                          100,
                         ),
-                        crossAxisSpacing: AppSpacing.responsive(context),
-                        mainAxisSpacing: AppSpacing.responsive(context),
+                        controller: _scrollController,
+                        itemBuilder: (context, index) {
+                          final recipe = filteredRecipes[index];
+                          return RecipeCard(
+                            recipe: recipe,
+                            showEditButton: true,
+                            showRemoveButton: true,
+                            showFavoriteButton: true,
+                            onTap:
+                                () => Navigator.pushNamed(
+                                  context,
+                                  '/recipeDetail',
+                                  arguments: recipe,
+                                ),
+                            onRecipeUpdated: (updatedRecipe) {
+                              // Update the recipe in the list
+                              setState(() {
+                                final index = allRecipes.indexWhere(
+                                  (r) => r.id == updatedRecipe.id,
+                                );
+                                if (index != -1) {
+                                  allRecipes[index] = updatedRecipe;
+                                }
+                              });
+                            },
+                          );
+                        },
+                        itemCount: filteredRecipes.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: AppSizing.responsiveGridCount(
+                            context,
+                          ),
+                          childAspectRatio: AppSizing.responsiveAspectRatio(
+                            context,
+                          ),
+                          crossAxisSpacing: AppSpacing.responsive(context),
+                          mainAxisSpacing: AppSpacing.responsive(context),
+                        ),
                       ),
                     ),
 

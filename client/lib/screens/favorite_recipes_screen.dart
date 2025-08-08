@@ -74,28 +74,36 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
                   );
                 }
 
-                return ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: recipeProvider.favoriteRecipes.length,
-                  itemBuilder: (context, index) {
-                    final recipe = recipeProvider.favoriteRecipes[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: RecipeCard(
-                        recipe: recipe,
-                        showEditButton: false,
-                        showFavoriteButton: true,
-                        showRemoveButton: true,
-                        onTap:
-                            () => Navigator.pushNamed(
-                              context,
-                              '/recipeDetail',
-                              arguments: recipe,
-                            ),
-                      ),
-                    );
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    await Provider.of<RecipeProvider>(
+                      context,
+                      listen: false,
+                    ).loadFavoriteRecipes();
                   },
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: recipeProvider.favoriteRecipes.length,
+                    itemBuilder: (context, index) {
+                      final recipe = recipeProvider.favoriteRecipes[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: RecipeCard(
+                          recipe: recipe,
+                          showEditButton: false,
+                          showFavoriteButton: true,
+                          showRemoveButton: true,
+                          onTap:
+                              () => Navigator.pushNamed(
+                                context,
+                                '/recipeDetail',
+                                arguments: recipe,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
                 );
               },
             ),
