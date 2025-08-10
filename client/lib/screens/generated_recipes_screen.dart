@@ -67,7 +67,12 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
         if (response.success && response.data != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Recipe saved to your collection!'),
+              content: Text(
+                'Recipe saved to your collection!',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
               backgroundColor: Theme.of(context).colorScheme.success,
               action: SnackBarAction(
                 label: 'Go to My Recipes',
