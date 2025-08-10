@@ -148,6 +148,7 @@ router.post("/recipes", auth, async (req, res) => {
 			youtube = null,
 			aiGenerated = false,
 			toEdit = false,
+			nutrition = null,
 		} = req.body;
 
 		if (!title) {
@@ -186,6 +187,7 @@ router.post("/recipes", auth, async (req, res) => {
 			youtube,
 			aiGenerated,
 			toEdit,
+			nutrition,
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 			isFavorite: false,

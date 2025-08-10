@@ -15,6 +15,17 @@ const client = new OpenAI({
 	base_url: process.env.LlamaAI_API_URL,
 });
 
+const nutritionSchema = z.object({
+	calories: z.string().optional(),
+	protein: z.string().optional(),
+	carbs: z.string().optional(),
+	fat: z.string().optional(),
+	fiber: z.string().optional(),
+	sugar: z.string().optional(),
+	sodium: z.string().optional(),
+	iron: z.string().optional(),
+});
+
 const recipeObjSchema = z.object({
 	id: z.string(),
 	title: z.string(),
@@ -27,6 +38,7 @@ const recipeObjSchema = z.object({
 	difficulty: z.string(),
 	servings: z.string(),
 	tags: z.array(z.string()),
+	nutrition: nutritionSchema.optional(),
 });
 
 const recipesArrSchema = z.object({
@@ -158,7 +170,8 @@ router.post("/generate", async (req, res) => {
 						- Dietary restrictions: ${dietaryRestrictions}
 						- Cuisine type: ${cuisineType}
 						- Include cooking time, difficulty level, and number of servings
-						- Additional ingredients if needed
+                        - Additional ingredients if needed
+                        - Provide approximate nutrition per serving as fields: calories (number, no unit), protein (g), carbs (g), fat (g), fiber (g), sugar (g), sodium (mg), iron (% DV numeric only)
 					`,
 				},
 			],
@@ -187,6 +200,7 @@ router.post("/generate", async (req, res) => {
 				difficulty: recipeData.difficulty || "medium",
 				servings: recipeData.servings || "4",
 				tags: recipeData.tags || [],
+				nutrition: recipeData.nutrition || null,
 				aiGenerated: true,
 				createdAt: new Date().toISOString(),
 			}))
@@ -303,8 +317,8 @@ const processRecipeData = async (
 				role: "system",
 				content:
 					isInstagram || isTikTok || isYouTube
-						? "Extract recipe details from this social media post. Return title, ingredients (array), instructions (array), description, and tags (array). Fill in any missing recipe details."
-						: "Extract recipe details from this text. Return title, ingredients (array), instructions (array), description, and tags (array). Fill in any missing recipe details.",
+						? "Extract recipe details from this social media post. Return title, ingredients (array), instructions (array), description, tags (array), and approximate nutrition per serving. Use these fields: calories (number, no unit), protein (g), carbs (g), fat (g), fiber (g), sugar (g), sodium (mg), iron (percent DV numeric only). Fill in any missing recipe details."
+						: "Extract recipe details from this text. Return title, ingredients (array), instructions (array), description, tags (array), and approximate nutrition per serving. Use these fields: calories (number, no unit), protein (g), carbs (g), fat (g), fiber (g), sugar (g), sodium (mg), iron (percent DV numeric only). Fill in any missing recipe details.",
 			},
 			{
 				role: "user",
@@ -352,6 +366,7 @@ const processRecipeData = async (
 			socialData?.author?.username ||
 			socialData?.channelTitle,
 		tags: parsedRecipe.tags || [],
+		nutrition: parsedRecipe.nutrition || null,
 		createdAt: new Date().toISOString(),
 		...(isInstagram && {
 			instagram: {

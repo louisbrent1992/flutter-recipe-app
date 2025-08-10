@@ -25,6 +25,7 @@ class Recipe {
   final YouTubeData? youtube;
   final bool toEdit;
   final bool aiGenerated;
+  final Nutrition? nutrition;
 
   Recipe({
     this.id = '',
@@ -52,6 +53,7 @@ class Recipe {
     this.youtube,
     this.toEdit = false,
     this.aiGenerated = false,
+    this.nutrition,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Helper method to parse DateTime from various formats
@@ -163,6 +165,12 @@ class Recipe {
               : null,
       toEdit: json['toEdit'] ?? false,
       aiGenerated: json['aiGenerated'] ?? false,
+      nutrition:
+          json['nutrition'] != null && json['nutrition'] is Map
+              ? Nutrition.fromJson(
+                Map<String, dynamic>.from(json['nutrition'] as Map),
+              )
+              : null,
     );
   }
 
@@ -192,6 +200,7 @@ class Recipe {
     'youtube': youtube?.toJson(),
     'toEdit': toEdit,
     'aiGenerated': aiGenerated,
+    'nutrition': nutrition?.toJson(),
   };
 
   // Create a copy of the recipe with updated values
@@ -220,6 +229,7 @@ class Recipe {
     YouTubeData? youtube,
     bool? toEdit,
     bool? aiGenerated,
+    Nutrition? nutrition,
   }) {
     return Recipe(
       id: id ?? this.id,
@@ -246,6 +256,7 @@ class Recipe {
       youtube: youtube ?? this.youtube,
       toEdit: toEdit ?? this.toEdit,
       aiGenerated: aiGenerated ?? this.aiGenerated,
+      nutrition: nutrition ?? this.nutrition,
     );
   }
 
@@ -267,6 +278,7 @@ ${ingredients.map((i) => '• $i').join('\n')}
 ${instructions.map((i) => '${instructions.indexOf(i) + 1}. $i').join('\n')}
 
 🏷️ Tags: ${tags.join(', ')}
+${nutrition != null ? '\nNutrition (approx.): ${nutrition!.calories ?? ''}${nutrition!.calories != null ? ' kcal' : ''}${nutrition!.protein != null ? '\n• Protein: ' + nutrition!.protein! : ''}${nutrition!.carbs != null ? '\n• Carbs: ' + nutrition!.carbs! : ''}${nutrition!.fat != null ? '\n• Fat: ' + nutrition!.fat! : ''}${nutrition!.fiber != null ? '\n• Fiber: ' + nutrition!.fiber! : ''}${nutrition!.sugar != null ? '\n• Sugar: ' + nutrition!.sugar! : ''}${nutrition!.sodium != null ? '\n• Sodium: ' + nutrition!.sodium! : ''}${nutrition!.iron != null ? '\n• Iron: ' + nutrition!.iron! : ''}' : ''}
 ${source != null ? '\nSource: $source' : ''}
 ${author != null ? 'By: $author' : ''}
 
@@ -365,4 +377,50 @@ class YouTubeData {
       'commentCount': commentCount,
     };
   }
+}
+
+class Nutrition {
+  final String? protein; // e.g., "25 g"
+  final String? carbs; // e.g., "40 g"
+  final String? fat; // e.g., "12 g"
+  final String? fiber; // e.g., "6 g"
+  final String? sugar; // e.g., "8 g"
+  final String? sodium; // e.g., "500 mg"
+  final String? iron; // e.g., "10%"
+  final String? calories; // e.g., "420"
+
+  const Nutrition({
+    this.protein,
+    this.carbs,
+    this.fat,
+    this.fiber,
+    this.sugar,
+    this.sodium,
+    this.iron,
+    this.calories,
+  });
+
+  factory Nutrition.fromJson(Map<String, dynamic> json) {
+    return Nutrition(
+      protein: json['protein']?.toString(),
+      carbs: json['carbs']?.toString(),
+      fat: json['fat']?.toString(),
+      fiber: json['fiber']?.toString(),
+      sugar: json['sugar']?.toString(),
+      sodium: json['sodium']?.toString(),
+      iron: json['iron']?.toString(),
+      calories: json['calories']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    if (protein != null) 'protein': protein,
+    if (carbs != null) 'carbs': carbs,
+    if (fat != null) 'fat': fat,
+    if (fiber != null) 'fiber': fiber,
+    if (sugar != null) 'sugar': sugar,
+    if (sodium != null) 'sodium': sodium,
+    if (iron != null) 'iron': iron,
+    if (calories != null) 'calories': calories,
+  };
 }

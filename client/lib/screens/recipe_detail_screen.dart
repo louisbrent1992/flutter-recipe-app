@@ -31,6 +31,75 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     _checkSavedStatus();
   }
 
+  Widget _nutritionRow(BuildContext context, String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: Row(
+        children: [
+          Icon(
+            Icons.check_circle,
+            size: AppSizing.responsiveIconSize(
+              context,
+              mobile: 14,
+              tablet: 16,
+              desktop: 18,
+            ),
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: AppTypography.responsiveFontSize(context),
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: AppTypography.responsiveFontSize(context),
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatNutritionValue(String label, String raw) {
+    final value = raw.trim();
+    final lower = value.toLowerCase();
+    bool hasUnitSuffix(List<String> units) =>
+        units.any((u) => lower.endsWith(u));
+
+    String withUnit(String unit) {
+      // If already has any alpha chars, assume a unit exists
+      if (RegExp(r"[a-zA-Z]$").hasMatch(lower) || hasUnitSuffix([unit])) {
+        return value;
+      }
+      return '$value $unit';
+    }
+
+    switch (label.toLowerCase()) {
+      case 'protein':
+      case 'carbs':
+      case 'fat':
+      case 'fiber':
+      case 'sugar':
+        return withUnit('g');
+      case 'sodium':
+        return withUnit('mg');
+      case 'iron':
+        // Display as % if no unit
+        return hasUnitSuffix(['%']) ? value : '$value%';
+      default:
+        return value;
+    }
+  }
+
   Future<void> _checkFavoriteStatus() async {
     if (widget.recipe.id.isEmpty) return;
     context.read<UserProfileProvider>();
@@ -656,6 +725,98 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           ),
                         ),
                       ),
+                      if (recipe.nutrition != null) ...[
+                        SizedBox(height: AppSpacing.xl),
+                        Text(
+                          'Nutrition Facts (approx.)',
+                          style: TextStyle(
+                            fontSize: AppTypography.responsiveHeadingSize(
+                              context,
+                              mobile: 18.0,
+                              tablet: 20.0,
+                              desktop: 22.0,
+                            ),
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        SizedBox(height: AppSpacing.sm),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (recipe.nutrition!.calories != null)
+                              _nutritionRow(
+                                context,
+                                'Calories',
+                                '${recipe.nutrition!.calories} kcal',
+                              ),
+                            if (recipe.nutrition!.protein != null)
+                              _nutritionRow(
+                                context,
+                                'Protein',
+                                _formatNutritionValue(
+                                  'Protein',
+                                  recipe.nutrition!.protein!,
+                                ),
+                              ),
+                            if (recipe.nutrition!.carbs != null)
+                              _nutritionRow(
+                                context,
+                                'Carbs',
+                                _formatNutritionValue(
+                                  'Carbs',
+                                  recipe.nutrition!.carbs!,
+                                ),
+                              ),
+                            if (recipe.nutrition!.fat != null)
+                              _nutritionRow(
+                                context,
+                                'Fat',
+                                _formatNutritionValue(
+                                  'Fat',
+                                  recipe.nutrition!.fat!,
+                                ),
+                              ),
+                            if (recipe.nutrition!.fiber != null)
+                              _nutritionRow(
+                                context,
+                                'Fiber',
+                                _formatNutritionValue(
+                                  'Fiber',
+                                  recipe.nutrition!.fiber!,
+                                ),
+                              ),
+                            if (recipe.nutrition!.sugar != null)
+                              _nutritionRow(
+                                context,
+                                'Sugar',
+                                _formatNutritionValue(
+                                  'Sugar',
+                                  recipe.nutrition!.sugar!,
+                                ),
+                              ),
+                            if (recipe.nutrition!.sodium != null)
+                              _nutritionRow(
+                                context,
+                                'Sodium',
+                                _formatNutritionValue(
+                                  'Sodium',
+                                  recipe.nutrition!.sodium!,
+                                ),
+                              ),
+                            if (recipe.nutrition!.iron != null)
+                              _nutritionRow(
+                                context,
+                                'Iron',
+                                _formatNutritionValue(
+                                  'Iron',
+                                  recipe.nutrition!.iron!,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+
                       if (recipe.tags.isNotEmpty) ...[
                         SizedBox(height: AppSpacing.xl),
                         Text(
