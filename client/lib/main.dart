@@ -36,7 +36,6 @@ import 'package:share_handler/share_handler.dart';
 import 'screens/generated_recipes_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:recipease/services/deep_link_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -144,8 +143,6 @@ class _MyAppState extends State<MyApp> {
     final maybeUrl = _extractUrlFromSharedMedia(sharedMedia);
     if (maybeUrl != null && maybeUrl.isNotEmpty) {
       debugPrint('share_handler: extracted URL => $maybeUrl');
-      // Handle deep links from share extension (no-op unless matches our custom scheme)
-      DeepLinkService.handleDeepLink(maybeUrl);
 
       // Navigate/import
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -172,8 +169,8 @@ class _MyAppState extends State<MyApp> {
     final attachments = media.attachments ?? [];
     for (final att in attachments) {
       if (att == null) continue;
-      final path = att.path?.trim();
-      if (path == null || path.isEmpty) continue;
+      final path = att.path.trim();
+      if (path.isEmpty) continue;
       if (_looksLikeUrl(path)) return path;
     }
     return null;

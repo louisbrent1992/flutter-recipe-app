@@ -1080,17 +1080,20 @@ class _GeneratingRecipesDialogState extends State<_GeneratingRecipesDialog>
           decoration: BoxDecoration(
             color:
                 theme.brightness == Brightness.dark
-                    ? cs.surfaceContainerHigh.withOpacity(0.9)
-                    : cs.surface.withOpacity(0.95),
+                    ? cs.surfaceContainerHigh.withValues(alpha: 0.9)
+                    : cs.surface.withValues(alpha: 0.95),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.25),
+                color: Colors.black.withValues(alpha: 0.25),
                 blurRadius: 24,
                 offset: const Offset(0, 12),
               ),
             ],
-            border: Border.all(color: cs.primary.withOpacity(0.12), width: 1.2),
+            border: Border.all(
+              color: cs.primary.withValues(alpha: 0.12),
+              width: 1.2,
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1100,7 +1103,7 @@ class _GeneratingRecipesDialogState extends State<_GeneratingRecipesDialog>
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: cs.primary.withOpacity(0.12),
+                  color: cs.primary.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Padding(
@@ -1118,7 +1121,7 @@ class _GeneratingRecipesDialogState extends State<_GeneratingRecipesDialog>
                 'Whisking ideas, simmering flavors, and plating suggestions...',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: cs.onSurface.withOpacity(0.7),
+                  color: cs.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               const SizedBox(height: 16),
@@ -1126,7 +1129,7 @@ class _GeneratingRecipesDialogState extends State<_GeneratingRecipesDialog>
                 borderRadius: BorderRadius.circular(10),
                 child: LinearProgressIndicator(
                   minHeight: 6,
-                  backgroundColor: cs.primary.withOpacity(0.12),
+                  backgroundColor: cs.primary.withValues(alpha: 0.12),
                   valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
                 ),
               ),
