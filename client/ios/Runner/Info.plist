@@ -60,6 +60,14 @@
 			<dict>
 				<key>CFBundleTypeRole</key>
 				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.826154873845-9n1vqk797jnrvarkd3stsehjhl6ff1le</string>
+				</array>
+			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
 				<key>CFBundleURLName</key>
 				<string>signinwithapple</string>
 				<key>CFBundleURLSchemes</key>

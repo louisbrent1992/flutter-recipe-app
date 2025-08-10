@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>826154873845-90vgqjq0l8i3omfasd38pgs604gi8e0n.apps.googleusercontent.com</string>
+	<string>826154873845-9n1vqk797jnrvarkd3stsehjhl6ff1le.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.826154873845-90vgqjq0l8i3omfasd38pgs604gi8e0n</string>
+	<string>com.googleusercontent.apps.826154873845-9n1vqk797jnrvarkd3stsehjhl6ff1le</string>
 	<key>ANDROID_CLIENT_ID</key>
 	<string>826154873845-2uber91hjcgap6qr688uo3lqeim47mjj.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
@@ -15,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.recipease</string>
+	<string>com.recipease.kitchen</string>
 	<key>PROJECT_ID</key>
 	<string>recipe-app-c2fcc</string>
 	<key>STORAGE_BUCKET</key>
@@ -31,7 +31,7 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:826154873845:ios:e266d5eb041684f35be6bc</string>
+	<string>1:826154873845:ios:28605276c137f58a5be6bc</string>
 	<key>DATABASE_URL</key>
 	<string>https://recipe-app-c2fcc-default-rtdb.firebaseio.com</string>
 </dict>

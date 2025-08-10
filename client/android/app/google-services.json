@@ -1,0 +1,71 @@
+{
+  "project_info": {
+    "project_number": "826154873845",
+    "firebase_url": "https://recipe-app-c2fcc-default-rtdb.firebaseio.com",
+    "project_id": "recipe-app-c2fcc",
+    "storage_bucket": "recipe-app-c2fcc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:826154873845:android:3f2fe4573a09ee025be6bc",
+        "android_client_info": {
+          "package_name": "com.recipease.kitchen"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "826154873845-44b13vtg3dr2n0f8q714c3ptt7i154jq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.recipease.kitchen",
+            "certificate_hash": "829eba9f78b0a5f2767b788707df12c46fdc45a8"
+          }
+        },
+        {
+          "client_id": "826154873845-iop4r6fuqfjgiou4qnnajl70k63eptot.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.recipease.kitchen",
+            "certificate_hash": "503a120e015ea8c697045e3ff5aa890a9edd1bb5"
+          }
+        },
+        {
+          "client_id": "826154873845-tpfcjktesp45s3p1pr9gupffsbgduriq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.recipease.kitchen",
+            "certificate_hash": "43b235ba7b095706fd353d0c006db39e0d40e6ff"
+          }
+        },
+        {
+          "client_id": "826154873845-edi3umlhmdhq9r6iibui6cgutegn9kne.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCh2vwuvWxGLlfbegNu73zPq0YOUssm0-0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "826154873845-edi3umlhmdhq9r6iibui6cgutegn9kne.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "826154873845-4904phdrsiv04juljvs6n2reirpje1qg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.client"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
