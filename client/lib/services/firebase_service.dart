@@ -1,13 +1,22 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 import 'collection_service.dart';
+import '../firebase_options.dart';
 
 class FirebaseService {
   static final FirebaseService _instance = FirebaseService._internal();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    // Use correct iOS client ID from GoogleService-Info.plist
+    clientId:
+        defaultTargetPlatform == TargetPlatform.iOS
+            ? '826154873845-9n1vqk797jnrvarkd3stsehjhl6ff1le.apps.googleusercontent.com'
+            : DefaultFirebaseOptions.android.androidClientId,
+    scopes: ['email', 'profile'],
+  );
   final CollectionService _collectionService = CollectionService();
 
   factory FirebaseService() {

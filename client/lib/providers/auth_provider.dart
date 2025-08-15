@@ -5,11 +5,19 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../services/api_client.dart';
 import '../services/collection_service.dart';
+import '../firebase_options.dart';
 
 class AuthService with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    // Use correct iOS client ID from GoogleService-Info.plist
+    clientId:
+        defaultTargetPlatform == TargetPlatform.iOS
+            ? '826154873845-9n1vqk797jnrvarkd3stsehjhl6ff1le.apps.googleusercontent.com'
+            : DefaultFirebaseOptions.android.androidClientId,
+    scopes: ['email', 'profile'],
+  );
   final ApiClient _apiClient = ApiClient();
   final CollectionService _collectionService = CollectionService();
 
@@ -199,11 +207,21 @@ class AuthService with ChangeNotifier {
     notifyListeners();
 
     try {
+      // Ensure we're signed out first to avoid cached state issues
+      await _googleSignIn.signOut();
+
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) throw 'Google sign in aborted';
+      if (googleUser == null) {
+        _error = 'Google sign in was cancelled';
+        return null;
+      }
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
+
+      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+        throw 'Failed to get authentication tokens from Google';
+      }
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -225,6 +243,7 @@ class AuthService with ChangeNotifier {
       _user = userCredential.user;
       return _user;
     } catch (e) {
+      print('Google sign in error: $e');
       _error = e.toString();
       return null;
     } finally {

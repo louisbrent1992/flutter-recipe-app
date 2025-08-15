@@ -1062,7 +1062,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        activeColor: color,
+        activeThumbColor: color,
       ),
     );
   }

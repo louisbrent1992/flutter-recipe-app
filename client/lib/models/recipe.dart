@@ -278,7 +278,7 @@ ${ingredients.map((i) => '• $i').join('\n')}
 ${instructions.map((i) => '${instructions.indexOf(i) + 1}. $i').join('\n')}
 
 🏷️ Tags: ${tags.join(', ')}
-${nutrition != null ? '\nNutrition (approx.): ${nutrition!.calories ?? ''}${nutrition!.calories != null ? ' kcal' : ''}${nutrition!.protein != null ? '\n• Protein: ' + nutrition!.protein! : ''}${nutrition!.carbs != null ? '\n• Carbs: ' + nutrition!.carbs! : ''}${nutrition!.fat != null ? '\n• Fat: ' + nutrition!.fat! : ''}${nutrition!.fiber != null ? '\n• Fiber: ' + nutrition!.fiber! : ''}${nutrition!.sugar != null ? '\n• Sugar: ' + nutrition!.sugar! : ''}${nutrition!.sodium != null ? '\n• Sodium: ' + nutrition!.sodium! : ''}${nutrition!.iron != null ? '\n• Iron: ' + nutrition!.iron! : ''}' : ''}
+${nutrition != null ? '\nNutrition (approx.): ${nutrition!.calories ?? ''}${nutrition!.calories != null ? ' kcal' : ''}${nutrition!.protein != null ? '\n• Protein: ${nutrition!.protein!}' : ''}${nutrition!.carbs != null ? '\n• Carbs: ${nutrition!.carbs!}' : ''}${nutrition!.fat != null ? '\n• Fat: ${nutrition!.fat!}' : ''}${nutrition!.fiber != null ? '\n• Fiber: ${nutrition!.fiber!}' : ''}${nutrition!.sugar != null ? '\n• Sugar: ${nutrition!.sugar!}' : ''}${nutrition!.sodium != null ? '\n• Sodium: ${nutrition!.sodium!}' : ''}${nutrition!.iron != null ? '\n• Iron: ${nutrition!.iron!}' : ''}' : ''}
 ${source != null ? '\nSource: $source' : ''}
 ${author != null ? 'By: $author' : ''}
 
