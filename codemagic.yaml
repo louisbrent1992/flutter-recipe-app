@@ -17,17 +17,19 @@ workflows:
       - name: Install Flutter dependencies
         script: cd client && flutter pub get
 
-      # Remove problematic manual copy of ShareExtension.appex to avoid circular build errors
-      - name: Remove manual copy of ShareExtension
-        script: cd client && sed -i.bak '/ShareExtension.appex/d' ios/Runner.xcodeproj/project.pbxproj
+      # Make build scripts executable
+      - name: Make build scripts executable
+        script: cd client && chmod +x flutter_build.sh ios/scripts/embed_share_extension.sh
 
       # Optional: Clean old builds for safety (doesn't delete caches)
       - name: Clean old build artifacts
         script: cd client && flutter clean
 
-      # Build the iOS IPA (release)
-      - name: Build iOS IPA
-        script: cd client && flutter build ipa --release
+      # Build the iOS IPA with automatic ShareExtension embedding (release)
+      # This uses our enhanced build script that ensures ShareExtension.appex
+      # is properly embedded in the final IPA for distribution
+      - name: Build iOS IPA with ShareExtension
+        script: cd client && ./flutter_build.sh release ipa
 
       # Code sign (handled by Codemagic's automatic signing)
       - name: Code sign IPA
