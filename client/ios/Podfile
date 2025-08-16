@@ -49,7 +49,21 @@ target 'Runner' do
 end
 
 post_install do |installer|
+  # Ensure the Pods project (global) also targets iOS 14.0
+  installer.pods_project.build_configurations.each do |config|
+    config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+  end
+
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # Enforce a consistent, supported iOS deployment target and Swift settings across all pods
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+      config.build_settings['SWIFT_VERSION'] = '5.0'
+      if config.name == 'Debug'
+        config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone'
+      end
+    end
   end
 end
