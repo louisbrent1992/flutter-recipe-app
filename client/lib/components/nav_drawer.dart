@@ -2,9 +2,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
+import 'package:recipease/services/collection_service.dart';
 import '../theme/theme.dart';
 import '../providers/recipe_provider.dart';
 import '../models/recipe.dart';
+import '../models/recipe_collection.dart';
 import 'dart:ui';
 
 class NavDrawer extends StatefulWidget {
@@ -118,13 +120,17 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     super.initState();
 
     // Load user recipes if not already loaded
+    // Ensure we load page 1 to get the total count for accurate stats
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final recipeProvider = Provider.of<RecipeProvider>(
         context,
         listen: false,
       );
-      if (recipeProvider.userRecipes.isEmpty) {
-        recipeProvider.loadUserRecipes();
+      if (recipeProvider.userRecipes.isEmpty ||
+          recipeProvider.totalRecipes == 0) {
+        recipeProvider.loadUserRecipes(
+          page: 1,
+        ); // Explicitly load page 1 for total count
         recipeProvider.loadFavoriteRecipes();
       }
     });
@@ -586,15 +592,14 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
   ) {
     return Consumer<RecipeProvider>(
       builder: (context, recipeProvider, child) {
-        // Calculate collections count (this would come from a collections provider if available)
-        int collectionsCount = 3; // Placeholder
-
         // Calculate cooking streak or total cooking time
         String totalCookingTime = _calculateTotalCookingTime(
           recipeProvider.userRecipes,
         );
 
-        // Determine accurate saved recipe count using provider totals
+        // Get user's actual saved recipes count
+        // The totalRecipes should come from server pagination and be user-specific
+        // but only available after loading page 1. Ensure page 1 is loaded for accurate count.
         final savedCount =
             recipeProvider.totalRecipes > 0
                 ? recipeProvider.totalRecipes
@@ -622,15 +627,23 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               isMobile,
               null,
             ),
-            _buildStatChip(
-              collectionsCount.toString(),
-              'Collections',
-              Icons.collections_bookmark,
-              isDark,
-              isMobile,
-              () {
-                // Navigate to the collecitons page
-                Navigator.pushNamed(context, '/collections');
+            // Use FutureBuilder to properly handle async collections count
+            FutureBuilder<List<RecipeCollection>>(
+              future: CollectionService().getCollections(),
+              builder: (context, snapshot) {
+                final collectionsCount =
+                    snapshot.hasData ? snapshot.data!.length.toString() : '...';
+                return _buildStatChip(
+                  collectionsCount,
+                  'Collections',
+                  Icons.collections_bookmark,
+                  isDark,
+                  isMobile,
+                  () {
+                    // Navigate to the collections page
+                    Navigator.pushNamed(context, '/collections');
+                  },
+                );
               },
             ),
           ],
