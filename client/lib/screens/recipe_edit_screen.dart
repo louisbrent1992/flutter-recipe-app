@@ -705,21 +705,15 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                     onPressed: () => Navigator.pop(context),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.secondary,
+                                          Theme.of(context).colorScheme.error,
                                     ),
                                     child: Text(
                                       'Cancel',
                                       style: TextStyle(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.surface.withValues(
-                                          alpha:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.alphaVeryHigh,
-                                        ),
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onError,
                                       ),
                                     ),
                                   ),
@@ -729,30 +723,12 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                       backgroundColor:
                                           Theme.of(
                                             context,
-                                          ).colorScheme.tertiary,
+                                          ).colorScheme.onSurfaceVariant,
                                     ),
                                     child: Text(
                                       widget.recipe?.toEdit == true
                                           ? 'Update'
                                           : 'Save',
-                                      style: TextStyle(
-                                        color:
-                                            Theme.of(context)
-                                                        .colorScheme
-                                                        .onTertiary
-                                                        .computeLuminance() >
-                                                    0.5
-                                                ? Colors.black
-                                                : Theme.of(context)
-                                                    .colorScheme
-                                                    .surface
-                                                    .withValues(
-                                                      alpha:
-                                                          Theme.of(context)
-                                                              .colorScheme
-                                                              .alphaVeryHigh,
-                                                    ),
-                                      ),
                                     ),
                                   ),
                                   if (currentRecipe.id.isNotEmpty)

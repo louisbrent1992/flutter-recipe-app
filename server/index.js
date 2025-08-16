@@ -70,26 +70,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// Add request timeout middleware
-app.use((req, res, next) => {
-	// Set timeout for all requests
-	req.setTimeout(30000); // 30 seconds
-	res.setTimeout(30000); // 30 seconds
-
-	// Add timeout handler
-	const timeout = setTimeout(() => {
-		if (!res.headersSent) {
-			res.status(408).json({ error: "Request timeout" });
-		}
-	}, 30000);
-
-	// Clear timeout when response is sent
-	res.on("finish", () => {
-		clearTimeout(timeout);
-	});
-
-	next();
-});
+// Timeout middleware removed to prevent conflicts with long-running operations
 
 // Trust proxy for rate limiting and IP detection (needed for data deletion)
 app.set("trust proxy", 1);

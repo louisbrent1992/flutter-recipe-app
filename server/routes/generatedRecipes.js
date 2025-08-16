@@ -405,6 +405,8 @@ router.post("/import", async (req, res) => {
 	}
 
 	try {
+		console.log(`Starting recipe import for URL: ${url}`);
+		
 		// Check recipe cache first
 		const cachedRecipe = getFromCache(recipeCache, url);
 		if (cachedRecipe) {
@@ -441,6 +443,7 @@ router.post("/import", async (req, res) => {
 			);
 			pageContent = socialData.description;
 		} else {
+			console.log("Processing web URL with textfrom.website");
 			const textUrl = `https://textfrom.website/${url}`;
 			const { data } = await axios.get(textUrl);
 			pageContent = data;
@@ -450,6 +453,7 @@ router.post("/import", async (req, res) => {
 			return res.status(500).json({ error: "Failed to process URL" });
 		}
 
+		console.log("Processing recipe data with AI...");
 		const importedRecipe = await processRecipeData(
 			pageContent,
 			socialData,
@@ -458,9 +462,12 @@ router.post("/import", async (req, res) => {
 			isTikTok,
 			isYouTube
 		);
+		
+		console.log("Recipe processed successfully, caching and saving...");
 		handleCache(recipeCache, url, importedRecipe);
 		tempRecipes.push(importedRecipe);
 
+		console.log(`Recipe import completed for: ${importedRecipe.title}`);
 		res.json(importedRecipe);
 	} catch (error) {
 		console.error("Error importing recipe:", error);
