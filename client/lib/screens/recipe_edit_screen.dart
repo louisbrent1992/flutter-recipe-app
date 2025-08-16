@@ -165,11 +165,13 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
               action: SnackBarAction(
                 label: 'View Recipe',
                 onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    '/recipeDetail',
-                    arguments: updatedRecipe,
-                  );
+                  if (mounted) {
+                    Navigator.pushNamed(
+                      context,
+                      '/recipeDetail',
+                      arguments: updatedRecipe,
+                    );
+                  }
                 },
               ),
               content: Text(
@@ -194,13 +196,14 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
             SnackBar(
               action: SnackBarAction(
                 label: 'View Recipe',
-
                 onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    '/recipeDetail',
-                    arguments: newRecipe,
-                  );
+                  if (mounted) {
+                    Navigator.pushNamed(
+                      context,
+                      '/recipeDetail',
+                      arguments: newRecipe,
+                    );
+                  }
                 },
               ),
               content: Text(

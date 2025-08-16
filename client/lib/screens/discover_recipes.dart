@@ -162,7 +162,9 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
               action: SnackBarAction(
                 label: 'Go to My Recipes',
                 onPressed: () {
-                  Navigator.pushNamed(context, '/myRecipes');
+                  if (mounted) {
+                    Navigator.pushNamed(context, '/myRecipes');
+                  }
                 },
               ),
               backgroundColor: Colors.green,

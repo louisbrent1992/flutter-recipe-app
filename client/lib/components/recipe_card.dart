@@ -134,7 +134,9 @@ class _RecipeCardState extends State<RecipeCard> {
                       : SnackBarAction(
                         label: 'Go to favorites',
                         onPressed: () async {
-                          Navigator.pushNamed(context, '/favorites');
+                          if (mounted) {
+                            Navigator.pushNamed(context, '/favorites');
+                          }
                         },
                         textColor: Theme.of(
                           context,

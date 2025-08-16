@@ -51,7 +51,9 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
             action: SnackBarAction(
               label: 'Go to My Recipes',
               onPressed: () {
-                Navigator.pushNamed(context, '/myRecipes');
+                if (mounted) {
+                  Navigator.pushNamed(context, '/myRecipes');
+                }
               },
             ),
           ),
@@ -77,7 +79,9 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
               action: SnackBarAction(
                 label: 'Go to My Recipes',
                 onPressed: () {
-                  Navigator.pushNamed(context, '/myRecipes');
+                  if (mounted) {
+                    Navigator.pushNamed(context, '/myRecipes');
+                  }
                 },
               ),
             ),
