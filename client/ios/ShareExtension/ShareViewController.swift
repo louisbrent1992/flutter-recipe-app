@@ -1,3 +1,5 @@
-import share_handler_ios_models
-    
-class ShareViewController: ShareHandlerIosViewController {}
+import receive_sharing_intent
+
+class ShareViewController: RSIShareViewController {
+    override func shouldAutoRedirect() -> Bool { return false }
+}

@@ -45,16 +45,7 @@
 		<true />
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true />
-		<!-- Add for share_handler start -->
-		<!-- The 'NSUserActivityTypes' key is only needed if you plan to use the recordSentMessage
-		API allowing for conversations to show up as direct share suggestions -->
-		<key>NSUserActivityTypes</key>
-		<array>
-			<string>INSendMessageIntent</string>
-		</array>
-		<!-- Explicitly set the App Group ID used by the share_handler plugin -->
-		<key>AppGroupId</key>
-		<string>group.com.recipease.kitchen</string>
+		<!-- receive_sharing_intent does not require share_handler-specific keys -->
 		<key>CFBundleURLTypes</key>
 		<array>
 			<dict>
@@ -75,38 +66,13 @@
 					<string>signinwithapple</string>
 				</array>
 			</dict>
-			<dict>
-				<key>CFBundleTypeRole</key>
-				<string>Editor</string>
-				<key>CFBundleURLSchemes</key>
-				<array>
-					<string>ShareMedia-$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-				</array>
-			</dict>
 		</array>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>Photos can be shared to and used in this app</string>
 		<!-- Optional: Add/Customize for AirDrop support -->
 		<key>LSSupportsOpeningDocumentsInPlace</key>
 		<string>No</string>
-		<key>CFBundleDocumentTypes</key>
-		<array>
-			<dict>
-				<key>CFBundleTypeName</key>
-				<string>ShareHandler</string>
-				<key>LSHandlerRank</key>
-				<string>Alternate</string>
-				<key>LSItemContentTypes</key>
-				<array>
-					<string>public.file-url</string>
-					<string>public.image</string>
-					<string>public.text</string>
-					<string>public.movie</string>
-					<string>public.url</string>
-					<string>public.data</string>
-				</array>
-			</dict>
-		</array>
+		<!-- CFBundleDocumentTypes not required for receive_sharing_intent -->
 		<!-- Add for share_handler end -->
 		<!-- Google Mobile Ads Configuration -->
 		<key>GADApplicationIdentifier</key>

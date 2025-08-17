@@ -32,7 +32,8 @@ import 'package:recipease/services/collection_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 // import 'package:share_handler/share_handler.dart'; // TEMPORARILY COMMENTED OUT
 import 'package:recipease/services/permission_service.dart';
-import 'package:share_handler/share_handler.dart';
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+import 'dart:async';
 import 'screens/generated_recipes_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -102,13 +103,13 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final ShareHandlerPlatform _shareHandler = ShareHandlerPlatform.instance;
+  StreamSubscription<List<SharedMediaFile>>? _mediaStreamSub;
   final PermissionService _permissionService = PermissionService();
 
   @override
   void initState() {
     super.initState();
-    _initShareHandler();
+    _initReceiveSharing();
 
     // Request necessary permissions when app starts
     _requestInitialPermissions();
@@ -123,53 +124,46 @@ class _MyAppState extends State<MyApp> {
     // as it's better to request them when they're needed
   }
 
-  // Initialize the share handler to receive shared content
-  Future<void> _initShareHandler() async {
-    // Initial shared media
-    final sharedMedia = await _shareHandler.getInitialSharedMedia();
-    if (sharedMedia != null &&
-        sharedMedia.content != null &&
-        sharedMedia.content!.isNotEmpty) {
-      print('Shared media received: ${sharedMedia.content}');
-      _handleSharedMedia(sharedMedia);
+  // Initialize receive_sharing_intent to receive shared content
+  Future<void> _initReceiveSharing() async {
+    // Listen for media while app is in memory
+    _mediaStreamSub = ReceiveSharingIntent.instance.getMediaStream().listen(
+      (List<SharedMediaFile> files) {
+        if (files.isEmpty) return;
+        final maybeUrl = _extractUrlFromSharedFiles(files);
+        if (maybeUrl != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _navigateToImportScreen(maybeUrl);
+            _importRecipeFromSharedMedia(maybeUrl);
+          });
+        }
+      },
+      onError: (err) => debugPrint('receive_sharing_intent media error: $err'),
+    );
+
+    // Get initial media when app launched from share
+    final List<SharedMediaFile> initialFiles =
+        await ReceiveSharingIntent.instance.getInitialMedia();
+    if (initialFiles.isNotEmpty) {
+      final maybeUrl = _extractUrlFromSharedFiles(initialFiles);
+      if (maybeUrl != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _navigateToImportScreen(maybeUrl);
+          _importRecipeFromSharedMedia(maybeUrl);
+        });
+        // Mark handled
+        ReceiveSharingIntent.instance.reset();
+      }
     }
 
-    // Register callback for future shared media
-    _shareHandler.sharedMediaStream.listen(_handleSharedMedia);
+    // Note: receive_sharing_intent v1.8.1 does not expose text streams; URLs are often delivered as files
+    // or via getInitialMedia. If needed, we can parse file contents for URLs.
   }
 
-  // Handle the shared media
-  void _handleSharedMedia(SharedMedia sharedMedia) {
-    final maybeUrl = _extractUrlFromSharedMedia(sharedMedia);
-    if (maybeUrl != null && maybeUrl.isNotEmpty) {
-      debugPrint('share_handler: extracted URL => $maybeUrl');
-
-      // Navigate/import
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _navigateToImportScreen(maybeUrl);
-        _importRecipeFromSharedMedia(maybeUrl);
-      });
-    } else {
-      debugPrint(
-        'share_handler: no URL content detected. SharedMedia: '
-        'content="${sharedMedia.content}", attachments=${sharedMedia.attachments?.length ?? 0}',
-      );
-    }
-  }
-
-  // Try to extract a usable URL from SharedMedia (content or attachments)
-  String? _extractUrlFromSharedMedia(SharedMedia media) {
-    // Prefer plain text content if present
-    final content = media.content?.trim();
-    if (content != null && content.isNotEmpty) {
-      if (_looksLikeUrl(content)) return content;
-    }
-
-    // Fallback to attachments (some iOS shares provide a URL as an attachment)
-    final attachments = media.attachments ?? [];
-    for (final att in attachments) {
-      if (att == null) continue;
-      final path = att.path.trim();
+  // Extract a usable URL from SharedMediaFile list
+  String? _extractUrlFromSharedFiles(List<SharedMediaFile> files) {
+    for (final f in files) {
+      final path = f.path.trim();
       if (path.isEmpty) continue;
       if (_looksLikeUrl(path)) return path;
     }
@@ -207,6 +201,9 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    try {
+      _mediaStreamSub?.cancel();
+    } catch (_) {}
     super.dispose();
   }
 

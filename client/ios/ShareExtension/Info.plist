@@ -2,9 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
     <dict>
-        <!-- Explicitly set the App Group ID used by the share_handler plugin -->
         <key>AppGroupId</key>
-        <string>group.com.recipease.kitchen</string>
+        <string>$(CUSTOM_GROUP_ID)</string>
         <key>CFBundleVersion</key>
         <string>$(FLUTTER_BUILD_NUMBER)</string>
         <key>NSExtension</key>
@@ -20,15 +19,18 @@
                 <!-- Add supported message intent if you support sharing to a specific conversation
                 (registered via the recordSentMessage api call) - end -->
                 <key>NSExtensionActivationRule</key>
-                <!-- Production-ready activation rule for sharing content -->
-                <string>SUBQUERY ( extensionItems, $extensionItem, SUBQUERY (
-                    $extensionItem.attachments, $attachment, ( ANY
-                    $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.file-url" || ANY
-                    $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.image" || ANY
-                    $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.text" || ANY
-                    $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.movie" || ANY
-                    $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.url" ) ).@count >
-                    0 ).@count > 0 </string>
+                <dict>
+                    <key>NSExtensionActivationSupportsText</key>
+                    <true/>
+                    <key>NSExtensionActivationSupportsWebURLWithMaxCount</key>
+                    <integer>1</integer>
+                    <key>NSExtensionActivationSupportsImageWithMaxCount</key>
+                    <integer>100</integer>
+                    <key>NSExtensionActivationSupportsMovieWithMaxCount</key>
+                    <integer>100</integer>
+                    <key>NSExtensionActivationSupportsFileWithMaxCount</key>
+                    <integer>1</integer>
+                </dict>
                 <key>PHSupportedMediaTypes</key>
                 <array>
                     <string>Video</string>
