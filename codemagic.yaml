@@ -10,18 +10,12 @@ workflows:
       cache_paths:
         - $HOME/.pub-cache
         - $FLUTTER_ROOT/.pub-cache
-        - client/ios/Pods
+        - ios/Pods
         - node_modules
     scripts:
       # Install dependencies
       - name: Install Flutter dependencies
         script: cd client && flutter pub get
-
-      - name: Install CocoaPods
-        script: |
-          cd client/ios
-          pod repo update
-          pod install --repo-update
 
       # Make build scripts executable
       - name: Make build scripts executable
