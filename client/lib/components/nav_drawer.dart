@@ -270,7 +270,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                   controller: _scrollController,
                   child: SingleChildScrollView(
                     controller: _scrollController,
-                    physics: const BouncingScrollPhysics(),
+                    physics: const ClampingScrollPhysics(),
                     child: Column(
                       children: [
                         _buildNavigationContent(context, colorScheme, isDark),

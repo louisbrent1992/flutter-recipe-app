@@ -95,6 +95,26 @@ void main() async {
   runApp(MyApp(Key('key')));
 }
 
+/// Platform-aware scroll behavior:
+/// - iOS/macOS: Bouncing
+/// - Android/Windows/Linux/Web: Clamping (no over-stretch)
+class AppScrollBehavior extends MaterialScrollBehavior {
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const ClampingScrollPhysics();
+  }
+
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    // Disable glow/stretch indicators to avoid over-drag visuals on Android
+    return child;
+  }
+}
+
 class MyApp extends StatefulWidget {
   const MyApp(Key? key) : super(key: key);
 
@@ -253,9 +273,7 @@ class _MyAppState extends State<MyApp> {
               // GlobalCupertinoLocalizations.delegate,
             ],
             // Performance and accessibility configurations
-            scrollBehavior: const MaterialScrollBehavior().copyWith(
-              physics: const BouncingScrollPhysics(),
-            ),
+            scrollBehavior: AppScrollBehavior(),
             // Error handling and debugging
             builder: (context, child) {
               // Add error boundary for better error handling
