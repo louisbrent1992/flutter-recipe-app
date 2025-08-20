@@ -65,11 +65,21 @@ router.get("/search", auth, async (req, res) => {
 		const startAt = Math.max(0, (page - 1) * limit);
 
 		// Fetch recipes with smaller buffer for deduplication
-		const snapshot = await recipesRef
-			.orderBy("createdAt", "desc")
-			.limit(fetchLimit)
-			.offset(startAt)
-			.get();
+		let snapshot;
+		try {
+			snapshot = await recipesRef
+				.orderBy("createdAt", "desc")
+				.limit(fetchLimit)
+				.offset(startAt)
+				.get();
+		} catch (orderErr) {
+			// Fallback if some docs have non-timestamp createdAt or field missing
+			console.warn(
+				"Falling back to un-ordered fetch due to createdAt orderBy error:",
+				orderErr?.message || orderErr
+			);
+			snapshot = await recipesRef.limit(fetchLimit).offset(startAt).get();
+		}
 
 		// Collect all recipes
 		const allRecipes = [];

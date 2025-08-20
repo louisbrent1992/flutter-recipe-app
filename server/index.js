@@ -232,8 +232,9 @@ cron.schedule("59 23 * * *", async () => {
 					tags: recipe.dishTypes || [],
 					imageUrl: recipe.image || "",
 					sourceUrl: recipe.sourceUrl || "",
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString(),
+					// Store canonical Firestore timestamps for consistent querying
+					createdAt: admin.firestore.FieldValue.serverTimestamp(),
+					updatedAt: admin.firestore.FieldValue.serverTimestamp(),
 					isExternal: true,
 					externalId: recipe.id.toString(),
 					searchableFields,
