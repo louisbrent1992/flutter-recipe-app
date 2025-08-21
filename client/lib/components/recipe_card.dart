@@ -617,7 +617,7 @@ Shared from Recipe App
                 AppSpacing.responsive(context),
                 AppSpacing.responsive(context),
                 AppSpacing.responsive(context),
-                AppSpacing.xs,
+                AppSpacing.responsive(context),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

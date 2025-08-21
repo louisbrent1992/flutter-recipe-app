@@ -136,14 +136,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Enjoy your recipes!',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineLarge?.copyWith(
-                        fontSize: AppTypography.responsiveHeadingSize(context),
-                      ),
-                    ),
+                    
                     SizedBox(height: AppSpacing.sm),
                     ...recipeProvider.generatedRecipes.map(
                       (recipe) => RecipeCard(

@@ -1115,7 +1115,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               ),
               _NavItem(
                 Icons.add_box_rounded,
-                'Import Recipe',
+                'Import Recipe (Beta)',
                 '/import',
                 const Color(0xFF0984E3),
 
