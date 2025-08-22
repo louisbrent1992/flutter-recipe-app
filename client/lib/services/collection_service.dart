@@ -59,12 +59,18 @@ class CollectionService extends ChangeNotifier {
                 .map((json) => RecipeCollection.fromJson(json))
                 .toList();
 
-        // Ensure special collections exist (but don't create Favorites automatically)
-        final hasRecentlyAdded = collections.any(
-          (c) => c.name == 'Recently Added',
-        );
-        if (collections.isNotEmpty && !hasRecentlyAdded) {
-          collections.add(RecipeCollection.withName('Recently Added'));
+        // Deduplicate any accidental duplicates of "Recently Added" by keeping the most recently updated
+        final recentlyAddedCollections =
+            collections.where((c) => c.name == 'Recently Added').toList();
+        if (recentlyAddedCollections.length > 1) {
+          recentlyAddedCollections.sort(
+            (a, b) => b.updatedAt.compareTo(a.updatedAt),
+          );
+          final keepId = recentlyAddedCollections.first.id;
+          collections =
+              collections
+                  .where((c) => !(c.name == 'Recently Added' && c.id != keepId))
+                  .toList();
         }
       } else {
         logger.e('Error getting collections: ${response.message}');

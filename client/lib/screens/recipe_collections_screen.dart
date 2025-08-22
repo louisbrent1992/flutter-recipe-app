@@ -252,8 +252,8 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
 
   // Helper method to check if a collection is a default collection
   bool _isDefaultCollection(RecipeCollection collection) {
-    final defaultCollectionNames = ['Favorites', 'Recently Added'];
-    return defaultCollectionNames.contains(collection.name);
+    // Only "Recently Added" is considered default; "Favorites" is user-created if present
+    return collection.name == 'Recently Added';
   }
 
   @override
@@ -261,22 +261,16 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // Check if "Recently Added" collection exists
-    final hasRecentlyAddedCollection = _collections.any(
-      (collection) => collection.name == 'Recently Added',
-    );
-
     return SafeArea(
       child: Scaffold(
         appBar: CustomAppBar(
           title: 'Recipe Collections',
           floatingButtons: [
-            if (!hasRecentlyAddedCollection)
-              IconButton(
-                icon: const Icon(Icons.add_rounded),
-                tooltip: 'Add Collection',
-                onPressed: () => _showAddCategoryDialog(),
-              ),
+            IconButton(
+              icon: const Icon(Icons.add_rounded),
+              tooltip: 'Add Collection',
+              onPressed: () => _showAddCategoryDialog(),
+            ),
           ],
         ),
         body: Stack(

@@ -285,8 +285,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
 
   // Helper method to check if a collection is a default collection
   bool _isDefaultCollection(RecipeCollection collection) {
-    final defaultCollectionNames = ['Favorites', 'Recently Added'];
-    return defaultCollectionNames.contains(collection.name);
+    return collection.name == 'Recently Added';
   }
 
   @override
@@ -306,14 +305,15 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
             ),
         ],
         floatingButtons: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
-            tooltip: 'Add Recipes',
-            onPressed:
-                widget.collection.name == 'Favorites'
-                    ? () => Navigator.pushNamed(context, '/myRecipes')
-                    : _searchAllRecipes,
-          ),
+          if (!_isDefaultCollection(_collection))
+            IconButton(
+              icon: const Icon(Icons.add_rounded),
+              tooltip: 'Add Recipes',
+              onPressed:
+                  widget.collection.name == 'Favorites'
+                      ? () => Navigator.pushNamed(context, '/myRecipes')
+                      : _searchAllRecipes,
+            ),
         ],
       ),
       body: Stack(
