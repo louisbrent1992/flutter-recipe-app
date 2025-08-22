@@ -28,9 +28,9 @@ class ApiClient {
             : 'http://localhost:$port/api';
 
     // Use production URL in release mode, development URL otherwise
-    return productionUrl;
-    // ? productionUrl
-    // : developmentUrl;
+    return const bool.fromEnvironment('dart.vm.product')
+        ? productionUrl
+        : developmentUrl;
   }
 
   /// Get headers with Firebase authentication token
