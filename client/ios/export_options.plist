@@ -12,6 +12,12 @@
   <key>codeSigningIdentity</key>
   <string>iPhone Distribution</string>
 
+  <key>certificatePath</key>
+  <string>$CM_CERTIFICATE_PATH</string>
+
+  <key>certificatePassword</key>
+  <string>$CM_CERTIFICATE_PASSWORD</string>
+
   <key>provisioningProfiles</key>
   <dict>
     <key>com.recipease.kitchen</key>
