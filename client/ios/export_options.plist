@@ -12,9 +12,9 @@
   <key>provisioningProfiles</key>
   <dict>
     <key>com.recipease.kitchen</key>
-    <string>RecipEase ios_app_store</string>
+    <string>RecipEase_ios_app_store_1755472796</string>
     <key>com.recipease.kitchen.ShareExtension</key>
-    <string>ShareExtension ios_app_store</string>
+    <string>ShareExtension_ios_app_store_1755472796</string>
   </dict>
 
   <key>uploadSymbols</key>
