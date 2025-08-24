@@ -68,7 +68,7 @@ class ApiResponse<T> {
   /// User-friendly error message for display
   String get userFriendlyMessage {
     if (isNetworkError) {
-      return 'Network error. Please check your internet connection.';
+      return 'Apologies, we\'re having a connection issue. It might be your internet or on our end. Please try again shortly.';
     }
 
     if (isAuthError) {
