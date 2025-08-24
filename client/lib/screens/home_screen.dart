@@ -37,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen>
       FirebaseAuth.instance.currentUser?.displayName ?? 'User';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final String _heroImageUrl = 'assets/images/hero_image.jpg';
+  bool _isBooting = true;
 
   @override
   void initState() {
@@ -60,8 +61,29 @@ class _HomeScreenState extends State<HomeScreen>
 
         // Fetch a larger set of random recipes for discovery to ensure we have enough after filtering
         recipeProvider.searchExternalRecipes(query: '', limit: 50);
+
+        // Ensure first frame shows placeholders even before provider flips loading
+        if (mounted) setState(() => _isBooting = false);
       }
     });
+  }
+
+  // Refresh all home sections at once
+  void _refreshAllSections(BuildContext context) {
+    final recipeProvider = context.read<RecipeProvider>();
+    final collectionService = context.read<CollectionService>();
+
+    // Trigger parallel refreshes (no await needed for button callbacks)
+    recipeProvider.loadUserRecipes(limit: 20, forceRefresh: true);
+    recipeProvider.searchExternalRecipes(
+      query: '',
+      limit: 50,
+      forceRefresh: true,
+    );
+    collectionService.getCollections(forceRefresh: true);
+
+    // Ensure widgets depending on FutureBuilder rebuild
+    setState(() {});
   }
 
   @override
@@ -97,10 +119,6 @@ class _HomeScreenState extends State<HomeScreen>
           SafeArea(
             child: Consumer<UserProfileProvider>(
               builder: (context, profile, _) {
-                if (profile.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
                 return Container(
                   decoration: BoxDecoration(
                     color: Theme.of(context).scaffoldBackgroundColor,
@@ -124,6 +142,25 @@ class _HomeScreenState extends State<HomeScreen>
                         Consumer<RecipeProvider>(
                           builder: (context, recipeProvider, _) {
                             final saved = recipeProvider.userRecipes;
+                            if ((recipeProvider.isLoading || _isBooting) &&
+                                saved.isEmpty) {
+                              return _buildSectionLoading(
+                                context,
+                                title: 'Your Recipes',
+                                height: 180,
+                              );
+                            }
+                            if (saved.isEmpty && recipeProvider.error != null) {
+                              return _buildSectionMessage(
+                                context,
+                                title: 'Your Recipes',
+                                message:
+                                    recipeProvider.error!.userFriendlyMessage,
+                                onRetry: () {
+                                  _refreshAllSections(context);
+                                },
+                              );
+                            }
                             if (saved.isEmpty) return const SizedBox();
                             return _buildRecipeCarousel(
                               context,
@@ -146,7 +183,26 @@ class _HomeScreenState extends State<HomeScreen>
                                     )
                                     .take(10)
                                     .toList();
-
+                            if ((recipeProvider.isLoading || _isBooting) &&
+                                random.isEmpty) {
+                              return _buildSectionLoading(
+                                context,
+                                title: 'Discover & Try',
+                                height: 180,
+                              );
+                            }
+                            if (random.isEmpty &&
+                                recipeProvider.error != null) {
+                              return _buildSectionMessage(
+                                context,
+                                title: 'Discover & Try',
+                                message:
+                                    recipeProvider.error!.userFriendlyMessage,
+                                onRetry: () {
+                                  _refreshAllSections(context);
+                                },
+                              );
+                            }
                             if (random.isEmpty) return const SizedBox();
                             return _buildRecipeCarousel(
                               context,
@@ -666,8 +722,63 @@ class _HomeScreenState extends State<HomeScreen>
           child: FutureBuilder<List<RecipeCollection>>(
             future: collections,
             builder: (context, snapshot) {
-              if (!snapshot.hasData) return const SizedBox();
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return _buildSectionLoading(
+                  context,
+                  title: title,
+                  height: 220,
+                  includeTitle: false,
+                );
+              }
+              if (snapshot.hasError) {
+                return _buildSectionMessage(
+                  context,
+                  title: title,
+                  message:
+                      'Unable to load collections right now. Please try again.',
+                  onRetry: () {
+                    _refreshAllSections(context);
+                  },
+                  includeTitle: false,
+                  leadingIcon: null,
+                  height: 220,
+                );
+              }
+              if (!snapshot.hasData) {
+                return _buildSectionMessage(
+                  context,
+                  title: title,
+                  message:
+                      'No collections yet. Add your first recipe to see it here.',
+                  onRetry: () {
+                    _refreshAllSections(context);
+                  },
+                  includeTitle: false,
+                  leadingIcon: null,
+                  secondaryActionLabel: 'Add a Recipe',
+                  secondaryAction: () {
+                    Navigator.pushNamed(context, '/import');
+                  },
+                  height: 220,
+                );
+              }
               final collections = snapshot.data!;
+              if (collections.isEmpty) {
+                return _buildSectionMessage(
+                  context,
+                  title: title,
+                  message:
+                      'No collections yet. Add your first recipe to see it here.',
+                  onRetry: null,
+                  includeTitle: false,
+                  leadingIcon: null,
+                  secondaryActionLabel: 'Add a Recipe',
+                  secondaryAction: () {
+                    Navigator.pushNamed(context, '/import');
+                  },
+                  height: 220,
+                );
+              }
               return ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: collections.length,
@@ -678,6 +789,173 @@ class _HomeScreenState extends State<HomeScreen>
                 },
               );
             },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Builds a standardized loading placeholder for a section with a title
+  Widget _buildSectionLoading(
+    BuildContext context, {
+    required String title,
+    double height = 180,
+    bool includeTitle = true,
+  }) {
+    final theme = Theme.of(context);
+
+    void navigate() {
+      if (title.contains('Your Recipes')) {
+        Navigator.pushNamed(context, '/myRecipes');
+      } else if (title.contains('Discover')) {
+        Navigator.pushNamed(context, '/discover');
+      } else if (title.contains('Collections')) {
+        Navigator.pushNamed(context, '/collections');
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (includeTitle)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: GestureDetector(
+              onTap: navigate,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        SizedBox(
+          height: height,
+          child: Center(
+            child: SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Builds a standardized message placeholder for a section with retry
+  Widget _buildSectionMessage(
+    BuildContext context, {
+    required String title,
+    required String message,
+    VoidCallback? onRetry,
+    double height = 180,
+    bool includeTitle = true,
+    IconData? leadingIcon = Icons.wifi_off_rounded,
+    String? secondaryActionLabel,
+    VoidCallback? secondaryAction,
+  }) {
+    final theme = Theme.of(context);
+
+    void navigate() {
+      if (title.contains('Your Recipes')) {
+        Navigator.pushNamed(context, '/myRecipes');
+      } else if (title.contains('Discover')) {
+        Navigator.pushNamed(context, '/discover');
+      } else if (title.contains('Collections')) {
+        Navigator.pushNamed(context, '/collections');
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (includeTitle)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: GestureDetector(
+              onTap: navigate,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.refresh,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface.withValues(
+              alpha: Theme.of(context).colorScheme.alphaHigh,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withValues(
+                alpha: Theme.of(context).colorScheme.overlayLight,
+              ),
+              width: 1,
+            ),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (leadingIcon != null)
+                  Icon(
+                    leadingIcon,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    message.isNotEmpty
+                        ? message
+                        : 'Unable to load right now. Please try again.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (onRetry != null)
+                  TextButton.icon(
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Retry'),
+                  ),
+                if (secondaryAction != null && secondaryActionLabel != null)
+                  TextButton(
+                    onPressed: secondaryAction,
+                    child: Text(secondaryActionLabel),
+                  ),
+              ],
+            ),
           ),
         ),
       ],

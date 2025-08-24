@@ -396,7 +396,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                           ),
                                           const SizedBox(height: 16),
                                           Text(
-                                            'Loading recipes...',
+                                            'Fetching delicious recipes for you...',
                                             style: Theme.of(
                                               context,
                                             ).textTheme.bodyMedium?.copyWith(

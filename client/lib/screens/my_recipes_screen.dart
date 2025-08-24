@@ -312,7 +312,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'Loading recipes...',
+                                'Fetching your tasty recipes...',
                                 style: Theme.of(
                                   context,
                                 ).textTheme.bodyMedium?.copyWith(
