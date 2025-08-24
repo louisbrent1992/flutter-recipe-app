@@ -12,20 +12,15 @@
             <dict>
                 <key>NSExtensionActivationRule</key>
                 <dict>
-                    <key>NSExtensionActivationSupportsText</key>
-                    <true/>
                     <key>NSExtensionActivationSupportsWebURLWithMaxCount</key>
                     <integer>1</integer>
+                    <key>NSExtensionActivationSupportsText</key>
+                    <true/>
                     <key>NSExtensionActivationSupportsImageWithMaxCount</key>
-                    <integer>100</integer>
-                    <key>NSExtensionActivationSupportsMovieWithMaxCount</key>
-                    <integer>100</integer>
-                    <key>NSExtensionActivationSupportsFileWithMaxCount</key>
                     <integer>1</integer>
                 </dict>
                 <key>PHSupportedMediaTypes</key>
                 <array>
-                    <string>Video</string>
                     <string>Image</string>
                 </array>
             </dict>
