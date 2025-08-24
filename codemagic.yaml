@@ -6,8 +6,6 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      vars:
-        EXPORT_OPTIONS_PLIST: "ios/export_options.plist"  # App Store distribution
     cache:
       cache_paths:
         - $HOME/.pub-cache
@@ -31,7 +29,7 @@ workflows:
       # This uses our enhanced build script that ensures ShareExtension.appex
       # is properly embedded in the final IPA for distribution
       - name: Build iOS IPA with ShareExtension
-        script: cd client && EXPORT_OPTIONS_PLIST=$EXPORT_OPTIONS_PLIST ./flutter_build.sh release ipa
+        script: cd client && flutter build ipa --release --export-options-plist=ios/export_options.plist
 
       # Code sign (handled by Codemagic's automatic signing)
       - name: Code sign IPA
@@ -59,8 +57,6 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      vars:
-        EXPORT_OPTIONS_PLIST: "ios/export_options_development.plist"  # Development distribution
     cache:
       cache_paths:
         - $HOME/.pub-cache
@@ -78,7 +74,7 @@ workflows:
         script: cd client && flutter clean
 
       - name: Build iOS Development IPA
-        script: cd client && EXPORT_OPTIONS_PLIST=$EXPORT_OPTIONS_PLIST ./flutter_build.sh debug ipa
+        script: cd client && flutter build ipa --debug --export-options-plist=ios/export_options_development.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
