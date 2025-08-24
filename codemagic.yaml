@@ -5,7 +5,7 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
-      cocoapods: default
+      cocoapods: latest
     cache:
       cache_paths:
         - $HOME/.pub-cache
@@ -17,10 +17,16 @@ workflows:
       - name: Install Flutter dependencies
         script: cd client && flutter pub get
 
+      # Make build scripts executable
+      - name: Make build scripts executable
+        script: cd client && chmod +x flutter_build.sh ios/scripts/embed_share_extension.sh
+
       # Optional: Clean old builds for safety (doesn't delete caches)
       - name: Clean old build artifacts
         script: cd client && flutter clean
 
+      # Build the iOS IPA with automatic ShareExtension embedding (release)
+      # This uses our enhanced build script that ensures ShareExtension.appex
       # is properly embedded in the final IPA for distribution
       - name: Build iOS IPA with ShareExtension
         script: cd client && flutter build ipa --release --export-options-plist=ios/export_options.plist
@@ -50,7 +56,7 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
-      cocoapods: default
+      cocoapods: latest
     cache:
       cache_paths:
         - $HOME/.pub-cache
