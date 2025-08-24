@@ -21,8 +21,6 @@ workflows:
       - name: Clean old build artifacts
         script: cd client && flutter clean
 
-      # Build the iOS IPA with automatic ShareExtension embedding (release)
-      # This uses our enhanced build script that ensures ShareExtension.appex
       # is properly embedded in the final IPA for distribution
       - name: Build iOS IPA with ShareExtension
         script: cd client && flutter build ipa --release --export-options-plist=ios/export_options.plist
