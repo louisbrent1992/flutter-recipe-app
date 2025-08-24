@@ -86,14 +86,15 @@ android {
             excludes += "/META-INF/notice.txt"
             excludes += "/META-INF/ASL2.0"
             excludes += "/META-INF/*.kotlin_module"
+            pickFirsts += "META-INF/gradle/incremental.annotation.processors"
         }
     }
     
     // Build optimizations
     dexOptions {
         preDexLibraries = false
-        maxProcessCount = 8
-        javaMaxHeapSize = "4g"
+        maxProcessCount = 4
+        javaMaxHeapSize = "8g"
     }
 }
 
