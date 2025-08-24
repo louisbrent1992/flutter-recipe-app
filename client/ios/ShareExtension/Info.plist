@@ -8,17 +8,23 @@
         <string>$(FLUTTER_BUILD_NUMBER)</string>
         <key>CFBundleDisplayName</key>
         <string>Add to RecipEase</string>
+        <key>CFBundleIdentifier</key>
+        <string>com.recipease.kitchen.ShareExtension</string>
         <key>NSExtension</key>
         <dict>
             <key>NSExtensionAttributes</key>
             <dict>
                 <key>NSExtensionActivationRule</key>
-                <dict>
-                    <key>NSExtensionActivationSupportsWebURLWithMaxCount</key>
-                    <integer>1</integer>
-                    <key>NSExtensionActivationSupportsText</key>
-                    <true/>
-                </dict>
+                <string>SUBQUERY (
+                    extensionItems,
+                    $extensionItem,
+                    SUBQUERY (
+                        $extensionItem.attachments,
+                        $attachment,
+                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.url" ||
+                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.plain-text"
+                    ).@count > 0
+                ).@count > 0</string>
             </dict>
             <key>NSExtensionMainStoryboard</key>
             <string>MainInterface</string>
