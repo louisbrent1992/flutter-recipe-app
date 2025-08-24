@@ -8,8 +8,8 @@ class ShareViewController: RSIShareViewController {
         os_log("[ShareExtension] viewDidLoad", type: .info)
     }
 
-    override func viewDidAppear(_animated: Bool) {
-        super.viewDidAppear(animated: animated)
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
         let items = self.extensionContext?.inputItems as? [NSExtensionItem] ?? []
         os_log("[ShareExtension] viewDidAppear inputItems=%d", type: .info, items.count)
         
