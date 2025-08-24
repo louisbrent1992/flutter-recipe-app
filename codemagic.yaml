@@ -17,10 +17,6 @@ workflows:
       - name: Install Flutter dependencies
         script: cd client && flutter pub get
 
-      # Make build scripts executable
-      - name: Make build scripts executable
-        script: cd client && chmod +x flutter_build.sh ios/scripts/embed_share_extension.sh
-
       # Optional: Clean old builds for safety (doesn't delete caches)
       - name: Clean old build artifacts
         script: cd client && flutter clean
