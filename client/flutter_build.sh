@@ -17,11 +17,24 @@ echo "🚀 Starting enhanced Flutter build..."
 echo "📋 Mode: $BUILD_MODE"
 echo "📋 Platform: $PLATFORM"
 
+# Check for export options plist
+if [ -n "$EXPORT_OPTIONS_PLIST" ]; then
+    echo "📋 Using export options: $EXPORT_OPTIONS_PLIST"
+    EXPORT_OPTIONS_FLAG="--export-options-plist=$EXPORT_OPTIONS_PLIST"
+else
+    echo "⚠️  No export options specified, using default"
+    EXPORT_OPTIONS_FLAG=""
+fi
+
 # Run Flutter build
 echo "🔨 Running Flutter build..."
 if [ "$PLATFORM" = "ipa" ]; then
     # Special case for Codemagic IPA builds
-    flutter build ipa --release
+    if [ -n "$EXPORT_OPTIONS_FLAG" ]; then
+        flutter build ipa --release $EXPORT_OPTIONS_FLAG
+    else
+        flutter build ipa --release
+    fi
     PLATFORM="ios"
     BUILD_MODE="release"
 elif [ "$BUILD_MODE" = "release" ]; then

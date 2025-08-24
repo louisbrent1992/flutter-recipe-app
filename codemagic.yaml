@@ -6,6 +6,8 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
+      vars:
+        EXPORT_OPTIONS_PLIST: "ios/export_options.plist"  # App Store distribution
     cache:
       cache_paths:
         - $HOME/.pub-cache
@@ -29,7 +31,7 @@ workflows:
       # This uses our enhanced build script that ensures ShareExtension.appex
       # is properly embedded in the final IPA for distribution
       - name: Build iOS IPA with ShareExtension
-        script: cd client && ./flutter_build.sh release ipa
+        script: cd client && EXPORT_OPTIONS_PLIST=$EXPORT_OPTIONS_PLIST ./flutter_build.sh release ipa
 
       # Code sign (handled by Codemagic's automatic signing)
       - name: Code sign IPA
@@ -48,3 +50,35 @@ workflows:
         submit_to_testflight: true # Automatically makes the build available to testers
         beta_groups:
           - RecipEase Testing # Name of your TestFlight tester group
+
+  # Add a new workflow for development builds
+  ios-development:
+    name: iOS Development Build
+    max_build_duration: 60 # minutes
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        EXPORT_OPTIONS_PLIST: "ios/export_options_development.plist"  # Development distribution
+    cache:
+      cache_paths:
+        - $HOME/.pub-cache
+        - $FLUTTER_ROOT/.pub-cache
+        - ios/Pods
+        - node_modules
+    scripts:
+      - name: Install Flutter dependencies
+        script: cd client && flutter pub get
+
+      - name: Make build scripts executable
+        script: cd client && chmod +x flutter_build.sh
+
+      - name: Clean old build artifacts
+        script: cd client && flutter clean
+
+      - name: Build iOS Development IPA
+        script: cd client && EXPORT_OPTIONS_PLIST=$EXPORT_OPTIONS_PLIST ./flutter_build.sh debug ipa
+
+    artifacts:
+      - build/ios/ipa/*.ipa
