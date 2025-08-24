@@ -10,14 +10,6 @@
         <dict>
             <key>NSExtensionAttributes</key>
             <dict>
-                <!-- Add supported message intent if you support sharing to a specific conversation
-                - start -->
-                <key>IntentsSupported</key>
-                <array>
-                    <string>INSendMessageIntent</string>
-                </array>
-                <!-- Add supported message intent if you support sharing to a specific conversation
-                (registered via the recordSentMessage api call) - end -->
                 <key>NSExtensionActivationRule</key>
                 <dict>
                     <key>NSExtensionActivationSupportsText</key>
