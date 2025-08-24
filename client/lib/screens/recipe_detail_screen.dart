@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:recipease/components/html_description.dart';
 import 'package:recipease/providers/recipe_provider.dart';
@@ -227,38 +228,97 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       return const SizedBox.shrink();
     }
 
-    // Render a simple non-clickable row (icon + text)
+    // If no URL to launch, render as non-clickable
+    if (sourceUrl == null || sourceUrl.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: AppSizing.responsiveIconSize(
+                context,
+                mobile: 18,
+                tablet: 20,
+                desktop: 22,
+              ),
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                detailsLabel != null && detailsLabel.isNotEmpty
+                    ? '$platformLabel · $detailsLabel'
+                    : platformLabel,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontSize: AppTypography.responsiveFontSize(context),
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Render clickable row with URL launching functionality
     return Padding(
       padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: AppSizing.responsiveIconSize(
-              context,
-              mobile: 18,
-              tablet: 20,
-              desktop: 22,
-            ),
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              detailsLabel != null && detailsLabel.isNotEmpty
-                  ? '$platformLabel · $detailsLabel'
-                  : platformLabel,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontSize: AppTypography.responsiveFontSize(context),
+      child: GestureDetector(
+        onTap: () => _launchUrl(sourceUrl!),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: AppSizing.responsiveIconSize(
+                context,
+                mobile: 18,
+                tablet: 20,
+                desktop: 22,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              color: Theme.of(context).colorScheme.primary,
             ),
-          ),
-        ],
+            SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                detailsLabel != null && detailsLabel.isNotEmpty
+                    ? '$platformLabel · $detailsLabel'
+                    : platformLabel,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontSize: AppTypography.responsiveFontSize(context),
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open $url'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+          ),
+        );
+      }
+    }
   }
 
   String _formatCookingTime(String cookingTime) {
