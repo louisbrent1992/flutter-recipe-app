@@ -506,16 +506,19 @@ class RecipeProvider extends ChangeNotifier {
 
       if (response.success && response.data != null) {
         final favoriteIds = response.data ?? <String>[];
+        // If user recipes are not yet loaded, try to load the first page
+        if (_userRecipes.isEmpty) {
+          try {
+            await loadUserRecipes(page: 1);
+          } catch (_) {}
+        }
 
         // Filter the user recipes to find those with IDs in the favorites list
         // Convert both to strings for comparison to handle mixed types
-        _favoriteRecipes =
-            _userRecipes.where((recipe) {
-              final recipeIdStr = recipe.id.toString();
-              return favoriteIds.any(
-                (favId) => favId.toString() == recipeIdStr,
-              );
-            }).toList();
+        _favoriteRecipes = _userRecipes.where((recipe) {
+          final recipeIdStr = recipe.id.toString();
+          return favoriteIds.any((favId) => favId.toString() == recipeIdStr);
+        }).toList(growable: false);
 
         notifyListeners();
       } else {

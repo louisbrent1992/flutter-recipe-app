@@ -1283,10 +1283,14 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
                         onTap: () {
-                          // Add haptic feedback for better UX
-                          Navigator.pop(context);
-                          if (!isActive) {
-                            Navigator.pushNamed(context, item.route);
+                          // Close the drawer first, then navigate on the same navigator
+                          final navigator = Navigator.of(context);
+                          final routeToPush = item.route;
+                          final shouldNavigate = !isActive;
+                          navigator.pop();
+                          if (shouldNavigate) {
+                            // Schedule after pop to avoid using a possibly disposed context
+                            Future.microtask(() => navigator.pushNamed(routeToPush));
                           }
                         },
                         child: AnimatedContainer(

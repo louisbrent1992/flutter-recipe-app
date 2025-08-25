@@ -24,10 +24,15 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authService = Provider.of<AuthService>(context, listen: false);
       if (authService.user != null) {
-        Provider.of<RecipeProvider>(
-          context,
-          listen: false,
-        ).loadFavoriteRecipes();
+        final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
+        // Ensure we have the base user recipes first so favorites filter has data
+        final needsUserRecipes = recipeProvider.userRecipes.isEmpty;
+        Future(() async {
+          if (needsUserRecipes) {
+            await recipeProvider.loadUserRecipes(page: 1);
+          }
+          await recipeProvider.loadFavoriteRecipes();
+        });
       }
     });
   }
