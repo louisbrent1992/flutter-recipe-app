@@ -89,13 +89,6 @@ android {
             pickFirsts += "META-INF/gradle/incremental.annotation.processors"
         }
     }
-    
-    // Build optimizations
-    dexOptions {
-        preDexLibraries = false
-        maxProcessCount = 4
-        javaMaxHeapSize = "8g"
-    }
 }
 
 flutter {
