@@ -1290,7 +1290,9 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                           navigator.pop();
                           if (shouldNavigate) {
                             // Schedule after pop to avoid using a possibly disposed context
-                            Future.microtask(() => navigator.pushNamed(routeToPush));
+                            Future.microtask(
+                              () => navigator.pushNamed(routeToPush),
+                            );
                           }
                         },
                         child: AnimatedContainer(

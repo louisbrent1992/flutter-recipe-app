@@ -24,7 +24,10 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authService = Provider.of<AuthService>(context, listen: false);
       if (authService.user != null) {
-        final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
+        final recipeProvider = Provider.of<RecipeProvider>(
+          context,
+          listen: false,
+        );
         // Ensure we have the base user recipes first so favorites filter has data
         final needsUserRecipes = recipeProvider.userRecipes.isEmpty;
         Future(() async {
