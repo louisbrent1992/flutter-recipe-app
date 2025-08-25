@@ -230,8 +230,6 @@ workflows:
         issuer_id: $APP_STORE_ISSUER
         key_id: $APP_STORE_KEY_ID
         submit_to_testflight: true
-        beta_groups:
-          - RecipEase Testing
       google_play:
         track: production
         submit_as_draft: false

@@ -24,7 +24,7 @@ class ApiClient {
         'https://recipease-api-280575606029.us-west1.run.app/api';
     final String developmentUrl =
         Platform.isAndroid
-            ? 'http://172.16.1.2:$port/api'
+            ? 'http://10.0.2.2:$port/api'
             : 'http://localhost:$port/api';
 
     // Use production URL in release mode, development URL otherwise
