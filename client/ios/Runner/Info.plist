@@ -42,6 +42,17 @@
 				<string>signinwithapple</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>rsi-recipes</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>rsi</string>
+				<string>rsi-com.recipease.kitchen</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
@@ -49,6 +60,11 @@
 	<string>ca-app-pub-3940256099942544~1458002511</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<string>no</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>rsi</string>
+		<string>rsi-com.recipease.kitchen</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
