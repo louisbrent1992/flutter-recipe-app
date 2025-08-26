@@ -599,6 +599,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                     ),
                                     SizedBox(height: AppSpacing.sm),
                                     Container(
+                                      width: double.infinity,
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(
                                           AppBreakpoints.isMobile(context)
@@ -625,6 +626,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                         ],
                                       ),
                                       padding: EdgeInsets.symmetric(
+                                        horizontal: AppSpacing.md,
                                         vertical: AppSpacing.sm,
                                       ),
                                       child: DietaryPreferenceCheckboxList(
