@@ -610,17 +610,21 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                                 ? colorScheme
                                                     .surfaceContainerHighest
                                                     .withAlpha(64)
-                                                : Theme.of(context)
-                                                    .colorScheme
-                                                    .surface
-                                                    .withValues(
-                                                      alpha:
-                                                          Theme.of(context)
-                                                              .colorScheme
-                                                              .alphaVeryHigh,
-                                                    ),
+                                                : Theme.of(
+                                                  context,
+                                                ).colorScheme.surface,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withAlpha(20),
+                                            blurRadius:
+                                                AppBreakpoints.isMobile(context)
+                                                    ? 15
+                                                    : 20,
+                                            offset: const Offset(0, 5),
+                                          ),
+                                        ],
                                       ),
-                                      padding: EdgeInsets.symmetric(
+                                                                             padding: EdgeInsets.symmetric(
                                         horizontal: AppSpacing.md,
                                         vertical: AppSpacing.sm,
                                       ),
@@ -692,6 +696,16 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                                               .colorScheme
                                                               .alphaVeryHigh,
                                                     ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withAlpha(20),
+                                            blurRadius:
+                                                AppBreakpoints.isMobile(context)
+                                                    ? 15
+                                                    : 20,
+                                            offset: const Offset(0, 5),
+                                          ),
+                                        ],
                                       ),
                                       child: DropdownButton<String>(
                                         value: _cuisineType,
@@ -844,13 +858,12 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                             : () => _loadRecipes(context),
                                     icon: Icon(
                                       Icons.auto_awesome_rounded,
-                                      size:
-                                          AppSizing.responsiveIconSize(
-                                            context,
-                                            mobile: 20,
-                                            tablet: 22,
-                                            desktop: 24,
-                                          ),
+                                      size: AppSizing.responsiveIconSize(
+                                        context,
+                                        mobile: 20,
+                                        tablet: 22,
+                                        desktop: 24,
+                                      ),
                                     ),
                                     label: Text(
                                       'Generate Recipes',
