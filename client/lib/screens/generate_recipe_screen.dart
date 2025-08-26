@@ -792,18 +792,29 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      'Cooking Time: ${_cookingTime.round()} minutes',
-                                      style: TextStyle(
-                                        fontSize:
-                                            AppTypography.responsiveHeadingSize(
-                                              context,
-                                              mobile: 18.0,
-                                              tablet: 20.0,
-                                              desktop: 22.0,
+                                    Text.rich(
+                                      TextSpan(
+                                        text: 'Cooking Time: ',
+                                        style: TextStyle(
+                                          fontSize:
+                                              AppTypography.responsiveHeadingSize(
+                                                context,
+                                                mobile: 18.0,
+                                                tablet: 20.0,
+                                                desktop: 22.0,
+                                              ),
+                                          fontWeight: FontWeight.bold,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text:
+                                                '${_cookingTime.round()} minutes',
+                                            style: TextStyle(
+                                              color: colorScheme.primary,
                                             ),
-                                        fontWeight: FontWeight.bold,
-                                        color: colorScheme.onSurface,
+                                          ),
+                                        ],
                                       ),
                                     ),
                                     SizedBox(height: AppSpacing.sm),
@@ -865,6 +876,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                         tablet: 22,
                                         desktop: 24,
                                       ),
+                                      color: colorScheme.surface,
                                     ),
                                     label: Text(
                                       'Generate Recipes',
@@ -878,6 +890,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                             ),
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 0.5,
+                                        color: colorScheme.surface,
                                       ),
                                     ),
                                     style: ElevatedButton.styleFrom(
