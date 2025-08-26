@@ -650,7 +650,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     subtitle: 'Explore your recipes',
                     icon: Icons.restaurant_menu_rounded,
                     color: Theme.of(context).colorScheme.warning,
-                    onTap: () => Navigator.pushNamed(context, '/my_recipes'),
+                    onTap: () => Navigator.pushNamed(context, '/myRecipes'),
                   ),
                   // Favorites removed
                   SizedBox(height: AppSpacing.md),
