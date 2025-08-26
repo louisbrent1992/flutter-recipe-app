@@ -19,7 +19,7 @@ class RecipeCard extends StatefulWidget {
   final bool showCookingTime;
   final bool showServings;
   final bool showEditButton;
-  final bool showFavoriteButton;
+  // Favorites removed
   final bool showShareButton;
   final Function(Recipe)? onRecipeUpdated;
 
@@ -35,7 +35,7 @@ class RecipeCard extends StatefulWidget {
     this.showCookingTime = true,
     this.showServings = true,
     this.showEditButton = false,
-    this.showFavoriteButton = false,
+
     this.showShareButton = true,
     this.onRecipeUpdated,
   });
@@ -45,7 +45,6 @@ class RecipeCard extends StatefulWidget {
 }
 
 class _RecipeCardState extends State<RecipeCard> {
-  bool _isFavoriteLoading = false;
   bool _isShareLoading = false;
 
   @override
@@ -53,116 +52,7 @@ class _RecipeCardState extends State<RecipeCard> {
     super.initState();
   }
 
-  Future<void> _toggleFavorite() async {
-    if (_isFavoriteLoading) return;
-
-    final isCurrentlyFavorite = widget.recipe.isFavorite;
-    final confirm =
-        isCurrentlyFavorite
-            ? await showDialog<bool>(
-              context: context,
-              builder:
-                  (context) => AlertDialog(
-                    title: const Text('Remove from Favorites'),
-                    content: Text(
-                      'Are you sure you want to remove "${widget.recipe.title}" from your favorites?',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancel'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.warning,
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.surface.withValues(
-                            alpha: Theme.of(context).colorScheme.alphaVeryHigh,
-                          ),
-                        ),
-                        child: const Text('Remove'),
-                      ),
-                    ],
-                  ),
-            )
-            : true;
-
-    if (confirm != true) return;
-
-    setState(() => _isFavoriteLoading = true);
-    try {
-      if (mounted) {
-        final recipeProvider = context.read<RecipeProvider>();
-        await recipeProvider.toggleFavorite(
-          widget.recipe.id,
-          !isCurrentlyFavorite,
-          context,
-        );
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isCurrentlyFavorite
-                    ? 'Removed "${widget.recipe.title}" from favorites'
-                    : 'Added "${widget.recipe.title}" to favorites',
-              ),
-              backgroundColor:
-                  isCurrentlyFavorite
-                      ? Theme.of(context).colorScheme.warning
-                      : Theme.of(context).colorScheme.error,
-              action:
-                  isCurrentlyFavorite
-                      ? SnackBarAction(
-                        label: 'Undo',
-                        onPressed: () async {
-                          await recipeProvider.toggleFavorite(
-                            widget.recipe.id,
-                            true,
-                            context,
-                          );
-                        },
-                        textColor: Theme.of(
-                          context,
-                        ).colorScheme.surface.withValues(
-                          alpha: Theme.of(context).colorScheme.alphaVeryHigh,
-                        ),
-                      )
-                      : SnackBarAction(
-                        label: 'Go to favorites',
-                        onPressed: () async {
-                          if (mounted) {
-                            Navigator.pushNamed(context, '/favorites');
-                          }
-                        },
-                        textColor: Theme.of(
-                          context,
-                        ).colorScheme.surface.withValues(
-                          alpha: Theme.of(context).colorScheme.alphaVeryHigh,
-                        ),
-                      ),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error updating favorites: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isFavoriteLoading = false);
-      }
-    }
-  }
+  // Favorites removed
 
   Future<void> _shareRecipe() async {
     if (_isShareLoading) return;
@@ -551,31 +441,9 @@ Shared from Recipe App
                       if (widget.showEditButton &&
                           (widget.showRemoveButton ||
                               widget.showSaveButton ||
-                              widget.showFavoriteButton ||
                               widget.showShareButton))
                         SizedBox(width: AppSpacing.xs),
-                      if (widget.showFavoriteButton)
-                        _buildActionButton(
-                          icon:
-                              widget.recipe.isFavorite
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                          onTap: _toggleFavorite,
-                          tooltip:
-                              widget.recipe.isFavorite
-                                  ? 'Remove from favorites'
-                                  : 'Add to favorites',
-                          iconColor:
-                              widget.recipe.isFavorite
-                                  ? Theme.of(context).colorScheme.error
-                                  : Theme.of(context).colorScheme.primary,
-                          isLoading: _isFavoriteLoading,
-                        ),
-                      if (widget.showFavoriteButton &&
-                          (widget.showRemoveButton ||
-                              widget.showSaveButton ||
-                              widget.showShareButton))
-                        SizedBox(width: AppSpacing.xs),
+
                       if (widget.showShareButton)
                         _buildActionButton(
                           icon: Icons.share_rounded,

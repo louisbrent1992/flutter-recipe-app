@@ -131,7 +131,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
         recipeProvider.loadUserRecipes(
           page: 1,
         ); // Explicitly load page 1 for total count
-        recipeProvider.loadFavoriteRecipes();
+        // Favorites removed: no favorites preloading
       }
     });
 
@@ -1091,13 +1091,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               colorScheme.success,
               3,
             ),
-            _NavItem(
-              Icons.favorite_rounded,
-              'Favorites',
-              '/favorites',
-              colorScheme.tertiary,
-              4,
-            ),
+            // Favorites removed from navigation
           ]),
           SizedBox(height: isMobile ? 12 : 20),
           _buildFloatingNavSection(

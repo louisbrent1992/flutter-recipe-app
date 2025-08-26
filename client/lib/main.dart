@@ -6,7 +6,6 @@ import 'package:recipease/components/persistent_banner_layout.dart';
 import 'package:recipease/firebase_options.dart';
 import 'package:recipease/screens/my_recipes_screen.dart';
 import 'package:recipease/screens/discover_recipes.dart';
-import 'package:recipease/screens/favorite_recipes_screen.dart';
 import 'package:recipease/screens/generate_recipe_screen.dart';
 import 'package:recipease/screens/home_screen.dart';
 import 'package:recipease/screens/recipe_edit_screen.dart';
@@ -318,10 +317,6 @@ class _MyAppState extends State<MyApp> {
               '/discover':
                   (context) => const PersistentBannerLayout(
                     child: DiscoverRecipesScreen(),
-                  ),
-              '/favorites':
-                  (context) => const PersistentBannerLayout(
-                    child: FavoriteRecipesScreen(),
                   ),
               '/generate':
                   (context) => const PersistentBannerLayout(

@@ -309,10 +309,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
             IconButton(
               icon: const Icon(Icons.add_rounded),
               tooltip: 'Add Recipes',
-              onPressed:
-                  widget.collection.name == 'Favorites'
-                      ? () => Navigator.pushNamed(context, '/myRecipes')
-                      : _searchAllRecipes,
+              onPressed: _searchAllRecipes,
             ),
         ],
       ),

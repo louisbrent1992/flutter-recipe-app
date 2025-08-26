@@ -207,77 +207,7 @@ class RecipeService {
     );
   }
 
-  /// Toggle favorite status of a recipe
-  static Future<ApiResponse<bool>> toggleFavoriteStatus(
-    String id,
-    bool isFavorite,
-  ) async {
-    final response = await _api.authenticatedPut(
-      'users/favorites',
-      body: {'recipeId': id, 'isFavorite': isFavorite},
-    );
-
-    if (response.success) {
-      return ApiResponse.success(
-        true,
-        message:
-            isFavorite
-                ? 'Recipe added to favorites'
-                : 'Recipe removed from favorites',
-      );
-    }
-
-    return ApiResponse.error(
-      response.message ?? 'Failed to update favorite status',
-      statusCode: response.statusCode,
-    );
-  }
-
-  /// Get all favorite recipes
-  static Future<ApiResponse<List<String>>> getFavoriteRecipes() async {
-    try {
-      final response = await _api.authenticatedGet<List<dynamic>>(
-        'users/favorites',
-      );
-
-      if (response.success && response.data != null) {
-        // Handle the case where data might be a List or might be something else
-        List<dynamic> rawData;
-        if (response.data is List) {
-          rawData = response.data!;
-        } else {
-          return ApiResponse.success([]);
-        }
-
-        // Convert each dynamic element to String, handling potential Maps
-        final favoriteIds =
-            rawData
-                .map<String>((id) {
-                  if (id is String) {
-                    return id;
-                  } else if (id is Map) {
-                    // If it's a map, try to get an 'id' field
-                    return id['id']?.toString() ?? '';
-                  } else {
-                    return id.toString();
-                  }
-                })
-                .where((id) => id.isNotEmpty)
-                .toList();
-
-        return ApiResponse.success(favoriteIds);
-      }
-
-      return ApiResponse.error(
-        response.message ?? 'Failed to get favorite recipes',
-        statusCode: response.statusCode,
-      );
-    } catch (e) {
-      return ApiResponse.error(
-        'Error fetching favorite recipes: ${e.toString()}',
-      );
-    }
-  }
+  // Favorites removed: no toggle or fetch endpoints
 
   /// Get the last 50 recipes added to the user's collection
   static Future<ApiResponse<List<Recipe>>> getRecentlyAddedRecipes() async {

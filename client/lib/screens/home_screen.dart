@@ -489,12 +489,7 @@ class _HomeScreenState extends State<HomeScreen>
         '/discover',
         Theme.of(context).colorScheme.info,
       ),
-      _CategoryItem(
-        'Favorite Recipes',
-        Icons.favorite,
-        '/favorites',
-        Theme.of(context).colorScheme.error,
-      ),
+      // Favorites removed
       _CategoryItem(
         'Import Recipe',
         Icons.ios_share_rounded,
@@ -519,8 +514,7 @@ class _HomeScreenState extends State<HomeScreen>
         return 'Organized recipe lists for meal planning and themes';
       case 'Discover Recipes':
         return 'Explore trending recipes and new cooking inspiration';
-      case 'Favorite Recipes':
-        return 'Your bookmarked recipes for quick access';
+
       case 'Import Recipe':
         return 'Add recipes from websites, blogs, and social media';
       case 'Generate Recipe':

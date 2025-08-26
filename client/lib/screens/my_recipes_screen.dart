@@ -7,7 +7,6 @@ import 'package:recipease/components/floating_bottom_bar.dart';
 import 'package:recipease/components/recipe_card.dart';
 import 'package:recipease/components/compact_filter_bar.dart';
 import 'package:recipease/mixins/recipe_filter_mixin.dart';
-import 'package:recipease/screens/favorite_recipes_screen.dart';
 import '../providers/recipe_provider.dart';
 import '../models/recipe.dart';
 import '../theme/theme.dart';
@@ -128,19 +127,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
       appBar: CustomAppBar(
         title: 'My Recipes',
         floatingButtons: [
-          // Favorite Recipes button
-          IconButton(
-            icon: const Icon(Icons.favorite_rounded),
-            tooltip: 'Favorite Recipes',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FavoriteRecipesScreen(),
-                ),
-              );
-            },
-          ),
+          // Favorites removed
           // New Recipe button
           IconButton(
             icon: const Icon(Icons.add),
@@ -263,7 +250,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                             recipe: recipe,
                             showEditButton: true,
                             showRemoveButton: true,
-                            showFavoriteButton: true,
+                            // Favorites removed
                             onTap:
                                 () => Navigator.pushNamed(
                                   context,

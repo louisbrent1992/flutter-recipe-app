@@ -654,13 +654,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
 
                   SizedBox(height: AppSpacing.md),
-                  _buildAnimatedListTile(
-                    title: 'Favorite Recipes',
-                    subtitle: 'View your favorite recipes',
-                    icon: Icons.favorite_rounded,
-                    color: Colors.red,
-                    onTap: () => Navigator.pushNamed(context, '/favorites'),
-                  ),
+                  // Favorites removed
                   SizedBox(height: AppSpacing.md),
                   _buildAnimatedListTile(
                     title: 'Discover Recipes',

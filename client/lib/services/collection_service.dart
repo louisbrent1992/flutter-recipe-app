@@ -16,7 +16,7 @@ class CollectionService extends ChangeNotifier {
   static DateTime? _lastCacheTime;
   static const Duration _cacheTimeout = Duration(minutes: 2);
 
-  // Default collections that all users start with (Favorites is no longer a default)
+  // Default collections that all users start with
   static final List<RecipeCollection> _defaultCollections = [
     RecipeCollection.withName('Recently Added'),
   ];
@@ -81,10 +81,6 @@ class CollectionService extends ChangeNotifier {
       if (updateSpecialCollections) {
         // Update the recently added collection with current data
         await updateRecentlyAddedCollection(collections);
-        // Only update Favorites collection if it exists (not a default anymore)
-        if (collections.any((c) => c.name == 'Favorites')) {
-          await updateFavoritesCollection(collections);
-        }
       }
 
       // Cache the result AFTER all updates are complete
@@ -242,29 +238,9 @@ class CollectionService extends ChangeNotifier {
         return false;
       }
 
-      // If adding to the Favorites collection, also toggle favorite flag in backend.
-      // We must compare by collection name when the caller passes a name instead of ID.
-      final collections = await getCollections(updateSpecialCollections: false);
-      final favorites = collections.firstWhere(
-        (c) => c.name == 'Favorites',
-        orElse: () => RecipeCollection.withName('Favorites'),
-      );
-
-      // Support callers passing either the real collection ID or the name 'Favorites'
-      final isFavoritesTarget =
-          (collections.any((c) => c.name == 'Favorites')) &&
-          (collectionId == favorites.id || collectionId == 'Favorites');
-
-      if (isFavoritesTarget) {
-        await RecipeService.toggleFavoriteStatus(recipe.id, true);
-      }
-
       // Resolve real collection ID if a name was provided
-      final targetCollectionId =
-          collectionId == 'Favorites' &&
-                  collections.any((c) => c.name == 'Favorites')
-              ? favorites.id
-              : collectionId;
+      final collections = await getCollections(updateSpecialCollections: false);
+      final targetCollectionId = collectionId;
 
       final response = await _api.authenticatedPost(
         'collections/$targetCollectionId/recipes',
@@ -298,27 +274,9 @@ class CollectionService extends ChangeNotifier {
         return false;
       }
 
-      // If removing from the Favorites collection, also toggle favorite flag in backend.
-      final collections = await getCollections(updateSpecialCollections: false);
-      final favorites = collections.firstWhere(
-        (c) => c.name == 'Favorites',
-        orElse: () => RecipeCollection.withName('Favorites'),
-      );
-
-      final isFavoritesTarget =
-          (collections.any((c) => c.name == 'Favorites')) &&
-          (collectionId == favorites.id || collectionId == 'Favorites');
-
-      if (isFavoritesTarget) {
-        await RecipeService.toggleFavoriteStatus(recipeId, false);
-      }
-
       // Resolve real collection ID if a name was provided
-      final targetCollectionId =
-          collectionId == 'Favorites' &&
-                  collections.any((c) => c.name == 'Favorites')
-              ? favorites.id
-              : collectionId;
+      final collections = await getCollections(updateSpecialCollections: false);
+      final targetCollectionId = collectionId;
 
       final response = await _api.authenticatedDelete(
         'collections/$targetCollectionId/recipes/$recipeId',
@@ -441,108 +399,7 @@ class CollectionService extends ChangeNotifier {
     }
   }
 
-  Future<void> updateFavoritesCollection(
-    List<RecipeCollection> collections,
-  ) async {
-    try {
-      // Find the "Favorites" collection
-      final favoritesIndex = collections.indexWhere(
-        (collection) => collection.name == 'Favorites',
-      );
-
-      // Get all recipes from the database
-      final allRecipesResponse = await RecipeService.getUserRecipes();
-
-      if (allRecipesResponse.success && allRecipesResponse.data != null) {
-        // The data is already converted to Recipe objects by RecipeService
-        final recipesData = allRecipesResponse.data!['recipes'];
-        if (recipesData is! List) {
-          logger.e('Invalid response format: recipes is not a list');
-          return;
-        }
-        final List<Recipe> allRecipes = recipesData.cast<Recipe>();
-
-        // Get all favorites from the database
-        final favoritesResponse = await RecipeService.getFavoriteRecipes();
-
-        if (favoritesResponse.success && favoritesResponse.data != null) {
-          // Get the list of favorite recipe IDs
-          final List<String> favoriteIds = favoritesResponse.data!;
-
-          // Filter all recipes to only include those with IDs in the favorites list
-          // Convert both to strings for comparison to handle mixed types
-          final favoriteRecipes =
-              allRecipes.where((recipe) {
-                final recipeIdStr = recipe.id.toString();
-
-                // First check direct ID match
-                bool isMatch = favoriteIds.any(
-                  (favId) => favId.toString() == recipeIdStr,
-                );
-
-                // If no direct match, check if this recipe might be a saved version of a favorited external recipe
-                if (!isMatch &&
-                    recipe.source != null &&
-                    recipe.source != 'user-created') {
-                  // For external recipes that were saved, the original external ID might be in favorites
-                  // but the recipe now has a new Firestore ID
-                  isMatch = favoriteIds.any((favId) {
-                    final favIdStr = favId.toString();
-                    // Check if the favorite ID looks like an external API ID (numeric)
-                    return RegExp(r'^\d+$').hasMatch(favIdStr) &&
-                        recipe.sourceUrl != null &&
-                        recipe.sourceUrl!.contains(favIdStr);
-                  });
-                }
-
-                return isMatch;
-              }).toList();
-
-          // Start with an empty collection to properly replace all recipes
-          var updatedCollection = collections[favoritesIndex].copyWith(
-            recipes: [],
-          );
-
-          // Add all favorite recipes to the collection
-          for (final recipe in favoriteRecipes) {
-            updatedCollection = updatedCollection.addRecipe(recipe);
-          }
-
-          // Update the collection in the list
-          collections[favoritesIndex] = updatedCollection;
-
-          // Only update the collection on the server if there are actual changes
-          final currentCollection = collections[favoritesIndex];
-          final hasChanged =
-              currentCollection.recipes.length != favoriteRecipes.length ||
-              !currentCollection.recipes.every(
-                (recipe) => favoriteRecipes.any((fav) => fav.id == recipe.id),
-              );
-
-          if (hasChanged) {
-            // Update the collection on the server with the full collection data
-            final tempCache = _cachedCollections;
-            final tempCacheTime = _lastCacheTime;
-            await _api.authenticatedPut(
-              'collections/${updatedCollection.id}',
-              body: updatedCollection.toJson(),
-            );
-            // Restore cache since this is an internal update
-            _cachedCollections = tempCache;
-            _lastCacheTime = tempCacheTime;
-          }
-        } else {
-          logger.e('Failed to get favorites: ${favoritesResponse.message}');
-        }
-      } else {
-        logger.e('Error getting recipes: ${allRecipesResponse.message}');
-      }
-    } catch (e, stackTrace) {
-      logger.e('Error updating favorites collection: $e');
-      logger.e('Stack trace: $stackTrace');
-      // Don't rethrow - this is a background update
-    }
-  }
+  // Favorites removed: no Favorites collection sync
 
   // Update a collection directly with the given recipes
   Future<bool> updateCollectionRecipes(

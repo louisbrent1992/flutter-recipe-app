@@ -15,7 +15,6 @@ class RecipeProvider extends ChangeNotifier {
 
   // User recipes with pagination
   List<Recipe> _userRecipes = [];
-  List<Recipe> _favoriteRecipes = [];
   int _currentPage = 1;
   int _totalPages = 1;
   bool _hasNextPage = false;
@@ -33,10 +32,7 @@ class RecipeProvider extends ChangeNotifier {
   final Map<String, Map<int, Map<String, dynamic>>> _generatedPaginationCache =
       {};
 
-  // Cache favorite ids to avoid fetching repeatedly
-  Set<String> _favoriteIdsCache = <String>{};
-  DateTime? _favoritesLastFetchedAt;
-  static const Duration _favoritesTtl = Duration(seconds: 60);
+  // Favorites removed: no favorites cache
 
   // Getters
   List<Recipe> get generatedRecipes => _generatedRecipes;
@@ -44,7 +40,6 @@ class RecipeProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   ApiResponse<Recipe>? get error => _error;
   List<Recipe> get userRecipes => _userRecipes;
-  List<Recipe> get favoriteRecipes => _favoriteRecipes;
   int get currentPage => _currentPage;
   int get totalPages => _totalPages;
   bool get hasNextPage => _hasNextPage;
@@ -195,10 +190,6 @@ class RecipeProvider extends ChangeNotifier {
         _totalRecipes = pagination['total'] ?? _userRecipes.length;
       }
       notifyListeners();
-      // Ensure favorite flags are kept in sync using cached ids (non-blocking)
-      // Do not set loading to true to avoid jank when serving from cache
-      // Just refresh favorites in background if TTL expired
-      _ensureFavoriteIdsFresh().then((_) => _applyFavoriteFlagsFromCache());
       return;
     }
 
@@ -258,10 +249,6 @@ class RecipeProvider extends ChangeNotifier {
             'total': _totalRecipes,
           };
         }
-
-        // Update favorite status for loaded recipes
-        await _ensureFavoriteIdsFresh();
-        _applyFavoriteFlagsFromCache();
 
         notifyListeners();
       } else {
@@ -369,11 +356,7 @@ class RecipeProvider extends ChangeNotifier {
           _userRecipes[index] = updatedRecipe!;
         }
 
-        // Also update in favorites list if present
-        final favIndex = _favoriteRecipes.indexWhere((r) => r.id == recipe.id);
-        if (favIndex != -1) {
-          _favoriteRecipes[favIndex] = updatedRecipe!;
-        }
+        // Favorites removed
 
         notifyListeners();
         return updatedRecipe;
@@ -403,7 +386,6 @@ class RecipeProvider extends ChangeNotifier {
         if (response.success) {
           // Remove from all local lists
           _userRecipes.removeWhere((recipe) => recipe.id == id);
-          _favoriteRecipes.removeWhere((recipe) => recipe.id == id);
           _generatedRecipes.removeWhere((recipe) => recipe.id == id);
 
           // Clear imported recipe if it matches
@@ -430,108 +412,9 @@ class RecipeProvider extends ChangeNotifier {
     return false;
   }
 
-  // Toggle favorite status
-  Future<bool> toggleFavorite(
-    String id,
-    bool isFavorite,
-    BuildContext context,
-  ) async {
-    clearError();
+  // Favorites removed: toggleFavorite no longer supported
 
-    try {
-      final response = await RecipeService.toggleFavoriteStatus(id, isFavorite);
-
-      if (context.mounted) {
-        final collectionService = context.read<CollectionService>();
-
-        if (response.success) {
-          // Update in user recipes list - handle string/number ID comparison
-          final index = _userRecipes.indexWhere(
-            (r) => r.id.toString() == id.toString(),
-          );
-          if (index != -1) {
-            _userRecipes[index] = _userRecipes[index].copyWith(
-              isFavorite: isFavorite,
-            );
-          }
-
-          // Update favorites list
-          if (isFavorite) {
-            // If not already in favorites and marking as favorite, add it
-            if (!_favoriteRecipes.any(
-                  (r) => r.id.toString() == id.toString(),
-                ) &&
-                index != -1) {
-              final recipeToAdd = _userRecipes[index];
-              _favoriteRecipes = List<Recipe>.from(_favoriteRecipes)
-                ..add(recipeToAdd);
-              // Add to favorites collection using the correct recipe
-              await collectionService.addRecipeToCollection(
-                'Favorites',
-                recipeToAdd,
-              );
-            }
-          } else {
-            // If removing from favorites, remove from list
-            _favoriteRecipes = List<Recipe>.from(_favoriteRecipes)
-              ..removeWhere((r) => r.id.toString() == id.toString());
-            // Remove from favorites collection
-            await collectionService.removeRecipeFromCollection('Favorites', id);
-          }
-
-          // Force refresh the favorites collection to ensure it's in sync
-          await collectionService.getCollections(forceRefresh: true);
-
-          notifyListeners();
-          return true;
-        } else {
-          _setError(response.message ?? 'Failed to toggle favorite status');
-          return false;
-        }
-      }
-    } catch (e) {
-      _setError(e.toString());
-      return false;
-    }
-    return false;
-  }
-
-  // Load favorite recipes
-  Future<void> loadFavoriteRecipes() async {
-    _setLoading(true);
-    clearError();
-
-    try {
-      final response = await RecipeService.getFavoriteRecipes();
-
-      if (response.success && response.data != null) {
-        final favoriteIds = response.data ?? <String>[];
-        // If user recipes are not yet loaded, try to load the first page
-        if (_userRecipes.isEmpty) {
-          try {
-            await loadUserRecipes(page: 1);
-          } catch (_) {}
-        }
-
-        // Filter the user recipes to find those with IDs in the favorites list
-        // Convert both to strings for comparison to handle mixed types
-        _favoriteRecipes = _userRecipes.where((recipe) {
-          final recipeIdStr = recipe.id.toString();
-          return favoriteIds.any((favId) => favId.toString() == recipeIdStr);
-        }).toList(growable: false);
-
-        notifyListeners();
-      } else {
-        _setError(response.message ?? 'Failed to load favorite recipes');
-        _favoriteRecipes = [];
-      }
-    } catch (e) {
-      _setError(e.toString());
-      _favoriteRecipes = [];
-    } finally {
-      _setLoading(false);
-    }
-  }
+  // Favorites removed: no favorite recipes loader
 
   // Deprecated: kept for reference during refactor
   // Favorite flags are now applied from cached ids via _applyFavoriteFlagsFromCache()
@@ -539,7 +422,6 @@ class RecipeProvider extends ChangeNotifier {
   // Refresh all data
   Future<void> refreshAll() async {
     await loadUserRecipes();
-    await loadFavoriteRecipes();
   }
 
   // Check if a recipe is a duplicate
@@ -704,33 +586,5 @@ class RecipeProvider extends ChangeNotifier {
     return 'query=$q|difficulty=$d|tag=$t|limit=$l';
   }
 
-  Future<void> _ensureFavoriteIdsFresh() async {
-    final now = DateTime.now();
-    final isStale =
-        _favoritesLastFetchedAt == null ||
-        now.difference(_favoritesLastFetchedAt!) > _favoritesTtl;
-    if (!isStale) return;
-
-    try {
-      final response = await RecipeService.getFavoriteRecipes();
-      if (response.success && response.data != null) {
-        _favoriteIdsCache = response.data!.map((e) => e.toString()).toSet();
-        _favoritesLastFetchedAt = now;
-      }
-    } catch (_) {
-      // ignore errors; we'll try again later
-    }
-  }
-
-  void _applyFavoriteFlagsFromCache() {
-    if (_favoriteIdsCache.isEmpty) return;
-    for (int i = 0; i < _userRecipes.length; i++) {
-      final recipe = _userRecipes[i];
-      final idStr = recipe.id.toString();
-      final isFav = _favoriteIdsCache.contains(idStr);
-      if (recipe.isFavorite != isFav) {
-        _userRecipes[i] = recipe.copyWith(isFavorite: isFav);
-      }
-    }
-  }
+  // Favorites removed: no favorite cache or flags
 }
