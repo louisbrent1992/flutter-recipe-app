@@ -624,8 +624,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                           ),
                                         ],
                                       ),
-                                                                             padding: EdgeInsets.symmetric(
-                                        horizontal: AppSpacing.md,
+                                      padding: EdgeInsets.symmetric(
                                         vertical: AppSpacing.sm,
                                       ),
                                       child: DietaryPreferenceCheckboxList(
