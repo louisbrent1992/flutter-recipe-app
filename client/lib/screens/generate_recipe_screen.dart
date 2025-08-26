@@ -395,15 +395,14 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                       hintText: 'gluten-free, chicken, eggs',
                                       labelText: 'Enter ingredients',
                                       hintStyle: TextStyle(
-                                        color: colorScheme.onSurface.withAlpha(
-                                          102,
-                                        ), // 0.4 alpha
+                                        color: colorScheme.onSurface,
                                         fontSize:
                                             AppTypography.responsiveFontSize(
                                               context,
                                             ),
                                       ),
                                       labelStyle: TextStyle(
+                                        color: colorScheme.onSurface,
                                         fontSize:
                                             AppTypography.responsiveFontSize(
                                               context,
@@ -423,7 +422,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                               ? colorScheme
                                                   .surfaceContainerHighest
                                                   .withAlpha(
-                                                    128,
+                                                    64,
                                                   ) // Using surfaceContainerHighest as fallback
                                               : Theme.of(
                                                 context,
@@ -610,7 +609,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                             theme.brightness == Brightness.dark
                                                 ? colorScheme
                                                     .surfaceContainerHighest
-                                                    .withAlpha(128)
+                                                    .withAlpha(64)
                                                 : Theme.of(context)
                                                     .colorScheme
                                                     .surface
@@ -683,7 +682,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                             theme.brightness == Brightness.dark
                                                 ? colorScheme
                                                     .surfaceContainerHighest
-                                                    .withAlpha(128)
+                                                    .withAlpha(64)
                                                 : Theme.of(context)
                                                     .colorScheme
                                                     .surface
@@ -843,54 +842,18 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                         recipeProvider.isLoading
                                             ? null
                                             : () => _loadRecipes(context),
-                                    icon:
-                                        recipeProvider.isLoading
-                                            ? SizedBox(
-                                              width:
-                                                  AppSizing.responsiveIconSize(
-                                                    context,
-                                                    mobile: 18,
-                                                    tablet: 20,
-                                                    desktop: 22,
-                                                  ),
-                                              height:
-                                                  AppSizing.responsiveIconSize(
-                                                    context,
-                                                    mobile: 18,
-                                                    tablet: 20,
-                                                    desktop: 22,
-                                                  ),
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<
-                                                  Color
-                                                >(
-                                                  Theme.of(context)
-                                                      .colorScheme
-                                                      .surface
-                                                      .withValues(
-                                                        alpha:
-                                                            Theme.of(context)
-                                                                .colorScheme
-                                                                .alphaVeryHigh,
-                                                      ),
-                                                ),
-                                              ),
-                                            )
-                                            : Icon(
-                                              Icons.auto_awesome_rounded,
-                                              size:
-                                                  AppSizing.responsiveIconSize(
-                                                    context,
-                                                    mobile: 20,
-                                                    tablet: 22,
-                                                    desktop: 24,
-                                                  ),
-                                            ),
+                                    icon: Icon(
+                                      Icons.auto_awesome_rounded,
+                                      size:
+                                          AppSizing.responsiveIconSize(
+                                            context,
+                                            mobile: 20,
+                                            tablet: 22,
+                                            desktop: 24,
+                                          ),
+                                    ),
                                     label: Text(
-                                      recipeProvider.isLoading
-                                          ? 'Generating...'
-                                          : 'Generate Recipes',
+                                      'Generate Recipes',
                                       style: TextStyle(
                                         fontSize:
                                             AppTypography.responsiveFontSize(
