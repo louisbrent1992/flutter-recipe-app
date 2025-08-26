@@ -652,8 +652,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                     color: Theme.of(context).colorScheme.warning,
                     onTap: () => Navigator.pushNamed(context, '/my_recipes'),
                   ),
-
-                  SizedBox(height: AppSpacing.md),
                   // Favorites removed
                   SizedBox(height: AppSpacing.md),
                   _buildAnimatedListTile(

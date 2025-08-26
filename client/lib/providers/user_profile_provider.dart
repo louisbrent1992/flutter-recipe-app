@@ -6,8 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
-import '../models/recipe.dart';
-import '../services/recipe_service.dart';
 
 class UserProfileProvider with ChangeNotifier {
   final FirebaseService _firebaseService = FirebaseService();
