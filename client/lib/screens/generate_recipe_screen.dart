@@ -710,6 +710,13 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                       ),
                                       child: DropdownButton<String>(
                                         value: _cuisineType,
+                                        style: TextStyle(
+                                          fontSize:
+                                              AppTypography.responsiveFontSize(
+                                                context,
+                                              ),
+                                          color: colorScheme.onSurface,
+                                        ),
                                         onChanged: (String? newValue) {
                                           setState(() {
                                             _cuisineType = newValue!;
