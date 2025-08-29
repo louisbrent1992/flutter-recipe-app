@@ -198,19 +198,10 @@ class _MyAppState extends State<MyApp> {
 
   // Import recipe directly from shared media
   void _importRecipeFromSharedMedia(String url) {
-    final context = navigatorKey.currentContext;
-    if (context != null) {
-      final recipeProvider = Provider.of<RecipeProvider>(
-        context,
-        listen: false,
-      );
-      recipeProvider.importRecipeFromUrl(url, context).then((recipe) {
-        if (recipe != null && context.mounted) {
-          // Navigate to recipe edit screen with the imported recipe
-          Navigator.pushNamed(context, '/recipeEdit', arguments: recipe);
-        }
-      });
-    }
+    // Do not import in the background here.
+    // Only navigate to the import screen, which shows the "Importing" dialog
+    // and handles the import UX consistently.
+    _navigateToImportScreen(url);
   }
 
   // Navigate to the import screen with the shared URL (kept for manual import)

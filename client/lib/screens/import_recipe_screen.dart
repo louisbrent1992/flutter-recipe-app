@@ -44,9 +44,10 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
     if (widget.sharedUrl != null && widget.sharedUrl!.isNotEmpty) {
       _urlController.text = widget.sharedUrl!;
 
-      // Auto import if URL is provided (optional)
-      // Uncomment the next line if you want to automatically import the recipe
-      // WidgetsBinding.instance.addPostFrameCallback((_) => _importRecipe(context, widget.sharedUrl!));
+      // Auto import if URL is provided
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _importRecipe(context, widget.sharedUrl!),
+      );
     }
   }
 

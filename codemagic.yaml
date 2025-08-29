@@ -46,8 +46,7 @@ workflows:
         issuer_id: $APP_STORE_ISSUER
         key_id: $APP_STORE_KEY_ID
         submit_to_testflight: true # Automatically makes the build available to testers
-        beta_groups:
-          - RecipEase Testing # Name of your TestFlight tester group
+        
 
   # Add a new workflow for development builds
   ios-development:
