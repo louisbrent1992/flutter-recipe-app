@@ -161,7 +161,11 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
   Future<void> _navigateToRecipeDetails(Recipe recipe) async {
     if (mounted) {
       if (_startedFromShare) {
-        Navigator.pushReplacementNamed(context, '/recipeEdit', arguments: recipe);
+        Navigator.pushReplacementNamed(
+          context,
+          '/recipeEdit',
+          arguments: recipe,
+        );
       } else {
         Navigator.pushNamed(context, '/recipeEdit', arguments: recipe);
       }
