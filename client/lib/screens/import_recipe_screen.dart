@@ -22,6 +22,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
   final TextEditingController _urlController = TextEditingController();
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
+  bool _startedFromShare = false;
 
   @override
   void initState() {
@@ -42,6 +43,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
 
     // Set the URL from shared intent if available
     if (widget.sharedUrl != null && widget.sharedUrl!.isNotEmpty) {
+      _startedFromShare = true;
       _urlController.text = widget.sharedUrl!;
 
       // Auto import if URL is provided
@@ -158,7 +160,11 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
 
   Future<void> _navigateToRecipeDetails(Recipe recipe) async {
     if (mounted) {
-      Navigator.pushNamed(context, '/recipeEdit', arguments: recipe);
+      if (_startedFromShare) {
+        Navigator.pushReplacementNamed(context, '/recipeEdit', arguments: recipe);
+      } else {
+        Navigator.pushNamed(context, '/recipeEdit', arguments: recipe);
+      }
     }
   }
 

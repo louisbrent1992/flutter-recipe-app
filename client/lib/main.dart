@@ -124,6 +124,8 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   StreamSubscription<List<SharedMediaFile>>? _mediaStreamSub;
   final PermissionService _permissionService = PermissionService();
+  String? _lastHandledShareUrl;
+  DateTime? _lastHandledAt;
 
   @override
   void initState() {
@@ -151,10 +153,9 @@ class _MyAppState extends State<MyApp> {
         if (files.isEmpty) return;
         final maybeUrl = _extractUrlFromSharedFiles(files);
         if (maybeUrl != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _navigateToImportScreen(maybeUrl);
-            _importRecipeFromSharedMedia(maybeUrl);
-          });
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _handleSharedUrl(maybeUrl),
+          );
         }
       },
       onError: (err) => debugPrint('receive_sharing_intent media error: $err'),
@@ -166,10 +167,9 @@ class _MyAppState extends State<MyApp> {
     if (initialFiles.isNotEmpty) {
       final maybeUrl = _extractUrlFromSharedFiles(initialFiles);
       if (maybeUrl != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _navigateToImportScreen(maybeUrl);
-          _importRecipeFromSharedMedia(maybeUrl);
-        });
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _handleSharedUrl(maybeUrl),
+        );
         // Mark handled
         ReceiveSharingIntent.instance.reset();
       }
@@ -202,6 +202,21 @@ class _MyAppState extends State<MyApp> {
     // Only navigate to the import screen, which shows the "Importing" dialog
     // and handles the import UX consistently.
     _navigateToImportScreen(url);
+  }
+
+  // Handle shared URL once, de-duping initial and stream deliveries
+  void _handleSharedUrl(String url) {
+    final now = DateTime.now();
+    // De-dupe: if the same URL was handled within the last 2 seconds, skip
+    if (_lastHandledShareUrl == url && _lastHandledAt != null) {
+      final diff = now.difference(_lastHandledAt!);
+      if (diff.inSeconds < 30) {
+        return;
+      }
+    }
+    _lastHandledShareUrl = url;
+    _lastHandledAt = now;
+    _importRecipeFromSharedMedia(url);
   }
 
   // Navigate to the import screen with the shared URL (kept for manual import)
