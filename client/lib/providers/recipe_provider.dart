@@ -20,6 +20,7 @@ class RecipeProvider extends ChangeNotifier {
   bool _hasNextPage = false;
   bool _hasPrevPage = false;
   int _totalRecipes = 0;
+  int _totalUserRecipes = 0; // Dedicated count for user-saved recipes
 
   // Lightweight in-memory caches to reduce network calls and jank
   // Cache user recipes by page
@@ -45,6 +46,7 @@ class RecipeProvider extends ChangeNotifier {
   bool get hasNextPage => _hasNextPage;
   bool get hasPrevPage => _hasPrevPage;
   int get totalRecipes => _totalRecipes;
+  int get totalUserRecipes => _totalUserRecipes;
 
   // Set loading state
   void _setLoading(bool loading) {
@@ -231,6 +233,7 @@ class RecipeProvider extends ChangeNotifier {
           _hasNextPage = pagination['hasNextPage'] ?? false;
           _hasPrevPage = pagination['hasPrevPage'] ?? false;
           _totalRecipes = pagination['total'] ?? 0;
+          _totalUserRecipes = _totalRecipes; // keep user-specific total in sync
 
           // Cache pagination per page
           _userPaginationCache[page] = Map<String, dynamic>.from(pagination);
@@ -241,6 +244,7 @@ class RecipeProvider extends ChangeNotifier {
           _hasNextPage = false;
           _hasPrevPage = false;
           _totalRecipes = _userRecipes.length;
+          _totalUserRecipes = _userRecipes.length;
           _userPaginationCache[page] = {
             'page': _currentPage,
             'totalPages': _totalPages,
@@ -254,10 +258,12 @@ class RecipeProvider extends ChangeNotifier {
       } else {
         _setError(response.message ?? 'Failed to load recipes');
         _userRecipes = [];
+        _totalUserRecipes = 0;
       }
     } catch (e) {
       _setError(e.toString());
       _userRecipes = [];
+      _totalUserRecipes = 0;
     } finally {
       _setLoading(false);
     }
@@ -319,6 +325,8 @@ class RecipeProvider extends ChangeNotifier {
         if (response.success && response.data != null) {
           final newRecipe = response.data;
           _userRecipes.add(newRecipe!);
+          // Update user recipes total optimistically
+          _totalUserRecipes = (_totalUserRecipes + 1).clamp(0, 1 << 31);
 
           // Force refresh collections to update recently added
           await collectionService.getCollections(forceRefresh: true);
@@ -396,6 +404,8 @@ class RecipeProvider extends ChangeNotifier {
           // Refresh collections to ensure the deleted recipe is removed from all collections
           await collectionService.refreshCollectionsAfterRecipeDeletion(id);
 
+          // Update user recipes total optimistically
+          _totalUserRecipes = (_totalUserRecipes - 1).clamp(0, 1 << 31);
           notifyListeners();
           return true;
         } else {

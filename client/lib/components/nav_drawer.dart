@@ -30,8 +30,8 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
   // Get actual user data from RecipeProvider
   int get savedRecipesCount {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    // Prefer the server-reported total if available; fallback to currently loaded list length
-    final total = recipeProvider.totalRecipes;
+    // Use user-specific total if available; fallback to currently loaded list length
+    final total = recipeProvider.totalUserRecipes;
     return (total > 0) ? total : recipeProvider.userRecipes.length;
   }
 
@@ -600,10 +600,9 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
         // Get user's actual saved recipes count
         // The totalRecipes should come from server pagination and be user-specific
         // but only available after loading page 1. Ensure page 1 is loaded for accurate count.
-        final savedCount =
-            recipeProvider.totalRecipes > 0
-                ? recipeProvider.totalRecipes
-                : recipeProvider.userRecipes.length;
+        final savedCount = recipeProvider.totalUserRecipes > 0
+            ? recipeProvider.totalUserRecipes
+            : recipeProvider.userRecipes.length;
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
