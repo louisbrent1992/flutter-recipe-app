@@ -96,7 +96,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     final popularTags = sortedKeys.map((k) => lowerToDisplay[k]!).toList();
 
     // Construct final list with 'All' prefixed
-    final newAvailable = <String>['All']..addAll(popularTags);
+    final newAvailable = <String>['All', ...popularTags];
 
     // Ensure initial selected tag stays visible even if not among popular
     if (_selectedTag != 'All' && !newAvailable.contains(_selectedTag)) {
@@ -338,12 +338,17 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                     // Friendly empty state: show when not loading and no results
                     if (!recipeProvider.isLoading && displayRecipes.isEmpty) {
                       final parts = <String>[];
-                      if (_selectedTag != 'All') parts.add('tag "$_selectedTag"');
-                      if (_selectedDifficulty != 'All') parts.add('difficulty "$_selectedDifficulty"');
-                      if (_searchQuery.isNotEmpty) parts.add('search "$_searchQuery"');
-                      final contextLine = parts.isEmpty
-                          ? ''
-                          : ' for ${parts.join(' · ')}';
+                      if (_selectedTag != 'All') {
+                        parts.add('tag "$_selectedTag"');
+                      }
+                      if (_selectedDifficulty != 'All') {
+                        parts.add('difficulty "$_selectedDifficulty"');
+                      }
+                      if (_searchQuery.isNotEmpty) {
+                        parts.add('search "$_searchQuery"');
+                      }
+                      final contextLine =
+                          parts.isEmpty ? '' : ' for ${parts.join(' · ')}';
 
                       return Column(
                         children: [
@@ -362,18 +367,23 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                   Text(
                                     'No recipes found$contextLine',
                                     textAlign: TextAlign.center,
-                                    style: Theme.of(context).textTheme.headlineLarge,
+                                    style:
+                                        Theme.of(
+                                          context,
+                                        ).textTheme.headlineLarge,
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
                                     'Try a different tag, change filters, or clear filters to see more.',
                                     textAlign: TextAlign.center,
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withValues(alpha: 0.7),
-                                        ),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.7),
+                                    ),
                                   ),
                                 ],
                               ),

@@ -195,12 +195,12 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               action: SnackBarAction(
-                label: 'View Recipe',
+                label: 'View Recipes',
                 onPressed: () {
                   if (mounted) {
                     Navigator.pushNamed(
                       context,
-                      '/recipeDetail',
+                      '/myRecipes',
                       arguments: newRecipe,
                     );
                   }

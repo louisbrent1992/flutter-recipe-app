@@ -707,7 +707,9 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
       hours = int.tryParse(hourMatch.group(1) ?? '0') ?? 0;
     }
 
-    final minuteMatch = RegExp(r'(\d+)\s*(m|min|mins|minute|minutes)\b').firstMatch(s);
+    final minuteMatch = RegExp(
+      r'(\d+)\s*(m|min|mins|minute|minutes)\b',
+    ).firstMatch(s);
     if (minuteMatch != null) {
       minutes = int.tryParse(minuteMatch.group(1) ?? '0') ?? 0;
     }

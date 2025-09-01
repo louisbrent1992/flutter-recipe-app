@@ -239,7 +239,7 @@ class CollectionService extends ChangeNotifier {
       }
 
       // Resolve real collection ID if a name was provided
-      final collections = await getCollections(updateSpecialCollections: false);
+      await getCollections(updateSpecialCollections: false);
       final targetCollectionId = collectionId;
 
       final response = await _api.authenticatedPost(
@@ -275,7 +275,7 @@ class CollectionService extends ChangeNotifier {
       }
 
       // Resolve real collection ID if a name was provided
-      final collections = await getCollections(updateSpecialCollections: false);
+      await getCollections(updateSpecialCollections: false);
       final targetCollectionId = collectionId;
 
       final response = await _api.authenticatedDelete(
