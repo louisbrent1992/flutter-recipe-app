@@ -11,7 +11,16 @@ import '../theme/theme.dart';
 import '../components/floating_bottom_bar.dart';
 
 class DiscoverRecipesScreen extends StatefulWidget {
-  const DiscoverRecipesScreen({super.key});
+  final String? initialQuery;
+  final String? initialDifficulty;
+  final String? initialTag;
+
+  const DiscoverRecipesScreen({
+    super.key,
+    this.initialQuery,
+    this.initialDifficulty,
+    this.initialTag,
+  });
 
   @override
   State<DiscoverRecipesScreen> createState() => _DiscoverRecipesScreenState();
@@ -48,6 +57,26 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
   @override
   void initState() {
     super.initState();
+    // Seed initial filters if provided via widget parameters
+    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+      _searchQuery = widget.initialQuery!.trim();
+      _searchController.text = _searchQuery;
+    }
+    if (widget.initialDifficulty != null &&
+        widget.initialDifficulty!.isNotEmpty) {
+      _selectedDifficulty = widget.initialDifficulty!;
+      if (!_difficulties.contains(_selectedDifficulty)) {
+        _selectedDifficulty = 'All';
+      }
+    }
+    if (widget.initialTag != null && widget.initialTag!.isNotEmpty) {
+      _selectedTag = widget.initialTag!;
+      if (!_availableTags.contains(_selectedTag)) {
+        // Insert custom tag right after 'All' to make it visible
+        _availableTags.insert(1, _selectedTag);
+      }
+    }
+
     // Load recipes after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadRecipes();

@@ -320,10 +320,30 @@ class _MyAppState extends State<MyApp> {
               '/home': (context) => const HomeScreen(),
               '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),
-              '/discover':
-                  (context) => const PersistentBannerLayout(
-                    child: DiscoverRecipesScreen(),
+              '/discover': (context) {
+                final args = ModalRoute.of(context)?.settings.arguments;
+                String? initialQuery;
+                String? initialDifficulty;
+                String? initialTag;
+
+                if (args is Map) {
+                  try {
+                    initialQuery = args['query'] as String?;
+                    initialDifficulty = args['difficulty'] as String?;
+                    initialTag = args['tag'] as String?;
+                  } catch (_) {
+                    // ignore malformed args
+                  }
+                }
+
+                return PersistentBannerLayout(
+                  child: DiscoverRecipesScreen(
+                    initialQuery: initialQuery,
+                    initialDifficulty: initialDifficulty,
+                    initialTag: initialTag,
                   ),
+                );
+              },
               '/generate':
                   (context) => const PersistentBannerLayout(
                     child: GenerateRecipeScreen(),

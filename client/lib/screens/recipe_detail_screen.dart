@@ -895,24 +895,36 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           children:
                               recipe.tags
                                   .map(
-                                    (tag) => Chip(
-                                      label: Text(
-                                        tag,
-                                        style: TextStyle(
-                                          fontSize:
-                                              AppTypography.responsiveFontSize(
-                                                context,
-                                                mobile: 12.0,
-                                                tablet: 14.0,
-                                                desktop: 16.0,
-                                              ),
+                                    (tag) => InkWell(
+                                      onTap: () {
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/discover',
+                                          arguments: {'tag': tag},
+                                        );
+                                      },
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: Chip(
+                                        label: Text(
+                                          tag,
+                                          style: TextStyle(
+                                            fontSize:
+                                                AppTypography.responsiveFontSize(
+                                                  context,
+                                                  mobile: 12.0,
+                                                  tablet: 14.0,
+                                                  desktop: 16.0,
+                                                ),
+                                          ),
                                         ),
-                                      ),
-                                      backgroundColor:
-                                          Theme.of(context).colorScheme.surface,
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: AppSpacing.sm,
-                                        vertical: AppSpacing.xs,
+                                        backgroundColor:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.surface,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: AppSpacing.sm,
+                                          vertical: AppSpacing.xs,
+                                        ),
                                       ),
                                     ),
                                   )
