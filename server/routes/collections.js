@@ -34,7 +34,11 @@ router.get("/", auth, async (req, res) => {
 		res.json(collections);
 	} catch (error) {
 		console.error("Error getting collections:", error);
-		res.status(500).json({ error: "Failed to retrieve collections" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't load your collections right now. Please try again shortly."
+		);
 	}
 });
 
@@ -65,7 +69,11 @@ router.get("/:id", auth, async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Error getting collection:", error);
-		res.status(500).json({ error: "Failed to retrieve collection" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't load that collection right now. Please try again shortly."
+		);
 	}
 });
 
@@ -115,7 +123,11 @@ router.post("/", auth, async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Error creating collection:", error);
-		res.status(500).json({ error: "Failed to create collection" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't create the collection right now. Please try again shortly."
+		);
 	}
 });
 
@@ -172,7 +184,11 @@ router.put("/:id", auth, async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Error updating collection:", error);
-		res.status(500).json({ error: "Failed to update collection" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't update the collection right now. Please try again shortly."
+		);
 	}
 });
 
@@ -204,7 +220,11 @@ router.delete("/:id", auth, async (req, res) => {
 		res.json({ message: "Collection deleted successfully" });
 	} catch (error) {
 		console.error("Error deleting collection:", error);
-		res.status(500).json({ error: "Failed to delete collection" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't delete the collection right now. Please try again shortly."
+		);
 	}
 });
 
@@ -255,7 +275,11 @@ router.post("/:id/recipes", auth, async (req, res) => {
 		res.json({ message: "Recipe added to collection successfully" });
 	} catch (error) {
 		console.error("Error adding recipe to collection:", error);
-		res.status(500).json({ error: "Failed to add recipe to collection" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't add that recipe to the collection right now. Please try again shortly."
+		);
 	}
 });
 
@@ -297,7 +321,11 @@ router.delete("/:id/recipes/:recipeId", auth, async (req, res) => {
 		res.json({ message: "Recipe removed from collection successfully" });
 	} catch (error) {
 		console.error("Error removing recipe from collection:", error);
-		res.status(500).json({ error: "Failed to remove recipe from collection" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't remove that recipe from the collection right now. Please try again shortly."
+		);
 	}
 });
 

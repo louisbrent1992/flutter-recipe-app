@@ -210,7 +210,11 @@ router.post("/generate", async (req, res) => {
 		res.json(generatedRecipes);
 	} catch (error) {
 		console.error("Error generating recipes:", error);
-		res.status(500).json({ error: "Failed to generate recipes" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't generate recipes right now. Please try again shortly."
+		);
 	}
 });
 
@@ -471,10 +475,12 @@ router.post("/import", async (req, res) => {
 		res.json(importedRecipe);
 	} catch (error) {
 		console.error("Error importing recipe:", error);
-		res.status(500).json({
-			error: "Failed to import recipe",
-			details: error.message,
-		});
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't import that link right now. Please try another link or try again shortly.",
+			error.message
+		);
 	}
 });
 
@@ -611,7 +617,11 @@ router.get("/", (req, res) => {
 		res.json(result);
 	} catch (error) {
 		console.error("Error getting generated recipes:", error);
-		res.status(500).json({ error: "Failed to retrieve generated recipes" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't load generated recipes. Please try again in a moment."
+		);
 	}
 });
 

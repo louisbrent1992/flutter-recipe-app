@@ -129,7 +129,11 @@ router.get("/search", auth, async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Error searching recipes:", error);
-		res.status(500).json({ error: "Failed to search recipes" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't search recipes right now. Please try again shortly."
+		);
 	}
 });
 

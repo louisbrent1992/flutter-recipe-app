@@ -300,12 +300,11 @@ router.post(
 			});
 		} catch (error) {
 			console.error("Error processing data deletion request:", error);
-
-			res.status(500).json({
-				success: false,
-				message:
-					"An error occurred while processing your request. Please try again or contact support.",
-			});
+			const errorHandler = require("../utils/errorHandler");
+			return errorHandler.serverError(
+				res,
+				"We couldn't process your request right now. Please try again shortly."
+			);
 		}
 	}
 );
@@ -340,10 +339,11 @@ router.get("/data-deletion-request/:id", async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Error fetching deletion request:", error);
-		res.status(500).json({
-			success: false,
-			message: "Error fetching request status",
-		});
+		const errorHandler = require("../utils/errorHandler");
+		return errorHandler.serverError(
+			res,
+			"We couldn't fetch the request status right now. Please try again shortly."
+		);
 	}
 });
 

@@ -53,7 +53,7 @@ const errorHandler = {
 	) => sendError(res, 409, message, details),
 
 	// 500 - Internal Server Error
-	serverError: (res, message = "Internal server error", details = null) => {
+	serverError: (res, message = "Something went wrong on our end. Please try again in a moment.", details = null) => {
 		console.error("Server error:", message, details);
 		sendError(
 			res,
@@ -83,7 +83,7 @@ const errorHandler = {
 		sendError(
 			res,
 			500,
-			"An unexpected error occurred",
+			"Something went wrong on our end. Please try again in a moment.",
 			process.env.NODE_ENV === "development" ? err.message : null
 		);
 	},

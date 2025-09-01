@@ -16,7 +16,11 @@ router.get("/profile", auth, async (req, res) => {
 		res.json(userDoc.data());
 	} catch (error) {
 		console.error("Error fetching user profile:", error);
-		res.status(500).json({ error: "Internal server error" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't load your profile right now. Please try again shortly."
+		);
 	}
 });
 
@@ -32,7 +36,11 @@ router.put("/profile", auth, async (req, res) => {
 		res.json({ message: "Profile updated successfully" });
 	} catch (error) {
 		console.error("Error updating user profile:", error);
-		res.status(500).json({ error: "Internal server error" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't update your profile right now. Please try again shortly."
+		);
 	}
 });
 
@@ -90,7 +98,11 @@ router.get("/recipes", auth, async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Error getting user recipes:", error);
-		res.status(500).json({ error: "Failed to retrieve recipes" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't load your recipes right now. Please try again shortly."
+		);
 	}
 });
 
@@ -202,7 +214,11 @@ router.post("/recipes", auth, async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Error creating recipe:", error);
-		res.status(500).json({ error: "Failed to create recipe" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't save your recipe right now. Please try again shortly."
+		);
 	}
 });
 
@@ -260,7 +276,11 @@ router.put("/recipes/:id", auth, async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Error updating recipe:", error);
-		res.status(500).json({ error: "Failed to update recipe" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't update the recipe right now. Please try again shortly."
+		);
 	}
 });
 
@@ -324,7 +344,11 @@ router.delete("/recipes/:id", auth, async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Error deleting recipe:", error);
-		res.status(500).json({ error: "Failed to delete recipe" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't delete the recipe right now. Please try again shortly."
+		);
 	}
 });
 
@@ -338,10 +362,11 @@ router.delete("/account", auth, async (req, res) => {
 
 		res.json({ success: true, message: "Account deleted successfully" });
 	} catch (error) {
-		res.status(500).json({
-			success: false,
-			message: "Failed to delete account data",
-		});
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't delete your account data right now. Please try again shortly."
+		);
 	}
 });
 
