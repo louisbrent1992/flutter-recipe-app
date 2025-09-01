@@ -600,9 +600,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
         // Get user's actual saved recipes count
         // The totalRecipes should come from server pagination and be user-specific
         // but only available after loading page 1. Ensure page 1 is loaded for accurate count.
-        final savedCount = recipeProvider.totalUserRecipes > 0
-            ? recipeProvider.totalUserRecipes
-            : recipeProvider.userRecipes.length;
+        final savedCount =
+            recipeProvider.totalUserRecipes > 0
+                ? recipeProvider.totalUserRecipes
+                : recipeProvider.userRecipes.length;
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -655,28 +656,70 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     if (recipes.isEmpty) return '0h';
 
     int totalMinutes = 0;
-    for (Recipe recipe in recipes) {
-      // Parse cooking time (assuming format like "30", "45 min", "1 hour", etc.)
-      String cookingTime = recipe.cookingTime.toLowerCase().replaceAll(
-        RegExp(r'[^\d]'),
-        '',
-      );
-      if (cookingTime.isNotEmpty) {
-        totalMinutes += int.tryParse(cookingTime) ?? 0;
-      }
+    for (final recipe in recipes) {
+      totalMinutes += _parseCookingTimeToMinutes(recipe.cookingTime);
     }
 
-    if (totalMinutes < 60) {
-      return '${totalMinutes}m';
-    } else {
-      int hours = totalMinutes ~/ 60;
-      int remainingMinutes = totalMinutes % 60;
-      if (remainingMinutes == 0) {
-        return '${hours}h';
-      } else {
-        return '${hours}h ${remainingMinutes}m';
-      }
+    if (totalMinutes <= 0) return '0h';
+
+    final hours = totalMinutes ~/ 60;
+    final minutes = totalMinutes % 60;
+    if (hours == 0) return '${minutes}m';
+    if (minutes == 0) return '${hours}h';
+    return '${hours}h ${minutes}m';
+  }
+
+  int _parseCookingTimeToMinutes(String raw) {
+    if (raw.isEmpty) return 0;
+    final s = raw.trim().toLowerCase();
+
+    // Common quick cases
+    if (RegExp(r'^\d+$').hasMatch(s)) {
+      // plain minutes
+      return int.tryParse(s) ?? 0;
     }
+    final hmMatch = RegExp(r'^(\d{1,2}):(\d{1,2})$').firstMatch(s);
+    if (hmMatch != null) {
+      final h = int.tryParse(hmMatch.group(1) ?? '0') ?? 0;
+      final m = int.tryParse(hmMatch.group(2) ?? '0') ?? 0;
+      return (h * 60) + m;
+    }
+
+    // ISO-8601 duration like PT1H30M
+    final iso = RegExp(
+      r'^pt(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$',
+      caseSensitive: false,
+      multiLine: false,
+    ).firstMatch(s);
+    if (iso != null) {
+      final h = int.tryParse(iso.group(1) ?? '0') ?? 0;
+      final m = int.tryParse(iso.group(2) ?? '0') ?? 0;
+      final secs = int.tryParse(iso.group(3) ?? '0') ?? 0;
+      return (h * 60) + m + (secs > 0 ? 1 : 0); // round up seconds
+    }
+
+    // General text like "1 hour 30 minutes", "2h", "45 min"
+    int hours = 0;
+    int minutes = 0;
+
+    final hourMatch = RegExp(r'(\d+)\s*(h|hr|hrs|hour|hours)\b').firstMatch(s);
+    if (hourMatch != null) {
+      hours = int.tryParse(hourMatch.group(1) ?? '0') ?? 0;
+    }
+
+    final minuteMatch = RegExp(r'(\d+)\s*(m|min|mins|minute|minutes)\b').firstMatch(s);
+    if (minuteMatch != null) {
+      minutes = int.tryParse(minuteMatch.group(1) ?? '0') ?? 0;
+    }
+
+    // If we didn't match specific tokens, attempt last-resort numeric parse
+    if (hours == 0 && minutes == 0) {
+      // Avoid concatenation of all digits; prefer the first number we find
+      final firstNumber = RegExp(r'(\d{1,4})').firstMatch(s)?.group(1);
+      return int.tryParse(firstNumber ?? '0') ?? 0;
+    }
+
+    return (hours * 60) + minutes;
   }
 
   Widget _buildStatChip(
