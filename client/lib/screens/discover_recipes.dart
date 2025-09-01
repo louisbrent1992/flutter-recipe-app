@@ -311,19 +311,6 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
               Expanded(
                 child: Consumer<RecipeProvider>(
                   builder: (context, recipeProvider, _) {
-                    if (recipeProvider.error != null) {
-                      return ErrorDisplay(
-                        message: recipeProvider.error!.userFriendlyMessage,
-                        isNetworkError: recipeProvider.error!.isNetworkError,
-                        isAuthError: recipeProvider.error!.isAuthError,
-                        isFormatError: recipeProvider.error!.isFormatError,
-                        onRetry: () {
-                          recipeProvider.clearError();
-                          _loadRecipes();
-                        },
-                      );
-                    }
-
                     final allRecipes = recipeProvider.generatedRecipes;
 
                     // Server now handles deduplication, so we can use recipes directly
@@ -348,7 +335,16 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                           userRecipeKeys.contains(recipeKey);
                     }
 
+                    // Friendly empty state: show when not loading and no results
                     if (!recipeProvider.isLoading && displayRecipes.isEmpty) {
+                      final parts = <String>[];
+                      if (_selectedTag != 'All') parts.add('tag "$_selectedTag"');
+                      if (_selectedDifficulty != 'All') parts.add('difficulty "$_selectedDifficulty"');
+                      if (_searchQuery.isNotEmpty) parts.add('search "$_searchQuery"');
+                      final contextLine = parts.isEmpty
+                          ? ''
+                          : ' for ${parts.join(' · ')}';
+
                       return Column(
                         children: [
                           Expanded(
@@ -364,29 +360,40 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'No recipes found',
-                                    style:
-                                        Theme.of(
-                                          context,
-                                        ).textTheme.headlineLarge,
+                                    'No recipes found$contextLine',
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context).textTheme.headlineLarge,
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    'Try adjusting your search or filters',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.7),
-                                    ),
+                                    'Try a different tag, change filters, or clear filters to see more.',
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.7),
+                                        ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
                         ],
+                      );
+                    }
+
+                    // Show errors after empty-state check so genuine results absence doesn't look like a network issue
+                    if (recipeProvider.error != null) {
+                      return ErrorDisplay(
+                        message: recipeProvider.error!.userFriendlyMessage,
+                        isNetworkError: recipeProvider.error!.isNetworkError,
+                        isAuthError: recipeProvider.error!.isAuthError,
+                        isFormatError: recipeProvider.error!.isFormatError,
+                        onRetry: () {
+                          recipeProvider.clearError();
+                          _loadRecipes();
+                        },
                       );
                     }
 
