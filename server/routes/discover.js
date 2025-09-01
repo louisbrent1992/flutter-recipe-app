@@ -221,7 +221,11 @@ router.post("/cleanup-duplicates", auth, async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Error during duplicate cleanup:", error);
-		res.status(500).json({ error: "Failed to cleanup duplicates" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't complete duplicate cleanup right now. Please try again later."
+		);
 	}
 });
 

@@ -132,7 +132,11 @@ router.get("/recipes/:id", auth, async (req, res) => {
 		});
 	} catch (error) {
 		console.error("Error getting recipe:", error);
-		res.status(500).json({ error: "Failed to retrieve recipe" });
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't load that recipe right now. Please try again shortly."
+		);
 	}
 });
 

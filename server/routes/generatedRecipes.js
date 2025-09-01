@@ -454,7 +454,11 @@ router.post("/import", async (req, res) => {
 		}
 
 		if (!pageContent) {
-			return res.status(500).json({ error: "Failed to process URL" });
+			const errorHandler = require("../utils/errorHandler");
+			return errorHandler.serverError(
+				res,
+				"We couldn't process that URL right now. Please try again shortly."
+			);
 		}
 
 		console.log("Processing recipe data with AI...");
