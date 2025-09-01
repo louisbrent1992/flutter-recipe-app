@@ -36,23 +36,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
   int _currentPage = 1;
   static const int _itemsPerPage = 12;
   final List<String> _difficulties = ['All', 'Easy', 'Medium', 'Hard'];
-  final List<String> _availableTags = [
-    'All',
-    'Breakfast',
-    'Lunch',
-    'Dinner',
-    'Dessert',
-    'Vegetarian',
-    'Vegan',
-    'Gluten-Free',
-    'Quick & Easy',
-    'Healthy',
-    'Comfort Food',
-    'Italian',
-    'Mexican',
-    'Asian',
-    'Mediterranean',
-  ];
+  final List<String> _availableTags = ['All'];
 
   @override
   void initState() {
@@ -83,6 +67,52 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     });
   }
 
+  // Build popular tags from the current discover recipe results
+  void _updateAvailableTagsFromRecipes() {
+    final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
+    final recipes = recipeProvider.generatedRecipes;
+
+    final Map<String, int> tagCounts = {};
+    final Map<String, String> lowerToDisplay = {};
+
+    for (final recipe in recipes) {
+      for (final rawTag in recipe.tags) {
+        final trimmed = rawTag.trim();
+        if (trimmed.isEmpty) continue;
+        final key = trimmed.toLowerCase();
+        tagCounts[key] = (tagCounts[key] ?? 0) + 1;
+        lowerToDisplay.putIfAbsent(key, () => trimmed);
+      }
+    }
+
+    // Sort tags by frequency (desc) then alphabetically
+    final sortedKeys =
+        tagCounts.keys.toList()..sort((a, b) {
+          final countDiff = (tagCounts[b] ?? 0) - (tagCounts[a] ?? 0);
+          if (countDiff != 0) return countDiff;
+          return a.compareTo(b);
+        });
+
+    final popularTags = sortedKeys.map((k) => lowerToDisplay[k]!).toList();
+
+    // Construct final list with 'All' prefixed
+    final newAvailable = <String>['All']..addAll(popularTags);
+
+    // Ensure initial selected tag stays visible even if not among popular
+    if (_selectedTag != 'All' && !newAvailable.contains(_selectedTag)) {
+      newAvailable.insert(1, _selectedTag);
+    }
+
+    // Only update state if changed to avoid unnecessary rebuilds
+    if (newAvailable.join('|') != _availableTags.join('|')) {
+      setState(() {
+        _availableTags
+          ..clear()
+          ..addAll(newAvailable);
+      });
+    }
+  }
+
   // Load recipes from external API
   Future<void> _loadRecipes() async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
@@ -93,6 +123,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
       page: _currentPage,
       limit: _itemsPerPage,
     );
+    _updateAvailableTagsFromRecipes();
   }
 
   // Reset all filters and go to page 1
