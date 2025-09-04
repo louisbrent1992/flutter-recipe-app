@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import '../providers/recipe_provider.dart';
@@ -30,6 +31,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     with RecipeFilterMixin {
   final ScrollController _scrollController = ScrollController();
   final _searchController = TextEditingController();
+  Timer? _searchDebounce;
   String _searchQuery = '';
   String _selectedDifficulty = 'All';
   String _selectedTag = 'All';
@@ -256,6 +258,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
   void dispose() {
     _scrollController.dispose();
     _searchController.dispose();
+    _searchDebounce?.cancel();
     super.dispose();
   }
 
@@ -280,11 +283,17 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                     _searchQuery = value;
                     _currentPage = 1;
                   });
-                  Future.delayed(const Duration(milliseconds: 500), () {
-                    if (_searchQuery == value) {
-                      _loadRecipes();
-                    }
-                  });
+                  // Debounce server fetches until typing pauses
+                  _searchDebounce?.cancel();
+                  _searchDebounce = Timer(
+                    const Duration(milliseconds: 1000),
+                    () {
+                      if (!mounted) return;
+                      if (_searchQuery == value) {
+                        _loadRecipes();
+                      }
+                    },
+                  );
                 },
                 onDifficultySelected: (difficulty) {
                   setState(() {

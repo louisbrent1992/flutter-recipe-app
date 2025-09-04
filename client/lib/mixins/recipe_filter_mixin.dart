@@ -29,10 +29,13 @@ mixin RecipeFilterMixin {
 
       final matchesDifficulty =
           selectedDifficulty == 'All' ||
-          recipe.difficulty == selectedDifficulty;
+          recipe.difficulty.toLowerCase() == selectedDifficulty.toLowerCase();
 
       final matchesTag =
-          selectedTag == 'All' || recipe.tags.contains(selectedTag);
+          selectedTag == 'All' ||
+          recipe.tags.any(
+            (tag) => tag.toLowerCase() == selectedTag.toLowerCase(),
+          );
 
       return matchesSearch && matchesDifficulty && matchesTag;
     }).toList();
