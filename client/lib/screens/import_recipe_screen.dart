@@ -6,6 +6,7 @@ import 'package:recipease/components/floating_bottom_bar.dart';
 
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/providers/recipe_provider.dart';
+import 'package:recipease/config/app_config.dart';
 import 'package:recipease/theme/theme.dart';
 
 class ImportRecipeScreen extends StatefulWidget {
@@ -73,6 +74,20 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
           ),
         ),
       );
+      return;
+    }
+
+    // Ensure context is still mounted and providers are available
+    if (!context.mounted) {
+      debugPrint('Context not mounted, skipping import');
+      return;
+    }
+
+    // Wait a moment to ensure providers are fully initialized
+    await Future.delayed(Duration(milliseconds: AppConfig.importDelayMs));
+
+    if (!context.mounted) {
+      debugPrint('Context not mounted after delay, skipping import');
       return;
     }
 
