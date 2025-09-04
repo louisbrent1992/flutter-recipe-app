@@ -1146,7 +1146,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
             [
               _NavItem(
                 Icons.explore_rounded,
-                'Discover',
+                'Discover Recipes',
                 '/discover',
                 colorScheme.info,
                 7,
@@ -1161,7 +1161,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               ),
               _NavItem(
                 Icons.auto_awesome_rounded,
-                'AI Generate Recipe (Beta)',
+                'AI Generate Recipes (Beta)',
                 '/generate',
                 colorScheme.onTertiary,
                 6,
