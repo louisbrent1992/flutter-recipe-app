@@ -41,6 +41,7 @@ router.get("/search", auth, async (req, res) => {
 			}
 		}
 		if (difficulty) {
+			// Normalize difficulty to capitalized (Easy/Medium/Hard) for stored format
 			recipesRef = recipesRef.where(
 				"difficulty",
 				"==",
@@ -48,8 +49,9 @@ router.get("/search", auth, async (req, res) => {
 			);
 		}
 		if (tag) {
+			// Match tags case-insensitively using searchableFields which contains lower-cased tags
 			recipesRef = recipesRef.where(
-				"tags",
+				"searchableFields",
 				"array-contains",
 				tag.toLowerCase()
 			);
