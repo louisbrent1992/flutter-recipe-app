@@ -256,7 +256,13 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                         maxWidth: AppSizing.responsiveMaxWidth(context),
                       ),
                       child: Padding(
-                        padding: AppSpacing.allResponsive(context),
+                        padding: EdgeInsets.only(
+                          left: AppSpacing.responsive(context),
+                          right: AppSpacing.responsive(context),
+                          top: AppSpacing.responsive(context),
+                          // Add extra bottom space so the bottom notice clears the floating bar
+                          bottom: AppSpacing.responsive(context) + 80,
+                        ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -715,7 +721,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                     Expanded(
                                       child: Center(
                                         child: Text(
-                                          'Supported sites: AllRecipes, Instagram, TikTok, Food Network, BBC Food, and many more!',
+                                          'Supported sites: AllRecipes, Instagram, TikTok, YouTube, Food Network, BBC Food, and many more!',
                                           style: TextStyle(
                                             fontSize:
                                                 AppTypography.responsiveCaptionSize(
