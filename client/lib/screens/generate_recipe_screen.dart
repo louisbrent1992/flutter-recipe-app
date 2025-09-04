@@ -297,7 +297,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                               FadeTransition(
                                 opacity: _fadeInAnimation,
                                 child: Text(
-                                  'AI Recipe Generator',
+                                  'Recipe Generator',
                                   style: TextStyle(
                                     fontSize:
                                         AppTypography.responsiveHeadingSize(
@@ -957,7 +957,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                 SizedBox(width: AppSpacing.sm),
                                 Expanded(
                                   child: Text(
-                                    'AI will create recipes based on your preferences and available ingredients',
+                                    'Recipes are generated based on your preferences and available ingredients',
                                     style: TextStyle(
                                       fontSize:
                                           AppTypography.responsiveCaptionSize(

@@ -497,7 +497,7 @@ class _HomeScreenState extends State<HomeScreen>
         Theme.of(context).colorScheme.success,
       ),
       _CategoryItem(
-        'Generate Recipe',
+        'Generate Recipes',
         Icons.auto_awesome,
         '/generate',
         Colors.purple,
@@ -517,8 +517,8 @@ class _HomeScreenState extends State<HomeScreen>
 
       case 'Import Recipe':
         return 'Add recipes from websites, blogs, and social media';
-      case 'Generate Recipe':
-        return 'Create custom recipes with AI assistance';
+      case 'Generate Recipes':
+        return 'Create custom recipes tailored to you';
       default:
         return 'Quick access to cooking features';
     }

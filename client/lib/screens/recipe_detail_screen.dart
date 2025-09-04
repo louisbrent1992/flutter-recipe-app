@@ -215,11 +215,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       platformLabel = recipe.source!.trim();
     }
 
-    // Fallback for AI generated without any source
+    // Fallback for generated recipes without any source
     if ((platformLabel == null || platformLabel.isEmpty) &&
         recipe.aiGenerated == true) {
       icon = Icons.auto_awesome;
-      platformLabel = 'AI-Generated';
+      platformLabel = 'Generated';
       detailsLabel = null;
     }
 
