@@ -18,6 +18,8 @@ import 'package:recipease/screens/recipe_collections_screen.dart';
 import 'package:recipease/screens/collection_detail_screen.dart';
 import 'package:recipease/screens/subscription_screen.dart';
 import 'package:recipease/screens/add_recipes_to_collection_screen.dart';
+import 'package:recipease/screens/splash_screen.dart';
+import 'package:recipease/config/app_config.dart';
 import 'package:recipease/theme/theme.dart';
 import 'package:recipease/providers/auth_provider.dart';
 import 'package:recipease/providers/user_profile_provider.dart';
@@ -167,8 +169,9 @@ class _MyAppState extends State<MyApp> {
     if (initialFiles.isNotEmpty) {
       final maybeUrl = _extractUrlFromSharedFiles(initialFiles);
       if (maybeUrl != null) {
+        // Wait for the app to be fully initialized before handling shared content
         WidgetsBinding.instance.addPostFrameCallback(
-          (_) => _handleSharedUrl(maybeUrl),
+          (_) => _handleSharedUrlWithDelay(maybeUrl),
         );
         // Mark handled
         ReceiveSharingIntent.instance.reset();
@@ -177,6 +180,17 @@ class _MyAppState extends State<MyApp> {
 
     // Note: receive_sharing_intent v1.8.1 does not expose text streams; URLs are often delivered as files
     // or via getInitialMedia. If needed, we can parse file contents for URLs.
+  }
+
+  // Handle shared URL with additional delay for cold start
+  void _handleSharedUrlWithDelay(String url) {
+    // Add a small delay to ensure the app is fully initialized
+    Future.delayed(
+      Duration(milliseconds: AppConfig.importNavigationDelayMs),
+      () {
+        _handleSharedUrl(url);
+      },
+    );
   }
 
   // Extract a usable URL from SharedMediaFile list
@@ -221,7 +235,35 @@ class _MyAppState extends State<MyApp> {
 
   // Navigate to the import screen with the shared URL (kept for manual import)
   void _navigateToImportScreen(String url) {
-    navigatorKey.currentState?.pushNamed('/import', arguments: url);
+    // Wait for the navigator to be ready before attempting navigation
+    _waitForNavigatorAndNavigate(url);
+  }
+
+  // Wait for navigator to be ready and then navigate
+  void _waitForNavigatorAndNavigate(String url) {
+    // Check if navigator is ready
+    if (navigatorKey.currentState != null) {
+      navigatorKey.currentState!.pushNamed('/import', arguments: url);
+      return;
+    }
+
+    // If not ready, wait for the next frame and try again
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (navigatorKey.currentState != null) {
+        navigatorKey.currentState!.pushNamed('/import', arguments: url);
+      } else {
+        // If still not ready after a frame, wait a bit longer
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (navigatorKey.currentState != null) {
+            navigatorKey.currentState!.pushNamed('/import', arguments: url);
+          } else {
+            debugPrint(
+              'Failed to navigate to import screen - navigator not ready',
+            );
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -312,12 +354,12 @@ class _MyAppState extends State<MyApp> {
               };
               return child!;
             },
-            home:
-                authService.user != null
-                    ? const PersistentBannerLayout(child: HomeScreen())
-                    : const LoginScreen(),
+            home: const SplashScreen(),
             routes: {
-              '/home': (context) => const HomeScreen(),
+              '/splash': (context) => const SplashScreen(),
+              '/home':
+                  (context) =>
+                      const PersistentBannerLayout(child: HomeScreen()),
               '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),
               '/discover': (context) {
