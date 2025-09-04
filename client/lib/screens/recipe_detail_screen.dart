@@ -219,7 +219,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     if ((platformLabel == null || platformLabel.isEmpty) &&
         recipe.aiGenerated == true) {
       icon = Icons.auto_awesome;
-      platformLabel = 'Generated';
+      platformLabel = 'User Generated';
       detailsLabel = null;
     }
 
