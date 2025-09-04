@@ -214,7 +214,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                   ),
                 ),
               ),
-              duration: Duration(seconds: 5),
+              duration: Duration(seconds: 8),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
               margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
