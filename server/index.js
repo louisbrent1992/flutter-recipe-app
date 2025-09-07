@@ -109,6 +109,11 @@ app.get("/health", (req, res) => {
 	res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// Open app redirect endpoint
+app.get("/open-app", (req, res) => {
+	res.sendFile(require("path").join(__dirname, "public", "open-app.html"));
+});
+
 // 404 handler for undefined routes
 app.use((req, res) => {
 	errorHandler.notFound(res, `Route not found: ${req.method} ${req.url}`);
