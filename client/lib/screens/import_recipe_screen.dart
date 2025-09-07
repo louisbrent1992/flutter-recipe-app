@@ -727,11 +727,10 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                                 AppTypography.responsiveCaptionSize(
                                                   context,
                                                 ),
-                                            color: colorScheme.onSurface
-                                                .withAlpha(128), // 0.5 alpha
+                                            color: colorScheme.onSurface,
                                             fontStyle: FontStyle.italic,
                                           ),
-                                          textAlign: TextAlign.center,
+                                          textAlign: TextAlign.left,
                                         ),
                                       ),
                                     ),

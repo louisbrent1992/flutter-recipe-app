@@ -242,7 +242,13 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                       maxWidth: AppSizing.responsiveMaxWidth(context),
                     ),
                     child: Padding(
-                      padding: AppSpacing.allResponsive(context),
+                      padding: EdgeInsets.only(
+                        left: AppSpacing.responsive(context),
+                        right: AppSpacing.responsive(context),
+                        top: AppSpacing.responsive(context),
+                        // Add extra bottom space so the bottom notice clears the floating bar
+                        bottom: AppSpacing.responsive(context) + 80,
+                      ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -934,45 +940,6 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
 
                               SizedBox(height: AppSpacing.xxl),
                             ],
-                          ),
-
-                          // Bottom section - pushed to bottom of screen
-                          Padding(
-                            padding: EdgeInsets.only(bottom: AppSpacing.md),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Icons.help_outline,
-                                  size: AppSizing.responsiveIconSize(
-                                    context,
-                                    mobile: 14,
-                                    tablet: 16,
-                                    desktop: 18,
-                                  ),
-                                  color: colorScheme.onSurface.withAlpha(
-                                    102,
-                                  ), // 0.4 alpha
-                                ),
-                                SizedBox(width: AppSpacing.sm),
-                                Expanded(
-                                  child: Text(
-                                    'Recipes are generated based on your preferences and available ingredients',
-                                    style: TextStyle(
-                                      fontSize:
-                                          AppTypography.responsiveCaptionSize(
-                                            context,
-                                          ),
-                                      color: colorScheme.onSurface.withAlpha(
-                                        128,
-                                      ), // 0.5 alpha
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                    textAlign: TextAlign.left,
-                                  ),
-                                ),
-                              ],
-                            ),
                           ),
                         ],
                       ),
