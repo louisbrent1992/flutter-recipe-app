@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appID": "J3BCYJKJTC.com.recipease.kitchen",
+        "paths": ["/ul/open", "/ul/*"]
+      }
+    ]
+  }
+}

@@ -114,6 +114,22 @@ app.get("/open-app", (req, res) => {
 	res.sendFile(require("path").join(__dirname, "public", "open-app.html"));
 });
 
+// Universal Link target that immediately opens the app via custom scheme as a fallback
+app.get("/ul/open", (req, res) => {
+  res.setHeader("Content-Type", "text/html; charset=UTF-8");
+  res.send(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Opening RecipEase…</title></head><body style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;background:#f7f7f7;">
+  <div>
+    <p>Opening RecipEase…</p>
+    <script>
+      // If the app is installed and associated domains are configured, iOS should open the app automatically
+      // Fallback to custom scheme after a short delay
+      setTimeout(function(){ window.location.href = 'ShareMedia-com.recipease.kitchen://import'; }, 600);
+    </script>
+    <p style="margin-top:16px"><a href="ShareMedia-com.recipease.kitchen://import">Open RecipEase Now</a></p>
+  </div>
+  </body></html>`);
+});
+
 // 404 handler for undefined routes
 app.use((req, res) => {
 	errorHandler.notFound(res, `Route not found: ${req.method} ${req.url}`);

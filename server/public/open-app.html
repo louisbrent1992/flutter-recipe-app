@@ -94,22 +94,22 @@
         <h1>Opening RecipEase...</h1>
         <div class="spinner"></div>
         <p>You'll be redirected to the app automatically</p>
-        <a href="ShareMedia-com.recipease.kitchen://import" class="button" id="openAppButton">Open RecipEase Now</a>
+        <a href="/ul/open" class="button" id="openAppButton" style="display:none;">Open RecipEase Now</a>
     </div>
 
     <script>
-        // Immediately try to open the app
-        window.location.href = 'ShareMedia-com.recipease.kitchen://import';
-        
+        // Prefer Universal Link first; iOS will open the app if associated domains are configured
+        window.location.replace('/ul/open');
+
         // Fallback: if still on page after 2 seconds, show manual button
         setTimeout(function() {
             document.getElementById('openAppButton').style.display = 'inline-block';
         }, 2000);
-        
-        // Auto-close this tab after 3 seconds (may not work in all browsers)
+
+        // Optional: try custom scheme after 1s if UL didn't immediately open (may be ignored by Safari)
         setTimeout(function() {
-            window.close();
-        }, 3000);
+            window.location.href = 'ShareMedia-com.recipease.kitchen://import';
+        }, 1000);
     </script>
 </body>
 </html>
