@@ -1,4 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'dart:math';
+import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -265,19 +268,23 @@ class AuthService with ChangeNotifier {
         throw 'Apple Sign In is not available on this device';
       }
 
+      // Generate secure nonce for Firebase (recommended)
+      final String rawNonce = _generateNonce();
+      final String hashedNonce = _sha256ofString(rawNonce);
+
       // Request Apple Sign In
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
+        nonce: hashedNonce,
       );
 
       // Create OAuth provider credential
-      final oauthCredential = OAuthProvider('apple.com').credential(
-        idToken: credential.identityToken,
-        accessToken: credential.authorizationCode,
-      );
+      final oauthCredential = OAuthProvider(
+        'apple.com',
+      ).credential(idToken: credential.identityToken, rawNonce: rawNonce);
 
       // Sign in to Firebase
       UserCredential userCredential = await _auth.signInWithCredential(
@@ -306,6 +313,25 @@ class AuthService with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  // Generates a cryptographically secure random nonce, to be included in a
+  // credential request.
+  String _generateNonce([int length = 32]) {
+    const String charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvxyz-._';
+    final Random random = Random.secure();
+    return List<String>.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
+  }
+
+  // Returns the sha256 hash of [input] in hex notation.
+  String _sha256ofString(String input) {
+    final List<int> bytes = utf8.encode(input);
+    final Digest digest = sha256.convert(bytes);
+    return digest.toString();
   }
 
   // Sign out

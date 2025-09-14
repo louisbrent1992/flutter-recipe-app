@@ -10,10 +10,10 @@ class FirebaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    // Use correct iOS client ID from GoogleService-Info.plist
+    // Use client IDs from generated Firebase options for each platform
     clientId:
         defaultTargetPlatform == TargetPlatform.iOS
-            ? '826154873845-9n1vqk797jnrvarkd3stsehjhl6ff1le.apps.googleusercontent.com'
+            ? DefaultFirebaseOptions.ios.iosClientId
             : DefaultFirebaseOptions.android.androidClientId,
     scopes: ['email', 'profile'],
   );
