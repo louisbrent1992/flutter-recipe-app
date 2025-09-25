@@ -5,6 +5,7 @@ const auth = require("../middleware/auth");
 const admin = require("firebase-admin");
 const { v4: uuidv4 } = require("uuid");
 const { getFirestore } = require("firebase-admin/firestore");
+const errorHandler = require("../utils/errorHandler");
 
 // Get Firestore database instance
 const db = getFirestore();
@@ -232,3 +233,76 @@ router.post("/cleanup-duplicates", auth, async (req, res) => {
 });
 
 module.exports = router;
+
+// Add after existing routes above export
+
+// Update canonical image for a discover recipe (global)
+router.patch("/recipes/:id/image", auth, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { imageUrl } = req.body || {};
+
+        if (!id || typeof id !== "string" || id.trim().length === 0) {
+            return errorHandler.badRequest(res, "Recipe id is required");
+        }
+        if (!imageUrl || typeof imageUrl !== "string") {
+            return errorHandler.badRequest(res, "imageUrl is required");
+        }
+        const trimmedUrl = imageUrl.trim();
+        if (!/^https?:\/\//i.test(trimmedUrl)) {
+            return errorHandler.badRequest(res, "imageUrl must be http(s)");
+        }
+
+        // Validate the URL points to an image via HEAD
+        const headers = {
+            "User-Agent":
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 Safari/604.1",
+            Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+        };
+        try {
+            const head = await axios.head(trimmedUrl, { maxRedirects: 3, timeout: 5000, headers });
+            const ct = (head.headers["content-type"] || "").toString();
+            if (!ct.startsWith("image/")) {
+                return errorHandler.badRequest(res, "imageUrl does not point to an image");
+            }
+        } catch (e) {
+            // If the host blocks HEAD, try GET with small range
+            try {
+                const getResp = await axios.get(trimmedUrl, {
+                    headers: { ...headers, Range: "bytes=0-1024" },
+                    responseType: "arraybuffer",
+                    maxRedirects: 3,
+                    timeout: 6000,
+                    validateStatus: (s) => s >= 200 && s < 400,
+                });
+                const ct = (getResp.headers["content-type"] || "").toString();
+                if (!ct.startsWith("image/")) {
+                    return errorHandler.badRequest(res, "imageUrl does not point to an image");
+                }
+            } catch (err) {
+                return errorHandler.badRequest(res, "Unable to validate imageUrl");
+            }
+        }
+
+        // Update Firestore canonical recipe image
+        const docRef = db.collection("recipes").doc(id);
+        const doc = await docRef.get();
+        if (!doc.exists) {
+            return errorHandler.notFound(res, "Recipe not found");
+        }
+
+        await docRef.update({
+            imageUrl: trimmedUrl,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        return res.json({
+            success: true,
+            id,
+            imageUrl: trimmedUrl,
+        });
+    } catch (error) {
+        console.error("Error updating discover recipe image:", error);
+        return errorHandler.serverError(res, "Failed to update recipe image");
+    }
+});
