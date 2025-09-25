@@ -193,6 +193,17 @@ class RecipeService {
     );
   }
 
+  /// Update canonical image for a discover recipe (global)
+  static Future<ApiResponse<Map<String, dynamic>>> updateDiscoverRecipeImage({
+    required String recipeId,
+    required String imageUrl,
+  }) async {
+    return _api.authenticatedPatch<Map<String, dynamic>>(
+      'discover/recipes/$recipeId/image',
+      body: {'imageUrl': imageUrl},
+    );
+  }
+
   /// Delete a user recipe
   static Future<ApiResponse<bool>> deleteUserRecipe(String id) async {
     final response = await _api.authenticatedDelete('users/recipes/$id');

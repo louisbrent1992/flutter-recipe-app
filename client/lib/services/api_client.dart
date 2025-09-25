@@ -28,9 +28,7 @@ class ApiClient {
             : 'http://localhost:$port/api';
 
     // Use production URL in release mode, development URL otherwise
-    return const bool.fromEnvironment('dart.vm.product')
-        ? productionUrl
-        : developmentUrl;
+    return productionUrl;
   }
 
   /// Get headers with Firebase authentication token
@@ -95,6 +93,21 @@ class ApiClient {
       return _handleResponse<T>(response, fromJson: fromJson);
     } catch (e) {
       return _handleError<T>(e, 'PUT $endpoint');
+    }
+  }
+
+  /// Make an authenticated PATCH request
+  Future<ApiResponse<T>> authenticatedPatch<T>(
+    String endpoint, {
+    dynamic body,
+    T Function(Map<String, dynamic>)? fromJson,
+  }) async {
+    try {
+      final headers = await _authHeaders;
+      final response = await _patch(endpoint, headers, body);
+      return _handleResponse<T>(response, fromJson: fromJson);
+    } catch (e) {
+      return _handleError<T>(e, 'PATCH $endpoint');
     }
   }
 
@@ -210,6 +223,34 @@ class ApiClient {
     // Add timeout to requests
     final response = await http
         .put(
+          uri,
+          headers: headers,
+          body: body == null ? null : json.encode(body),
+        )
+        .timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw TimeoutException(
+              'Request timed out',
+              const Duration(seconds: 30),
+            );
+          },
+        );
+
+    return response;
+  }
+
+  Future<http.Response> _patch(
+    String endpoint,
+    Map<String, String> headers,
+    dynamic body,
+  ) async {
+    final uri = Uri.parse('$baseUrl/$endpoint');
+
+    _logger.d('PATCH $uri with body: $body');
+
+    final response = await http
+        .patch(
           uri,
           headers: headers,
           body: body == null ? null : json.encode(body),

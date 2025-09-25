@@ -6,7 +6,8 @@ import 'package:provider/provider.dart';
 import '../services/recipe_service.dart';
 import '../theme/theme.dart';
 import '../utils/image_utils.dart';
-import 'expandable_image.dart';
+// import 'expandable_image.dart';
+import 'smart_recipe_image.dart';
 
 class RecipeCard extends StatefulWidget {
   final Recipe recipe;
@@ -388,14 +389,32 @@ Shared from Recipe App
                   aspectRatio: widget.aspectRatio ?? 16 / 9,
                   child: Container(
                     padding: EdgeInsets.all(AppSpacing.xs),
-                    child: ExpandableImage(
-                      imageUrl:
+                    child: SmartRecipeImage(
+                      recipeTitle: widget.recipe.title,
+                      primaryImageUrl:
                           ImageUtils.isValidImageUrl(widget.recipe.imageUrl)
                               ? widget.recipe.imageUrl
-                              : ImageUtils.getDefaultRecipeImage(
-                                widget.recipe.cuisineType,
-                              ),
+                              : null,
+                      fallbackStaticUrl: ImageUtils.getDefaultRecipeImage(
+                        widget.recipe.cuisineType,
+                      ),
                       fit: BoxFit.cover,
+                      onResolvedUrl: (url) async {
+                        if (url.isEmpty || url == widget.recipe.imageUrl)
+                          return;
+                        final updated = widget.recipe.copyWith(imageUrl: url);
+                        if (widget.onRecipeUpdated != null) {
+                          widget.onRecipeUpdated!(updated);
+                        }
+                        final profile = context.read<RecipeProvider>();
+                        await profile.updateUserRecipe(updated);
+                        if (widget.recipe.id.isNotEmpty) {
+                          await RecipeService.updateDiscoverRecipeImage(
+                            recipeId: widget.recipe.id,
+                            imageUrl: url,
+                          );
+                        }
+                      },
                       placeholder: const Center(
                         child: CircularProgressIndicator(),
                       ),
@@ -412,6 +431,10 @@ Shared from Recipe App
                           color: theme.colorScheme.primary,
                         ),
                       ),
+                      cacheKey:
+                          widget.recipe.id.isNotEmpty
+                              ? 'discover-${widget.recipe.id}'
+                              : 'discover-${widget.recipe.title.toLowerCase()}-${widget.recipe.description.toLowerCase()}',
                     ),
                   ),
                 ),

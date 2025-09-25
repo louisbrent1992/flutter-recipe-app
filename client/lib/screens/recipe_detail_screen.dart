@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../services/recipe_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:recipease/components/html_description.dart';
@@ -11,7 +12,8 @@ import '../components/custom_app_bar.dart';
 import '../providers/user_profile_provider.dart';
 import '../components/floating_bottom_bar.dart';
 import '../theme/theme.dart';
-import '../components/expandable_image.dart';
+// import '../components/expandable_image.dart';
+import '../components/smart_recipe_image.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   final Recipe recipe;
@@ -499,9 +501,34 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 flexibleSpace: FlexibleSpaceBar(
                   background: AspectRatio(
                     aspectRatio: 16 / 9,
-                    child: ExpandableImage(
-                      imageUrl: recipe.imageUrl,
+                    child: SmartRecipeImage(
+                      recipeTitle: recipe.title,
+                      primaryImageUrl: recipe.imageUrl,
+                      fallbackStaticUrl: null,
                       fit: BoxFit.cover,
+                      onResolvedUrl: (url) async {
+                        if (url.isEmpty || url == recipe.imageUrl) return;
+                        final profile = context.read<RecipeProvider>();
+                        final updated = recipe.copyWith(imageUrl: url);
+                        await profile.updateUserRecipe(updated);
+                        if (recipe.id.isNotEmpty) {
+                          await RecipeService.updateDiscoverRecipeImage(
+                            recipeId: recipe.id,
+                            imageUrl: url,
+                          );
+                        }
+                        if (mounted) {
+                          setState(() {
+                            // update local widget state to reflect new url immediately
+                            // ignore: invalid_use_of_protected_member
+                            widget.recipe.imageUrl;
+                          });
+                        }
+                      },
+                      cacheKey:
+                          recipe.id.isNotEmpty
+                              ? 'discover-${recipe.id}'
+                              : 'discover-${recipe.title.toLowerCase()}-${recipe.description.toLowerCase()}',
                       placeholder: const Center(
                         child: CircularProgressIndicator(),
                       ),
