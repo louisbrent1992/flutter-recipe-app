@@ -13,10 +13,11 @@ const db = getFirestore();
 // Search recipes from Spoonacular API
 router.get("/search", auth, async (req, res) => {
 	try {
-		const { query, difficulty, tag } = req.query;
+		const { query, difficulty, tag, random } = req.query;
 		const page = parseInt(req.query.page) || 1;
 		const limitParam = parseInt(req.query.limit);
 		const limit = isNaN(limitParam) ? 10 : Math.min(limitParam, 100);
+		const isRandom = random === 'true';
 
 		// Build Firestore query
 		let recipesRef = db.collection("recipes");
@@ -74,11 +75,21 @@ router.get("/search", auth, async (req, res) => {
 		while (uniqueRecipesMap.size < limit && fetchAttempts < maxFetchAttempts) {
 			let snapshot;
 			try {
-				snapshot = await recipesRef
-					.orderBy("createdAt", "desc")
-					.limit(batchSize)
-					.offset(currentOffset)
-					.get();
+				if (isRandom) {
+					// For random ordering, fetch more recipes and randomize client-side
+					const randomBatchSize = Math.min(batchSize * 3, 300); // Fetch more for better randomization
+					snapshot = await recipesRef
+						.limit(randomBatchSize)
+						.offset(currentOffset)
+						.get();
+				} else {
+					// Default: order by creation date (latest first)
+					snapshot = await recipesRef
+						.orderBy("createdAt", "desc")
+						.limit(batchSize)
+						.offset(currentOffset)
+						.get();
+				}
 			} catch (orderErr) {
 				// Fallback if some docs have non-timestamp createdAt or field missing
 				console.warn(
@@ -122,7 +133,17 @@ router.get("/search", auth, async (req, res) => {
 		}
 
 		// Convert back to array and apply pagination to deduplicated results
-		const deduplicatedRecipes = Array.from(uniqueRecipesMap.values());
+		let deduplicatedRecipes = Array.from(uniqueRecipesMap.values());
+		
+		// Apply random shuffling if requested
+		if (isRandom) {
+			// Fisher-Yates shuffle algorithm for true randomization
+			for (let i = deduplicatedRecipes.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[deduplicatedRecipes[i], deduplicatedRecipes[j]] = [deduplicatedRecipes[j], deduplicatedRecipes[i]];
+			}
+		}
+		
 		const paginatedRecipes = deduplicatedRecipes.slice(0, limit);
 
 		console.log(

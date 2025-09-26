@@ -62,7 +62,11 @@ class _HomeScreenState extends State<HomeScreen>
         recipeProvider.loadUserRecipes(limit: 20);
 
         // Fetch a larger set of random recipes for discovery to ensure we have enough after filtering
-        recipeProvider.searchExternalRecipes(query: '', limit: 50);
+        recipeProvider.searchExternalRecipes(
+          query: '',
+          limit: 50,
+          random: true,
+        );
 
         // Ensure first frame shows placeholders even before provider flips loading
         if (mounted) setState(() => _isBooting = false);
@@ -92,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen>
       query: '',
       limit: 50,
       forceRefresh: true,
+      random: true,
     );
     collectionService.getCollections(forceRefresh: true);
 

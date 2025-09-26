@@ -469,15 +469,17 @@ class RecipeProvider extends ChangeNotifier {
     int page = 1,
     int limit = 10,
     bool forceRefresh = false,
+    bool random = false,
   }) async {
     clearError();
 
-    // Build a stable cache key for query+filters+limit
+    // Build a stable cache key for query+filters+limit+random
     final String cacheKey = _buildSearchKey(
       query: query,
       difficulty: difficulty,
       tag: tag,
       limit: limit,
+      random: random,
     );
 
     // Serve from cache if available
@@ -508,6 +510,7 @@ class RecipeProvider extends ChangeNotifier {
         tag: tag,
         page: page,
         limit: limit,
+        random: random,
       );
 
       if (response.success && response.data != null) {
@@ -596,12 +599,14 @@ class RecipeProvider extends ChangeNotifier {
     String? difficulty,
     String? tag,
     int? limit,
+    bool? random,
   }) {
     final q = (query ?? '').trim().toLowerCase();
     final d = (difficulty ?? 'All').trim();
     final t = (tag ?? 'All').trim();
     final l = (limit ?? 10).toString();
-    return 'query=$q|difficulty=$d|tag=$t|limit=$l';
+    final r = (random ?? false).toString();
+    return 'query=$q|difficulty=$d|tag=$t|limit=$l|random=$r';
   }
 
   // Emit cross-screen refresh event

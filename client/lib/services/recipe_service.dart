@@ -283,6 +283,7 @@ class RecipeService {
     String? tag,
     int page = 1,
     int limit = 10,
+    bool random = false,
   }) async {
     final Map<String, String> queryParams = {
       if (query != null && query.isNotEmpty) 'query': query,
@@ -290,6 +291,7 @@ class RecipeService {
       if (tag != null && tag != 'All') 'tag': tag,
       'page': page.toString(),
       'limit': limit.toString(),
+      if (random) 'random': 'true',
     };
 
     final response = await _api.authenticatedGet<Map<String, dynamic>>(
