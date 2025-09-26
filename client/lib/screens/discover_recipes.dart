@@ -435,7 +435,13 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                   padding: EdgeInsets.only(bottom: 100),
                                   itemBuilder: (context, index) {
                                     final recipe = displayRecipes[index];
+                                    // Use a stable key so Flutter does not reuse state across pages
+                                    final String identity =
+                                        recipe.id.isNotEmpty
+                                            ? recipe.id
+                                            : '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
                                     return RecipeCard(
+                                      key: ValueKey('discover-card-$identity'),
                                       recipe: recipe,
                                       showSaveButton: !isRecipeSaved(recipe),
                                       showRemoveButton: isRecipeSaved(recipe),

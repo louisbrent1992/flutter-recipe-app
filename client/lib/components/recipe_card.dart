@@ -390,6 +390,9 @@ Shared from Recipe App
                   child: Container(
                     padding: EdgeInsets.all(AppSpacing.xs),
                     child: SmartRecipeImage(
+                      key: ValueKey(
+                        'smart-img-${widget.recipe.id.isNotEmpty ? widget.recipe.id : widget.recipe.title.toLowerCase()}',
+                      ),
                       recipeTitle: widget.recipe.title,
                       primaryImageUrl:
                           ImageUtils.isValidImageUrl(widget.recipe.imageUrl)
@@ -399,6 +402,47 @@ Shared from Recipe App
                         widget.recipe.cuisineType,
                       ),
                       fit: BoxFit.cover,
+                      onRefreshStart: () {
+                        // no-op in card for now
+                      },
+                      onRefreshed: (newUrl) async {
+                        if (newUrl == null || newUrl.isEmpty) return;
+                        if (newUrl == widget.recipe.imageUrl) return;
+                        final updated = widget.recipe.copyWith(
+                          imageUrl: newUrl,
+                        );
+                        if (widget.onRecipeUpdated != null) {
+                          widget.onRecipeUpdated!(updated);
+                        }
+                        try {
+                          final profile = context.read<RecipeProvider>();
+                          if (widget.showRemoveButton) {
+                            final userRecipe = profile.userRecipes.firstWhere(
+                              (r) =>
+                                  r.id == widget.recipe.id ||
+                                  (r.title.toLowerCase() ==
+                                          widget.recipe.title.toLowerCase() &&
+                                      r.description.toLowerCase() ==
+                                          widget.recipe.description
+                                              .toLowerCase()),
+                              orElse: () => Recipe(),
+                            );
+                            if (userRecipe.id.isNotEmpty) {
+                              await profile.updateUserRecipe(
+                                userRecipe.copyWith(imageUrl: newUrl),
+                              );
+                            }
+                          }
+                        } catch (_) {}
+                        if (widget.recipe.id.isNotEmpty) {
+                          try {
+                            await RecipeService.updateDiscoverRecipeImage(
+                              recipeId: widget.recipe.id,
+                              imageUrl: newUrl,
+                            );
+                          } catch (_) {}
+                        }
+                      },
                       onResolvedUrl: (url) async {
                         if (url.isEmpty || url == widget.recipe.imageUrl)
                           return;
@@ -406,13 +450,44 @@ Shared from Recipe App
                         if (widget.onRecipeUpdated != null) {
                           widget.onRecipeUpdated!(updated);
                         }
-                        final profile = context.read<RecipeProvider>();
-                        await profile.updateUserRecipe(updated);
+
+                        // Persist change appropriately depending on context
+                        // 1) If this card represents a saved user recipe, update the user recipe
+                        //    Use the actual user recipe id when possible to avoid 403s
+                        try {
+                          final profile = context.read<RecipeProvider>();
+                          if (widget.showRemoveButton) {
+                            // Attempt to find the matching user recipe id
+                            final userRecipe = profile.userRecipes.firstWhere(
+                              (r) =>
+                                  r.id == widget.recipe.id ||
+                                  (r.title.toLowerCase() ==
+                                          widget.recipe.title.toLowerCase() &&
+                                      r.description.toLowerCase() ==
+                                          widget.recipe.description
+                                              .toLowerCase()),
+                              orElse: () => Recipe(),
+                            );
+                            if (userRecipe.id.isNotEmpty) {
+                              await profile.updateUserRecipe(
+                                userRecipe.copyWith(imageUrl: url),
+                              );
+                            }
+                          }
+                        } catch (_) {
+                          // Swallow errors here to avoid surfacing a global error overlay
+                        }
+
+                        // 2) Always update the discover record so future fetches use the new URL
                         if (widget.recipe.id.isNotEmpty) {
-                          await RecipeService.updateDiscoverRecipeImage(
-                            recipeId: widget.recipe.id,
-                            imageUrl: url,
-                          );
+                          try {
+                            await RecipeService.updateDiscoverRecipeImage(
+                              recipeId: widget.recipe.id,
+                              imageUrl: url,
+                            );
+                          } catch (_) {
+                            // Ignore discover update failures silently in UI
+                          }
                         }
                       },
                       placeholder: const Center(

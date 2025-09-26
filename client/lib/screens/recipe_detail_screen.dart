@@ -26,10 +26,12 @@ class RecipeDetailScreen extends StatefulWidget {
 
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   bool _isSaved = false;
+  late Recipe _currentRecipe;
 
   @override
   void initState() {
     super.initState();
+    _currentRecipe = widget.recipe;
     _checkFavoriteStatus();
     _checkSavedStatus();
   }
@@ -360,116 +362,63 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       return const Scaffold(body: Center(child: Text('Recipe not found')));
     }
 
-    final recipe = widget.recipe;
+    final recipe = _currentRecipe;
 
-    return Scaffold(
-      appBar: CustomAppBar(
-        title: 'Recipe Details',
-        floatingButtons: [
-          // Show edit button only for custom recipes (user-created or imported)
-          if (_isSaved && _isCustomRecipe(recipe))
-            IconButton(
-              icon: const Icon(Icons.edit),
-              tooltip: 'Edit Recipe',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (context) => RecipeEditScreen(recipe: widget.recipe),
-                  ),
-                );
-              },
-            ),
-          // Show save button for unsaved recipes
-          if (!_isSaved)
-            IconButton(
-              icon: const Icon(Icons.save),
-              tooltip: 'Save Recipe',
-              onPressed: () async {
-                final recipeProvider = context.read<RecipeProvider>();
-                final savedRecipe = await recipeProvider.createUserRecipe(
-                  widget.recipe,
-                  context,
-                );
-                if (context.mounted) {
-                  if (savedRecipe != null) {
-                    setState(() {
-                      _isSaved = true;
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Recipe saved successfully!'),
-                        duration: Duration(seconds: 4),
-                        action: SnackBarAction(
-                          label: 'View Recipes',
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const MyRecipesScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        backgroundColor: Theme.of(context).colorScheme.success,
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          recipeProvider.error?.message ??
-                              'Failed to save recipe',
-                        ),
-                        backgroundColor: Theme.of(context).colorScheme.error,
-                      ),
-                    );
-                  }
-                }
-              },
-            ),
-          // Show delete button for all saved recipes
-          if (_isSaved)
-            IconButton(
-              icon: const Icon(Icons.delete),
-              tooltip: 'Delete Recipe',
-              onPressed: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder:
-                      (context) => AlertDialog(
-                        title: const Text('Delete Recipe'),
-                        content: const Text(
-                          'Are you sure you want to delete this recipe?',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: const Text('Delete'),
-                          ),
-                        ],
-                      ),
-                );
-
-                if (confirmed == true && context.mounted) {
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context, _currentRecipe);
+        return false;
+      },
+      child: Scaffold(
+        appBar: CustomAppBar(
+          title: 'Recipe Details',
+          floatingButtons: [
+            // Show edit button only for custom recipes (user-created or imported)
+            if (_isSaved && _isCustomRecipe(recipe))
+              IconButton(
+                icon: const Icon(Icons.edit),
+                tooltip: 'Edit Recipe',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => RecipeEditScreen(recipe: widget.recipe),
+                    ),
+                  );
+                },
+              ),
+            // Show save button for unsaved recipes
+            if (!_isSaved)
+              IconButton(
+                icon: const Icon(Icons.save),
+                tooltip: 'Save Recipe',
+                onPressed: () async {
                   final recipeProvider = context.read<RecipeProvider>();
-                  final success = await recipeProvider.deleteUserRecipe(
-                    widget.recipe.id,
+                  final savedRecipe = await recipeProvider.createUserRecipe(
+                    widget.recipe,
                     context,
                   );
                   if (context.mounted) {
-                    if (success) {
+                    if (savedRecipe != null) {
                       setState(() {
-                        _isSaved = false;
+                        _isSaved = true;
                       });
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Recipe deleted successfully!'),
+                          content: Text('Recipe saved successfully!'),
+                          duration: Duration(seconds: 4),
+                          action: SnackBarAction(
+                            label: 'View Recipes',
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const MyRecipesScreen(),
+                                ),
+                              );
+                            },
+                          ),
                           backgroundColor:
                               Theme.of(context).colorScheme.success,
                         ),
@@ -479,437 +428,152 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         SnackBar(
                           content: Text(
                             recipeProvider.error?.message ??
-                                'Failed to delete recipe',
+                                'Failed to save recipe',
                           ),
                           backgroundColor: Theme.of(context).colorScheme.error,
                         ),
                       );
                     }
                   }
-                }
-              },
-            ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                expandedHeight: AppBreakpoints.isMobile(context) ? 180 : 220,
-                automaticallyImplyLeading: false,
-                flexibleSpace: FlexibleSpaceBar(
-                  background: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: SmartRecipeImage(
-                      recipeTitle: recipe.title,
-                      primaryImageUrl: recipe.imageUrl,
-                      fallbackStaticUrl: null,
-                      fit: BoxFit.cover,
-                      onResolvedUrl: (url) async {
-                        if (url.isEmpty || url == recipe.imageUrl) return;
-                        final profile = context.read<RecipeProvider>();
-                        final updated = recipe.copyWith(imageUrl: url);
-                        await profile.updateUserRecipe(updated);
-                        if (recipe.id.isNotEmpty) {
-                          await RecipeService.updateDiscoverRecipeImage(
-                            recipeId: recipe.id,
-                            imageUrl: url,
-                          );
-                        }
-                        if (mounted) {
-                          setState(() {
-                            // update local widget state to reflect new url immediately
-                            // ignore: invalid_use_of_protected_member
-                            widget.recipe.imageUrl;
-                          });
-                        }
-                      },
-                      cacheKey:
-                          recipe.id.isNotEmpty
-                              ? 'discover-${recipe.id}'
-                              : 'discover-${recipe.title.toLowerCase()}-${recipe.description.toLowerCase()}',
-                      placeholder: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                      errorWidget: Icon(
-                        Icons.error,
-                        color: Theme.of(context).colorScheme.error,
+                },
+              ),
+            // Show delete button for all saved recipes
+            if (_isSaved)
+              IconButton(
+                icon: const Icon(Icons.delete),
+                tooltip: 'Delete Recipe',
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder:
+                        (context) => AlertDialog(
+                          title: const Text('Delete Recipe'),
+                          content: const Text(
+                            'Are you sure you want to delete this recipe?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text('Delete'),
+                            ),
+                          ],
+                        ),
+                  );
+
+                  if (confirmed == true && context.mounted) {
+                    final recipeProvider = context.read<RecipeProvider>();
+                    final success = await recipeProvider.deleteUserRecipe(
+                      widget.recipe.id,
+                      context,
+                    );
+                    if (context.mounted) {
+                      if (success) {
+                        setState(() {
+                          _isSaved = false;
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Recipe deleted successfully!'),
+                            backgroundColor:
+                                Theme.of(context).colorScheme.success,
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              recipeProvider.error?.message ??
+                                  'Failed to delete recipe',
+                            ),
+                            backgroundColor:
+                                Theme.of(context).colorScheme.error,
+                          ),
+                        );
+                      }
+                    }
+                  }
+                },
+              ),
+          ],
+        ),
+        body: Stack(
+          children: [
+            CustomScrollView(
+              slivers: [
+                SliverAppBar(
+                  expandedHeight: AppBreakpoints.isMobile(context) ? 180 : 220,
+                  automaticallyImplyLeading: false,
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: SmartRecipeImage(
+                        recipeTitle: recipe.title,
+                        primaryImageUrl: recipe.imageUrl,
+                        fallbackStaticUrl: null,
+                        fit: BoxFit.cover,
+                        onResolvedUrl: (url) async {
+                          if (url.isEmpty || url == recipe.imageUrl) return;
+                          final updated = recipe.copyWith(imageUrl: url);
+                          // Avoid surfacing provider-wide errors (e.g., 403)
+                          // Only attempt a silent server update if this recipe is saved
+                          if (_isSaved) {
+                            try {
+                              await RecipeService.updateUserRecipe(updated);
+                            } catch (_) {
+                              // Ignore failures to prevent global error overlay
+                            }
+                          }
+                          if (recipe.id.isNotEmpty) {
+                            await RecipeService.updateDiscoverRecipeImage(
+                              recipeId: recipe.id,
+                              imageUrl: url,
+                            );
+                          }
+                          if (mounted) {
+                            setState(() {
+                              _currentRecipe = updated;
+                            });
+                          }
+                        },
+                        cacheKey:
+                            recipe.id.isNotEmpty
+                                ? 'discover-${recipe.id}'
+                                : 'discover-${recipe.title.toLowerCase()}-${recipe.description.toLowerCase()}',
+                        placeholder: const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                        errorWidget: Icon(
+                          Icons.error,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    AppSpacing.responsive(context),
-                    AppSpacing.responsive(context),
-                    AppSpacing.responsive(context),
-                    60,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        textAlign: TextAlign.center,
-                        recipe.title,
-                        style: TextStyle(
-                          fontSize: AppTypography.responsiveHeadingSize(
-                            context,
-                            mobile: 22.0,
-                            tablet: 26.0,
-                            desktop: 30.0,
-                          ),
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.sm),
-                      Wrap(
-                        spacing: AppSpacing.responsive(context),
-
-                        runSpacing: AppSpacing.xs,
-
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.timer,
-                                size: AppSizing.responsiveIconSize(
-                                  context,
-                                  mobile: 16,
-                                  tablet: 18,
-                                  desktop: 20,
-                                ),
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              SizedBox(width: AppSpacing.xs),
-                              Text(
-                                _formatCookingTime(recipe.cookingTime),
-                                style: TextStyle(
-                                  fontSize: AppTypography.responsiveFontSize(
-                                    context,
-                                  ),
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.people,
-                                size: AppSizing.responsiveIconSize(
-                                  context,
-                                  mobile: 16,
-                                  tablet: 18,
-                                  desktop: 20,
-                                ),
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              SizedBox(width: AppSpacing.xs),
-                              Text(
-                                recipe.servings,
-                                style: TextStyle(
-                                  fontSize: AppTypography.responsiveFontSize(
-                                    context,
-                                  ),
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.restaurant,
-                                size: AppSizing.responsiveIconSize(
-                                  context,
-                                  mobile: 16,
-                                  tablet: 18,
-                                  desktop: 20,
-                                ),
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              SizedBox(width: AppSpacing.xs),
-                              Text(
-                                recipe.difficulty,
-                                style: TextStyle(
-                                  fontSize: AppTypography.responsiveFontSize(
-                                    context,
-                                  ),
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: AppSpacing.lg),
-
-                      Text(
-                        'Description',
-                        style: TextStyle(
-                          fontSize: AppTypography.responsiveHeadingSize(
-                            context,
-                            mobile: 18.0,
-                            tablet: 20.0,
-                            desktop: 22.0,
-                          ),
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.sm),
-                      HtmlDescription(
-                        htmlContent: recipe.description,
-                        style: TextStyle(
-                          fontSize: AppTypography.responsiveFontSize(context),
-                          color: Theme.of(context).colorScheme.onSurface,
-                          height: 1.5,
-                        ),
-                      ),
-
-                      _buildSourceLink(),
-                      SizedBox(height: AppSpacing.xl),
-                      Text(
-                        'Ingredients',
-                        style: TextStyle(
-                          fontSize: AppTypography.responsiveHeadingSize(
-                            context,
-                            mobile: 18.0,
-                            tablet: 20.0,
-                            desktop: 22.0,
-                          ),
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.sm),
-                      ...recipe.ingredients.map(
-                        (ingredient) => Padding(
-                          padding: EdgeInsets.symmetric(
-                            vertical: AppSpacing.xs,
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.circle,
-                                size: AppSizing.responsiveIconSize(
-                                  context,
-                                  mobile: 6,
-                                  tablet: 8,
-                                  desktop: 8,
-                                ),
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: Text(
-                                  ingredient,
-                                  style: TextStyle(
-                                    fontSize: AppTypography.responsiveFontSize(
-                                      context,
-                                    ),
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.xl),
-                      Text(
-                        'Instructions',
-                        style: TextStyle(
-                          fontSize: AppTypography.responsiveHeadingSize(
-                            context,
-                            mobile: 18.0,
-                            tablet: 20.0,
-                            desktop: 22.0,
-                          ),
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.sm),
-                      ...recipe.instructions.asMap().entries.map(
-                        (entry) => Padding(
-                          padding: EdgeInsets.symmetric(
-                            vertical: AppSpacing.sm,
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: AppSizing.responsiveIconSize(
-                                  context,
-                                  mobile: 24,
-                                  tablet: 28,
-                                  desktop: 32,
-                                ),
-                                height: AppSizing.responsiveIconSize(
-                                  context,
-                                  mobile: 24,
-                                  tablet: 28,
-                                  desktop: 32,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '${entry.key + 1}',
-                                    style: TextStyle(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimary,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize:
-                                          AppTypography.responsiveFontSize(
-                                            context,
-                                            mobile: 12.0,
-                                            tablet: 14.0,
-                                            desktop: 16.0,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: AppSpacing.md),
-                              Expanded(
-                                child: Text(
-                                  entry.value,
-                                  style: TextStyle(
-                                    fontSize: AppTypography.responsiveFontSize(
-                                      context,
-                                    ),
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      if (recipe.nutrition != null) ...[
-                        SizedBox(height: AppSpacing.xl),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.responsive(context),
+                      AppSpacing.responsive(context),
+                      AppSpacing.responsive(context),
+                      60,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          'Nutrition Facts (approx.)',
+                          recipe.title,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: AppTypography.responsiveHeadingSize(
                               context,
-                              mobile: 18.0,
-                              tablet: 20.0,
-                              desktop: 22.0,
-                            ),
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.sm),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (recipe.nutrition!.calories != null)
-                              _nutritionRow(
-                                context,
-                                'Calories',
-                                '${recipe.nutrition!.calories} kcal',
-                              ),
-                            if (recipe.nutrition!.protein != null)
-                              _nutritionRow(
-                                context,
-                                'Protein',
-                                _formatNutritionValue(
-                                  'Protein',
-                                  recipe.nutrition!.protein!,
-                                ),
-                              ),
-                            if (recipe.nutrition!.carbs != null)
-                              _nutritionRow(
-                                context,
-                                'Carbs',
-                                _formatNutritionValue(
-                                  'Carbs',
-                                  recipe.nutrition!.carbs!,
-                                ),
-                              ),
-                            if (recipe.nutrition!.fat != null)
-                              _nutritionRow(
-                                context,
-                                'Fat',
-                                _formatNutritionValue(
-                                  'Fat',
-                                  recipe.nutrition!.fat!,
-                                ),
-                              ),
-                            if (recipe.nutrition!.fiber != null)
-                              _nutritionRow(
-                                context,
-                                'Fiber',
-                                _formatNutritionValue(
-                                  'Fiber',
-                                  recipe.nutrition!.fiber!,
-                                ),
-                              ),
-                            if (recipe.nutrition!.sugar != null)
-                              _nutritionRow(
-                                context,
-                                'Sugar',
-                                _formatNutritionValue(
-                                  'Sugar',
-                                  recipe.nutrition!.sugar!,
-                                ),
-                              ),
-                            if (recipe.nutrition!.sodium != null)
-                              _nutritionRow(
-                                context,
-                                'Sodium',
-                                _formatNutritionValue(
-                                  'Sodium',
-                                  recipe.nutrition!.sodium!,
-                                ),
-                              ),
-                            if (recipe.nutrition!.iron != null)
-                              _nutritionRow(
-                                context,
-                                'Iron',
-                                _formatNutritionValue(
-                                  'Iron',
-                                  recipe.nutrition!.iron!,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-
-                      if (recipe.tags.isNotEmpty) ...[
-                        SizedBox(height: AppSpacing.xl),
-                        Text(
-                          'Tags',
-                          style: TextStyle(
-                            fontSize: AppTypography.responsiveHeadingSize(
-                              context,
-                              mobile: 18.0,
-                              tablet: 20.0,
-                              desktop: 22.0,
+                              mobile: 22.0,
+                              tablet: 26.0,
+                              desktop: 30.0,
                             ),
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).colorScheme.onSurface,
@@ -917,55 +581,413 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         ),
                         SizedBox(height: AppSpacing.sm),
                         Wrap(
-                          spacing: AppSpacing.sm,
-                          runSpacing: AppSpacing.sm,
-                          children:
-                              recipe.tags
-                                  .map(
-                                    (tag) => InkWell(
-                                      onTap: () {
-                                        Navigator.pushNamed(
-                                          context,
-                                          '/discover',
-                                          arguments: {'tag': tag},
-                                        );
-                                      },
-                                      borderRadius: BorderRadius.circular(16),
-                                      child: Chip(
-                                        label: Text(
-                                          tag,
-                                          style: TextStyle(
-                                            fontSize:
-                                                AppTypography.responsiveFontSize(
-                                                  context,
-                                                  mobile: 12.0,
-                                                  tablet: 14.0,
-                                                  desktop: 16.0,
-                                                ),
+                          spacing: AppSpacing.responsive(context),
+
+                          runSpacing: AppSpacing.xs,
+
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.timer,
+                                  size: AppSizing.responsiveIconSize(
+                                    context,
+                                    mobile: 16,
+                                    tablet: 18,
+                                    desktop: 20,
+                                  ),
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                SizedBox(width: AppSpacing.xs),
+                                Text(
+                                  _formatCookingTime(recipe.cookingTime),
+                                  style: TextStyle(
+                                    fontSize: AppTypography.responsiveFontSize(
+                                      context,
+                                    ),
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.people,
+                                  size: AppSizing.responsiveIconSize(
+                                    context,
+                                    mobile: 16,
+                                    tablet: 18,
+                                    desktop: 20,
+                                  ),
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                SizedBox(width: AppSpacing.xs),
+                                Text(
+                                  recipe.servings,
+                                  style: TextStyle(
+                                    fontSize: AppTypography.responsiveFontSize(
+                                      context,
+                                    ),
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.restaurant,
+                                  size: AppSizing.responsiveIconSize(
+                                    context,
+                                    mobile: 16,
+                                    tablet: 18,
+                                    desktop: 20,
+                                  ),
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                SizedBox(width: AppSpacing.xs),
+                                Text(
+                                  recipe.difficulty,
+                                  style: TextStyle(
+                                    fontSize: AppTypography.responsiveFontSize(
+                                      context,
+                                    ),
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: AppSpacing.lg),
+
+                        Text(
+                          'Description',
+                          style: TextStyle(
+                            fontSize: AppTypography.responsiveHeadingSize(
+                              context,
+                              mobile: 18.0,
+                              tablet: 20.0,
+                              desktop: 22.0,
+                            ),
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        SizedBox(height: AppSpacing.sm),
+                        HtmlDescription(
+                          htmlContent: recipe.description,
+                          style: TextStyle(
+                            fontSize: AppTypography.responsiveFontSize(context),
+                            color: Theme.of(context).colorScheme.onSurface,
+                            height: 1.5,
+                          ),
+                        ),
+
+                        _buildSourceLink(),
+                        SizedBox(height: AppSpacing.xl),
+                        Text(
+                          'Ingredients',
+                          style: TextStyle(
+                            fontSize: AppTypography.responsiveHeadingSize(
+                              context,
+                              mobile: 18.0,
+                              tablet: 20.0,
+                              desktop: 22.0,
+                            ),
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        SizedBox(height: AppSpacing.sm),
+                        ...recipe.ingredients.map(
+                          (ingredient) => Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: AppSpacing.xs,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.circle,
+                                  size: AppSizing.responsiveIconSize(
+                                    context,
+                                    mobile: 6,
+                                    tablet: 8,
+                                    desktop: 8,
+                                  ),
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: Text(
+                                    ingredient,
+                                    style: TextStyle(
+                                      fontSize:
+                                          AppTypography.responsiveFontSize(
+                                            context,
                                           ),
-                                        ),
-                                        backgroundColor:
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: AppSpacing.xl),
+                        Text(
+                          'Instructions',
+                          style: TextStyle(
+                            fontSize: AppTypography.responsiveHeadingSize(
+                              context,
+                              mobile: 18.0,
+                              tablet: 20.0,
+                              desktop: 22.0,
+                            ),
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        SizedBox(height: AppSpacing.sm),
+                        ...recipe.instructions.asMap().entries.map(
+                          (entry) => Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: AppSpacing.sm,
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: AppSizing.responsiveIconSize(
+                                    context,
+                                    mobile: 24,
+                                    tablet: 28,
+                                    desktop: 32,
+                                  ),
+                                  height: AppSizing.responsiveIconSize(
+                                    context,
+                                    mobile: 24,
+                                    tablet: 28,
+                                    desktop: 32,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${entry.key + 1}',
+                                      style: TextStyle(
+                                        color:
                                             Theme.of(
                                               context,
-                                            ).colorScheme.surface,
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: AppSpacing.sm,
-                                          vertical: AppSpacing.xs,
-                                        ),
+                                            ).colorScheme.onPrimary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize:
+                                            AppTypography.responsiveFontSize(
+                                              context,
+                                              mobile: 12.0,
+                                              tablet: 14.0,
+                                              desktop: 16.0,
+                                            ),
                                       ),
                                     ),
-                                  )
-                                  .toList(),
+                                  ),
+                                ),
+                                SizedBox(width: AppSpacing.md),
+                                Expanded(
+                                  child: Text(
+                                    entry.value,
+                                    style: TextStyle(
+                                      fontSize:
+                                          AppTypography.responsiveFontSize(
+                                            context,
+                                          ),
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
+                        if (recipe.nutrition != null) ...[
+                          SizedBox(height: AppSpacing.xl),
+                          Text(
+                            'Nutrition Facts (approx.)',
+                            style: TextStyle(
+                              fontSize: AppTypography.responsiveHeadingSize(
+                                context,
+                                mobile: 18.0,
+                                tablet: 20.0,
+                                desktop: 22.0,
+                              ),
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          SizedBox(height: AppSpacing.sm),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (recipe.nutrition!.calories != null)
+                                _nutritionRow(
+                                  context,
+                                  'Calories',
+                                  '${recipe.nutrition!.calories} kcal',
+                                ),
+                              if (recipe.nutrition!.protein != null)
+                                _nutritionRow(
+                                  context,
+                                  'Protein',
+                                  _formatNutritionValue(
+                                    'Protein',
+                                    recipe.nutrition!.protein!,
+                                  ),
+                                ),
+                              if (recipe.nutrition!.carbs != null)
+                                _nutritionRow(
+                                  context,
+                                  'Carbs',
+                                  _formatNutritionValue(
+                                    'Carbs',
+                                    recipe.nutrition!.carbs!,
+                                  ),
+                                ),
+                              if (recipe.nutrition!.fat != null)
+                                _nutritionRow(
+                                  context,
+                                  'Fat',
+                                  _formatNutritionValue(
+                                    'Fat',
+                                    recipe.nutrition!.fat!,
+                                  ),
+                                ),
+                              if (recipe.nutrition!.fiber != null)
+                                _nutritionRow(
+                                  context,
+                                  'Fiber',
+                                  _formatNutritionValue(
+                                    'Fiber',
+                                    recipe.nutrition!.fiber!,
+                                  ),
+                                ),
+                              if (recipe.nutrition!.sugar != null)
+                                _nutritionRow(
+                                  context,
+                                  'Sugar',
+                                  _formatNutritionValue(
+                                    'Sugar',
+                                    recipe.nutrition!.sugar!,
+                                  ),
+                                ),
+                              if (recipe.nutrition!.sodium != null)
+                                _nutritionRow(
+                                  context,
+                                  'Sodium',
+                                  _formatNutritionValue(
+                                    'Sodium',
+                                    recipe.nutrition!.sodium!,
+                                  ),
+                                ),
+                              if (recipe.nutrition!.iron != null)
+                                _nutritionRow(
+                                  context,
+                                  'Iron',
+                                  _formatNutritionValue(
+                                    'Iron',
+                                    recipe.nutrition!.iron!,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+
+                        if (recipe.tags.isNotEmpty) ...[
+                          SizedBox(height: AppSpacing.xl),
+                          Text(
+                            'Tags',
+                            style: TextStyle(
+                              fontSize: AppTypography.responsiveHeadingSize(
+                                context,
+                                mobile: 18.0,
+                                tablet: 20.0,
+                                desktop: 22.0,
+                              ),
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          SizedBox(height: AppSpacing.sm),
+                          Wrap(
+                            spacing: AppSpacing.sm,
+                            runSpacing: AppSpacing.sm,
+                            children:
+                                recipe.tags
+                                    .map(
+                                      (tag) => InkWell(
+                                        onTap: () {
+                                          Navigator.pushNamed(
+                                            context,
+                                            '/discover',
+                                            arguments: {'tag': tag},
+                                          );
+                                        },
+                                        borderRadius: BorderRadius.circular(16),
+                                        child: Chip(
+                                          label: Text(
+                                            tag,
+                                            style: TextStyle(
+                                              fontSize:
+                                                  AppTypography.responsiveFontSize(
+                                                    context,
+                                                    mobile: 12.0,
+                                                    tablet: 14.0,
+                                                    desktop: 16.0,
+                                                  ),
+                                            ),
+                                          ),
+                                          backgroundColor:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.surface,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: AppSpacing.sm,
+                                            vertical: AppSpacing.xs,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          FloatingBottomBar(),
-        ],
+              ],
+            ),
+            FloatingBottomBar(),
+          ],
+        ),
       ),
     );
   }

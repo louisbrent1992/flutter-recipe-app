@@ -12,19 +12,29 @@ const _uaHeaders = {
 class GoogleImageService {
   static const Duration _requestTimeout = Duration(seconds: 6);
 
-  static Future<String?> fetchImageForQuery(String query) async {
+  static Future<String?> fetchImageForQuery(String query, {int? start}) async {
     if (AppConfig.googleCseApiKey.isEmpty || AppConfig.googleCseCx.isEmpty) {
       return null;
     }
 
-    final uri = Uri.https('customsearch.googleapis.com', '/customsearch/v1', {
+    final params = <String, String>{
       'q': query,
       'cx': AppConfig.googleCseCx,
       'key': AppConfig.googleCseApiKey,
       'searchType': 'image',
       'num': '3',
       'safe': 'active',
-    });
+    };
+    if (start != null && start > 0) {
+      // Google CSE supports start 1..100
+      params['start'] = start.toString();
+    }
+
+    final uri = Uri.https(
+      'customsearch.googleapis.com',
+      '/customsearch/v1',
+      params,
+    );
 
     try {
       final res = await http.get(uri).timeout(_requestTimeout);

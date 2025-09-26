@@ -27,6 +27,8 @@ class SmartRecipeImage extends StatefulWidget {
   final Widget? placeholder;
   final Widget? errorWidget;
   final void Function(String url)? onResolvedUrl;
+  final VoidCallback? onRefreshStart;
+  final void Function(String? newUrl)? onRefreshed;
 
   const SmartRecipeImage({
     super.key,
@@ -41,19 +43,28 @@ class SmartRecipeImage extends StatefulWidget {
     this.placeholder,
     this.errorWidget,
     this.onResolvedUrl,
+    this.onRefreshStart,
+    this.onRefreshed,
   });
 
   @override
   State<SmartRecipeImage> createState() => _SmartRecipeImageState();
 }
 
-class _SmartRecipeImageState extends State<SmartRecipeImage> {
+class _SmartRecipeImageState extends State<SmartRecipeImage>
+    with SingleTickerProviderStateMixin {
   String? _resolvedUrl;
   bool _checkedPrimary = false;
+  late final AnimationController _spinController;
+  bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
+    _spinController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
     _bootstrapFromCacheThenResolve();
   }
 
@@ -119,8 +130,36 @@ class _SmartRecipeImageState extends State<SmartRecipeImage> {
         if (widget.cacheKey != null) {
           unawaited(ImageResolverCache.set(widget.cacheKey!, resolved));
         }
+        widget.onRefreshed?.call(resolved);
       }
     }
+  }
+
+  Future<void> _forceRefresh() async {
+    if (_isRefreshing) return;
+    setState(() => _isRefreshing = true);
+    _spinController.repeat();
+    widget.onRefreshStart?.call();
+    // Try a different result set by advancing the start index
+    final alt = await GoogleImageService.fetchImageForQuery(
+      '${widget.recipeTitle} recipe',
+      start: 4,
+    );
+    final resolved = alt ?? widget.fallbackStaticUrl;
+    if (!mounted) return;
+    setState(() {
+      _resolvedUrl = resolved;
+    });
+    if (resolved != null && resolved.isNotEmpty) {
+      widget.onResolvedUrl?.call(resolved);
+      if (widget.cacheKey != null) {
+        unawaited(ImageResolverCache.set(widget.cacheKey!, resolved));
+      }
+    }
+    widget.onRefreshed?.call(resolved);
+    _spinController.stop();
+    _spinController.reset();
+    if (mounted) setState(() => _isRefreshing = false);
   }
 
   @override
@@ -156,25 +195,57 @@ class _SmartRecipeImageState extends State<SmartRecipeImage> {
         borderRadius:
             widget.borderRadius ??
             BorderRadius.circular(AppBreakpoints.isMobile(context) ? 8 : 12),
-        child: CachedNetworkImage(
-          imageUrl: url,
-          width: widget.width,
-          height: widget.height,
-          fit: widget.fit,
-          memCacheWidth: (widget.width != null) ? widget.width!.toInt() : null,
-          memCacheHeight:
-              (widget.height != null) ? widget.height!.toInt() : null,
-          fadeInDuration: const Duration(milliseconds: 150),
-          fadeOutDuration: const Duration(milliseconds: 100),
-          placeholder: (context, u) => placeholder,
-          errorWidget: (context, u, err) {
-            // If we already checked primary and are displaying it, try Google fallback once
-            if (!_checkedPrimary && u == widget.primaryImageUrl) {
-              // We haven't done HEAD, but image provider failed; attempt fallback
-              scheduleMicrotask(() => _tryGoogleFallback());
-            }
-            return error;
-          },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CachedNetworkImage(
+              imageUrl: url,
+              width: widget.width,
+              height: widget.height,
+              fit: widget.fit,
+              memCacheWidth:
+                  (widget.width != null) ? widget.width!.toInt() : null,
+              memCacheHeight:
+                  (widget.height != null) ? widget.height!.toInt() : null,
+              fadeInDuration: const Duration(milliseconds: 150),
+              fadeOutDuration: const Duration(milliseconds: 100),
+              placeholder: (context, u) => placeholder,
+              errorWidget: (context, u, err) {
+                if (!_checkedPrimary && u == widget.primaryImageUrl) {
+                  scheduleMicrotask(() => _tryGoogleFallback());
+                }
+                return error;
+              },
+            ),
+            Positioned(
+              top: 6,
+              right: 6,
+              child: GestureDetector(
+                onTap: _isRefreshing ? null : _forceRefresh,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: RotationTransition(
+                    turns: _spinController,
+                    child: Icon(
+                      Icons.refresh_rounded,
+                      size: AppSizing.responsiveIconSize(
+                        context,
+                        mobile: 16,
+                        tablet: 18,
+                        desktop: 20,
+                      ),
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

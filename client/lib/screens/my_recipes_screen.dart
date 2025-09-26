@@ -251,12 +251,23 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                             showEditButton: true,
                             showRemoveButton: true,
                             // Favorites removed
-                            onTap:
-                                () => Navigator.pushNamed(
-                                  context,
-                                  '/recipeDetail',
-                                  arguments: recipe,
-                                ),
+                            onTap: () async {
+                              final result = await Navigator.pushNamed(
+                                context,
+                                '/recipeDetail',
+                                arguments: recipe,
+                              );
+                              if (result is Recipe && mounted) {
+                                setState(() {
+                                  final idx = allRecipes.indexWhere(
+                                    (r) => r.id == result.id,
+                                  );
+                                  if (idx != -1) {
+                                    allRecipes[idx] = result;
+                                  }
+                                });
+                              }
+                            },
                             onRecipeUpdated: (updatedRecipe) {
                               // Update the recipe in the list
                               setState(() {
