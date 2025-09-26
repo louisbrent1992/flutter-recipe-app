@@ -7,6 +7,11 @@ import '../services/recipe_service.dart';
 import '../services/collection_service.dart';
 
 class RecipeProvider extends ChangeNotifier {
+  // Cross-screen refresh mechanism
+  final StreamController<void> _recipesChangedController =
+      StreamController<void>.broadcast();
+  Stream<void> get onRecipesChanged => _recipesChangedController.stream;
+
   // AI generated recipes
   List<Recipe> _generatedRecipes = [];
   Recipe? _importedRecipe;
@@ -332,6 +337,7 @@ class RecipeProvider extends ChangeNotifier {
           await collectionService.getCollections(forceRefresh: true);
 
           notifyListeners();
+          emitRecipesChanged();
           return newRecipe;
         }
       } else {
@@ -367,6 +373,7 @@ class RecipeProvider extends ChangeNotifier {
         // Favorites removed
 
         notifyListeners();
+        emitRecipesChanged();
         return updatedRecipe;
       } else {
         _setError(response.message ?? 'Failed to update recipe');
@@ -407,6 +414,7 @@ class RecipeProvider extends ChangeNotifier {
           // Update user recipes total optimistically
           _totalUserRecipes = (_totalUserRecipes - 1).clamp(0, 1 << 31);
           notifyListeners();
+          emitRecipesChanged();
           return true;
         } else {
           _setError(response.message ?? 'Failed to delete recipe');
@@ -594,6 +602,17 @@ class RecipeProvider extends ChangeNotifier {
     final t = (tag ?? 'All').trim();
     final l = (limit ?? 10).toString();
     return 'query=$q|difficulty=$d|tag=$t|limit=$l';
+  }
+
+  // Emit cross-screen refresh event
+  void emitRecipesChanged() {
+    _recipesChangedController.add(null);
+  }
+
+  @override
+  void dispose() {
+    _recipesChangedController.close();
+    super.dispose();
   }
 
   // Favorites removed: no favorite cache or flags

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/recipe.dart';
@@ -51,6 +52,18 @@ class _RecipeCardState extends State<RecipeCard> {
   @override
   void initState() {
     super.initState();
+  }
+
+  /// Determines if the refresh button should be shown based on debug mode or recipe ownership
+  bool _shouldShowRefreshButton() {
+    // Always show in debug mode
+    if (kDebugMode) {
+      return true;
+    }
+
+    // In production, only show for user's own saved recipes
+    return widget
+        .showRemoveButton; // showRemoveButton indicates this is a saved user recipe
   }
 
   // Favorites removed
@@ -402,6 +415,7 @@ Shared from Recipe App
                         widget.recipe.cuisineType,
                       ),
                       fit: BoxFit.cover,
+                      showRefreshButton: _shouldShowRefreshButton(),
                       onRefreshStart: () {
                         // no-op in card for now
                       },

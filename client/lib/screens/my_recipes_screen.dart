@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/floating_bottom_bar.dart';
 
@@ -44,6 +45,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
     'Asian',
     'Mediterranean',
   ];
+  StreamSubscription<void>? _recipesChangedSubscription;
 
   @override
   void initState() {
@@ -51,6 +53,14 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
     // Initial load of recipes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadRecipes();
+      // Listen for cross-screen recipe updates to refetch current page
+      final recipeProvider = Provider.of<RecipeProvider>(
+        context,
+        listen: false,
+      );
+      _recipesChangedSubscription = recipeProvider.onRecipesChanged.listen((_) {
+        _loadRecipes(forceRefresh: true);
+      });
     });
   }
 
@@ -58,6 +68,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
   void dispose() {
     _scrollController.dispose();
     _searchController.dispose();
+    _recipesChangedSubscription?.cancel();
     super.dispose();
   }
 

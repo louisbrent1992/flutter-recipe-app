@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
 import '../services/google_image_service.dart';
@@ -29,6 +30,7 @@ class SmartRecipeImage extends StatefulWidget {
   final void Function(String url)? onResolvedUrl;
   final VoidCallback? onRefreshStart;
   final void Function(String? newUrl)? onRefreshed;
+  final bool showRefreshButton; // Control visibility of refresh button
 
   const SmartRecipeImage({
     super.key,
@@ -45,6 +47,7 @@ class SmartRecipeImage extends StatefulWidget {
     this.onResolvedUrl,
     this.onRefreshStart,
     this.onRefreshed,
+    this.showRefreshButton = false, // Default to not showing refresh button
   });
 
   @override
@@ -217,34 +220,37 @@ class _SmartRecipeImageState extends State<SmartRecipeImage>
                 return error;
               },
             ),
-            Positioned(
-              top: 6,
-              right: 6,
-              child: GestureDetector(
-                onTap: _isRefreshing ? null : _forceRefresh,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: RotationTransition(
-                    turns: _spinController,
-                    child: Icon(
-                      Icons.refresh_rounded,
-                      size: AppSizing.responsiveIconSize(
-                        context,
-                        mobile: 16,
-                        tablet: 18,
-                        desktop: 20,
+            if (widget.showRefreshButton)
+              Positioned(
+                top: 6,
+                right: 6,
+                child: GestureDetector(
+                  onTap: _isRefreshing ? null : _forceRefresh,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: RotationTransition(
+                      turns: _spinController,
+                      child: Icon(
+                        Icons.refresh_rounded,
+                        size: AppSizing.responsiveIconSize(
+                          context,
+                          mobile: 16,
+                          tablet: 18,
+                          desktop: 20,
+                        ),
+                        color: Theme.of(context).colorScheme.primary,
                       ),
-                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),

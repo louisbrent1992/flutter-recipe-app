@@ -40,6 +40,8 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
   final List<String> _difficulties = ['All', 'Easy', 'Medium', 'Hard'];
   final List<String> _availableTags = ['All'];
 
+  StreamSubscription<void>? _recipesChangedSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +68,14 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     // Load recipes after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadRecipes();
+      // Listen for cross-screen recipe updates to refetch current page
+      final recipeProvider = Provider.of<RecipeProvider>(
+        context,
+        listen: false,
+      );
+      _recipesChangedSubscription = recipeProvider.onRecipesChanged.listen((_) {
+        _loadRecipes(forceRefresh: true);
+      });
     });
   }
 
@@ -116,7 +126,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
   }
 
   // Load recipes from external API
-  Future<void> _loadRecipes() async {
+  Future<void> _loadRecipes({bool forceRefresh = false}) async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
     await recipeProvider.searchExternalRecipes(
       query: _searchQuery.isEmpty ? null : _searchQuery,
@@ -124,6 +134,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
       tag: _selectedTag == 'All' ? null : _selectedTag,
       page: _currentPage,
       limit: _itemsPerPage,
+      forceRefresh: forceRefresh,
     );
     _updateAvailableTagsFromRecipes();
   }
@@ -259,6 +270,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     _scrollController.dispose();
     _searchController.dispose();
     _searchDebounce?.cancel();
+    _recipesChangedSubscription?.cancel();
     super.dispose();
   }
 

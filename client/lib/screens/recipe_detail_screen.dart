@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../services/recipe_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -34,6 +35,17 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     _currentRecipe = widget.recipe;
     _checkFavoriteStatus();
     _checkSavedStatus();
+  }
+
+  /// Determines if the refresh button should be shown based on debug mode or recipe ownership
+  bool _shouldShowRefreshButton() {
+    // Always show in debug mode
+    if (kDebugMode) {
+      return true;
+    }
+
+    // In production, only show for user's own saved recipes
+    return _isSaved;
   }
 
   Widget _nutritionRow(BuildContext context, String label, String value) {
@@ -515,6 +527,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         primaryImageUrl: recipe.imageUrl,
                         fallbackStaticUrl: null,
                         fit: BoxFit.cover,
+                        showRefreshButton: _shouldShowRefreshButton(),
                         onResolvedUrl: (url) async {
                           if (url.isEmpty || url == recipe.imageUrl) return;
                           final updated = recipe.copyWith(imageUrl: url);
@@ -528,15 +541,21 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             }
                           }
                           if (recipe.id.isNotEmpty) {
-                            await RecipeService.updateDiscoverRecipeImage(
-                              recipeId: recipe.id,
-                              imageUrl: url,
-                            );
+                            try {
+                              await RecipeService.updateDiscoverRecipeImage(
+                                recipeId: recipe.id,
+                                imageUrl: url,
+                              );
+                            } catch (_) {
+                              // Ignore failures
+                            }
                           }
                           if (mounted) {
                             setState(() {
                               _currentRecipe = updated;
                             });
+                            // Emit cross-screen refresh after image update
+                            context.read<RecipeProvider>().emitRecipesChanged();
                           }
                         },
                         cacheKey:

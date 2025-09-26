@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/providers/auth_provider.dart';
 import 'package:recipease/services/collection_service.dart';
+import 'dart:async';
 import '../providers/user_profile_provider.dart';
 import '../components/custom_app_bar.dart';
 import '../components/nav_drawer.dart';
@@ -38,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen>
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final String _heroImageUrl = 'assets/images/hero_image.jpg';
   bool _isBooting = true;
+  StreamSubscription<void>? _recipesChangedSubscription;
 
   @override
   void initState() {
@@ -66,6 +68,17 @@ class _HomeScreenState extends State<HomeScreen>
         if (mounted) setState(() => _isBooting = false);
       }
     });
+
+    // Listen for cross-screen recipe updates to refresh all sections
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final recipeProvider = Provider.of<RecipeProvider>(
+        context,
+        listen: false,
+      );
+      _recipesChangedSubscription = recipeProvider.onRecipesChanged.listen((_) {
+        _refreshAllSections(context);
+      });
+    });
   }
 
   // Refresh all home sections at once
@@ -90,6 +103,7 @@ class _HomeScreenState extends State<HomeScreen>
   void dispose() {
     _animationController.dispose();
     _scrollController.dispose();
+    _recipesChangedSubscription?.cancel();
     super.dispose();
   }
 
