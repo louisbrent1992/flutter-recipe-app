@@ -62,47 +62,63 @@ router.get("/search", auth, async (req, res) => {
 		const totalQuery = await recipesRef.count().get();
 		const totalRecipes = totalQuery.data().count;
 
-		// Reduced buffer multiplier for better performance
-		const bufferMultiplier = 1.2; // Reduced from 1.5x
-		const fetchLimit = Math.min(Math.floor(limit * bufferMultiplier), 150); // Reduced cap
+		// Fetch recipes ensuring we get enough unique ones
 		const startAt = Math.max(0, (page - 1) * limit);
-
-		// Fetch recipes with smaller buffer for deduplication
-		let snapshot;
-		try {
-			snapshot = await recipesRef
-				.orderBy("createdAt", "desc")
-				.limit(fetchLimit)
-				.offset(startAt)
-				.get();
-		} catch (orderErr) {
-			// Fallback if some docs have non-timestamp createdAt or field missing
-			console.warn(
-				"Falling back to un-ordered fetch due to createdAt orderBy error:",
-				orderErr?.message || orderErr
-			);
-			snapshot = await recipesRef.limit(fetchLimit).offset(startAt).get();
-		}
-
-		// Collect all recipes
-		const allRecipes = [];
-		snapshot.forEach((doc) => {
-			const data = doc.data();
-			allRecipes.push({
-				id: doc.id,
-				...data,
-			});
-		});
-
-		// Server-side deduplication (should be minimal now after cleanup)
 		const uniqueRecipesMap = new Map();
-		for (const recipe of allRecipes) {
-			const key = `${recipe.title?.toLowerCase() || ""}|${
-				recipe.description?.toLowerCase() || ""
-			}`;
-			if (!uniqueRecipesMap.has(key)) {
-				uniqueRecipesMap.set(key, recipe);
+		let currentOffset = startAt;
+		let fetchAttempts = 0;
+		const maxFetchAttempts = 3;
+		const batchSize = Math.max(limit * 2, 50); // Fetch larger batches to account for deduplication
+
+		// Keep fetching until we have enough unique recipes or hit max attempts
+		while (uniqueRecipesMap.size < limit && fetchAttempts < maxFetchAttempts) {
+			let snapshot;
+			try {
+				snapshot = await recipesRef
+					.orderBy("createdAt", "desc")
+					.limit(batchSize)
+					.offset(currentOffset)
+					.get();
+			} catch (orderErr) {
+				// Fallback if some docs have non-timestamp createdAt or field missing
+				console.warn(
+					"Falling back to un-ordered fetch due to createdAt orderBy error:",
+					orderErr?.message || orderErr
+				);
+				snapshot = await recipesRef.limit(batchSize).offset(currentOffset).get();
 			}
+
+			// If no more recipes, break
+			if (snapshot.empty) {
+				break;
+			}
+
+			// Collect recipes from this batch
+			const batchRecipes = [];
+			snapshot.forEach((doc) => {
+				const data = doc.data();
+				batchRecipes.push({
+					id: doc.id,
+					...data,
+				});
+			});
+
+			// Add unique recipes to our map
+			for (const recipe of batchRecipes) {
+				const key = `${recipe.title?.toLowerCase() || ""}|${
+					recipe.description?.toLowerCase() || ""
+				}`;
+				if (!uniqueRecipesMap.has(key)) {
+					uniqueRecipesMap.set(key, recipe);
+					// Stop if we have enough unique recipes
+					if (uniqueRecipesMap.size >= limit) {
+						break;
+					}
+				}
+			}
+
+			currentOffset += batchSize;
+			fetchAttempts++;
 		}
 
 		// Convert back to array and apply pagination to deduplicated results
@@ -110,7 +126,7 @@ router.get("/search", auth, async (req, res) => {
 		const paginatedRecipes = deduplicatedRecipes.slice(0, limit);
 
 		console.log(
-			`Fetched ${allRecipes.length} recipes, deduplicated to ${deduplicatedRecipes.length}, returning ${paginatedRecipes.length}`
+			`Performed ${fetchAttempts} fetch attempts, deduplicated to ${deduplicatedRecipes.length} unique recipes, returning ${paginatedRecipes.length}`
 		);
 
 		// Calculate pagination info based on deduplicated results
