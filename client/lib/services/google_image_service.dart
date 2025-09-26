@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
-import '../config/app_config.dart';
+import 'api_client.dart';
 
 const _uaHeaders = {
   'User-Agent':
@@ -10,48 +9,31 @@ const _uaHeaders = {
 };
 
 class GoogleImageService {
-  static const Duration _requestTimeout = Duration(seconds: 6);
+  static final ApiClient _api = ApiClient();
+  static const Duration _requestTimeout = Duration(seconds: 10);
 
   static Future<String?> fetchImageForQuery(String query, {int? start}) async {
-    if (AppConfig.googleCseApiKey.isEmpty || AppConfig.googleCseCx.isEmpty) {
+    if (query.trim().isEmpty) {
       return null;
     }
 
-    final params = <String, String>{
-      'q': query,
-      'cx': AppConfig.googleCseCx,
-      'key': AppConfig.googleCseApiKey,
-      'searchType': 'image',
-      'num': '3',
-      'safe': 'active',
-    };
+    final params = <String, String>{'query': query.trim()};
     if (start != null && start > 0) {
-      // Google CSE supports start 1..100
       params['start'] = start.toString();
     }
 
-    final uri = Uri.https(
-      'customsearch.googleapis.com',
-      '/customsearch/v1',
-      params,
-    );
-
     try {
-      final res = await http.get(uri).timeout(_requestTimeout);
-      if (res.statusCode != 200) return null;
+      final response = await _api.publicGet<Map<String, dynamic>>(
+        'ai/recipes/search-image',
+        queryParams: params,
+      );
 
-      final data = json.decode(res.body) as Map<String, dynamic>;
-      final items = (data['items'] as List?) ?? const [];
-
-      for (final raw in items) {
-        final item = raw as Map<String, dynamic>;
-        final img = (item['image'] as Map?)?.cast<String, dynamic>();
-        final thumb = img?['thumbnailLink'] as String?;
-        final link = item['link'] as String?;
-        // Prefer full-resolution link first; fall back to thumbnail if needed
-        for (final candidate in [link, thumb]) {
-          final usable = await _isLoadableImage(candidate);
-          if (usable) return candidate;
+      if (response.success && response.data != null) {
+        final imageUrl = response.data!['imageUrl'] as String?;
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          // Validate that the image is actually loadable
+          final usable = await _isLoadableImage(imageUrl);
+          if (usable) return imageUrl;
         }
       }
       return null;

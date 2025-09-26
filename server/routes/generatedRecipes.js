@@ -77,7 +77,7 @@ const MAX_ENTRIES_PER_CLEANUP = 100;
 const MAX_CACHE_SIZE = 1000; // Maximum number of entries in each cache
 
 // Function to fetch an image from Google with caching
-const fetchImage = async (query) => {
+const fetchImage = async (query, start = 1) => {
 	// Handle undefined or null query
 	if (!query) {
 		console.log("No query provided for image search");
@@ -86,10 +86,11 @@ const fetchImage = async (query) => {
 
 	// Normalize the query by trimming and converting to lowercase
 	const normalizedQuery = query.trim().toLowerCase();
+	const cacheKey = `${normalizedQuery}_${start}`;
 
 	// Check if the image is already cached
-	if (imageCache[normalizedQuery]) {
-		return imageCache[normalizedQuery];
+	if (imageCache[cacheKey]) {
+		return imageCache[cacheKey];
 	}
 
 	try {
@@ -99,8 +100,9 @@ const fetchImage = async (query) => {
 				cx: GOOGLE_CX,
 				q: `${normalizedQuery}`,
 				searchType: "image",
-				num: 1,
+				num: 3, // Get more results to have options
 				safe: "active",
+				start: start,
 			},
 		});
 
@@ -110,10 +112,16 @@ const fetchImage = async (query) => {
 			return null;
 		}
 
-		const imageUrl = response.data.items[0].link;
+		// Try to find the best image from the results
+		for (const item of response.data.items) {
+			const imageUrl = item.link;
+			if (imageUrl) {
+				imageCache[cacheKey] = imageUrl;
+				return imageUrl;
+			}
+		}
 
-		imageCache[normalizedQuery] = imageUrl;
-		return imageUrl;
+		return null;
 	} catch (error) {
 		console.error("Error fetching image from Google:", error);
 		return null;
@@ -625,6 +633,45 @@ router.get("/", (req, res) => {
 		errorHandler.serverError(
 			res,
 			"We couldn't load generated recipes. Please try again in a moment."
+		);
+	}
+});
+
+// GET /ai/recipes/search-image - Search for images using Google Custom Search
+router.get("/search-image", async (req, res) => {
+	try {
+		const { query, start } = req.query;
+		
+		if (!query) {
+			return res.status(400).json({
+				error: true,
+				message: "Query parameter is required"
+			});
+		}
+
+		const startParam = start ? parseInt(start) : 1;
+		const imageUrl = await fetchImage(query, startParam);
+
+		if (imageUrl) {
+			res.json({
+				imageUrl: imageUrl,
+				query: query,
+				start: startParam
+			});
+		} else {
+			res.json({
+				imageUrl: null,
+				query: query,
+				start: startParam,
+				message: "No image found for the given query"
+			});
+		}
+	} catch (error) {
+		console.error("Error searching for image:", error);
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't search for images right now. Please try again in a moment."
 		);
 	}
 });
