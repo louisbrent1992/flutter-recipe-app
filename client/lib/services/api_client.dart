@@ -167,16 +167,21 @@ class ApiClient {
 
     _logger.d('GET $uri');
 
-    // Add timeout to requests
+    // Add timeout to requests with longer timeout for recipe imports
+    final isRecipeImport =
+        uri.path.contains('/ai/recipes/import') ||
+        uri.path.contains('/generatedRecipes/import');
+    final timeoutDuration =
+        isRecipeImport
+            ? const Duration(seconds: 45) // 45 seconds for recipe imports
+            : const Duration(seconds: 30); // 30 seconds for other requests
+
     final response = await http
         .get(uri, headers: headers)
         .timeout(
-          const Duration(seconds: 30),
+          timeoutDuration,
           onTimeout: () {
-            throw TimeoutException(
-              'Request timed out',
-              const Duration(seconds: 30),
-            );
+            throw TimeoutException('Request timed out', timeoutDuration);
           },
         );
 
@@ -192,7 +197,15 @@ class ApiClient {
 
     _logger.d('POST $uri with body: $body');
 
-    // Add timeout to requests
+    // Add timeout to requests with longer timeout for recipe imports
+    final isRecipeImport =
+        uri.path.contains('/ai/recipes/import') ||
+        uri.path.contains('/generatedRecipes/import');
+    final timeoutDuration =
+        isRecipeImport
+            ? const Duration(seconds: 120) // 2 minutes for recipe imports
+            : const Duration(seconds: 30); // 30 seconds for other requests
+
     final response = await http
         .post(
           uri,
@@ -200,12 +213,9 @@ class ApiClient {
           body: body == null ? null : json.encode(body),
         )
         .timeout(
-          const Duration(seconds: 30),
+          timeoutDuration,
           onTimeout: () {
-            throw TimeoutException(
-              'Request timed out',
-              const Duration(seconds: 30),
-            );
+            throw TimeoutException('Request timed out', timeoutDuration);
           },
         );
 
@@ -221,7 +231,15 @@ class ApiClient {
 
     _logger.d('PUT $uri with body: $body');
 
-    // Add timeout to requests
+    // Add timeout to requests with longer timeout for recipe imports
+    final isRecipeImport =
+        uri.path.contains('/ai/recipes/import') ||
+        uri.path.contains('/generatedRecipes/import');
+    final timeoutDuration =
+        isRecipeImport
+            ? const Duration(seconds: 120) // 2 minutes for recipe imports
+            : const Duration(seconds: 30); // 30 seconds for other requests
+
     final response = await http
         .put(
           uri,
@@ -229,12 +247,9 @@ class ApiClient {
           body: body == null ? null : json.encode(body),
         )
         .timeout(
-          const Duration(seconds: 30),
+          timeoutDuration,
           onTimeout: () {
-            throw TimeoutException(
-              'Request timed out',
-              const Duration(seconds: 30),
-            );
+            throw TimeoutException('Request timed out', timeoutDuration);
           },
         );
 
@@ -250,6 +265,15 @@ class ApiClient {
 
     _logger.d('PATCH $uri with body: $body');
 
+    // Add timeout to requests with longer timeout for recipe imports
+    final isRecipeImport =
+        uri.path.contains('/ai/recipes/import') ||
+        uri.path.contains('/generatedRecipes/import');
+    final timeoutDuration =
+        isRecipeImport
+            ? const Duration(seconds: 120) // 2 minutes for recipe imports
+            : const Duration(seconds: 30); // 30 seconds for other requests
+
     final response = await http
         .patch(
           uri,
@@ -257,12 +281,9 @@ class ApiClient {
           body: body == null ? null : json.encode(body),
         )
         .timeout(
-          const Duration(seconds: 30),
+          timeoutDuration,
           onTimeout: () {
-            throw TimeoutException(
-              'Request timed out',
-              const Duration(seconds: 30),
-            );
+            throw TimeoutException('Request timed out', timeoutDuration);
           },
         );
 
@@ -277,16 +298,21 @@ class ApiClient {
 
     _logger.d('DELETE $uri');
 
-    // Add timeout to requests
+    // Add timeout to requests with longer timeout for recipe imports
+    final isRecipeImport =
+        uri.path.contains('/ai/recipes/import') ||
+        uri.path.contains('/generatedRecipes/import');
+    final timeoutDuration =
+        isRecipeImport
+            ? const Duration(seconds: 120) // 2 minutes for recipe imports
+            : const Duration(seconds: 30); // 30 seconds for other requests
+
     final response = await http
         .delete(uri, headers: headers)
         .timeout(
-          const Duration(seconds: 30),
+          timeoutDuration,
           onTimeout: () {
-            throw TimeoutException(
-              'Request timed out',
-              const Duration(seconds: 30),
-            );
+            throw TimeoutException('Request timed out', timeoutDuration);
           },
         );
 

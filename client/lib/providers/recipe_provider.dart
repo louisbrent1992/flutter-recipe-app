@@ -127,12 +127,28 @@ class RecipeProvider extends ChangeNotifier {
         if (isDuplicateRecipe(recipe)) {
           _setError('This recipe is already in your collection');
           if (context.mounted) {
+            final duplicateRecipe = findDuplicateRecipe(recipe);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: const Text(
                   'This recipe is already in your collection',
                 ),
                 backgroundColor: Colors.orange,
+                action:
+                    duplicateRecipe != null
+                        ? SnackBarAction(
+                          label: 'View Recipe',
+                          textColor: Colors.white,
+                          onPressed: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/recipeDetail',
+                              arguments: duplicateRecipe,
+                            );
+                          },
+                        )
+                        : null,
+                duration: const Duration(seconds: 6),
               ),
             );
           }
@@ -315,6 +331,32 @@ class RecipeProvider extends ChangeNotifier {
     // Check for duplicates before attempting to save
     if (isDuplicateRecipe(recipe)) {
       _setError('This recipe already exists in your collection');
+      if (context.mounted) {
+        final duplicateRecipe = findDuplicateRecipe(recipe);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'This recipe already exists in your collection',
+            ),
+            backgroundColor: Colors.orange,
+            action:
+                duplicateRecipe != null
+                    ? SnackBarAction(
+                      label: 'View Recipe',
+                      textColor: Colors.white,
+                      onPressed: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/recipeDetail',
+                          arguments: duplicateRecipe,
+                        );
+                      },
+                    )
+                    : null,
+            duration: const Duration(seconds: 6),
+          ),
+        );
+      }
       return null;
     }
 
@@ -455,6 +497,27 @@ class RecipeProvider extends ChangeNotifier {
           r.title.toLowerCase() == recipe.title.toLowerCase() &&
           r.description.toLowerCase() == recipe.description.toLowerCase(),
     );
+  }
+
+  // Find the duplicate recipe in user's collection
+  Recipe? findDuplicateRecipe(Recipe recipe) {
+    // Check if recipe with same source URL exists
+    if (recipe.sourceUrl != null) {
+      return _userRecipes.firstWhere(
+        (r) => r.sourceUrl == recipe.sourceUrl,
+        orElse: () => Recipe(),
+      );
+    }
+
+    // If no source URL, check title and description
+    final foundRecipe = _userRecipes.firstWhere(
+      (r) =>
+          r.title.toLowerCase() == recipe.title.toLowerCase() &&
+          r.description.toLowerCase() == recipe.description.toLowerCase(),
+      orElse: () => Recipe(),
+    );
+
+    return foundRecipe.id.isNotEmpty ? foundRecipe : null;
   }
 
   //----------------------------------------

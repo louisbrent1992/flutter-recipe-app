@@ -420,9 +420,9 @@ router.post("/import", async (req, res) => {
 		console.log(`Starting recipe import for URL: ${url}`);
 		
 		// Check recipe cache first
-		const cachedRecipe = getFromCache(recipeCache, url);
+		const cachedRecipe = getFromCache(recipeCache, url, CACHE_DURATIONS.RECIPES);
 		if (cachedRecipe) {
-			console.log("Recipe found in cache");
+			console.log("Recipe found in cache, returning cached result");
 			return res.json(cachedRecipe);
 		}
 
