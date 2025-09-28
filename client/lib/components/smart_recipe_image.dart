@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
 import '../services/google_image_service.dart';
@@ -101,7 +100,9 @@ class _SmartRecipeImageState extends State<SmartRecipeImage>
 
       _checkedPrimary = true;
 
-      if (response.statusCode == 403 || response.statusCode == 404) {
+      if (response.statusCode == 400 ||
+          response.statusCode == 403 ||
+          response.statusCode == 404) {
         await _tryGoogleFallback();
         return;
       }

@@ -54,16 +54,11 @@ class _RecipeCardState extends State<RecipeCard> {
     super.initState();
   }
 
-  /// Determines if the refresh button should be shown based on debug mode or recipe ownership
+  /// Determines if the refresh button should be shown based on debug mode
   bool _shouldShowRefreshButton() {
-    // Always show in debug mode
-    if (kDebugMode) {
-      return true;
-    }
-
-    // In production, only show for user's own saved recipes
-    return widget
-        .showRemoveButton; // showRemoveButton indicates this is a saved user recipe
+    // Only show individual refresh buttons in debug mode
+    // In production, users should use the bulk refresh in settings
+    return kDebugMode;
   }
 
   // Favorites removed
@@ -458,8 +453,9 @@ Shared from Recipe App
                         }
                       },
                       onResolvedUrl: (url) async {
-                        if (url.isEmpty || url == widget.recipe.imageUrl)
+                        if (url.isEmpty || url == widget.recipe.imageUrl) {
                           return;
+                        }
                         final updated = widget.recipe.copyWith(imageUrl: url);
                         if (widget.onRecipeUpdated != null) {
                           widget.onRecipeUpdated!(updated);

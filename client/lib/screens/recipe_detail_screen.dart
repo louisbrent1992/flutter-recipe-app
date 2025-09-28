@@ -37,15 +37,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     _checkSavedStatus();
   }
 
-  /// Determines if the refresh button should be shown based on debug mode or recipe ownership
+  /// Determines if the refresh button should be shown based on debug mode
   bool _shouldShowRefreshButton() {
-    // Always show in debug mode
-    if (kDebugMode) {
-      return true;
-    }
-
-    // In production, only show for user's own saved recipes
-    return _isSaved;
+    // Only show individual refresh buttons in debug mode
+    // In production, users should use the bulk refresh in settings
+    return kDebugMode;
   }
 
   Widget _nutritionRow(BuildContext context, String label, String value) {

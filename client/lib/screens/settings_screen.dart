@@ -10,6 +10,9 @@ import '../theme/theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../components/floating_bottom_bar.dart';
+import '../services/bulk_image_refresh_service.dart';
+import '../models/recipe.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -22,7 +25,9 @@ class _SettingsScreenState extends State<SettingsScreen>
     with SingleTickerProviderStateMixin {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+
   bool _isEditing = false;
+  bool _isRefreshingImages = false;
   final User? user = FirebaseAuth.instance.currentUser;
   late AnimationController _animationController;
   final ScrollController _scrollController = ScrollController();
@@ -662,6 +667,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                     onTap: () => Navigator.pushNamed(context, '/discover'),
                   ),
 
+                  // Only show image refresh in production mode
+                  if (!kDebugMode) ...[
+                    SizedBox(height: AppSpacing.md),
+                    _buildImageRefreshTile(colorScheme),
+                  ],
+
                   SizedBox(height: AppSpacing.xxl),
                   const Divider(height: 1, thickness: 0.1),
                   SizedBox(height: AppSpacing.md),
@@ -1126,6 +1137,288 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
         ),
       ),
+    );
+  }
+
+  /// Builds the image refresh tile (production only)
+  Widget _buildImageRefreshTile(ColorScheme colorScheme) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: _isRefreshingImages ? null : _refreshAllImages,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color:
+                _isRefreshingImages
+                    ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
+                    : Colors.green.withValues(
+                      alpha: Theme.of(context).colorScheme.alphaLow,
+                    ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color:
+                      _isRefreshingImages
+                          ? colorScheme.surfaceContainerHighest.withValues(
+                            alpha: 0.5,
+                          )
+                          : Colors.green.withValues(
+                            alpha: Theme.of(context).colorScheme.alphaMedium,
+                          ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child:
+                    _isRefreshingImages
+                        ? SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.primary,
+                            ),
+                          ),
+                        )
+                        : Icon(
+                          Icons.refresh_rounded,
+                          color: Colors.green,
+                          size: 24,
+                        ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _isRefreshingImages
+                          ? 'Refreshing Images...'
+                          : 'Fix Broken Images',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color:
+                            _isRefreshingImages
+                                ? colorScheme.onSurface.withValues(alpha: 0.6)
+                                : Colors.green,
+                      ),
+                    ),
+                    if (!_isRefreshingImages)
+                      Text(
+                        'Update broken recipe images in your collection',
+                        style: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.7),
+                          fontSize: 14,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Shows progress dialog and performs bulk image refresh
+  Future<void> _refreshAllImages() async {
+    // Prevent multiple concurrent refreshes
+    if (_isRefreshingImages) return;
+
+    try {
+      setState(() => _isRefreshingImages = true);
+
+      // Get all user recipes
+      final allRecipes = await BulkImageRefreshService.getAllUserRecipes();
+
+      if (allRecipes.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No saved recipes found to refresh images for.'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (mounted) {
+        await _showImageRefreshDialog(allRecipes);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading recipes: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRefreshingImages = false);
+      }
+    }
+  }
+
+  /// Shows the progress dialog for image refresh
+  Future<void> _showImageRefreshDialog(List<Recipe> recipes) async {
+    int currentProgress = 0;
+    String currentRecipe = '';
+    bool isCompleted = false;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            // Start the bulk refresh process when dialog opens
+            if (!isCompleted && currentProgress == 0) {
+              Future.delayed(Duration(milliseconds: 100), () async {
+                await BulkImageRefreshService.refreshAllBrokenImages(
+                  recipes,
+                  onProgress: (current, total, recipeTitle) {
+                    setDialogState(() {
+                      currentProgress = current;
+                      currentRecipe = recipeTitle ?? '';
+                    });
+                  },
+                  onCompletion: (totalFixed, totalChecked) {
+                    setDialogState(() {
+                      isCompleted = true;
+                    });
+
+                    // Close the progress dialog
+                    Navigator.of(dialogContext).pop();
+
+                    // Show completion dialog
+                    _showCompletionDialog(totalFixed, totalChecked);
+                  },
+                );
+              });
+            }
+
+            return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.refresh_rounded, color: Colors.green, size: 24),
+                  SizedBox(width: 12),
+                  Text('Refreshing Images'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Processing recipe images...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  LinearProgressIndicator(
+                    value:
+                        recipes.isEmpty ? 0 : currentProgress / recipes.length,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    '$currentProgress of ${recipes.length} recipes checked',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  if (currentRecipe.isNotEmpty) ...[
+                    SizedBox(height: 8),
+                    Text(
+                      'Current: $currentRecipe',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Shows completion dialog with results
+  Future<void> _showCompletionDialog(int totalFixed, int totalChecked) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                totalFixed > 0 ? Icons.check_circle : Icons.info,
+                color: totalFixed > 0 ? Colors.green : Colors.blue,
+                size: 24,
+              ),
+              SizedBox(width: 12),
+              Text('Image Refresh Complete'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                totalFixed > 0
+                    ? 'Successfully refreshed $totalFixed broken images!'
+                    : 'No broken images were found in your recipe collection.',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Checked $totalChecked recipes total.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
