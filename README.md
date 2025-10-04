@@ -1,4 +1,4 @@
-# Flutter Recipe App 🍽️
+# <img src="client/assets/icons/logo.png" alt="Recipease Logo" width="32" height="32" style="vertical-align:middle; margin-right:8px;"> Flutter Recipe App
 
 A mobile application that allows users to generate unique recipes using AI, manage personal recipe collections, and easily import recipe details from shared social media posts.
 
@@ -116,7 +116,13 @@ The integration allows the app to:
 ## Screenshots
 
 ![Home Screen](client/assets/screenshots/home_screen.png)
+
+---
+
 ![AI Recipe Screen](client/assets/screenshots/ai_recipe_screen.png)
+
+---
+
 ![Recipe List Screen](client/assets/screenshots/recipe_list_screen.png)
 
 ## Social Sharing Integration
