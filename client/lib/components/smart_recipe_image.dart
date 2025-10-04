@@ -225,28 +225,37 @@ class _SmartRecipeImageState extends State<SmartRecipeImage>
               Positioned(
                 top: 6,
                 right: 6,
-                child: GestureDetector(
-                  onTap: _isRefreshing ? null : _forceRefresh,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest
-                          .withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: RotationTransition(
-                      turns: _spinController,
-                      child: Icon(
-                        Icons.refresh_rounded,
-                        size: AppSizing.responsiveIconSize(
-                          context,
-                          mobile: 16,
-                          tablet: 18,
-                          desktop: 20,
+                child: Tooltip(
+                  message: 'Find a different image',
+                  child: GestureDetector(
+                    onTap: _isRefreshing ? null : _forceRefresh,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest
+                            .withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.3),
+                          width: 1,
                         ),
-                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      child: RotationTransition(
+                        turns: _spinController,
+                        child: Icon(
+                          Icons.image_search,
+                          size: AppSizing.responsiveIconSize(
+                            context,
+                            mobile: 16,
+                            tablet: 18,
+                            desktop: 20,
+                          ),
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                     ),
                   ),
@@ -325,27 +334,64 @@ class _ExpandedImageViewState extends State<_ExpandedImageView>
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: GestureDetector(
-        onTap: () => Navigator.of(context).pop(),
+        onTap: () => Navigator.pop(context),
         onDoubleTap: _resetZoom,
-        onScaleStart: (details) {
-          _focalPoint = details.focalPoint;
-        },
-        onScaleUpdate: (details) {
-          setState(() {
-            _scale = details.scale.clamp(0.5, 3.0);
-            _offset = details.focalPoint - _focalPoint;
-          });
-        },
         child: Container(
           color: Colors.transparent,
           child: Stack(
+            fit: StackFit.expand,
             children: [
+              // Gesture detector for pinch-to-zoom
+              GestureDetector(
+                onScaleStart: (details) {
+                  setState(() {
+                    _focalPoint = details.focalPoint;
+                  });
+                },
+                onScaleUpdate: (details) {
+                  setState(() {
+                    _scale = (_scale * details.scale).clamp(1.0, 4.0);
+                    _offset += details.focalPointDelta;
+                  });
+                },
+                onScaleEnd: (details) {
+                  if (_scale < 1.1) {
+                    _resetZoom();
+                  }
+                },
+                child: Center(
+                  child: Transform(
+                    transform:
+                        Matrix4.identity()
+                          ..translate(_offset.dx, _offset.dy)
+                          ..scale(_scale),
+                    alignment: Alignment.center,
+                    child: ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: CachedNetworkImage(
+                        imageUrl: widget.imageUrl,
+                        fit: BoxFit.contain,
+                        placeholder:
+                            (context, url) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                        errorWidget:
+                            (context, url, error) => const Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: Colors.red,
+                            ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Close button
               Positioned(
-                top: MediaQuery.of(context).padding.top + 16,
+                top: MediaQuery.of(context).padding.top + 8,
                 right: 16,
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
+                child: IconButton(
+                  icon: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.5),
@@ -357,71 +403,32 @@ class _ExpandedImageViewState extends State<_ExpandedImageView>
                       size: 24,
                     ),
                   ),
+                  onPressed: () => Navigator.pop(context),
                 ),
               ),
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 16,
-                left: 16,
-                child: GestureDetector(
-                  onTap: _resetZoom,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.zoom_out,
-                      color: Colors.white,
-                      size: 24,
+              // Instructions
+              if (_scale > 1.1)
+                Positioned(
+                  bottom: MediaQuery.of(context).padding.bottom + 16,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Double tap to reset zoom',
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Center(
-                child: AnimatedBuilder(
-                  animation: _scaleAnimation,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: _scaleAnimation.value,
-                      child: Transform.translate(
-                        offset: _offset,
-                        child: Transform.scale(
-                          scale: _scale,
-                          child: InteractiveViewer(
-                            boundaryMargin: const EdgeInsets.all(20),
-                            minScale: 0.5,
-                            maxScale: 3.0,
-                            child: CachedNetworkImage(
-                              imageUrl: widget.imageUrl,
-                              fit: BoxFit.contain,
-                              placeholder:
-                                  (context, url) => const Center(
-                                    child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                              errorWidget:
-                                  (context, url, error) => Container(
-                                    color: Colors.black.withValues(alpha: 0.3),
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.error,
-                                        color: Colors.white,
-                                        size: 48,
-                                      ),
-                                    ),
-                                  ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
             ],
           ),
         ),

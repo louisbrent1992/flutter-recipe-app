@@ -184,12 +184,12 @@ Shared from Recipe App
           decoration: BoxDecoration(
             color: Theme.of(
               context,
-            ).colorScheme.secondary.withValues(alpha: 0.8),
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
             border: Border.all(
               color: Theme.of(
                 context,
-              ).colorScheme.secondary.withValues(alpha: 0.5),
-              width: 0.2,
+              ).colorScheme.primary.withValues(alpha: 0.3),
+              width: 1,
             ),
             borderRadius: BorderRadius.circular(
               AppBreakpoints.isMobile(context) ? 12 : 16,
@@ -213,9 +213,7 @@ Shared from Recipe App
                     child: CircularProgressIndicator(
                       strokeWidth: AppBreakpoints.isMobile(context) ? 1.5 : 2,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        Theme.of(context).colorScheme.surface.withValues(
-                          alpha: Theme.of(context).colorScheme.alphaVeryHigh,
-                        ),
+                        Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   )
@@ -394,7 +392,7 @@ Shared from Recipe App
             Stack(
               children: [
                 AspectRatio(
-                  aspectRatio: widget.aspectRatio ?? 16 / 9,
+                  aspectRatio: widget.aspectRatio ?? 3 / 2,
                   child: Container(
                     padding: EdgeInsets.all(AppSpacing.xs),
                     child: SmartRecipeImage(
@@ -523,9 +521,11 @@ Shared from Recipe App
                     ),
                   ),
                 ),
+                // Action buttons positioned with conditional spacing for refresh button
                 Positioned(
                   top: 8,
-                  right: 6,
+                  // Add extra right spacing in debug mode to make room for refresh button
+                  right: _shouldShowRefreshButton() ? 46 : 6,
                   child: Row(
                     children: [
                       if (widget.showEditButton)

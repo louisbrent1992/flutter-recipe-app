@@ -880,7 +880,7 @@ class _ImportingRecipeDialogState extends State<_ImportingRecipeDialog>
               const _AnimatedDotsTitle(title: 'Importing Recipe'),
               const SizedBox(height: 10),
               Text(
-                'Fetching the page, parsing content, and preparing your recipe...',
+                'Magic is happening... Your recipe will be ready soon!',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: cs.onSurface.withValues(alpha: 0.7),
