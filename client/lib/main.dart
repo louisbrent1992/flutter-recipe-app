@@ -133,6 +133,7 @@ class _MyAppState extends State<MyApp> {
   String? _lastHandledShareUrl;
   DateTime? _lastHandledAt;
   static String? _pendingSharedUrl; // Static for cross-widget access
+  static String? _processedInitialUrl; // Track the initial URL to prevent duplicates
 
   @override
   void initState() {
@@ -183,6 +184,7 @@ class _MyAppState extends State<MyApp> {
       if (maybeUrl != null) {
         // Store the URL for SplashScreen to use
         _pendingSharedUrl = maybeUrl;
+        _processedInitialUrl = maybeUrl; // Track this URL to prevent stream duplicates
         // Note: We don't navigate here anymore. SplashScreen will handle it.
       }
     }
@@ -191,6 +193,11 @@ class _MyAppState extends State<MyApp> {
     _mediaStreamSub = handler.sharedMediaStream.listen((SharedMedia media) {
       final maybeUrl = _extractUrlFromSharedMedia(media);
       if (maybeUrl != null) {
+        // Skip if this is the same URL we already handled in cold start
+        if (_processedInitialUrl == maybeUrl) {
+          debugPrint('Skipping duplicate URL from stream: $maybeUrl');
+          return;
+        }
         WidgetsBinding.instance.addPostFrameCallback(
           (_) => _handleSharedUrl(maybeUrl),
         );
