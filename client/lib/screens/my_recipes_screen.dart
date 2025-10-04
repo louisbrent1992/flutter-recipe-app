@@ -127,7 +127,8 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
 
   void _goToNextPage() {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    if (recipeProvider.hasNextPage) {
+    // Check if we can go to the next page based on current page vs total pages
+    if (_currentPage < recipeProvider.totalPages) {
       _goToPage(_currentPage + 1);
     }
   }
@@ -336,12 +337,17 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                     // Floating bottom bar
                     Consumer<RecipeProvider>(
                       builder: (context, recipeProvider, _) {
+                        // Debug pagination values
+                        debugPrint(
+                          'MyRecipes Pagination - Current: $_currentPage, Total: ${recipeProvider.totalPages}, HasNext: ${_currentPage < recipeProvider.totalPages}',
+                        );
+
                         return FloatingBottomBar(
                           showPagination: true,
                           currentPage: _currentPage,
                           totalPages: recipeProvider.totalPages,
-                          hasNextPage: recipeProvider.hasNextPage,
-                          hasPreviousPage: recipeProvider.hasPrevPage,
+                          hasNextPage: _currentPage < recipeProvider.totalPages,
+                          hasPreviousPage: _currentPage > 1,
                           isLoading: recipeProvider.isLoading,
                           onPreviousPage: _goToPreviousPage,
                           onNextPage: _goToNextPage,

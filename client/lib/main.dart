@@ -31,9 +31,9 @@ import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-// import 'package:share_handler/share_handler.dart'; // TEMPORARILY COMMENTED OUT
+import 'package:share_handler/share_handler.dart';
 import 'package:recipease/services/permission_service.dart';
-import 'package:receive_sharing_intent/receive_sharing_intent.dart';
+// import 'package:receive_sharing_intent/receive_sharing_intent.dart'; // REPLACED WITH share_handler
 import 'dart:async';
 import 'screens/generated_recipes_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -124,7 +124,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  StreamSubscription<List<SharedMediaFile>>? _mediaStreamSub;
+  StreamSubscription<SharedMedia>? _mediaStreamSub;
+  StreamSubscription<Uri>? _linkStreamSub;
   final PermissionService _permissionService = PermissionService();
   String? _lastHandledShareUrl;
   DateTime? _lastHandledAt;
@@ -133,6 +134,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _initReceiveSharing();
+    _initDeepLinkHandling();
 
     // Request necessary permissions when app starts
     _requestInitialPermissions();
@@ -147,39 +149,49 @@ class _MyAppState extends State<MyApp> {
     // as it's better to request them when they're needed
   }
 
-  // Initialize receive_sharing_intent to receive shared content
-  Future<void> _initReceiveSharing() async {
-    // Listen for media while app is in memory
-    _mediaStreamSub = ReceiveSharingIntent.instance.getMediaStream().listen(
-      (List<SharedMediaFile> files) {
-        if (files.isEmpty) return;
-        final maybeUrl = _extractUrlFromSharedFiles(files);
-        if (maybeUrl != null) {
-          WidgetsBinding.instance.addPostFrameCallback(
-            (_) => _handleSharedUrl(maybeUrl),
-          );
-        }
-      },
-      onError: (err) => debugPrint('receive_sharing_intent media error: $err'),
-    );
+  // Initialize deep link handling for ShareMedia URL scheme
+  void _initDeepLinkHandling() {
+    try {
+      // Simple URL scheme handling using platform channels
+      // This will be called when the app receives a URL scheme
+      _handleInitialUrlScheme();
+    } catch (e) {
+      debugPrint('Error initializing deep link handling: $e');
+    }
+  }
 
-    // Get initial media when app launched from share
-    final List<SharedMediaFile> initialFiles =
-        await ReceiveSharingIntent.instance.getInitialMedia();
-    if (initialFiles.isNotEmpty) {
-      final maybeUrl = _extractUrlFromSharedFiles(initialFiles);
+  // Handle initial URL scheme (for cold starts from share extension)
+  void _handleInitialUrlScheme() {
+    // This method will be enhanced with platform-specific URL handling
+    // For now, we rely on the existing receive_sharing_intent mechanism
+    debugPrint('URL scheme handling initialized');
+  }
+
+  // Initialize share_handler to receive shared content
+  Future<void> _initReceiveSharing() async {
+    final handler = ShareHandlerPlatform.instance;
+
+    // Get initial shared media when app launched from share
+    final SharedMedia? initialMedia = await handler.getInitialSharedMedia();
+    if (initialMedia != null) {
+      final maybeUrl = _extractUrlFromSharedMedia(initialMedia);
       if (maybeUrl != null) {
         // Wait for the app to be fully initialized before handling shared content
         WidgetsBinding.instance.addPostFrameCallback(
           (_) => _handleSharedUrlWithDelay(maybeUrl),
         );
-        // Mark handled
-        ReceiveSharingIntent.instance.reset();
       }
     }
 
-    // Note: receive_sharing_intent v1.8.1 does not expose text streams; URLs are often delivered as files
-    // or via getInitialMedia. If needed, we can parse file contents for URLs.
+    // Listen for media while app is in memory
+    _mediaStreamSub = handler.sharedMediaStream.listen((SharedMedia media) {
+      final maybeUrl = _extractUrlFromSharedMedia(media);
+      if (maybeUrl != null) {
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _handleSharedUrl(maybeUrl),
+        );
+      }
+    });
   }
 
   // Handle shared URL with additional delay for cold start
@@ -193,13 +205,22 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  // Extract a usable URL from SharedMediaFile list
-  String? _extractUrlFromSharedFiles(List<SharedMediaFile> files) {
-    for (final f in files) {
-      final path = f.path.trim();
-      if (path.isEmpty) continue;
-      if (_looksLikeUrl(path)) return path;
+  // Extract a usable URL from SharedMedia
+  String? _extractUrlFromSharedMedia(SharedMedia media) {
+    // Check content (text) first
+    if (media.content != null && media.content!.isNotEmpty) {
+      if (_looksLikeUrl(media.content!)) return media.content!;
     }
+
+    // Check attachments
+    if (media.attachments != null) {
+      for (final attachment in media.attachments!) {
+        if (attachment != null && _looksLikeUrl(attachment.path)) {
+          return attachment.path;
+        }
+      }
+    }
+
     return null;
   }
 
@@ -270,6 +291,7 @@ class _MyAppState extends State<MyApp> {
   void dispose() {
     try {
       _mediaStreamSub?.cancel();
+      _linkStreamSub?.cancel();
     } catch (_) {}
     super.dispose();
   }

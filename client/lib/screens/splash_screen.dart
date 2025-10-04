@@ -178,7 +178,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                       // Tagline
                       Text(
-                        'Your Personal Recipe Assistant',
+                        'Your Personal Cooking Assistant',
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: colorScheme.onSurface.withValues(alpha: 0.7),
                           letterSpacing: 0.5,

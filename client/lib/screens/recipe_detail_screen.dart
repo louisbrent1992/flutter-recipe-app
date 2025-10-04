@@ -372,10 +372,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
     final recipe = _currentRecipe;
 
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.pop(context, _currentRecipe);
-        return false;
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.pop(context, _currentRecipe);
+        }
       },
       child: Scaffold(
         appBar: CustomAppBar(
@@ -546,7 +547,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                               // Ignore failures
                             }
                           }
-                          if (mounted) {
+                          if (context.mounted) {
                             setState(() {
                               _currentRecipe = updated;
                             });

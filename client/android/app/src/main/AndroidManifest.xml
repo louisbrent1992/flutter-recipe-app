@@ -146,6 +146,15 @@
                     android:mimeType="*/*"/>
             </intent-filter>
         </activity>
+
+        <!-- TODO: (Optional) Add these meta-data tags if you want to support sharing to a specific target/conversation/shortcut (via the recordSentMessage api) -->
+        <meta-data
+            android:name="android.service.chooser.chooser_target_service"
+            android:value="androidx.sharetarget.ChooserTargetServiceCompat" />
+        <meta-data
+            android:name="android.app.shortcuts"
+            android:resource="@xml/share_targets" />
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

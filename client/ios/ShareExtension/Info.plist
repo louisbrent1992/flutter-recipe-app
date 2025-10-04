@@ -14,17 +14,37 @@
         <dict>
             <key>NSExtensionAttributes</key>
             <dict>
+                <!-- Add supported message intent if you support sharing to a specific conversation - start -->
+                <key>IntentsSupported</key>
+                <array>
+                    <string>INSendMessageIntent</string>
+                </array>
+                <!-- Add supported message intent if you support sharing to a specific conversation (registered via the recordSentMessage api call) - end -->
                 <key>NSExtensionActivationRule</key>
+                <!-- Comment or delete the TRUEPREDICATE NSExtensionActivationRule that only works in development mode -->
+                <!-- <string>TRUEPREDICATE</string> -->
+                <!-- Add a new NSExtensionActivationRule. The rule below will allow sharing one or more file of any type, url, or text content, You can modify these rules to your liking for which types of share content, as well as how many your app can handle -->
                 <string>SUBQUERY (
                     extensionItems,
                     $extensionItem,
                     SUBQUERY (
                         $extensionItem.attachments,
                         $attachment,
-                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.url" ||
-                        ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.plain-text"
+                        (
+                            ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.file-url"
+                            || ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.image"
+                            || ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.text"
+                            || ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.movie"
+                            || ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.url"
+                        )
                     ).@count > 0
-                ).@count > 0</string>
+                ).@count > 0
+                </string>
+                <key>PHSupportedMediaTypes</key>
+                <array>
+                    <string>Video</string>
+                    <string>Image</string>
+                </array>
             </dict>
             <key>NSExtensionMainStoryboard</key>
             <string>MainInterface</string>

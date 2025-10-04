@@ -80,7 +80,9 @@ class _HomeScreenState extends State<HomeScreen>
         listen: false,
       );
       _recipesChangedSubscription = recipeProvider.onRecipesChanged.listen((_) {
-        _refreshAllSections(context);
+        if (mounted) {
+          _refreshAllSections(context);
+        }
       });
     });
   }
