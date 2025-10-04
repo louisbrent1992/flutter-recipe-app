@@ -35,6 +35,7 @@ import 'package:share_handler/share_handler.dart';
 import 'package:recipease/services/permission_service.dart';
 // import 'package:receive_sharing_intent/receive_sharing_intent.dart'; // REPLACED WITH share_handler
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'screens/generated_recipes_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -71,7 +72,11 @@ void main() async {
     ),
   );
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Firebase is already initialized in AppDelegate.swift for iOS
+  // Initialize Firebase for other platforms
+  if (!Platform.isIOS) {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  }
 
   // Initialize Firebase App Check with proper configuration
   if (kDebugMode) {
@@ -154,6 +159,7 @@ class _MyAppState extends State<MyApp> {
     try {
       // Simple URL scheme handling using platform channels
       // This will be called when the app receives a URL scheme
+      // Defer Firebase operations until after initialization is complete
       _handleInitialUrlScheme();
     } catch (e) {
       debugPrint('Error initializing deep link handling: $e');
