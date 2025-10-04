@@ -296,7 +296,7 @@ const processRecipeData = async (
 	const cachedRecipe = getFromCache(aiResponseCache, contentKey);
 
 	if (cachedRecipe) {
-		console.log("Recipe parsing found in AI cache");
+		console.log("Recipe parsing found in cache");
 		return {
 			...cachedRecipe,
 			id: uuidv4(),
@@ -469,7 +469,7 @@ router.post("/import", async (req, res) => {
 			);
 		}
 
-		console.log("Processing recipe data with AI...");
+		console.log("Processing recipe data...");
 		const importedRecipe = await processRecipeData(
 			pageContent,
 			socialData,
