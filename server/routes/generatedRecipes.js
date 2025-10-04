@@ -13,6 +13,7 @@ const { getYouTubeVideoFromUrl } = require("../utils/youtubeAPI");
 const client = new OpenAI({
 	api_key: process.env.LlamaAI_API_KEY,
 	base_url: process.env.LlamaAI_API_URL,
+	timeout: 60000,
 });
 
 const nutritionSchema = z.object({
@@ -76,6 +77,13 @@ const MAX_ENTRIES_PER_CLEANUP = 100;
 // Maximum cache size
 const MAX_CACHE_SIZE = 1000; // Maximum number of entries in each cache
 
+// Performance logging helper
+const logPerformance = (label, startTime) => {
+	const duration = Date.now() - startTime;
+	console.log(`⏱️  [PERFORMANCE] ${label}: ${duration}ms (${(duration / 1000).toFixed(2)}s)`);
+	return duration;
+};
+
 // Function to fetch an image from Google with caching
 const fetchImage = async (query, start = 1) => {
 	// Handle undefined or null query
@@ -90,9 +98,11 @@ const fetchImage = async (query, start = 1) => {
 
 	// Check if the image is already cached
 	if (imageCache[cacheKey]) {
+		console.log("✅ Image found in cache");
 		return imageCache[cacheKey];
 	}
 
+	const startTime = Date.now();
 	try {
 		const response = await axios.get(GOOGLE_SEARCH_URL, {
 			params: {
@@ -105,6 +115,8 @@ const fetchImage = async (query, start = 1) => {
 				start: start,
 			},
 		});
+
+		logPerformance(`Google Image Search for "${normalizedQuery}"`, startTime);
 
 		// Check if images exist in response
 		if (!response.data.items || response.data.items.length === 0) {
@@ -124,6 +136,7 @@ const fetchImage = async (query, start = 1) => {
 		return null;
 	} catch (error) {
 		console.error("Error fetching image from Google:", error);
+		logPerformance(`Google Image Search FAILED for "${normalizedQuery}"`, startTime);
 		return null;
 	}
 };
@@ -246,6 +259,7 @@ const getFromCache = (cache, key, maxAge = CACHE_DURATIONS.AI_GENERATED) => {
 
 // Helper function for social media processing
 const processSocialMedia = async (url, type, getDataFn) => {
+	const startTime = Date.now();
 	const cacheKey = `${type}_${url}`;
 	let socialData = getFromCache(
 		recipeCache,
@@ -258,12 +272,14 @@ const processSocialMedia = async (url, type, getDataFn) => {
 			console.log(`Processing ${type} URL:`, url);
 			socialData = await getDataFn(url);
 			handleCache(recipeCache, cacheKey, socialData);
+			logPerformance(`${type.toUpperCase()} API call`, startTime);
 		} catch (error) {
 			console.error(`Error processing ${type} URL:`, error);
+			logPerformance(`${type.toUpperCase()} API call FAILED`, startTime);
 			throw new Error(`Failed to process ${type} URL`);
 		}
 	} else {
-		console.log(`${type} data found in cache`);
+		console.log(`✅ ${type} data found in cache`);
 	}
 
 	return socialData;
@@ -296,15 +312,21 @@ const processRecipeData = async (
 	const cachedRecipe = getFromCache(aiResponseCache, contentKey);
 
 	if (cachedRecipe) {
-		console.log("Recipe parsing found in cache");
+		console.log("✅ Recipe parsing found in cache");
+		const imageStartTime = Date.now();
+		const imageUrl = socialData?.imageUrl ||
+			socialData?.coverUrl ||
+			socialData?.thumbnailUrl ||
+			(await fetchImage(cachedRecipe.title || "recipe"));
+		
+		if (!socialData?.imageUrl && !socialData?.coverUrl && !socialData?.thumbnailUrl) {
+			logPerformance("Image fetch (from cache hit)", imageStartTime);
+		}
+
 		return {
 			...cachedRecipe,
 			id: uuidv4(),
-			imageUrl:
-				socialData?.imageUrl ||
-				socialData?.coverUrl ||
-				socialData?.thumbnailUrl ||
-				(await fetchImage(cachedRecipe.title || "recipe")),
+			imageUrl,
 			sourceUrl: url,
 			sourcePlatform: isInstagram
 				? "instagram"
@@ -321,7 +343,10 @@ const processRecipeData = async (
 		};
 	}
 
-	// Process new recipe data
+	// Process new recipe data with AI
+	const aiStartTime = Date.now();
+	console.log("🤖 Starting AI recipe parsing...");
+	
 	const response = await client.beta.chat.completions.parse({
 		model: "gpt-4o-mini",
 		messages: [
@@ -340,12 +365,25 @@ const processRecipeData = async (
 		response_format: zodResponseFormat(recipeObjSchema, "recipe"),
 	});
 
+	logPerformance("AI Recipe Parsing (LlamaAI/OpenAI)", aiStartTime);
+
 	const parsedRecipe = response.choices[0].message.parsed;
 	if (!parsedRecipe) {
 		throw new Error("Unable to parse recipe from URL");
 	}
 
 	handleCache(aiResponseCache, contentKey, parsedRecipe);
+
+	// Fetch image
+	const imageStartTime = Date.now();
+	const imageUrl = socialData?.imageUrl ||
+		socialData?.coverUrl ||
+		socialData?.thumbnailUrl ||
+		(await fetchImage(parsedRecipe.title || "recipe"));
+	
+	if (!socialData?.imageUrl && !socialData?.coverUrl && !socialData?.thumbnailUrl) {
+		logPerformance("Image fetch (after AI parsing)", imageStartTime);
+	}
 
 	return {
 		id: uuidv4(),
@@ -357,11 +395,7 @@ const processRecipeData = async (
 			? parsedRecipe.instructions
 			: [],
 		description: parsedRecipe.description || "Imported recipe",
-		imageUrl:
-			socialData?.imageUrl ||
-			socialData?.coverUrl ||
-			socialData?.thumbnailUrl ||
-			(await fetchImage(parsedRecipe.title || "recipe")),
+		imageUrl,
 		cookingTime: parsedRecipe.cookingTime || "30 minutes",
 		difficulty: parsedRecipe.difficulty || "medium",
 		servings: parsedRecipe.servings || "4",
@@ -416,15 +450,22 @@ router.post("/import", async (req, res) => {
 		return res.status(400).json({ error: "URL is required" });
 	}
 
+	const totalStartTime = Date.now();
+	console.log(`\n🚀 ========== STARTING RECIPE IMPORT ==========`);
+	console.log(`📎 URL: ${url}`);
+
 	try {
-		console.log(`Starting recipe import for URL: ${url}`);
-		
 		// Check recipe cache first
+		const cacheStartTime = Date.now();
 		const cachedRecipe = getFromCache(recipeCache, url, CACHE_DURATIONS.RECIPES);
 		if (cachedRecipe) {
-			console.log("Recipe found in cache, returning cached result");
+			logPerformance("Cache lookup (HIT)", cacheStartTime);
+			console.log("✅ Recipe found in cache, returning cached result");
+			logPerformance("TOTAL IMPORT TIME (from cache)", totalStartTime);
+			console.log(`✓ ========== IMPORT COMPLETE ==========\n`);
 			return res.json(cachedRecipe);
 		}
+		logPerformance("Cache lookup (MISS)", cacheStartTime);
 
 		const isInstagram =
 			url.includes("instagram.com/p/") || url.includes("instagram.com/reel/");
@@ -433,6 +474,10 @@ router.post("/import", async (req, res) => {
 		let socialData = null;
 		let pageContent = "";
 
+		// Step 1: Fetch content from source
+		const fetchStartTime = Date.now();
+		console.log("📥 Step 1: Fetching content from source...");
+		
 		if (isInstagram) {
 			socialData = await processSocialMedia(
 				url,
@@ -455,21 +500,31 @@ router.post("/import", async (req, res) => {
 			);
 			pageContent = socialData.description;
 		} else {
-			console.log("Processing web URL with textfrom.website");
+			console.log("🌐 Processing web URL with textfrom.website");
+			const webFetchStart = Date.now();
 			const textUrl = `https://textfrom.website/${url}`;
 			const { data } = await axios.get(textUrl);
 			pageContent = data;
+			logPerformance("textfrom.website API call", webFetchStart);
 		}
+		
+		logPerformance("Content Fetching (Step 1)", fetchStartTime);
 
 		if (!pageContent) {
 			const errorHandler = require("../utils/errorHandler");
+			console.log("❌ No content extracted from URL");
+			logPerformance("TOTAL IMPORT TIME (failed - no content)", totalStartTime);
+			console.log(`✗ ========== IMPORT FAILED ==========\n`);
 			return errorHandler.serverError(
 				res,
 				"We couldn't process that URL right now. Please try again shortly."
 			);
 		}
 
-		console.log("Processing recipe data...");
+		// Step 2: Process recipe data with AI
+		console.log("🤖 Step 2: Processing recipe data with AI...");
+		const processStartTime = Date.now();
+		
 		const importedRecipe = await processRecipeData(
 			pageContent,
 			socialData,
@@ -479,14 +534,25 @@ router.post("/import", async (req, res) => {
 			isYouTube
 		);
 		
-		console.log("Recipe processed successfully, caching and saving...");
+		logPerformance("Recipe Data Processing (Step 2)", processStartTime);
+		
+		// Step 3: Cache and save
+		console.log("💾 Step 3: Caching and saving...");
+		const saveStartTime = Date.now();
 		handleCache(recipeCache, url, importedRecipe);
 		tempRecipes.push(importedRecipe);
+		logPerformance("Caching and Saving (Step 3)", saveStartTime);
 
-		console.log(`Recipe import completed for: ${importedRecipe.title}`);
+		logPerformance("🎉 TOTAL IMPORT TIME", totalStartTime);
+		console.log(`✓ Recipe import completed: "${importedRecipe.title}"`);
+		console.log(`✓ ========== IMPORT COMPLETE ==========\n`);
+		
 		res.json(importedRecipe);
 	} catch (error) {
-		console.error("Error importing recipe:", error);
+		console.error("❌ Error importing recipe:", error);
+		logPerformance("TOTAL IMPORT TIME (failed - error)", totalStartTime);
+		console.log(`✗ ========== IMPORT FAILED ==========\n`);
+		
 		const errorHandler = require("../utils/errorHandler");
 		errorHandler.serverError(
 			res,

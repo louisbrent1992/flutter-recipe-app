@@ -1,4 +1,4 @@
-# <img src="client/assets/icons/logo.png" alt="Recipease Logo" width="32" height="32" style="vertical-align:middle; margin-right:8px;"> Flutter Recipe App
+# <img src="client/assets/icons/logo.png" alt="Recipease Logo" width="32" height="32" style="vertical-align:middle; margin-right:8px;"> RecipEase Kitchen App
 
 A mobile application that allows users to generate unique recipes using AI, manage personal recipe collections, and easily import recipe details from shared social media posts.
 
