@@ -19,7 +19,6 @@ import 'package:recipease/screens/collection_detail_screen.dart';
 import 'package:recipease/screens/subscription_screen.dart';
 import 'package:recipease/screens/add_recipes_to_collection_screen.dart';
 import 'package:recipease/screens/splash_screen.dart';
-import 'package:recipease/config/app_config.dart';
 import 'package:recipease/theme/theme.dart';
 import 'package:recipease/providers/auth_provider.dart';
 import 'package:recipease/providers/user_profile_provider.dart';
@@ -35,7 +34,6 @@ import 'package:share_handler/share_handler.dart';
 import 'package:recipease/services/permission_service.dart';
 // import 'package:receive_sharing_intent/receive_sharing_intent.dart'; // REPLACED WITH share_handler
 import 'dart:async';
-import 'dart:io' show Platform;
 import 'screens/generated_recipes_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -72,11 +70,8 @@ void main() async {
     ),
   );
 
-  // Firebase is already initialized in AppDelegate.swift for iOS
-  // Initialize Firebase for other platforms
-  if (!Platform.isIOS) {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  }
+  // Initialize Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Initialize Firebase App Check with proper configuration
   if (kDebugMode) {
@@ -128,12 +123,16 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
+// Global function to access pending shared URL from anywhere
+String? getPendingSharedUrl() => _MyAppState._getPendingSharedUrl();
+
 class _MyAppState extends State<MyApp> {
   StreamSubscription<SharedMedia>? _mediaStreamSub;
   StreamSubscription<Uri>? _linkStreamSub;
   final PermissionService _permissionService = PermissionService();
   String? _lastHandledShareUrl;
   DateTime? _lastHandledAt;
+  static String? _pendingSharedUrl; // Static for cross-widget access
 
   @override
   void initState() {
@@ -182,10 +181,9 @@ class _MyAppState extends State<MyApp> {
     if (initialMedia != null) {
       final maybeUrl = _extractUrlFromSharedMedia(initialMedia);
       if (maybeUrl != null) {
-        // Wait for the app to be fully initialized before handling shared content
-        WidgetsBinding.instance.addPostFrameCallback(
-          (_) => _handleSharedUrlWithDelay(maybeUrl),
-        );
+        // Store the URL for SplashScreen to use
+        _pendingSharedUrl = maybeUrl;
+        // Note: We don't navigate here anymore. SplashScreen will handle it.
       }
     }
 
@@ -198,17 +196,6 @@ class _MyAppState extends State<MyApp> {
         );
       }
     });
-  }
-
-  // Handle shared URL with additional delay for cold start
-  void _handleSharedUrlWithDelay(String url) {
-    // Add a small delay to ensure the app is fully initialized
-    Future.delayed(
-      Duration(milliseconds: AppConfig.importNavigationDelayMs),
-      () {
-        _handleSharedUrl(url);
-      },
-    );
   }
 
   // Extract a usable URL from SharedMedia
@@ -291,6 +278,13 @@ class _MyAppState extends State<MyApp> {
         });
       }
     });
+  }
+
+  // Internal static method to get and clear pending shared URL
+  static String? _getPendingSharedUrl() {
+    final url = _pendingSharedUrl;
+    _pendingSharedUrl = null; // Clear after reading
+    return url;
   }
 
   @override

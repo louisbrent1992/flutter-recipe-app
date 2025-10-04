@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../config/app_config.dart';
+import '../main.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -82,7 +83,14 @@ class _SplashScreenState extends State<SplashScreen>
   void _navigateToNextScreen() {
     final authService = Provider.of<AuthService>(context, listen: false);
 
-    if (authService.user != null) {
+    // Check if there's a pending shared URL from cold start
+    final pendingUrl = getPendingSharedUrl();
+
+    if (pendingUrl != null) {
+      // If we have a shared URL, navigate directly to import screen
+      // This ensures the loading dialog stays visible during import
+      Navigator.pushReplacementNamed(context, '/import', arguments: pendingUrl);
+    } else if (authService.user != null) {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       Navigator.pushReplacementNamed(context, '/login');
