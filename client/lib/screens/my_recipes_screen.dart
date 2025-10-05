@@ -337,17 +337,12 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                     // Floating bottom bar
                     Consumer<RecipeProvider>(
                       builder: (context, recipeProvider, _) {
-                        // Debug pagination values
-                        debugPrint(
-                          'MyRecipes Pagination - Current: $_currentPage, Total: ${recipeProvider.totalPages}, HasNext: ${_currentPage < recipeProvider.totalPages}',
-                        );
-
                         return FloatingBottomBar(
                           showPagination: true,
-                          currentPage: _currentPage,
+                          currentPage: recipeProvider.currentPage,
                           totalPages: recipeProvider.totalPages,
-                          hasNextPage: _currentPage < recipeProvider.totalPages,
-                          hasPreviousPage: _currentPage > 1,
+                          hasNextPage: recipeProvider.hasNextPage,
+                          hasPreviousPage: recipeProvider.hasPrevPage,
                           isLoading: recipeProvider.isLoading,
                           onPreviousPage: _goToPreviousPage,
                           onNextPage: _goToNextPage,

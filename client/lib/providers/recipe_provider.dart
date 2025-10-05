@@ -26,11 +26,13 @@ class RecipeProvider extends ChangeNotifier {
   bool _hasPrevPage = false;
   int _totalRecipes = 0;
   int _totalUserRecipes = 0; // Dedicated count for user-saved recipes
+  int _currentLimit = 10; // Track the current limit for cache invalidation
 
   // Lightweight in-memory caches to reduce network calls and jank
-  // Cache user recipes by page
-  final Map<int, List<Recipe>> _userRecipesCache = {};
-  final Map<int, Map<String, dynamic>> _userPaginationCache = {};
+  // Cache user recipes by page (limit-specific)
+  final Map<String, List<Recipe>> _userRecipesCache = {}; // key: "page_limit"
+  final Map<String, Map<String, dynamic>> _userPaginationCache =
+      {}; // key: "page_limit"
 
   // Cache generated/external search results by a composite key and page
   // key format: query=<q>|difficulty=<d>|tag=<t>|limit=<l>
@@ -200,11 +202,22 @@ class RecipeProvider extends ChangeNotifier {
   }) async {
     clearError();
 
+    // If limit changed, clear the cache
+    if (limit != _currentLimit) {
+      _userRecipesCache.clear();
+      _userPaginationCache.clear();
+      _currentLimit = limit;
+      _totalPages = 0; // Reset to force recalculation
+    }
+
+    // Create cache key with page and limit
+    final cacheKey = '${page}_$limit';
+
     // Serve from cache if available and not forced
-    if (!forceRefresh && _userRecipesCache.containsKey(page)) {
-      final cached = _userRecipesCache[page];
+    if (!forceRefresh && _userRecipesCache.containsKey(cacheKey)) {
+      final cached = _userRecipesCache[cacheKey];
       _userRecipes = cached != null ? List<Recipe>.from(cached) : <Recipe>[];
-      final pagination = _userPaginationCache[page];
+      final pagination = _userPaginationCache[cacheKey];
       if (pagination != null) {
         _currentPage = pagination['page'] ?? page;
         _totalPages = pagination['totalPages'] ?? _totalPages;
@@ -243,30 +256,56 @@ class RecipeProvider extends ChangeNotifier {
 
         _userRecipes = List<Recipe>.from(recipesList as List<Recipe>);
 
-        // Cache the page data
-        _userRecipesCache[page] = List<Recipe>.unmodifiable(_userRecipes);
+        // Cache the page data with limit-aware key
+        _userRecipesCache[cacheKey] = List<Recipe>.unmodifiable(_userRecipes);
 
         // Safely handle pagination data
         final pagination = data['pagination'];
+
         if (pagination != null && pagination is Map<String, dynamic>) {
-          _currentPage = pagination['page'] ?? 1;
-          _totalPages = pagination['totalPages'] ?? 1;
+          _currentPage = pagination['page'] ?? page;
+
+          // Preserve totalPages if server returns 0 or null but we know better
+          final serverTotalPages = pagination['totalPages'];
+          if (serverTotalPages != null && serverTotalPages > 0) {
+            _totalPages = serverTotalPages;
+          } else if (_totalPages == 0 || _totalPages == 1) {
+            // If we don't have a good value yet, calculate from total and limit
+            final total = pagination['total'] ?? 0;
+            if (total > 0) {
+              _totalPages = (total / limit).ceil();
+            } else {
+              _totalPages = 1;
+            }
+          }
+          // Otherwise keep existing _totalPages value
+
           _hasNextPage = pagination['hasNextPage'] ?? false;
-          _hasPrevPage = pagination['hasPrevPage'] ?? false;
+          _hasPrevPage = pagination['hasPrevPage'] ?? (page > 1);
           _totalRecipes = pagination['total'] ?? 0;
           _totalUserRecipes = _totalRecipes; // keep user-specific total in sync
 
-          // Cache pagination per page
-          _userPaginationCache[page] = Map<String, dynamic>.from(pagination);
+          // Cache pagination per page with limit-aware key
+          _userPaginationCache[cacheKey] = {
+            'page': _currentPage,
+            'totalPages': _totalPages,
+            'hasNextPage': _hasNextPage,
+            'hasPrevPage': _hasPrevPage,
+            'total': _totalRecipes,
+          };
         } else {
-          // Fallback values if pagination data is missing
-          _currentPage = 1;
-          _totalPages = 1;
+          // Fallback values if pagination data is missing entirely
+          _currentPage = page;
+          // Preserve existing totalPages if we have it
+          if (_totalPages == 0) {
+            _totalPages = 1;
+          }
           _hasNextPage = false;
-          _hasPrevPage = false;
+          _hasPrevPage = page > 1;
           _totalRecipes = _userRecipes.length;
           _totalUserRecipes = _userRecipes.length;
-          _userPaginationCache[page] = {
+
+          _userPaginationCache[cacheKey] = {
             'page': _currentPage,
             'totalPages': _totalPages,
             'hasNextPage': _hasNextPage,

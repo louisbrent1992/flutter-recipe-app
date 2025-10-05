@@ -298,7 +298,6 @@ class _ExpandedImageViewState extends State<_ExpandedImageView>
     with TickerProviderStateMixin {
   late AnimationController _scaleController;
   late Animation<double> _scaleAnimation;
-  Offset _focalPoint = Offset.zero;
   double _scale = 1.0;
   Offset _offset = Offset.zero;
 
@@ -344,9 +343,7 @@ class _ExpandedImageViewState extends State<_ExpandedImageView>
               // Gesture detector for pinch-to-zoom
               GestureDetector(
                 onScaleStart: (details) {
-                  setState(() {
-                    _focalPoint = details.focalPoint;
-                  });
+                  setState(() {});
                 },
                 onScaleUpdate: (details) {
                   setState(() {
