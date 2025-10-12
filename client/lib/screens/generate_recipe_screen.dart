@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/components/floating_bottom_bar.dart';
 import 'package:recipease/providers/recipe_provider.dart';
+import 'package:recipease/providers/subscription_provider.dart';
+import 'package:recipease/services/credits_service.dart';
 import 'package:recipease/components/checkbox_list.dart';
 import 'package:recipease/theme/theme.dart';
 import '../components/error_display.dart';
@@ -66,8 +68,50 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
     });
   }
 
+  void _showInsufficientCreditsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Insufficient Credits'),
+            content: const Text(
+              'You don\'t have enough credits to generate recipes. Please purchase credits or subscribe to continue.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/subscription');
+                },
+                child: const Text('Get Credits'),
+              ),
+            ],
+          ),
+    );
+  }
+
   void _loadRecipes(BuildContext context) async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
+    final subscriptionProvider = Provider.of<SubscriptionProvider>(
+      context,
+      listen: false,
+    );
+
+    // Check if user has enough credits
+    final hasCredits = await subscriptionProvider.hasEnoughCredits(
+      CreditType.recipeGeneration,
+    );
+
+    if (!hasCredits && !subscriptionProvider.isPremium) {
+      if (context.mounted) {
+        _showInsufficientCreditsDialog(context);
+      }
+      return;
+    }
 
     try {
       // Show enhanced loading overlay
@@ -116,6 +160,14 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
       }
 
       if (context.mounted && recipeProvider.generatedRecipes.isNotEmpty) {
+        // Use credits for recipe generation (if not premium)
+        if (!subscriptionProvider.isPremium) {
+          await subscriptionProvider.useCredits(
+            CreditType.recipeGeneration,
+            reason: 'AI recipe generation',
+          );
+        }
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

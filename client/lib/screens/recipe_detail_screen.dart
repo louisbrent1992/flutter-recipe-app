@@ -420,12 +420,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           action: SnackBarAction(
                             label: 'View Recipes',
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const MyRecipesScreen(),
-                                ),
-                              );
+                              if (mounted) {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/myRecipes',
+                                  arguments: savedRecipe,
+                                );
+                              }
                             },
                           ),
                           backgroundColor:

@@ -1,28 +1,44 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
+import '../models/purchase_product.dart';
+import '../services/purchase_service.dart';
+import '../services/credits_service.dart';
 
 class SubscriptionProvider with ChangeNotifier {
-  final InAppPurchase _inAppPurchase = InAppPurchase.instance;
+  final PurchaseService _purchaseService = PurchaseService();
+  final CreditsService _creditsService = CreditsService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  List<ProductDetails> _products = [];
+  List<PurchaseProduct> _products = [];
+  Map<String, int> _credits = {'recipeImports': 0, 'recipeGenerations': 0};
   bool _isLoading = false;
   bool _isPremium = false;
+  bool _hasActiveSubscription = false;
   String? _error;
 
   // Getters
-  List<ProductDetails> get products => _products;
+  List<PurchaseProduct> get products => _products;
+  Map<String, int> get credits => _credits;
   bool get isLoading => _isLoading;
   bool get isPremium => _isPremium;
+  bool get hasActiveSubscription => _hasActiveSubscription;
   String? get error => _error;
 
-  // Product IDs
-  static const String _monthlySubscription = 'recipease_premium_monthly';
-  static const String _yearlySubscription = 'recipease_premium_yearly';
-  static const String _lifetimePurchase = 'recipease_premium_lifetime';
+  // Get products by type
+  List<PurchaseProduct> get consumables =>
+      _products
+          .where((p) => p.purchaseType == PurchaseType.consumable)
+          .toList();
+  List<PurchaseProduct> get nonConsumables =>
+      _products
+          .where((p) => p.purchaseType == PurchaseType.nonConsumable)
+          .toList();
+  List<PurchaseProduct> get subscriptions =>
+      _products
+          .where((p) => p.purchaseType == PurchaseType.subscription)
+          .toList();
 
   SubscriptionProvider() {
     _initialize();
@@ -39,44 +55,46 @@ class SubscriptionProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Initialize the in-app purchase
-      final bool available = await _inAppPurchase.isAvailable();
-      if (!available) {
+      // Initialize the purchase service
+      final bool success = await _purchaseService.initialize();
+      if (!success) {
         _error = 'Store not available';
         return;
       }
 
       // Load products
-      final ProductDetailsResponse response = await _inAppPurchase
-          .queryProductDetails({
-            _monthlySubscription,
-            _yearlySubscription,
-            _lifetimePurchase,
-          });
-
-      if (response.notFoundIDs.isNotEmpty) {
-        _error = 'Some products not found: ${response.notFoundIDs.join(", ")}';
-      }
-
-      _products = response.productDetails;
+      _products = _purchaseService.availableProducts;
 
       // Check current subscription status
       await _checkSubscriptionStatus();
 
-      // Listen to purchase updates
-      _inAppPurchase.purchaseStream.listen(
-        _handlePurchaseUpdate,
-        onDone: () {},
-        onError: (error) {
-          _error = error.toString();
-          notifyListeners();
-        },
-      );
+      // Load credits
+      await _loadCredits();
+
+      // Listen to purchase and product updates
+      _purchaseService.productsStream.listen((products) {
+        _products = products;
+        notifyListeners();
+      });
+
+      _purchaseService.purchaseStateStream.listen((isLoading) {
+        _isLoading = isLoading;
+        notifyListeners();
+      });
     } catch (e) {
       _error = e.toString();
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> _loadCredits() async {
+    try {
+      _credits = await _creditsService.getCreditBalance();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading credits: $e');
     }
   }
 
@@ -93,6 +111,7 @@ class SubscriptionProvider with ChangeNotifier {
       if (userDoc.exists) {
         final data = userDoc.data() as Map<String, dynamic>;
         _isPremium = data['isPremium'] ?? false;
+        _hasActiveSubscription = data['subscriptionActive'] ?? false;
         notifyListeners();
       }
     } catch (e) {
@@ -101,77 +120,83 @@ class SubscriptionProvider with ChangeNotifier {
     }
   }
 
-  Future<void> purchase(ProductDetails product) async {
-    try {
-      final PurchaseParam purchaseParam = PurchaseParam(
-        productDetails: product,
-      );
+  /// Refresh all data
+  Future<void> refreshData() async {
+    await _checkSubscriptionStatus();
+    await _loadCredits();
+  }
 
-      if (product.id == _lifetimePurchase) {
-        await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
+  Future<void> purchase(PurchaseProduct product) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final success = await _purchaseService.purchaseProduct(product);
+
+      if (success) {
+        // Wait a moment for the purchase to process
+        await Future.delayed(const Duration(seconds: 2));
+
+        // Refresh data
+        await refreshData();
       } else {
-        await _inAppPurchase.buyConsumable(purchaseParam: purchaseParam);
+        _error = 'Purchase failed';
       }
     } catch (e) {
       _error = e.toString();
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
-  }
-
-  Future<void> _handlePurchaseUpdate(
-    List<PurchaseDetails> purchaseDetailsList,
-  ) async {
-    for (final purchaseDetails in purchaseDetailsList) {
-      if (purchaseDetails.status == PurchaseStatus.pending) {
-        _isLoading = true;
-      } else {
-        _isLoading = false;
-        if (purchaseDetails.status == PurchaseStatus.error) {
-          _error = purchaseDetails.error?.message;
-        } else if (purchaseDetails.status == PurchaseStatus.purchased ||
-            purchaseDetails.status == PurchaseStatus.restored) {
-          await _verifyAndDeliverProduct(purchaseDetails);
-        }
-        if (purchaseDetails.pendingCompletePurchase) {
-          await _inAppPurchase.completePurchase(purchaseDetails);
-        }
-      }
-    }
-    notifyListeners();
-  }
-
-  Future<void> _verifyAndDeliverProduct(PurchaseDetails purchaseDetails) async {
-    if (_auth.currentUser == null) return;
-
-    try {
-      // Verify the purchase with your backend
-      final verificationData = {
-        'productId': purchaseDetails.productID,
-        'purchaseToken':
-            purchaseDetails.verificationData.serverVerificationData,
-        'platform': defaultTargetPlatform.toString(),
-      };
-
-      // Update user's premium status in Firestore
-      await _firestore.collection('users').doc(_auth.currentUser!.uid).update({
-        'isPremium': true,
-        'premiumSince': FieldValue.serverTimestamp(),
-        'lastPurchase': verificationData,
-      });
-
-      _isPremium = true;
-    } catch (e) {
-      _error = e.toString();
-    }
-    notifyListeners();
   }
 
   Future<void> restorePurchases() async {
     try {
-      await _inAppPurchase.restorePurchases();
+      _isLoading = true;
+      notifyListeners();
+
+      await _purchaseService.restorePurchases();
+
+      // Wait a moment for purchases to process
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Refresh data
+      await refreshData();
     } catch (e) {
       _error = e.toString();
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Check if user has enough credits for an action
+  Future<bool> hasEnoughCredits(CreditType type, {int amount = 1}) async {
+    return await _creditsService.hasEnoughCredits(type: type, amount: amount);
+  }
+
+  /// Use credits for an action
+  Future<bool> useCredits(
+    CreditType type, {
+    int amount = 1,
+    String? reason,
+  }) async {
+    final success = await _creditsService.useCredits(
+      type: type,
+      amount: amount,
+      reason: reason,
+    );
+
+    if (success) {
+      await _loadCredits();
+    }
+
+    return success;
+  }
+
+  @override
+  void dispose() {
+    _purchaseService.dispose();
+    super.dispose();
   }
 }

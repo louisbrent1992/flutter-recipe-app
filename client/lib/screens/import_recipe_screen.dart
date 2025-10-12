@@ -6,6 +6,8 @@ import 'package:recipease/components/floating_bottom_bar.dart';
 
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/providers/recipe_provider.dart';
+import 'package:recipease/providers/subscription_provider.dart';
+import 'package:recipease/services/credits_service.dart';
 import 'package:recipease/config/app_config.dart';
 import 'package:recipease/theme/theme.dart';
 
@@ -61,6 +63,32 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
     super.dispose();
   }
 
+  void _showInsufficientCreditsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Insufficient Credits'),
+            content: const Text(
+              'You don\'t have enough credits to import recipes. Please purchase credits or subscribe to continue.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/subscription');
+                },
+                child: const Text('Get Credits'),
+              ),
+            ],
+          ),
+    );
+  }
+
   Future<void> _importRecipe(BuildContext context, String url) async {
     if (url.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -92,6 +120,22 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
     }
 
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
+    final subscriptionProvider = Provider.of<SubscriptionProvider>(
+      context,
+      listen: false,
+    );
+
+    // Check if user has enough credits
+    final hasCredits = await subscriptionProvider.hasEnoughCredits(
+      CreditType.recipeImport,
+    );
+
+    if (!hasCredits && !subscriptionProvider.isPremium) {
+      if (context.mounted) {
+        _showInsufficientCreditsDialog(context);
+      }
+      return;
+    }
 
     try {
       // Show enhanced loading overlay
@@ -136,6 +180,14 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
       }
 
       if (context.mounted && recipe != null) {
+        // Use credits for recipe import (if not premium)
+        if (!subscriptionProvider.isPremium) {
+          await subscriptionProvider.useCredits(
+            CreditType.recipeImport,
+            reason: 'Recipe import from URL',
+          );
+        }
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

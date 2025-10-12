@@ -77,43 +77,40 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Hide ads completely when debug flag is set
-    if (hideAds) {
-      return const SizedBox.shrink();
-    }
+    return Consumer<SubscriptionProvider>(
+      builder: (context, subscriptionProvider, _) {
+        // Hide ads if user is premium or if debug flag is set
+        if (hideAds || subscriptionProvider.isPremium) {
+          return const SizedBox.shrink();
+        }
 
-    if (!_isAdLoaded) {
-      return const SizedBox.shrink();
-    }
+        if (!_isAdLoaded) {
+          return const SizedBox.shrink();
+        }
 
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      child: SafeArea(
-        child: Stack(
-          children: [
-            Container(
-              alignment: Alignment.center,
-              width: double.infinity,
-              height: _bannerAd?.size.height.toDouble(),
-              color: Colors.transparent,
-              child: Center(
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  child: AdWidget(ad: _bannerAd!),
+        return Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: SafeArea(
+            child: Stack(
+              children: [
+                Container(
+                  alignment: Alignment.center,
+                  width: double.infinity,
+                  height: _bannerAd?.size.height.toDouble(),
+                  color: Colors.transparent,
+                  child: Center(
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      child: AdWidget(ad: _bannerAd!),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            Positioned(
-              top: 0,
-              right: 10,
-              child: Consumer<SubscriptionProvider>(
-                builder: (context, subscriptionProvider, _) {
-                  if (subscriptionProvider.isPremium) {
-                    return const SizedBox.shrink();
-                  }
-                  return Material(
+                Positioned(
+                  top: 0,
+                  right: 10,
+                  child: Material(
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
@@ -131,13 +128,13 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
                         ),
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
