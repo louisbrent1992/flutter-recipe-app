@@ -53,6 +53,11 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _initializeApp() async {
+    // Wait for Firebase Auth to initialize
+    // This ensures we have the correct auth state before navigation
+    // Give Firebase Auth time to restore session if user was previously logged in
+    await Future.delayed(const Duration(milliseconds: 500));
+    
     // Wait for minimum splash duration
     final elapsed = DateTime.now().difference(_startTime!);
     final remainingTime =

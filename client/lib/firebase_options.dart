@@ -62,7 +62,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDGJ4Ds_DsWNb_zPWIeJXyOVW6RyOxb3i0',
-    appId: '1:826154873845:ios:a9a2ed9cc06ecc595be6bc',
+    appId: '1:826154873845:ios:28605276c137f58a5be6bc',
     messagingSenderId: '826154873845',
     projectId: 'recipe-app-c2fcc',
     databaseURL: 'https://recipe-app-c2fcc-default-rtdb.firebaseio.com',
@@ -70,13 +70,13 @@ class DefaultFirebaseOptions {
     androidClientId:
         '826154873845-2uber91hjcgap6qr688uo3lqeim47mjj.apps.googleusercontent.com',
     iosClientId:
-        '826154873845-4904phdrsiv04juljvs6n2reirpje1qg.apps.googleusercontent.com',
+        '826154873845-9n1vqk797jnrvarkd3stsehjhl6ff1le.apps.googleusercontent.com',
     iosBundleId: 'com.recipease.kitchen',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyDGJ4Ds_DsWNb_zPWIeJXyOVW6RyOxb3i0',
-    appId: '1:826154873845:ios:a9a2ed9cc06ecc595be6bc',
+    appId: '1:826154873845:ios:28605276c137f58a5be6bc',
     messagingSenderId: '826154873845',
     projectId: 'recipe-app-c2fcc',
     databaseURL: 'https://recipe-app-c2fcc-default-rtdb.firebaseio.com',
@@ -84,7 +84,7 @@ class DefaultFirebaseOptions {
     androidClientId:
         '826154873845-2uber91hjcgap6qr688uo3lqeim47mjj.apps.googleusercontent.com',
     iosClientId:
-        '826154873845-4904phdrsiv04juljvs6n2reirpje1qg.apps.googleusercontent.com',
+        '826154873845-9n1vqk797jnrvarkd3stsehjhl6ff1le.apps.googleusercontent.com',
     iosBundleId: 'com.recipease.kitchen',
   );
 

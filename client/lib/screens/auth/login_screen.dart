@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:recipease/providers/auth_provider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../theme/theme.dart';
@@ -182,7 +183,25 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacementNamed(context, '/home');
         }
       } else if (mounted && authService.error != null) {
-        _showSnackBar(authService.error!, isError: true);
+        // Check for specific error types
+        if (authService.error!.contains('invalid-credential')) {
+          _showSnackBar(
+            'Apple sign-in configuration error. Please contact support or try another sign-in method.',
+            isError: true,
+          );
+        } else {
+          _showSnackBar(authService.error!, isError: true);
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        String message;
+        if (e.code == 'invalid-credential') {
+          message = 'Apple sign-in configuration error. Please contact support or try another sign-in method.';
+        } else {
+          message = 'Failed to sign in with Apple: ${e.message}';
+        }
+        _showSnackBar(message, isError: true);
       }
     } catch (e) {
       if (mounted) {

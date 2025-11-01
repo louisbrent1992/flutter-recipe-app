@@ -1,4 +1,5 @@
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:flutter/material.dart';
 
 /// Enum for different types of purchases
 enum PurchaseType { consumable, nonConsumable, subscription }
@@ -6,6 +7,7 @@ enum PurchaseType { consumable, nonConsumable, subscription }
 /// Enum for specific product types
 enum ProductType {
   // Consumables
+  recipeImports10, // Quick pack
   recipeImports20,
   recipeGenerations50,
 
@@ -13,7 +15,7 @@ enum ProductType {
   adFree,
   adFreePlus20Imports,
   adFreePlus50Generations,
-  ultimateBundle, // Ad-free + 20 imports + 50 generations
+  ultimateBundle, // Ad-free + 30 imports + 50 generations
   // Subscriptions
   monthlyPremium,
   yearlyPremium,
@@ -31,6 +33,7 @@ class PurchaseProduct {
   final bool includesAdFree;
   final bool isBestValue;
   final ProductDetails? productDetails;
+  final IconData icon; // Icon for the product
 
   PurchaseProduct({
     required this.id,
@@ -43,6 +46,7 @@ class PurchaseProduct {
     this.includesAdFree = false,
     this.isBestValue = false,
     this.productDetails,
+    required this.icon,
   });
 
   PurchaseProduct copyWith({
@@ -56,6 +60,7 @@ class PurchaseProduct {
     bool? includesAdFree,
     bool? isBestValue,
     ProductDetails? productDetails,
+    IconData? icon,
   }) {
     return PurchaseProduct(
       id: id ?? this.id,
@@ -68,15 +73,45 @@ class PurchaseProduct {
       includesAdFree: includesAdFree ?? this.includesAdFree,
       isBestValue: isBestValue ?? this.isBestValue,
       productDetails: productDetails ?? this.productDetails,
+      icon: icon ?? this.icon,
     );
   }
 
-  String get price => productDetails?.price ?? 'N/A';
+  String get price => productDetails?.price ?? _getMockPrice();
+
+  String _getMockPrice() {
+    switch (productType) {
+      // Consumables
+      case ProductType.recipeImports10:
+        return '\$2.49';
+      case ProductType.recipeImports20:
+        return '\$3.99';
+      case ProductType.recipeGenerations50:
+        return '\$4.99';
+
+      // Non-consumables
+      case ProductType.adFree:
+        return '\$4.99';
+      case ProductType.adFreePlus20Imports:
+        return '\$6.99';
+      case ProductType.adFreePlus50Generations:
+        return '\$9.99';
+      case ProductType.ultimateBundle:
+        return '\$11.99';
+
+      // Subscriptions
+      case ProductType.monthlyPremium:
+        return '\$5.99/month';
+      case ProductType.yearlyPremium:
+        return '\$34.99/year';
+    }
+  }
 }
 
 /// Constants for product IDs
 class ProductIds {
   // Consumables
+  static const String recipeImports10 = 'recipease_imports_10'; // Quick pack
   static const String recipeImports20 = 'recipease_imports_20';
   static const String recipeGenerations50 = 'recipease_generations_50';
 
@@ -93,6 +128,7 @@ class ProductIds {
 
   /// Get all product IDs as a set
   static Set<String> get allProductIds => {
+    recipeImports10,
     recipeImports20,
     recipeGenerations50,
     adFree,
@@ -106,6 +142,8 @@ class ProductIds {
   /// Get product type from ID
   static ProductType? getProductType(String id) {
     switch (id) {
+      case recipeImports10:
+        return ProductType.recipeImports10;
       case recipeImports20:
         return ProductType.recipeImports20;
       case recipeGenerations50:
@@ -133,79 +171,105 @@ class ProductConfigurations {
   static List<PurchaseProduct> get allProducts => [
     // Consumables
     PurchaseProduct(
+      id: ProductIds.recipeImports10,
+      title: 'Quick Import Pack',
+      description:
+          'Import 10 recipes from any cooking website. Perfect for trying the feature!',
+      productType: ProductType.recipeImports10,
+      purchaseType: PurchaseType.consumable,
+      creditAmount: 10,
+      icon: Icons.rocket_launch,
+    ),
+    PurchaseProduct(
       id: ProductIds.recipeImports20,
       title: '20 Recipe Imports',
-      description: 'Import 20 recipes from your favorite websites',
+      description:
+          'Import 20 recipes from Instagram, TikTok, YouTube, AllRecipes, and thousands more sites',
       productType: ProductType.recipeImports20,
       purchaseType: PurchaseType.consumable,
       creditAmount: 20,
+      icon: Icons.share,
     ),
     PurchaseProduct(
       id: ProductIds.recipeGenerations50,
       title: '50 Recipe Generations',
-      description: 'Generate 50 AI-powered recipes',
+      description:
+          'Generate 50 custom recipes based on your ingredients and preferences',
       productType: ProductType.recipeGenerations50,
       purchaseType: PurchaseType.consumable,
       creditAmount: 50,
+      icon: Icons.auto_awesome,
     ),
 
     // Non-consumables
     PurchaseProduct(
       id: ProductIds.adFree,
-      title: 'Ad-Free Experience',
-      description: 'Remove all ads permanently',
+      title: 'RecipEase Ad-Free',
+      description:
+          'Remove all ads permanently. Clean, distraction-free cooking experience forever',
       productType: ProductType.adFree,
       purchaseType: PurchaseType.nonConsumable,
       includesAdFree: true,
+      icon: Icons.block,
     ),
     PurchaseProduct(
       id: ProductIds.adFreePlus20Imports,
-      title: 'Ad-Free + 20 Imports',
-      description: 'Remove ads forever and get 20 recipe imports',
+      title: 'Ad-Free + Import Starter',
+      description:
+          'Remove ads FOREVER + get 20 recipe imports. Perfect way to get started!',
       productType: ProductType.adFreePlus20Imports,
       purchaseType: PurchaseType.nonConsumable,
       creditAmount: 20,
       includesAdFree: true,
+      icon: Icons.card_giftcard,
     ),
     PurchaseProduct(
       id: ProductIds.adFreePlus50Generations,
-      title: 'Ad-Free + 50 Generations',
-      description: 'Remove ads forever and get 50 recipe generations',
+      title: 'Ad-Free + Recipe Pack',
+      description:
+          'Remove ads FOREVER + generate 50 recipes. Perfect for creative cooks!',
       productType: ProductType.adFreePlus50Generations,
       purchaseType: PurchaseType.nonConsumable,
       creditAmount: 50,
       includesAdFree: true,
+      icon: Icons.palette,
     ),
     PurchaseProduct(
       id: ProductIds.ultimateBundle,
-      title: 'Ultimate Bundle',
-      description: 'Ad-free + 20 imports + 50 generations',
+      title: 'Ultimate RecipEase Bundle',
+      description:
+          'Remove ads forever + 30 recipe imports + 50 recipe generations. Everything you need!',
       productType: ProductType.ultimateBundle,
       purchaseType: PurchaseType.nonConsumable,
-      creditAmount: 70, // 20 + 50
+      creditAmount: 80, // 30 + 50
       includesAdFree: true,
       isBestValue: true,
+      icon: Icons.local_fire_department,
     ),
 
     // Subscriptions
     PurchaseProduct(
       id: ProductIds.monthlyPremium,
-      title: 'Monthly Premium',
-      description: 'Ad-free + 10 imports + 25 generations per month',
+      title: 'RecipEase Premium - Monthly',
+      description:
+          'No ads + 25 recipe imports + 20 recipe generations every month. 7-day free trial!',
       productType: ProductType.monthlyPremium,
       purchaseType: PurchaseType.subscription,
-      monthlyCredits: 35, // 10 + 25
+      monthlyCredits: 45, // 25 + 20
       includesAdFree: true,
+      icon: Icons.workspace_premium,
     ),
     PurchaseProduct(
       id: ProductIds.yearlyPremium,
-      title: 'Yearly Premium',
-      description: 'Ad-free + 15 imports + 40 generations per month',
+      title: 'RecipEase Premium - Yearly',
+      description:
+          'SAVE 50%! No ads + 35 imports + 30 recipe generations/month. Only \$2.92/month. 7-day free trial!',
       productType: ProductType.yearlyPremium,
       purchaseType: PurchaseType.subscription,
-      monthlyCredits: 55, // 15 + 40
+      monthlyCredits: 65, // 35 + 30
       includesAdFree: true,
       isBestValue: true,
+      icon: Icons.star_rounded,
     ),
   ];
 

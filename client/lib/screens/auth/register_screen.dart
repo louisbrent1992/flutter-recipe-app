@@ -219,11 +219,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       final User? userData =
           await context.read<AuthService>().signInWithApple();
+      print('userData: $userData');
       if (mounted) {
         _showSnackBar('Successfully signed up with Apple!');
         Navigator.pushNamed(context, '/home', arguments: userData);
       }
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       String message;
       switch (e.code) {
         case 'account-exists-with-different-credential':

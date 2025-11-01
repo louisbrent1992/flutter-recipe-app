@@ -6,14 +6,12 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:recipease/components/html_description.dart';
 import 'package:recipease/providers/recipe_provider.dart';
-import 'package:recipease/screens/my_recipes_screen.dart';
 import 'package:recipease/screens/recipe_edit_screen.dart';
 import '../models/recipe.dart';
 import '../components/custom_app_bar.dart';
 import '../providers/user_profile_provider.dart';
 import '../components/floating_bottom_bar.dart';
 import '../theme/theme.dart';
-// import '../components/expandable_image.dart';
 import '../components/smart_recipe_image.dart';
 
 class RecipeDetailScreen extends StatefulWidget {

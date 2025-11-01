@@ -8,35 +8,41 @@ This document provides a comprehensive overview of the in-app purchase system im
 ### 1. Product Types
 
 #### Consumables
-- **20 Recipe Imports** (`recipease_imports_20`)
-  - One-time purchase for 20 recipe import credits
+- **Quick Import Pack** (`recipease_imports_10`) - **$2.49** 🚀
+  - Perfect for trying the feature! 10 recipe imports
   
-- **50 Recipe Generations** (`recipease_generations_50`)
-  - One-time purchase for 50 AI recipe generation credits
+- **20 Recipe Imports** (`recipease_imports_20`) - **$3.99** 🔗
+  - Save 20% per-credit vs Quick Pack! 20 recipe import credits
+  
+- **50 Recipe Generations** (`recipease_generations_50`) - **$4.99** ✨
+  - One-time purchase for 50 recipe generation credits
 
 #### Non-Consumables (One-time Purchases)
-- **Ad-Free Experience** (`recipease_ad_free`)
+- **Ad-Free Experience** (`recipease_ad_free`) - **$4.99**
   - Removes all ads permanently
   
-- **Ad-Free + 20 Imports** (`recipease_ad_free_imports_20`)
-  - Permanent ad-free + 20 recipe import credits
+- **Ad-Free + Import Starter** (`recipease_ad_free_imports_20`) - **$6.99** ⭐
+  - Permanent ad-free + 20 recipe import credits (Great first purchase!)
   
-- **Ad-Free + 50 Generations** (`recipease_ad_free_generations_50`)
-  - Permanent ad-free + 50 AI recipe generation credits
+- **Ad-Free + Recipe Pack** (`recipease_ad_free_generations_50`) - **$9.99**
+  - Permanent ad-free + 50 recipe generation credits
   
-- **Ultimate Bundle** (`recipease_ultimate_bundle`) *[BEST VALUE]*
-  - Permanent ad-free + 20 imports + 50 generations
+- **Ultimate Bundle** (`recipease_ultimate_bundle`) - **$11.99** 🔥 *[BEST VALUE]*
+  - Permanent ad-free + 30 imports + 50 generations (Save $13.96!)
 
 #### Subscriptions
-- **Monthly Premium** (`recipease_premium_monthly`)
+- **Monthly Premium** (`recipease_premium_monthly`) - **$5.99/month**
   - Ad-free experience
-  - 10 recipe imports per month
-  - 25 AI recipe generations per month
+  - 25 recipe imports per month
+  - 20 recipe generations per month
+  - 7-day FREE trial
   
-- **Yearly Premium** (`recipease_premium_yearly`) *[BEST VALUE]*
-  - Ad-free experience
-  - 15 recipe imports per month
-  - 40 AI recipe generations per month
+- **Yearly Premium** (`recipease_premium_yearly`) - **$34.99/year** ⭐ *[BEST VALUE]*
+  - Ad-free experience (only $2.92/month!)
+  - 35 recipe imports per month
+  - 30 recipe generations per month
+  - 7-day FREE trial
+  - Save 50% vs monthly!
 
 ## Files Created/Modified
 
@@ -153,7 +159,7 @@ if (!hasCredits && !subscriptionProvider.isPremium) {
 // Deduct credits after successful action
 await subscriptionProvider.useCredits(
   CreditType.recipeGeneration,
-  reason: 'AI recipe generation',
+  reason: 'recipe generation',
 );
 ```
 
@@ -262,18 +268,19 @@ users/{userId}/
 ### Product IDs to Configure
 ```
 Consumables:
-- recipease_imports_20
-- recipease_generations_50
+- recipease_imports_10          ($2.49)
+- recipease_imports_20          ($3.99)
+- recipease_generations_50      ($4.99)
 
 Non-Consumables:
-- recipease_ad_free
-- recipease_ad_free_imports_20
-- recipease_ad_free_generations_50
-- recipease_ultimate_bundle
+- recipease_ad_free             ($4.99)
+- recipease_ad_free_imports_20  ($6.99)
+- recipease_ad_free_generations_50 ($9.99)
+- recipease_ultimate_bundle     ($11.99)
 
 Subscriptions:
-- recipease_premium_monthly
-- recipease_premium_yearly
+- recipease_premium_monthly     ($5.99/mo + 7-day trial)
+- recipease_premium_yearly      ($34.99/yr + 7-day trial)
 ```
 
 ## Future Enhancements
