@@ -118,6 +118,14 @@ class AuthService with ChangeNotifier {
       // Update user profile in Firestore
       if (_user != null) {
         await _createOrUpdateUserProfile(_user!);
+        
+        // Force refresh ID token to ensure currentUser is properly set
+        // This prevents race conditions when making API calls immediately after login
+        await _user!.getIdToken(true);
+        
+        // Add a delay to ensure Firebase Auth state is fully propagated
+        // This is crucial for preventing "User not authenticated" errors
+        await Future.delayed(const Duration(milliseconds: 1000));
       }
 
       return _user;
@@ -241,6 +249,13 @@ class AuthService with ChangeNotifier {
           userCredential.user!,
           displayName: googleUser.displayName,
         );
+        
+        // Force refresh ID token to ensure currentUser is properly set
+        // This prevents race conditions when making API calls immediately after login
+        await userCredential.user!.getIdToken(true);
+        
+        // Add a small delay to ensure Firebase Auth state is fully propagated
+        await Future.delayed(const Duration(milliseconds: 500));
       }
 
       _user = userCredential.user;
@@ -262,17 +277,21 @@ class AuthService with ChangeNotifier {
     notifyListeners();
 
     try {
+      print('🍎 Starting Apple Sign In...');
+      
       // Check if Apple Sign In is available
       final isAvailable = await SignInWithApple.isAvailable();
       if (!isAvailable) {
         throw 'Apple Sign In is not available on this device';
       }
+      print('🍎 Apple Sign In is available');
 
       // Generate secure nonce for Firebase (recommended)
       final String rawNonce = _generateNonce();
       final String hashedNonce = _sha256ofString(rawNonce);
 
       // Request Apple Sign In
+      print('🍎 Requesting Apple ID credential...');
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
@@ -280,16 +299,27 @@ class AuthService with ChangeNotifier {
         ],
         nonce: hashedNonce,
       );
+      print('🍎 Got Apple ID credential: ${credential.identityToken != null ? "has token" : "NO TOKEN"}');
 
       // Create OAuth provider credential
       final oauthCredential = OAuthProvider(
         'apple.com',
-      ).credential(idToken: credential.identityToken, rawNonce: rawNonce);
+      ).credential(
+        idToken: credential.identityToken,
+        rawNonce: rawNonce,
+        // Some Firebase versions expect the Apple authorizationCode as accessToken
+        accessToken: credential.authorizationCode,
+      );
+      print('🍎 Created OAuth credential');
 
       // Sign in to Firebase
+      print('🍎 Signing in to Firebase...');
+      print('🍎 Identity Token (first 50 chars): ${credential.identityToken?.substring(0, 50)}...');
+      print('🍎 User Identifier: ${credential.userIdentifier}');
       UserCredential userCredential = await _auth.signInWithCredential(
         oauthCredential,
       );
+      print('🍎 Firebase sign-in complete. User: ${userCredential.user?.uid ?? "NULL USER"}');
 
       // Create or update user profile in Firestore
       if (userCredential.user != null) {
@@ -297,16 +327,39 @@ class AuthService with ChangeNotifier {
         if (credential.givenName != null && credential.familyName != null) {
           displayName = '${credential.givenName} ${credential.familyName}';
         }
+        print('🍎 Updating user profile...');
 
         await _createOrUpdateUserProfile(
           userCredential.user!,
           displayName: displayName,
         );
+        print('🍎 Profile updated');
+        
+        // Force refresh ID token to ensure currentUser is properly set
+        // This prevents race conditions when making API calls immediately after login
+        print('🍎 Refreshing ID token...');
+        await userCredential.user!.getIdToken(true);
+        print('🍎 ID token refreshed');
+        
+        // Add a delay to ensure Firebase Auth state is fully propagated
+        // This is crucial for preventing "User not authenticated" errors
+        print('🍎 Waiting 1500ms for auth state to propagate...');
+        await Future.delayed(const Duration(milliseconds: 1500));
+        print('🍎 Auth state should be ready. Current user check: ${_auth.currentUser?.uid ?? "STILL NULL"}');
+      } else {
+        print('🍎 ERROR: userCredential.user is NULL!');
       }
 
       _user = userCredential.user;
+      print('🍎 Sign in complete. Returning user: ${_user?.uid ?? "NULL"}');
       return _user;
     } catch (e) {
+      print('🍎 ❌ ERROR during Apple Sign In: $e');
+      if (e is FirebaseAuthException) {
+        print('🍎 ❌ Firebase Error Code: ${e.code}');
+        print('🍎 ❌ Firebase Error Message: ${e.message}');
+        print('🍎 ❌ Firebase Error Details: ${e.stackTrace}');
+      }
       _error = e.toString();
       return null;
     } finally {

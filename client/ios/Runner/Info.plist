@@ -35,16 +35,6 @@
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
-			<key>CFBundleURLName</key>
-			<string>signinwithapple</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>signinwithapple</string>
-			</array>
-		</dict>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>ShareMedia-$(PRODUCT_BUNDLE_IDENTIFIER)</string>
@@ -89,6 +79,10 @@
 	<string>no</string>
 	<key>AppGroupId</key>
 	<string>$(CUSTOM_GROUP_ID)</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>mailto</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
