@@ -4,9 +4,9 @@ service cloud.firestore {
     // Allow authenticated users to read and write their own data
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
-      
-      // Allow accessing subcollections like favorites
-      match /favorites/{docId} {
+      // Allow accessing any subcollections under the user's document
+      // (e.g., credits, purchases, favorites, etc.)
+      match /{document=**} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
@@ -18,16 +18,9 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
     
-    // Allow accessing favorites collection
+    // Allow accessing favorites collection (top-level mirror if used)
     match /favorites/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
-     match /b/{bucket}/o {
-    match /profile_pictures/{userId}/{fileName} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
   }
 } 
