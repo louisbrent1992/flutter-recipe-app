@@ -173,7 +173,6 @@ class _HomeScreenState extends State<HomeScreen>
                           },
                         ),
                         _buildHeroSection(context),
-                        SizedBox(height: AppSpacing.responsive(context)),
                         // --- Your Recipes carousel ---
                         Consumer<RecipeProvider>(
                           builder: (context, recipeProvider, _) {
