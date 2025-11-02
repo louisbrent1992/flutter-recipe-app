@@ -2,11 +2,13 @@ class DynamicUiConfig {
   final int version;
   final DateTime fetchedAt;
   final List<DynamicBannerConfig> banners;
+  final DynamicBackgroundConfig? globalBackground;
 
   DynamicUiConfig({
     required this.version,
     required this.fetchedAt,
     required this.banners,
+    this.globalBackground,
   });
 
   factory DynamicUiConfig.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,12 @@ class DynamicUiConfig {
                 (e) => DynamicBannerConfig.fromJson(e as Map<String, dynamic>),
               )
               .toList(),
+      globalBackground:
+          json['globalBackground'] != null
+              ? DynamicBackgroundConfig.fromJson(
+                json['globalBackground'] as Map<String, dynamic>,
+              )
+              : null,
     );
   }
 }
@@ -85,4 +93,36 @@ class DynamicBannerConfig {
     if (endAt != null && now.isAfter(endAt!)) return false;
     return true;
   }
+}
+
+class DynamicBackgroundConfig {
+  final String? imageUrl;
+  final List<String> colors; // hex strings
+  final bool animateGradient;
+  final bool kenBurns;
+  final double? opacity; // 0.0 - 1.0 overlay opacity for image/gradient
+
+  const DynamicBackgroundConfig({
+    this.imageUrl,
+    this.colors = const [],
+    this.animateGradient = true,
+    this.kenBurns = true,
+    this.opacity,
+  });
+
+  factory DynamicBackgroundConfig.fromJson(Map<String, dynamic> json) {
+    final rawColors = (json['colors'] as List?)?.cast<String>() ?? const [];
+    return DynamicBackgroundConfig(
+      imageUrl: json['imageUrl'] as String?,
+      colors: rawColors,
+      animateGradient: (json['animateGradient'] ?? true) as bool,
+      kenBurns: (json['kenBurns'] ?? true) as bool,
+      opacity:
+          (json['opacity'] is num) ? (json['opacity'] as num).toDouble() : null,
+    );
+  }
+
+  bool get hasImage => imageUrl != null && imageUrl!.isNotEmpty;
+  bool get hasGradient => colors.length >= 2;
+  bool get hasSolidColor => colors.length == 1;
 }

@@ -27,6 +27,7 @@ import 'package:recipease/providers/notification_provider.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/providers/subscription_provider.dart';
 import 'package:recipease/providers/dynamic_ui_provider.dart';
+import 'package:recipease/components/dynamic_background.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
@@ -134,7 +135,8 @@ class _MyAppState extends State<MyApp> {
   String? _lastHandledShareUrl;
   DateTime? _lastHandledAt;
   static String? _pendingSharedUrl; // Static for cross-widget access
-  static String? _processedInitialUrl; // Track the initial URL to prevent duplicates
+  static String?
+  _processedInitialUrl; // Track the initial URL to prevent duplicates
 
   @override
   void initState() {
@@ -185,7 +187,8 @@ class _MyAppState extends State<MyApp> {
       if (maybeUrl != null) {
         // Store the URL for SplashScreen to use
         _pendingSharedUrl = maybeUrl;
-        _processedInitialUrl = maybeUrl; // Track this URL to prevent stream duplicates
+        _processedInitialUrl =
+            maybeUrl; // Track this URL to prevent stream duplicates
         // Note: We don't navigate here anymore. SplashScreen will handle it.
       }
     }
@@ -383,7 +386,27 @@ class _MyAppState extends State<MyApp> {
                   ),
                 );
               };
-              return child!;
+              // Global dynamic background wrapper
+              return Consumer<DynamicUiProvider>(
+                builder: (context, dyn, _) {
+                  final hasBg = dyn.config?.globalBackground != null;
+                  final themedChild =
+                      hasBg
+                          ? Theme(
+                            data: Theme.of(context).copyWith(
+                              scaffoldBackgroundColor: Colors.transparent,
+                            ),
+                            child: Stack(
+                              children: [
+                                const DynamicGlobalBackground(),
+                                if (child != null) child,
+                              ],
+                            ),
+                          )
+                          : (child ?? const SizedBox.shrink());
+                  return themedChild;
+                },
+              );
             },
             home: const SplashScreen(),
             routes: {

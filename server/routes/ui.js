@@ -8,6 +8,14 @@ router.get("/ui/config", (req, res) => {
   const config = {
     version: 1,
     fetchedAt: now.toISOString(),
+    globalBackground: {
+      // Choose either imageUrl or colors (for gradient/solid)
+      imageUrl: null,
+      colors: ["#FFF3E0", "#FFE0B2"], // soft seasonal gradient (light theme example)
+      animateGradient: true,
+      kenBurns: true,
+      opacity: 1.0
+    },
     banners: [
       {
         id: "seasonal_home",
