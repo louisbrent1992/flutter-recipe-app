@@ -26,6 +26,7 @@ import 'package:recipease/providers/theme_provider.dart';
 import 'package:recipease/providers/notification_provider.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/providers/subscription_provider.dart';
+import 'package:recipease/providers/dynamic_ui_provider.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
@@ -315,6 +316,7 @@ class _MyAppState extends State<MyApp> {
         ),
         ChangeNotifierProvider(create: (_) => RecipeProvider()),
         ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
+        ChangeNotifierProvider(create: (_) => DynamicUiProvider()),
         ChangeNotifierProvider(create: (_) => CollectionService()),
       ],
       child: Consumer2<AuthService, ThemeProvider>(

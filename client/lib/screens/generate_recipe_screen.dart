@@ -101,12 +101,12 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
       listen: false,
     );
 
-    // Check if user has enough credits
+    // Check if user has enough credits (required for all users)
     final hasCredits = await subscriptionProvider.hasEnoughCredits(
       CreditType.recipeGeneration,
     );
 
-    if (!hasCredits && !subscriptionProvider.isPremium) {
+    if (!hasCredits) {
       if (context.mounted) {
         _showInsufficientCreditsDialog(context);
       }
@@ -160,13 +160,11 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
       }
 
       if (context.mounted && recipeProvider.generatedRecipes.isNotEmpty) {
-        // Use credits for recipe generation (if not premium)
-        if (!subscriptionProvider.isPremium) {
-          await subscriptionProvider.useCredits(
-            CreditType.recipeGeneration,
-            reason: 'AI recipe generation',
-          );
-        }
+        // Always deduct one generation credit after successful generation
+        await subscriptionProvider.useCredits(
+          CreditType.recipeGeneration,
+          reason: 'AI recipe generation',
+        );
 
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
@@ -242,16 +240,8 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      appBar: CustomAppBar(
+      appBar: const CustomAppBar(
         title: 'Generate Recipe',
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/settings');
-            },
-            icon: const Icon(Icons.settings),
-          ),
-        ],
       ),
       body: Consumer<RecipeProvider>(
         builder: (context, recipeProvider, _) {

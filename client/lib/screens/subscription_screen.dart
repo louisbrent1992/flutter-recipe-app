@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:provider/provider.dart';
+import '../components/credits_badge.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../components/dynamic_banner.dart';
+import '../providers/dynamic_ui_provider.dart';
 import '../providers/subscription_provider.dart';
 import '../models/purchase_product.dart';
 import '../components/error_display.dart';
@@ -15,16 +20,23 @@ class SubscriptionScreen extends StatefulWidget {
 class _SubscriptionScreenState extends State<SubscriptionScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  Duration _trialRemaining = Duration.zero;
+  Timer? _trialTimer;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    // Start a ticking timer to update the trial countdown if needed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startTrialTicker();
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _trialTimer?.cancel();
     super.dispose();
   }
 
@@ -39,6 +51,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         elevation: AppElevation.appBar,
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: colorScheme.onSurface,
+        actions: const [CreditsPill()],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: colorScheme.onPrimary,
@@ -83,6 +96,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
           return Column(
             children: [
+              // Trial countdown banner (only during trial)
+              _buildTrialCountdownBanner(context, subscriptionProvider),
               // Credits Display
               _buildCreditsHeader(context, subscriptionProvider),
 
@@ -102,9 +117,147 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                   ],
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+                child: GestureDetector(
+                  onTap: () async {
+                    final url = Uri.parse(
+                      'https://www.recipease.kitchen/fair-use',
+                    );
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(
+                        url,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    }
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 14,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Fair‑use policy',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _startTrialTicker() {
+    _trialTimer?.cancel();
+    _trialTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final provider = context.read<SubscriptionProvider>();
+      final end = provider.trialEndAt;
+      if (provider.trialActive && end != null) {
+        final diff = end.difference(DateTime.now());
+        if (mounted) {
+          setState(() {
+            _trialRemaining = diff.isNegative ? Duration.zero : diff;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _trialRemaining = Duration.zero;
+          });
+        }
+      }
+    });
+  }
+
+  Widget _buildTrialCountdownBanner(
+    BuildContext context,
+    SubscriptionProvider provider,
+  ) {
+    if (!provider.trialActive || provider.trialEndAt == null) {
+      return const SizedBox.shrink();
+    }
+
+    final remaining = _trialRemaining;
+    if (remaining <= Duration.zero) return const SizedBox.shrink();
+
+    String two(int n) => n.toString().padLeft(2, '0');
+    final days = remaining.inDays;
+    final hours = remaining.inHours % 24;
+    final mins = remaining.inMinutes % 60;
+    final secs = remaining.inSeconds % 60;
+    final countdown =
+        days > 0
+            ? '$days d ${two(hours)}:${two(mins)}:${two(secs)}'
+            : '${two(hours)}:${two(mins)}:${two(secs)}';
+
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade400, Colors.blue.shade600],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.rocket_launch,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Trial ends in $countdown',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Subscribe now to unlock full monthly credits when your trial ends.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: () => _tabController.animateTo(0),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: cs.onPrimary,
+              foregroundColor: cs.primary,
+            ),
+            child: const Text('Subscribe'),
+          ),
+        ],
       ),
     );
   }
@@ -205,6 +358,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Dynamic UI banners (shop_top)
+          Consumer<DynamicUiProvider>(
+            builder: (context, dyn, _) {
+              final banners = dyn.bannersForPlacement('shop_top');
+              if (banners.isEmpty) return const SizedBox.shrink();
+              return Column(
+                children: banners.map((b) => DynamicBanner(banner: b)).toList(),
+              );
+            },
+          ),
           // Free Trial Highlight Banner
           _buildFreeTrialBanner(context),
           const SizedBox(height: 24),
@@ -330,6 +493,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   ) async {
     // Check if it's a subscription
     final isSubscription = product.purchaseType == PurchaseType.subscription;
+    final trialEligible = provider.eligibleForTrial;
 
     // Show confirmation dialog with trial info
     final confirmed = await showDialog<bool>(
@@ -337,13 +501,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       builder:
           (context) => AlertDialog(
             title: Text(
-              isSubscription ? 'Start Free Trial' : 'Confirm Purchase',
+              isSubscription
+                  ? (trialEligible
+                      ? 'Start Free Trial'
+                      : 'Confirm Subscription')
+                  : 'Confirm Purchase',
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (isSubscription) ...[
+                if (isSubscription && trialEligible) ...[
                   Row(
                     children: [
                       Icon(Icons.celebration, color: Colors.green, size: 20),
@@ -398,6 +566,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       ],
                     ),
                   ),
+                ] else if (isSubscription && !trialEligible) ...[
+                  Text('Subscribe to ${product.title}?'),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Trial already used on this account.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ] else ...[
                   Text('Purchase ${product.title} for ${product.price}?'),
                   const SizedBox(height: 8),
@@ -419,9 +597,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               ElevatedButton(
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isSubscription ? Colors.green : null,
+                  backgroundColor:
+                      isSubscription && trialEligible ? Colors.green : null,
                 ),
-                child: Text(isSubscription ? 'Start Free Trial' : 'Buy'),
+                child: Text(
+                  isSubscription
+                      ? (trialEligible ? 'Start Free Trial' : 'Subscribe')
+                      : 'Buy',
+                ),
               ),
             ],
           ),
@@ -460,6 +643,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isSubscription = product.purchaseType == PurchaseType.subscription;
+    final subscriptionProvider = Provider.of<SubscriptionProvider>(
+      context,
+      listen: false,
+    );
+    final bool trialEligible = subscriptionProvider.eligibleForTrial;
+    final bool isUnlimited =
+        product.productType == ProductType.unlimitedPremium ||
+        product.productType == ProductType.unlimitedPremiumYearly ||
+        product.unlimitedUsage;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -491,17 +683,60 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       ),
                       child: Icon(
                         product.icon,
-                        color: colorScheme.primary,
-                        size: 20,
+                        color: colorScheme.onPrimaryContainer,
+                        size: 22,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        product.title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              product.title,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (product.unlimitedUsage) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.purple.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.purple,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.all_inclusive,
+                                    size: 14,
+                                    color: Colors.purple,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Unlimited',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: Colors.purple,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                          const SizedBox(width: 4),
+                        ],
                       ),
                     ),
                     if (product.isBestValue)
@@ -525,8 +760,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                   ],
                 ),
 
-                // Free Trial Badge for subscriptions
-                if (isSubscription) ...[
+                // Free Trial Badge for subscriptions (only when eligible)
+                if (isSubscription && trialEligible && !isUnlimited) ...[
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -591,7 +826,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (isSubscription)
+                        if (isSubscription && trialEligible && !isUnlimited)
                           Text(
                             'Then ${product.price}',
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -599,25 +834,48 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                             ),
                           ),
                         Text(
-                          isSubscription ? 'FREE for 7 days' : product.price,
+                          isSubscription
+                              ? (trialEligible && !isUnlimited
+                                  ? 'FREE for 7 days'
+                                  : product.price)
+                              : product.price,
                           style: theme.textTheme.headlineSmall?.copyWith(
                             color:
-                                isSubscription
+                                isSubscription && trialEligible && !isUnlimited
                                     ? Colors.green
                                     : colorScheme.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                        if (product.productType ==
+                            ProductType.unlimitedPremiumYearly) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            'Equivalent to \$9.99/month',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     ElevatedButton(
                       onPressed: onTap,
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
-                            isSubscription ? Colors.green : colorScheme.primary,
+                            isSubscription && trialEligible && !isUnlimited
+                                ? Colors.green
+                                : colorScheme.primary,
                         foregroundColor: Colors.white,
                       ),
-                      child: Text(isSubscription ? 'Start Trial' : 'Buy'),
+                      child: Text(
+                        isSubscription
+                            ? (trialEligible && !isUnlimited
+                                ? 'Start Trial'
+                                : 'Subscribe')
+                            : 'Buy',
+                      ),
                     ),
                   ],
                 ),

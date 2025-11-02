@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'credits_badge.dart';
 
 
 /// A customizable app bar component that supports multiple styles and configurations.
@@ -18,6 +19,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool useLogo;
   final double? logoHeight;
   final List<Widget>? floatingButtons;
+  final bool showCreditsPill;
 
   const CustomAppBar({
     super.key,
@@ -35,6 +37,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.useLogo = false,
     this.logoHeight = 60.0,
     this.floatingButtons,
+    this.showCreditsPill = true,
   });
 
   @override
@@ -66,6 +69,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               : null,
 
       actions: [
+        if (showCreditsPill)
+          CreditsPill(
+            onTap: () => Navigator.pushNamed(context, '/subscription'),
+          ),
         if (floatingButtons != null) ...floatingButtons!,
         if (actions != null) ...actions!,
       ],

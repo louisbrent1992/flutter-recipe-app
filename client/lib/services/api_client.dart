@@ -16,7 +16,7 @@ class ApiClient {
   factory ApiClient() => _instance;
   ApiClient._internal();
 
-  final String port = Platform.isAndroid ? '8080' : '8080';
+  final String port = '8080';
 
   /// Base URL for API requests
   String get baseUrl {
@@ -148,7 +148,6 @@ class ApiClient {
   }) async {
     try {
       final response = await _post(endpoint, _standardHeaders, body);
-      print('response: ${response.body}');
       return _handleResponse<T>(response, fromJson: fromJson);
     } catch (e) {
       return _handleError<T>(e, 'POST $endpoint');
@@ -165,7 +164,7 @@ class ApiClient {
       '$baseUrl/$endpoint',
     ).replace(queryParameters: queryParams);
 
-    _logger.d('GET $uri');
+    // debug logging removed
 
     // Add timeout to requests with longer timeout for recipe imports
     final isRecipeImport =
@@ -195,7 +194,7 @@ class ApiClient {
   ) async {
     final uri = Uri.parse('$baseUrl/$endpoint');
 
-    _logger.d('POST $uri with body: $body');
+    // debug logging removed
 
     // Add timeout to requests with longer timeout for recipe imports
     final isRecipeImport =
@@ -229,7 +228,7 @@ class ApiClient {
   ) async {
     final uri = Uri.parse('$baseUrl/$endpoint');
 
-    _logger.d('PUT $uri with body: $body');
+    // debug logging removed
 
     // Add timeout to requests with longer timeout for recipe imports
     final isRecipeImport =
@@ -263,7 +262,7 @@ class ApiClient {
   ) async {
     final uri = Uri.parse('$baseUrl/$endpoint');
 
-    _logger.d('PATCH $uri with body: $body');
+    // debug logging removed
 
     // Add timeout to requests with longer timeout for recipe imports
     final isRecipeImport =
@@ -296,7 +295,7 @@ class ApiClient {
   ) async {
     final uri = Uri.parse('$baseUrl/$endpoint');
 
-    _logger.d('DELETE $uri');
+    // debug logging removed
 
     // Add timeout to requests with longer timeout for recipe imports
     final isRecipeImport =
@@ -324,7 +323,7 @@ class ApiClient {
     http.Response response, {
     T Function(Map<String, dynamic>)? fromJson,
   }) {
-    _logger.d('Response status: ${response.statusCode}');
+    // debug logging removed
 
     try {
       // Parse the response body

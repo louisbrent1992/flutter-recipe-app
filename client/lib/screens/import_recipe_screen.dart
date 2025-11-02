@@ -125,12 +125,12 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
       listen: false,
     );
 
-    // Check if user has enough credits
+    // Check if user has enough credits (required for all users)
     final hasCredits = await subscriptionProvider.hasEnoughCredits(
       CreditType.recipeImport,
     );
 
-    if (!hasCredits && !subscriptionProvider.isPremium) {
+    if (!hasCredits) {
       if (context.mounted) {
         _showInsufficientCreditsDialog(context);
       }
@@ -180,13 +180,11 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
       }
 
       if (context.mounted && recipe != null) {
-        // Use credits for recipe import (if not premium)
-        if (!subscriptionProvider.isPremium) {
-          await subscriptionProvider.useCredits(
-            CreditType.recipeImport,
-            reason: 'Recipe import from URL',
-          );
-        }
+        // Always deduct one import credit after successful import
+        await subscriptionProvider.useCredits(
+          CreditType.recipeImport,
+          reason: 'Recipe import from URL',
+        );
 
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(

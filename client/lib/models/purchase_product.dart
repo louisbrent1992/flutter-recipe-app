@@ -19,6 +19,8 @@ enum ProductType {
   // Subscriptions
   monthlyPremium,
   yearlyPremium,
+  unlimitedPremium,
+  unlimitedPremiumYearly,
 }
 
 /// Model class representing a purchase product
@@ -34,6 +36,7 @@ class PurchaseProduct {
   final bool isBestValue;
   final ProductDetails? productDetails;
   final IconData icon; // Icon for the product
+  final bool unlimitedUsage;
 
   PurchaseProduct({
     required this.id,
@@ -47,6 +50,7 @@ class PurchaseProduct {
     this.isBestValue = false,
     this.productDetails,
     required this.icon,
+    this.unlimitedUsage = false,
   });
 
   PurchaseProduct copyWith({
@@ -61,6 +65,7 @@ class PurchaseProduct {
     bool? isBestValue,
     ProductDetails? productDetails,
     IconData? icon,
+    bool? unlimitedUsage,
   }) {
     return PurchaseProduct(
       id: id ?? this.id,
@@ -74,6 +79,7 @@ class PurchaseProduct {
       isBestValue: isBestValue ?? this.isBestValue,
       productDetails: productDetails ?? this.productDetails,
       icon: icon ?? this.icon,
+      unlimitedUsage: unlimitedUsage ?? this.unlimitedUsage,
     );
   }
 
@@ -85,7 +91,7 @@ class PurchaseProduct {
       case ProductType.recipeImports10:
         return '\$2.49';
       case ProductType.recipeImports20:
-        return '\$3.99';
+        return '\$4.49';
       case ProductType.recipeGenerations50:
         return '\$4.99';
 
@@ -104,6 +110,10 @@ class PurchaseProduct {
         return '\$5.99/month';
       case ProductType.yearlyPremium:
         return '\$34.99/year';
+      case ProductType.unlimitedPremium:
+        return '\$14.99/month';
+      case ProductType.unlimitedPremiumYearly:
+        return '\$119.99/year';
     }
   }
 }
@@ -125,6 +135,9 @@ class ProductIds {
   // Subscriptions
   static const String monthlyPremium = 'recipease_premium_monthly';
   static const String yearlyPremium = 'recipease_premium_yearly';
+  static const String unlimitedPremium = 'recipease_premium_unlimited';
+  static const String unlimitedPremiumYearly =
+      'recipease_premium_unlimited_yearly';
 
   /// Get all product IDs as a set
   static Set<String> get allProductIds => {
@@ -137,6 +150,8 @@ class ProductIds {
     ultimateBundle,
     monthlyPremium,
     yearlyPremium,
+    unlimitedPremium,
+    unlimitedPremiumYearly,
   };
 
   /// Get product type from ID
@@ -160,6 +175,10 @@ class ProductIds {
         return ProductType.monthlyPremium;
       case yearlyPremium:
         return ProductType.yearlyPremium;
+      case unlimitedPremium:
+        return ProductType.unlimitedPremium;
+      case unlimitedPremiumYearly:
+        return ProductType.unlimitedPremiumYearly;
       default:
         return null;
     }
@@ -192,19 +211,19 @@ class ProductConfigurations {
     ),
     PurchaseProduct(
       id: ProductIds.recipeGenerations50,
-      title: '50 Recipe Generations',
+      title: '30 Recipe Generations',
       description:
-          'Generate 50 custom recipes based on your ingredients and preferences',
+          'Generate 30 custom recipes based on your ingredients and preferences',
       productType: ProductType.recipeGenerations50,
       purchaseType: PurchaseType.consumable,
-      creditAmount: 50,
+      creditAmount: 30,
       icon: Icons.auto_awesome,
     ),
 
     // Non-consumables
     PurchaseProduct(
       id: ProductIds.adFree,
-      title: 'RecipEase Ad-Free',
+      title: 'Ad-Free',
       description:
           'Remove all ads permanently. Clean, distraction-free cooking experience forever',
       productType: ProductType.adFree,
@@ -227,21 +246,21 @@ class ProductConfigurations {
       id: ProductIds.adFreePlus50Generations,
       title: 'Ad-Free + Recipe Pack',
       description:
-          'Remove ads FOREVER + generate 50 recipes. Perfect for creative cooks!',
+          'Remove ads FOREVER + generate 30 recipes. Perfect for creative cooks!',
       productType: ProductType.adFreePlus50Generations,
       purchaseType: PurchaseType.nonConsumable,
-      creditAmount: 50,
+      creditAmount: 30,
       includesAdFree: true,
       icon: Icons.palette,
     ),
     PurchaseProduct(
       id: ProductIds.ultimateBundle,
-      title: 'Ultimate RecipEase Bundle',
+      title: 'Ultimate Bundle',
       description:
-          'Remove ads forever + 30 recipe imports + 50 recipe generations. Everything you need!',
+          'Remove ads forever + 20 recipe imports + 30 recipe generations. Everything you need!',
       productType: ProductType.ultimateBundle,
       purchaseType: PurchaseType.nonConsumable,
-      creditAmount: 80, // 30 + 50
+      creditAmount: 50, // 20 + 30
       includesAdFree: true,
       isBestValue: true,
       icon: Icons.local_fire_department,
@@ -250,26 +269,53 @@ class ProductConfigurations {
     // Subscriptions
     PurchaseProduct(
       id: ProductIds.monthlyPremium,
-      title: 'RecipEase Premium - Monthly',
+      title: 'Premium - Monthly',
       description:
-          'No ads + 25 recipe imports + 20 recipe generations every month. 7-day free trial!',
+          'No ads + 25 recipe imports + 25 recipe generations every month. 7-day free trial!',
       productType: ProductType.monthlyPremium,
       purchaseType: PurchaseType.subscription,
-      monthlyCredits: 45, // 25 + 20
+      monthlyCredits: 50, // 25 + 25
       includesAdFree: true,
       icon: Icons.workspace_premium,
     ),
     PurchaseProduct(
       id: ProductIds.yearlyPremium,
-      title: 'RecipEase Premium - Yearly',
+      title: 'Premium - Yearly',
       description:
-          'SAVE 50%! No ads + 35 imports + 30 recipe generations/month. Only \$2.92/month. 7-day free trial!',
+          'SAVE 50%! No ads + 25 recipe imports + 25 recipe generations/month. Only \$2.92/month. 7-day free trial!',
       productType: ProductType.yearlyPremium,
       purchaseType: PurchaseType.subscription,
-      monthlyCredits: 65, // 35 + 30
+      monthlyCredits: 50, // 25 + 25
       includesAdFree: true,
       isBestValue: true,
       icon: Icons.star_rounded,
+    ),
+
+    // Unlimited subscription
+    PurchaseProduct(
+      id: ProductIds.unlimitedPremium,
+      title: 'Premium - Unlimited',
+      description:
+          'Unlimited imports and generations. No ads. Fair-use policy applies.',
+      productType: ProductType.unlimitedPremium,
+      purchaseType: PurchaseType.subscription,
+      includesAdFree: true,
+      unlimitedUsage: true,
+      icon: Icons.all_inclusive,
+    ),
+
+    // Unlimited subscription (Yearly)
+    PurchaseProduct(
+      id: ProductIds.unlimitedPremiumYearly,
+      title: 'Premium - Unlimited (Yearly)',
+      description:
+          'Unlimited imports and generations. No ads. Save 33% with annual plan. Fair-use policy applies.',
+      productType: ProductType.unlimitedPremiumYearly,
+      purchaseType: PurchaseType.subscription,
+      includesAdFree: true,
+      unlimitedUsage: true,
+      isBestValue: true,
+      icon: Icons.all_inclusive,
     ),
   ];
 

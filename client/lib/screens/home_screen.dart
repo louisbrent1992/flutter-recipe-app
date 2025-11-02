@@ -12,6 +12,8 @@ import '../providers/recipe_provider.dart';
 import '../models/recipe.dart';
 import '../models/recipe_collection.dart';
 import '../components/floating_bottom_bar.dart';
+import '../components/dynamic_banner.dart';
+import '../providers/dynamic_ui_provider.dart';
 
 /// Lightweight model representing a quick-access category on the home screen.
 class _CategoryItem {
@@ -157,6 +159,19 @@ class _HomeScreenState extends State<HomeScreen>
                             80, // Extra space for floating bar
                       ),
                       children: [
+                        // Dynamic UI banners (home_top)
+                        Consumer<DynamicUiProvider>(
+                          builder: (context, dyn, _) {
+                            final banners = dyn.bannersForPlacement('home_top');
+                            if (banners.isEmpty) return const SizedBox.shrink();
+                            return Column(
+                              children:
+                                  banners
+                                      .map((b) => DynamicBanner(banner: b))
+                                      .toList(),
+                            );
+                          },
+                        ),
                         _buildHeroSection(context),
                         SizedBox(height: AppSpacing.responsive(context)),
                         // --- Your Recipes carousel ---

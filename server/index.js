@@ -61,6 +61,7 @@ const userRoutes = require("./routes/users");
 const authRoutes = require("./middleware/auth");
 const collectionRoutes = require("./routes/collections");
 const dataDeletionRoutes = require("./routes/data-deletion");
+const uiRoutes = require("./routes/ui");
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -93,6 +94,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/collections", collectionRoutes);
 app.use("/api", dataDeletionRoutes);
+app.use("/api", uiRoutes);
 
 // Server homepage
 app.get("/", (req, res) => {

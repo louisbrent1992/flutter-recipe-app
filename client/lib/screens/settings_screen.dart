@@ -10,6 +10,7 @@ import '../theme/theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../components/floating_bottom_bar.dart';
+import '../components/credits_badge.dart';
 import '../services/bulk_image_refresh_service.dart';
 import '../models/recipe.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -415,6 +416,9 @@ class _SettingsScreenState extends State<SettingsScreen>
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         actions: [
+          CreditsPill(
+            onTap: () => Navigator.pushNamed(context, '/subscription'),
+          ),
           if (_isEditing) ...[
             IconButton(
               icon: const Icon(Icons.cancel_rounded),
@@ -425,12 +429,6 @@ class _SettingsScreenState extends State<SettingsScreen>
               icon: const Icon(Icons.save_rounded),
               onPressed: _updateProfile,
               tooltip: 'Save changes',
-            ),
-          ] else ...[
-            IconButton(
-              icon: const Icon(Icons.edit_note_rounded),
-              onPressed: _toggleEditing,
-              tooltip: 'Edit profile',
             ),
           ],
         ],
@@ -665,6 +663,24 @@ class _SettingsScreenState extends State<SettingsScreen>
                     icon: Icons.explore,
                     color: Colors.blue,
                     onTap: () => Navigator.pushNamed(context, '/discover'),
+                  ),
+
+                  SizedBox(height: AppSpacing.md),
+                  _buildAnimatedListTile(
+                    title: 'Import Recipes',
+                    subtitle: 'Paste a link to import a recipe',
+                    icon: Icons.link_rounded,
+                    color: Theme.of(context).colorScheme.info,
+                    onTap: () => Navigator.pushNamed(context, '/import'),
+                  ),
+
+                  SizedBox(height: AppSpacing.md),
+                  _buildAnimatedListTile(
+                    title: 'Generate Recipes',
+                    subtitle: 'Create recipes from your ingredients',
+                    icon: Icons.auto_awesome_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                    onTap: () => Navigator.pushNamed(context, '/generate'),
                   ),
 
                   // Only show image refresh in production mode
@@ -998,10 +1014,10 @@ class _SettingsScreenState extends State<SettingsScreen>
             duration: const Duration(milliseconds: 200),
             child: TextField(
               controller: controller,
-              enabled: enabled,
+              enabled: true,
               style: TextStyle(
                 fontSize: AppTypography.responsiveFontSize(context),
-                fontWeight: enabled ? FontWeight.normal : FontWeight.bold,
+                fontWeight: FontWeight.normal,
               ),
               decoration: InputDecoration(
                 hintText: hint,
@@ -1010,13 +1026,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   borderRadius: BorderRadius.circular(
                     AppBreakpoints.isMobile(context) ? 8 : 12,
                   ),
-                  borderSide: enabled ? const BorderSide() : BorderSide.none,
+                  borderSide: const BorderSide(),
                 ),
-                filled: !enabled,
-                fillColor:
-                    enabled
-                        ? Colors.transparent
-                        : Theme.of(context).colorScheme.surface,
+                filled: false,
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(
                     AppBreakpoints.isMobile(context) ? 8 : 12,
@@ -1027,6 +1039,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ),
                 contentPadding: AppSpacing.allResponsive(context),
               ),
+              onTap: () {
+                if (!_isEditing) {
+                  setState(() => _isEditing = true);
+                  _animationController.forward();
+                }
+              },
             ),
           ),
         ],

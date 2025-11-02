@@ -16,6 +16,10 @@ class SubscriptionProvider with ChangeNotifier {
   bool _isLoading = false;
   bool _isPremium = false;
   bool _hasActiveSubscription = false;
+  bool _trialActive = false;
+  bool _trialUsed = false;
+  DateTime? _trialEndAt;
+  bool _unlimitedUsage = false;
   String? _error;
 
   // Getters
@@ -24,6 +28,10 @@ class SubscriptionProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isPremium => _isPremium;
   bool get hasActiveSubscription => _hasActiveSubscription;
+  bool get trialActive => _trialActive;
+  bool get eligibleForTrial => !_hasActiveSubscription && !_trialActive && !_trialUsed;
+  DateTime? get trialEndAt => _trialEndAt;
+  bool get unlimitedUsage => _unlimitedUsage;
   String? get error => _error;
 
   // Get products by type
@@ -102,16 +110,43 @@ class SubscriptionProvider with ChangeNotifier {
     if (_auth.currentUser == null) return;
 
     try {
-      final userDoc =
-          await _firestore
-              .collection('users')
-              .doc(_auth.currentUser!.uid)
-              .get();
+      final userRef = _firestore.collection('users').doc(_auth.currentUser!.uid);
+      final userDoc = await userRef.get();
 
       if (userDoc.exists) {
         final data = userDoc.data() as Map<String, dynamic>;
         _isPremium = data['isPremium'] ?? false;
         _hasActiveSubscription = data['subscriptionActive'] ?? false;
+        _trialActive = data['trialActive'] ?? false;
+        _trialUsed = data['trialUsed'] ?? false;
+        final String? subscriptionType = data['subscriptionType'];
+        final Timestamp? trialEndAtTs = data['trialEndAt'];
+        _trialEndAt = trialEndAtTs?.toDate();
+        _unlimitedUsage = data['unlimitedUsage'] ?? false;
+        // If trial ended, grant full monthly credits once and flip to non-trial
+        if (_hasActiveSubscription && _trialActive && trialEndAtTs != null) {
+          final DateTime trialEnd = trialEndAtTs.toDate();
+          if (DateTime.now().isAfter(trialEnd)) {
+            // Determine full monthly credit amounts based on plan
+            final bool isMonthly =
+                subscriptionType == 'recipease_premium_monthly';
+            final int importCredits = isMonthly ? 25 : 35;
+            final int generationCredits = isMonthly ? 20 : 30;
+
+            await _creditsService.addCredits(
+              recipeImports: importCredits,
+              recipeGenerations: generationCredits,
+              reason: 'Subscription trial ended - first month credits',
+            );
+
+            await userRef.update({
+              'trialActive': false,
+              'lastSubscriptionRenewal': FieldValue.serverTimestamp(),
+            });
+            _trialActive = false;
+            _trialEndAt = null;
+          }
+        }
         notifyListeners();
       }
     } catch (e) {
@@ -172,6 +207,7 @@ class SubscriptionProvider with ChangeNotifier {
 
   /// Check if user has enough credits for an action
   Future<bool> hasEnoughCredits(CreditType type, {int amount = 1}) async {
+    if (_unlimitedUsage) return true;
     return await _creditsService.hasEnoughCredits(type: type, amount: amount);
   }
 
@@ -181,6 +217,10 @@ class SubscriptionProvider with ChangeNotifier {
     int amount = 1,
     String? reason,
   }) async {
+    if (_unlimitedUsage) {
+      await _loadCredits();
+      return true;
+    }
     final success = await _creditsService.useCredits(
       type: type,
       amount: amount,

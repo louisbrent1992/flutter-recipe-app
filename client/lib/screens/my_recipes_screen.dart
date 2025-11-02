@@ -208,38 +208,57 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                 });
 
                 if (!recipeProvider.isLoading && filteredRecipes.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          allRecipes.isEmpty
-                              ? Icons.restaurant_menu_rounded
-                              : Icons.search_off,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          allRecipes.isEmpty
-                              ? 'No recipes found'
-                              : 'No matching recipes',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        if (allRecipes.isEmpty)
-                          Text(
-                            'Add your first recipe to get started',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade600,
+                  return Stack(
+                    children: [
+                      Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              allRecipes.isEmpty
+                                  ? Icons.restaurant_menu_rounded
+                                  : Icons.search_off,
+                              size: 64,
+                              color: Colors.grey,
                             ),
-                          ),
-                      ],
-                    ),
+                            const SizedBox(height: 16),
+                            Text(
+                              allRecipes.isEmpty
+                                  ? 'No recipes found'
+                                  : 'No matching recipes',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            if (allRecipes.isEmpty)
+                              Text(
+                                'Add your first recipe to get started',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      // Persistent bottom navigation, even when empty
+                      Consumer<RecipeProvider>(
+                        builder: (context, recipeProvider, _) {
+                          return FloatingBottomBar(
+                            showPagination: true,
+                            currentPage: _currentPage,
+                            totalPages: recipeProvider.totalPages,
+                            hasNextPage: recipeProvider.hasNextPage,
+                            hasPreviousPage: recipeProvider.hasPrevPage,
+                            isLoading: recipeProvider.isLoading,
+                            onPreviousPage: _goToPreviousPage,
+                            onNextPage: _goToNextPage,
+                          );
+                        },
+                      ),
+                    ],
                   );
                 }
 
@@ -339,7 +358,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                       builder: (context, recipeProvider, _) {
                         return FloatingBottomBar(
                           showPagination: true,
-                          currentPage: recipeProvider.currentPage,
+                          currentPage: _currentPage,
                           totalPages: recipeProvider.totalPages,
                           hasNextPage: recipeProvider.hasNextPage,
                           hasPreviousPage: recipeProvider.hasPrevPage,

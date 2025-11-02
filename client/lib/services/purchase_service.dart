@@ -83,56 +83,40 @@ class PurchaseService {
       final ProductDetailsResponse response = await _inAppPurchase
           .queryProductDetails(ProductIds.allProductIds);
 
-      if (response.notFoundIDs.isNotEmpty) {
-        debugPrint('Products not found: ${response.notFoundIDs.join(", ")}');
-      }
+      // Verbose store logging removed
 
-      if (response.error != null) {
-        debugPrint('Error loading products: ${response.error}');
-        // For development/testing, show products even if store is not available
+      // Prefer store-backed details whenever available; avoid dev fallback unless nothing loads
+      final Map<String, ProductDetails> byId = {
+        for (final d in response.productDetails) d.id: d,
+      };
+
+      final storeBacked = ProductConfigurations.allProducts
+          .where((p) => byId.containsKey(p.id))
+          .map((p) => p.copyWith(productDetails: byId[p.id]))
+          .toList();
+
+      // Coverage computation removed (no longer needed for logging)
+
+      if (storeBacked.isNotEmpty) {
+        _availableProducts = storeBacked;
+        _productsController.add(_availableProducts);
+      } else {
+        // Development fallback (no products returned). Prices may be mock values.
         _availableProducts = ProductConfigurations.allProducts;
         _productsController.add(_availableProducts);
-        debugPrint(
-          'Loaded ${_availableProducts.length} products (development mode)',
-        );
-        return;
       }
-
-      // Map ProductDetails to PurchaseProduct
-      _availableProducts =
-          ProductConfigurations.allProducts.map((product) {
-            // Try to find matching product details from store
-            try {
-              final productDetails = response.productDetails.firstWhere(
-                (details) => details.id == product.id,
-              );
-              return product.copyWith(productDetails: productDetails);
-            } catch (e) {
-              // If product not found in store, return product without details
-              // This allows UI to show products during development
-              debugPrint(
-                'Product ${product.id} not found in store, showing without details',
-              );
-              return product;
-            }
-          }).toList();
-
-      _productsController.add(_availableProducts);
-      debugPrint('Loaded ${_availableProducts.length} products');
     } catch (e) {
       debugPrint('Error loading products: $e');
       // For development/testing, show products even if there's an error
       _availableProducts = ProductConfigurations.allProducts;
       _productsController.add(_availableProducts);
-      debugPrint(
-        'Loaded ${_availableProducts.length} products (development mode)',
-      );
+      // Verbose fallback logging removed
     }
   }
 
   /// Simulate a purchase for development/testing
   Future<void> _simulatePurchase(PurchaseProduct product) async {
-    debugPrint('Simulating purchase of ${product.title}');
+    // Verbose simulation logging removed
 
     // Simulate purchase delay
     await Future.delayed(const Duration(seconds: 1));
@@ -147,9 +131,7 @@ class PurchaseService {
   /// Purchase a product
   Future<bool> purchaseProduct(PurchaseProduct product) async {
     if (product.productDetails == null) {
-      debugPrint(
-        'Product details not available for ${product.id} - simulating purchase for development',
-      );
+      // Verbose missing details logging removed
       // For development, simulate a successful purchase
       await _simulatePurchase(product);
       return true;
@@ -192,7 +174,7 @@ class PurchaseService {
     List<PurchaseDetails> purchaseDetailsList,
   ) async {
     for (final PurchaseDetails purchaseDetails in purchaseDetailsList) {
-      debugPrint('Purchase status: ${purchaseDetails.status}');
+      // Verbose status logging removed
 
       if (purchaseDetails.status == PurchaseStatus.pending) {
         _purchaseStateController.add(true); // Loading
@@ -230,9 +212,7 @@ class PurchaseService {
         purchaseDetails.productID,
       );
       if (productConfig == null) {
-        debugPrint(
-          'Product configuration not found: ${purchaseDetails.productID}',
-        );
+        debugPrint('Product configuration not found: ${purchaseDetails.productID}');
         return;
       }
 
@@ -259,9 +239,7 @@ class PurchaseService {
       // Deliver the purchase benefits
       await _deliverPurchaseBenefits(productConfig, purchaseDetails);
 
-      debugPrint(
-        'Purchase verified and delivered: ${purchaseDetails.productID}',
-      );
+      // Verbose success logging removed
     } catch (e) {
       debugPrint('Error verifying purchase: $e');
       rethrow;
@@ -279,6 +257,10 @@ class PurchaseService {
     try {
       // Update user document with purchase info
       final Map<String, dynamic> updates = {};
+      // Load current user state to determine trial status
+      final userRef = _firestore.collection('users').doc(userId);
+      final userDoc = await userRef.get();
+      final data = userDoc.data();
 
       // Handle ad-free
       if (product.includesAdFree) {
@@ -292,20 +274,31 @@ class PurchaseService {
         updates['subscriptionType'] = product.id;
         updates['subscriptionStartDate'] = FieldValue.serverTimestamp();
 
-        // Grant monthly credits for subscriptions
-        if (product.monthlyCredits != null) {
-          // Monthly: 25 imports + 20 generations
-          // Yearly: 35 imports + 30 generations
-          final int importCredits =
-              product.productType == ProductType.monthlyPremium ? 25 : 35;
-          final int generationCredits =
-              product.productType == ProductType.monthlyPremium ? 20 : 30;
-
-          await _creditsService.addCredits(
-            recipeImports: importCredits,
-            recipeGenerations: generationCredits,
-            reason: 'Subscription purchase: ${product.title}',
+        // Unlimited tier: enable unlimitedUsage, no trials or credits
+        if (product.productType == ProductType.unlimitedPremium || product.unlimitedUsage) {
+          updates['unlimitedUsage'] = true;
+          // If user had an active trial, end it immediately
+          updates['trialActive'] = false;
+        } else {
+        // If this is the first time enabling subscription (no prior sub/trial),
+        // start a 7-day trial and grant capped trial credits (total 12).
+        final bool hasActiveSub = (data?['subscriptionActive'] ?? false) == true;
+        final bool hasTrial = (data?['trialActive'] ?? false) == true;
+        if (!hasActiveSub && !hasTrial) {
+          // Mark trial active and set end timestamp (7 days from now)
+          updates['trialActive'] = true;
+          updates['trialUsed'] = true;
+          updates['trialEndAt'] = Timestamp.fromDate(
+            DateTime.now().add(const Duration(days: 7)),
           );
+
+          // Grant capped trial credits: 12 total → 7 imports + 5 generations
+          await _creditsService.addCredits(
+            recipeImports: 7,
+            recipeGenerations: 5,
+            reason: 'Subscription trial start: ${product.title}',
+          );
+        }
         }
       }
 
@@ -355,10 +348,10 @@ class PurchaseService {
 
       // Update user document
       if (updates.isNotEmpty) {
-        await _firestore.collection('users').doc(userId).update(updates);
+        await userRef.update(updates);
       }
 
-      debugPrint('Purchase benefits delivered for ${product.title}');
+      // Verbose benefits delivered logging removed
     } catch (e) {
       debugPrint('Error delivering purchase benefits: $e');
       rethrow;
@@ -369,7 +362,7 @@ class PurchaseService {
   Future<void> restorePurchases() async {
     try {
       await _inAppPurchase.restorePurchases();
-      debugPrint('Purchases restored');
+      // Verbose restore logging removed
     } catch (e) {
       debugPrint('Error restoring purchases: $e');
       rethrow;
