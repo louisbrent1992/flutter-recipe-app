@@ -8,21 +8,6 @@ router.get("/ui/config", (req, res) => {
   const config = {
     version: 1,
     fetchedAt: now.toISOString(),
-    quickActions: [
-      { icon: "link", text: "Import", url: "app://import" },
-      { icon: "sparkles", text: "Generate", url: "app://generate" },
-      { icon: "local_fire_department", text: "Holiday", url: "app://discover" },
-    ],
-    modal: {
-      id: "winter_promo",
-      title: "Winter Cooking Week",
-      body: "Warm up with seasonal recipes and save on Unlimited (Yearly).",
-      ctaText: "See Deals",
-      ctaUrl: "app://subscription",
-      dismissible: true,
-      startAt: null,
-      endAt: null
-    },
     banners: [
       {
         id: "seasonal_home",
@@ -31,7 +16,7 @@ router.get("/ui/config", (req, res) => {
         subtitle: "Warm flavors for cozy nights",
         ctaText: "Discover",
         ctaUrl: "app://discover",
-        imageUrl: null,
+        imageUrl: "https://res.cloudinary.com/client-images/image/upload/v1762055982/Recipe%20App/holliday_recipes_banner_tmk4u3.png",
         backgroundColor: "#FFF3E0",
         textColor: "#7B3F00",
         priority: 10,

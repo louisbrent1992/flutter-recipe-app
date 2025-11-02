@@ -6,11 +6,9 @@ class DynamicUiProvider with ChangeNotifier {
   final DynamicUiService _service = DynamicUiService();
   DynamicUiConfig? _config;
   bool _loading = false;
-  bool _modalShownThisSession = false;
 
   DynamicUiConfig? get config => _config;
   bool get isLoading => _loading;
-  bool get modalShownThisSession => _modalShownThisSession;
 
   DynamicUiProvider() {
     refresh();
@@ -36,13 +34,6 @@ class DynamicUiProvider with ChangeNotifier {
         [];
     list.sort((a, b) => b.priority.compareTo(a.priority));
     return list;
-  }
-
-  void markModalShown() {
-    if (!_modalShownThisSession) {
-      _modalShownThisSession = true;
-      notifyListeners();
-    }
   }
 }
 

@@ -84,6 +84,8 @@ class _DynamicBannerState extends State<DynamicBanner>
         Theme.of(context).colorScheme.onSurface;
 
     const double radius = 12;
+    final bool hasImage =
+        widget.banner.imageUrl != null && widget.banner.imageUrl!.isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -136,48 +138,66 @@ class _DynamicBannerState extends State<DynamicBanner>
                 decoration: BoxDecoration(
                   border: Border.all(color: fg.withValues(alpha: 0.15)),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              widget.banner.title,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.titleMedium?.copyWith(
-                                color: fg,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            if (widget.banner.subtitle != null &&
-                                widget.banner.subtitle!.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 2),
-                                child: Text(
-                                  widget.banner.subtitle!,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodySmall?.copyWith(
-                                    color: fg.withValues(alpha: 0.8),
-                                  ),
+                child:
+                    hasImage
+                        ? const SizedBox.shrink()
+                        : Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      widget.banner.title,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium?.copyWith(
+                                        color: fg,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    if (widget.banner.subtitle != null &&
+                                        widget.banner.subtitle!.isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 2),
+                                        child: Text(
+                                          widget.banner.subtitle!,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall?.copyWith(
+                                            color: fg.withValues(alpha: 0.8),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
-                          ],
+                              if (widget.banner.ctaText != null &&
+                                  widget.banner.ctaText!.isNotEmpty)
+                                TextButton(
+                                  onPressed: () => _handleTap(context),
+                                  child: Text(widget.banner.ctaText!),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                      if (widget.banner.ctaText != null &&
-                          widget.banner.ctaText!.isNotEmpty)
-                        TextButton(
-                          onPressed: () => _handleTap(context),
-                          child: Text(widget.banner.ctaText!),
-                        ),
-                    ],
+              ),
+              // Tap layer to navigate
+              Positioned.fill(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      if (hasImage) {
+                        Navigator.pushNamed(context, '/discover');
+                      } else {
+                        _handleTap(context);
+                      }
+                    },
                   ),
                 ),
               ),

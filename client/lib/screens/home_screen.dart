@@ -42,7 +42,6 @@ class _HomeScreenState extends State<HomeScreen>
   final String _heroImageUrl = 'assets/images/hero_image.jpg';
   bool _isBooting = true;
   StreamSubscription<void>? _recipesChangedSubscription;
-  bool _promoChecked = false;
 
   @override
   void initState() {
@@ -78,7 +77,6 @@ class _HomeScreenState extends State<HomeScreen>
 
     // Listen for cross-screen recipe updates to refresh all sections
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _maybeShowPromoModal(context);
       final recipeProvider = Provider.of<RecipeProvider>(
         context,
         listen: false,
@@ -88,67 +86,6 @@ class _HomeScreenState extends State<HomeScreen>
           _refreshAllSections(context);
         }
       });
-    });
-  }
-
-  void _maybeShowPromoModal(BuildContext context) {
-    if (_promoChecked) return;
-    _promoChecked = true;
-    final dyn = Provider.of<DynamicUiProvider>(context, listen: false);
-    final modal = dyn.config?.modal;
-    if (modal == null || !modal.isActive || dyn.modalShownThisSession) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      showDialog(
-        context: context,
-        barrierDismissible: modal.dismissible,
-        builder: (context) {
-          return AlertDialog(
-            title: Text(modal.title),
-            content: Text(modal.body),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Close'),
-              ),
-              if (modal.ctaText != null && modal.ctaText!.isNotEmpty)
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    // Reuse QuickActions navigation by constructing an app url
-                    // This will be handled by DynamicBanner/QuickActions parsers
-                    // by pushing a named route with arguments
-                    final url = modal.ctaUrl ?? '';
-                    if (url.isNotEmpty) {
-                      // Minimal inline navigation: forward to DynamicBanner parser path
-                      final uri = Uri.parse(
-                        url.startsWith('app://') ? url.substring(6) : url,
-                      );
-                      if (!uri.hasScheme) {
-                        final routePath =
-                            uri.path.startsWith('/')
-                                ? uri.path
-                                : '/${uri.path}';
-                        final args =
-                            uri.queryParameters.isNotEmpty
-                                ? uri.queryParameters
-                                : null;
-                        Navigator.pushNamed(
-                          context,
-                          routePath,
-                          arguments: args,
-                        );
-                      }
-                    }
-                  },
-                  child: Text(modal.ctaText!),
-                ),
-            ],
-          );
-        },
-      ).then((_) => dyn.markModalShown());
     });
   }
 
