@@ -27,6 +27,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
     // Start a ticking timer to update the trial countdown if needed
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startTrialTicker();
@@ -99,7 +102,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               // Trial countdown banner (only during trial)
               _buildTrialCountdownBanner(context, subscriptionProvider),
               // Credits Display
-              _buildCreditsHeader(context, subscriptionProvider),
+              _tabController.index == 2
+                  ? _buildCreditsHeader(context, subscriptionProvider)
+                  : const SizedBox.shrink(),
 
               // Tab Content
               Expanded(
