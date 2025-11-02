@@ -8,6 +8,21 @@ router.get("/ui/config", (req, res) => {
   const config = {
     version: 1,
     fetchedAt: now.toISOString(),
+    quickActions: [
+      { icon: "link", text: "Import", url: "app://import" },
+      { icon: "sparkles", text: "Generate", url: "app://generate" },
+      { icon: "local_fire_department", text: "Holiday", url: "app://discover" },
+    ],
+    modal: {
+      id: "winter_promo",
+      title: "Winter Cooking Week",
+      body: "Warm up with seasonal recipes and save on Unlimited (Yearly).",
+      ctaText: "See Deals",
+      ctaUrl: "app://subscription",
+      dismissible: true,
+      startAt: null,
+      endAt: null
+    },
     banners: [
       {
         id: "seasonal_home",
