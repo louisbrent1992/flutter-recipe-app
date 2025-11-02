@@ -52,7 +52,15 @@ class QuickActionsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<DynamicUiProvider>(
       builder: (context, dyn, _) {
-        final List<QuickActionConfig> actions = dyn.config?.quickActions ?? [];
+        List<QuickActionConfig> actions = const [];
+        try {
+          final cfg = dyn.config;
+          if (cfg != null && cfg.quickActions is List<QuickActionConfig>) {
+            actions = cfg.quickActions;
+          }
+        } catch (_) {
+          actions = const [];
+        }
         if (actions.isEmpty) return const SizedBox.shrink();
 
         return SingleChildScrollView(

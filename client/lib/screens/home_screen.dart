@@ -14,7 +14,6 @@ import '../models/recipe_collection.dart';
 import '../components/floating_bottom_bar.dart';
 import '../components/dynamic_banner.dart';
 import '../providers/dynamic_ui_provider.dart';
-import '../components/quick_actions.dart';
 
 /// Lightweight model representing a quick-access category on the home screen.
 class _CategoryItem {
@@ -124,11 +123,23 @@ class _HomeScreenState extends State<HomeScreen>
                     final url = modal.ctaUrl ?? '';
                     if (url.isNotEmpty) {
                       // Minimal inline navigation: forward to DynamicBanner parser path
-                      final uri = Uri.parse(url.startsWith('app://') ? url.substring(6) : url);
+                      final uri = Uri.parse(
+                        url.startsWith('app://') ? url.substring(6) : url,
+                      );
                       if (!uri.hasScheme) {
-                        final routePath = uri.path.startsWith('/') ? uri.path : '/${uri.path}';
-                        final args = uri.queryParameters.isNotEmpty ? uri.queryParameters : null;
-                        Navigator.pushNamed(context, routePath, arguments: args);
+                        final routePath =
+                            uri.path.startsWith('/')
+                                ? uri.path
+                                : '/${uri.path}';
+                        final args =
+                            uri.queryParameters.isNotEmpty
+                                ? uri.queryParameters
+                                : null;
+                        Navigator.pushNamed(
+                          context,
+                          routePath,
+                          arguments: args,
+                        );
                       }
                     }
                   },
@@ -224,7 +235,6 @@ class _HomeScreenState extends State<HomeScreen>
                             );
                           },
                         ),
-                        const QuickActionsRow(),
                         _buildHeroSection(context),
                         SizedBox(height: AppSpacing.responsive(context)),
                         // --- Your Recipes carousel ---

@@ -18,15 +18,22 @@ class DynamicUiConfig {
     return DynamicUiConfig(
       version: (json['version'] ?? 1) as int,
       fetchedAt: DateTime.tryParse(json['fetchedAt'] ?? '') ?? DateTime.now(),
-      banners: bannerList
-          .map((e) => DynamicBannerConfig.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      quickActions: (json['quickActions'] as List<dynamic>? ?? [])
-          .map((e) => QuickActionConfig.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      modal: json['modal'] == null
-          ? null
-          : PromoModalConfig.fromJson(json['modal'] as Map<String, dynamic>),
+      banners:
+          bannerList
+              .map(
+                (e) => DynamicBannerConfig.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
+      quickActions:
+          (json['quickActions'] as List<dynamic>? ?? [])
+              .map((e) => QuickActionConfig.fromJson(e as Map<String, dynamic>))
+              .toList(),
+      modal:
+          json['modal'] == null
+              ? null
+              : PromoModalConfig.fromJson(
+                json['modal'] as Map<String, dynamic>,
+              ),
     );
   }
 }
@@ -99,7 +106,11 @@ class QuickActionConfig {
   final String text;
   final String url; // app:// or http(s)://
 
-  QuickActionConfig({required this.icon, required this.text, required this.url});
+  QuickActionConfig({
+    required this.icon,
+    required this.text,
+    required this.url,
+  });
 
   factory QuickActionConfig.fromJson(Map<String, dynamic> json) {
     return QuickActionConfig(
@@ -160,5 +171,3 @@ class PromoModalConfig {
     return true;
   }
 }
-
-
