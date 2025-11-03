@@ -42,6 +42,8 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'dart:convert';
+import 'package:recipease/services/notification_scheduler.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -215,9 +217,19 @@ class _MyAppState extends State<MyApp> {
       await _localNotifications.initialize(
         const InitializationSettings(android: androidInit, iOS: iosInit),
         onDidReceiveNotificationResponse: (resp) {
-          final route = resp.payload;
-          if (route != null && route.isNotEmpty) {
-            navigatorKey.currentState?.pushNamed(route);
+          final payload = resp.payload;
+          if (payload != null && payload.isNotEmpty) {
+            try {
+              final obj = jsonDecode(payload) as Map<String, dynamic>;
+              final route = obj['route'] as String?;
+              final args = (obj['args'] as Map?)?.cast<String, String>();
+              if (route != null && route.isNotEmpty) {
+                navigatorKey.currentState?.pushNamed(route, arguments: args);
+              }
+            } catch (_) {
+              // Backward-compat: treat payload as a simple route string
+              navigatorKey.currentState?.pushNamed(payload);
+            }
           }
         },
       );
@@ -228,6 +240,9 @@ class _MyAppState extends State<MyApp> {
             AndroidFlutterLocalNotificationsPlugin
           >()
           ?.createNotificationChannel(_androidChannel);
+
+      // Initialize scheduler with plugin
+      NotificationScheduler.init(_localNotifications);
 
       // iOS: show alert in foreground
       await messaging.setForegroundNotificationPresentationOptions(
@@ -253,7 +268,13 @@ class _MyAppState extends State<MyApp> {
               ),
               iOS: DarwinNotificationDetails(),
             ),
-            payload: message.data['route'] as String?,
+            // Encode route + args so deep links can include parameters
+            payload: jsonEncode({
+              'route': (message.data['route'] as String?) ?? '/home',
+              'args': {
+                'tag': (message.data['tag'] as String?) ?? '',
+              },
+            }),
           );
         }
       });
@@ -275,6 +296,22 @@ class _MyAppState extends State<MyApp> {
           navigatorKey.currentState?.pushNamed(initialRoute);
         });
       }
+
+      // After init, (re)schedule local notifications based on user prefs
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          final notif =
+              Provider.of<NotificationProvider>(context, listen: false);
+          await NotificationScheduler.scheduleAll(
+            dailyInspiration: notif.catDailyInspiration,
+            mealPrep: notif.catMealPrep,
+            seasonal: notif.catSeasonal,
+            quickMeals: notif.catQuickMeals,
+            budget: notif.catBudget,
+            keto: notif.catKeto,
+          );
+        } catch (_) {}
+      });
     } catch (e) {
       debugPrint('Push notification init error: $e');
     }

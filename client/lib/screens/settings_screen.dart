@@ -595,6 +595,87 @@ class _SettingsScreenState extends State<SettingsScreen>
                             icon: Icons.restaurant_menu_rounded,
                             color: theme.colorScheme.onTertiary,
                           ),
+
+                          SizedBox(height: AppSpacing.md),
+                          const Divider(height: 1, thickness: 0.1),
+                          SizedBox(height: AppSpacing.md),
+
+                          _buildSectionHeader(
+                            title: 'Category Notifications',
+                            icon: Icons.category_rounded,
+                            colorScheme: colorScheme,
+                          ),
+
+                          SizedBox(height: AppSpacing.sm),
+
+                          _buildAnimatedSwitchTile(
+                            title: 'Daily Inspiration',
+                            subtitle: 'Receive a daily pick at 9:00 AM',
+                            value: notificationProvider.catDailyInspiration,
+                            onChanged: (v) => notificationProvider
+                                .setCatDailyInspiration(v),
+                            icon: Icons.lightbulb_rounded,
+                            color: Colors.orange,
+                          ),
+
+                          SizedBox(height: AppSpacing.sm),
+
+                          _buildAnimatedSwitchTile(
+                            title: 'Meal Prep Sunday',
+                            subtitle: 'Weekly reminder Sundays 5:00 PM',
+                            value: notificationProvider.catMealPrep,
+                            onChanged: (v) =>
+                                notificationProvider.setCatMealPrep(v),
+                            icon: Icons.calendar_month_rounded,
+                            color: Colors.teal,
+                          ),
+
+                          SizedBox(height: AppSpacing.sm),
+
+                          _buildAnimatedSwitchTile(
+                            title: 'Seasonal Collections',
+                            subtitle: 'Weekly Friday highlights at 12:00 PM',
+                            value: notificationProvider.catSeasonal,
+                            onChanged: (v) =>
+                                notificationProvider.setCatSeasonal(v),
+                            icon: Icons.snowing,
+                            color: Colors.redAccent,
+                          ),
+
+                          SizedBox(height: AppSpacing.sm),
+
+                          _buildAnimatedSwitchTile(
+                            title: 'Quick Meals',
+                            subtitle: 'Weekly Tuesdays at 6:00 PM',
+                            value: notificationProvider.catQuickMeals,
+                            onChanged: (v) =>
+                                notificationProvider.setCatQuickMeals(v),
+                            icon: Icons.flash_on_rounded,
+                            color: Colors.amber,
+                          ),
+
+                          SizedBox(height: AppSpacing.sm),
+
+                          _buildAnimatedSwitchTile(
+                            title: 'Budget-Friendly',
+                            subtitle: 'Weekly Wednesdays at 6:00 PM',
+                            value: notificationProvider.catBudget,
+                            onChanged: (v) =>
+                                notificationProvider.setCatBudget(v),
+                            icon: Icons.attach_money_rounded,
+                            color: Colors.green,
+                          ),
+
+                          SizedBox(height: AppSpacing.sm),
+
+                          _buildAnimatedSwitchTile(
+                            title: 'Keto Spotlight',
+                            subtitle: 'Weekly Mondays at 12:00 PM',
+                            value: notificationProvider.catKeto,
+                            onChanged: (v) => notificationProvider.setCatKeto(v),
+                            icon: Icons.restaurant_rounded,
+                            color: Colors.blue,
+                          ),
                         ],
                       );
                     },
