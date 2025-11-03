@@ -39,6 +39,9 @@ import 'dart:async';
 import 'screens/generated_recipes_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -50,6 +53,14 @@ const bool hideAds = false;
 // Alternative: Environment-based approach
 // const bool HIDE_ADS_FOR_SCREENSHOTS = bool.fromEnvironment('HIDE_ADS', defaultValue: false);
 // Then run with: flutter run --dart-define=HIDE_ADS=true
+
+// Push notifications: background message handler
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+}
+
+final FlutterLocalNotificationsPlugin _localNotifications =
+    FlutterLocalNotificationsPlugin();
 
 /// Initializes the app.
 ///
@@ -74,6 +85,12 @@ void main() async {
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize timezone database for scheduled notifications (optional)
+  tz.initializeTimeZones();
+
+  // Set background handler early
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // Initialize Firebase App Check with proper configuration
   if (kDebugMode) {
@@ -137,12 +154,20 @@ class _MyAppState extends State<MyApp> {
   static String? _pendingSharedUrl; // Static for cross-widget access
   static String?
   _processedInitialUrl; // Track the initial URL to prevent duplicates
+  static const AndroidNotificationChannel _androidChannel =
+      AndroidNotificationChannel(
+        'recipease_general',
+        'General',
+        description: 'General notifications',
+        importance: Importance.high,
+      );
 
   @override
   void initState() {
     super.initState();
     _initReceiveSharing();
     _initDeepLinkHandling();
+    _initPushNotifications();
 
     // Request necessary permissions when app starts
     _requestInitialPermissions();
@@ -166,6 +191,92 @@ class _MyAppState extends State<MyApp> {
       _handleInitialUrlScheme();
     } catch (e) {
       debugPrint('Error initializing deep link handling: $e');
+    }
+  }
+
+  Future<void> _initPushNotifications() async {
+    try {
+      // Ask FCM permissions (iOS) in addition to OS-level permission
+      final messaging = FirebaseMessaging.instance;
+      await messaging.setAutoInitEnabled(true);
+      await messaging.requestPermission(alert: true, badge: true, sound: true);
+
+      // Obtain token (use this to target notifications from server)
+      final token = await messaging.getToken();
+      if (kDebugMode) {
+        debugPrint('FCM token: ' + (token ?? 'null'));
+      }
+
+      // Local notifications init
+      const androidInit = AndroidInitializationSettings(
+        '@mipmap/launcher_icon',
+      );
+      const iosInit = DarwinInitializationSettings();
+      await _localNotifications.initialize(
+        const InitializationSettings(android: androidInit, iOS: iosInit),
+        onDidReceiveNotificationResponse: (resp) {
+          final route = resp.payload;
+          if (route != null && route.isNotEmpty) {
+            navigatorKey.currentState?.pushNamed(route);
+          }
+        },
+      );
+
+      // Android channel
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.createNotificationChannel(_androidChannel);
+
+      // iOS: show alert in foreground
+      await messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      // Foreground messages → show local notification
+      FirebaseMessaging.onMessage.listen((message) {
+        final notif = message.notification;
+        if (notif != null) {
+          _localNotifications.show(
+            notif.hashCode,
+            notif.title,
+            notif.body,
+            const NotificationDetails(
+              android: AndroidNotificationDetails(
+                'recipease_general',
+                'General',
+                importance: Importance.high,
+                priority: Priority.high,
+              ),
+              iOS: DarwinNotificationDetails(),
+            ),
+            payload: message.data['route'] as String?,
+          );
+        }
+      });
+
+      // App opened from notification (background)
+      FirebaseMessaging.onMessageOpenedApp.listen((message) {
+        final route = message.data['route'] as String?;
+        if (route != null && route.isNotEmpty) {
+          navigatorKey.currentState?.pushNamed(route);
+        }
+      });
+
+      // App launched from terminated via notification
+      final initialMsg = await messaging.getInitialMessage();
+      final initialRoute = initialMsg?.data['route'] as String?;
+      if (initialRoute != null && initialRoute.isNotEmpty) {
+        // Delay navigation until navigator is ready
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          navigatorKey.currentState?.pushNamed(initialRoute);
+        });
+      }
+    } catch (e) {
+      debugPrint('Push notification init error: $e');
     }
   }
 

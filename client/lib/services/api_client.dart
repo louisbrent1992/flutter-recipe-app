@@ -21,15 +21,13 @@ class ApiClient {
   /// Base URL for API requests
   String get baseUrl {
     final String productionUrl =
-        'https://recipease-api-280575606029.us-west1.run.app/api';
+        'https://recipease-app-server-826154873845.us-west2.run.app/api';
     final String developmentUrl =
         Platform.isAndroid
             ? 'http://10.0.2.2:$port/api'
             : 'http://localhost:$port/api';
 
-    return const bool.fromEnvironment('dart.vm.product')
-        ? productionUrl
-        : developmentUrl;
+    return productionUrl;
   }
 
   /// Get headers with Firebase authentication token
