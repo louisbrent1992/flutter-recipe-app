@@ -5,6 +5,17 @@
         android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission
         android:name="android.permission.INTERNET"/>
+    <!-- Alarm permissions for scheduled notifications (Android 12+) -->
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <uses-permission
+        android:name="android.permission.USE_EXACT_ALARM"/>
+    <!-- Receive boot completed to reschedule notifications after reboot -->
+    <uses-permission
+        android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Wake lock for alarms -->
+    <uses-permission
+        android:name="android.permission.WAKE_LOCK"/>
     <!-- Camera and Photos -->
     <uses-permission
         android:name="android.permission.CAMERA"/>
@@ -164,6 +175,20 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-9981622851892833~4647926058"/>
+        
+        <!-- Receiver to handle boot completed events and reschedule notifications -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

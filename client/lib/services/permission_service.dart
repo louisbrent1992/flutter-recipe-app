@@ -1,5 +1,6 @@
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
+import 'dart:io' show Platform;
 
 class PermissionService {
   // Singleton pattern
@@ -19,6 +20,34 @@ class PermissionService {
     return status.isGranted;
   }
 
+  /// Request schedule exact alarm permission (Android 12+)
+  /// This is required for scheduling exact notifications on Android 12+
+  Future<bool> requestScheduleExactAlarmPermission() async {
+    if (!Platform.isAndroid) {
+      return true; // iOS doesn't need this permission
+    }
+
+    // Check if permission is already granted
+    PermissionStatus status = await Permission.scheduleExactAlarm.status;
+    
+    if (status.isGranted) {
+      return true;
+    }
+
+    // Request the permission
+    status = await Permission.scheduleExactAlarm.request();
+    return status.isGranted;
+  }
+
+  /// Check if exact alarm permission is granted (Android 12+)
+  Future<bool> isExactAlarmPermissionGranted() async {
+    if (!Platform.isAndroid) {
+      return true; // iOS doesn't need this permission
+    }
+
+    return await Permission.scheduleExactAlarm.isGranted;
+  }
+
   /// Request photo library permissions
   Future<bool> requestPhotosPermission() async {
     if (await Permission.photos.isGranted) {
@@ -34,12 +63,16 @@ class PermissionService {
     bool camera = false,
     bool photos = false,
     bool notification = false,
+    bool scheduleExactAlarm = false,
   }) async {
     List<Permission> permissions = [];
 
     if (camera) permissions.add(Permission.camera);
     if (photos) permissions.add(Permission.photos);
     if (notification) permissions.add(Permission.notification);
+    if (scheduleExactAlarm && Platform.isAndroid) {
+      permissions.add(Permission.scheduleExactAlarm);
+    }
 
     return await permissions.request();
   }

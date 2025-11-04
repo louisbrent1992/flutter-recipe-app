@@ -43,7 +43,10 @@ class NotificationProvider with ChangeNotifier {
     );
 
     // Categories
-    _catDailyInspiration = _prefs.get('catDailyInspiration', defaultValue: true);
+    _catDailyInspiration = _prefs.get(
+      'catDailyInspiration',
+      defaultValue: true,
+    );
     _catMealPrep = _prefs.get('catMealPrep', defaultValue: true);
     _catSeasonal = _prefs.get('catSeasonal', defaultValue: true);
     _catQuickMeals = _prefs.get('catQuickMeals', defaultValue: true);

@@ -138,7 +138,10 @@ class NotificationScheduler {
     required bool budget,
     required bool keto,
   }) async {
-    await scheduleCategory(AppNotificationCategory.dailyInspiration, dailyInspiration);
+    await scheduleCategory(
+      AppNotificationCategory.dailyInspiration,
+      dailyInspiration,
+    );
     await scheduleCategory(AppNotificationCategory.mealPrep, mealPrep);
     await scheduleCategory(AppNotificationCategory.seasonal, seasonal);
     await scheduleCategory(AppNotificationCategory.quickMeals, quickMeals);
@@ -156,7 +159,14 @@ class NotificationScheduler {
     Map<String, String>? args,
   }) async {
     final now = tz.TZDateTime.now(tz.local);
-    var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    var scheduled = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
     if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }
@@ -168,8 +178,6 @@ class NotificationScheduler {
       scheduled,
       _details(),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
       payload: payload,
     );
@@ -205,12 +213,8 @@ class NotificationScheduler {
       scheduled,
       _details(),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       payload: payload,
     );
   }
 }
-
-

@@ -42,6 +42,8 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter_native_timezone/flutter_native_timezone.dart';
 import 'dart:convert';
 import 'package:recipease/services/notification_scheduler.dart';
 
@@ -90,6 +92,12 @@ void main() async {
 
   // Initialize timezone database for scheduled notifications (optional)
   tz.initializeTimeZones();
+  try {
+    final String timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
+  } catch (_) {
+    // Fallback: keep default tz.local
+  }
 
   // Set background handler early
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
@@ -180,6 +188,9 @@ class _MyAppState extends State<MyApp> {
     // Request notification permission
     await _permissionService.requestNotificationPermission();
 
+    // Request exact alarm permission for scheduled notifications (Android 12+)
+    await _permissionService.requestScheduleExactAlarmPermission();
+
     // We don't request camera and photos permissions on startup
     // as it's better to request them when they're needed
   }
@@ -206,7 +217,7 @@ class _MyAppState extends State<MyApp> {
       // Obtain token (use this to target notifications from server)
       final token = await messaging.getToken();
       if (kDebugMode) {
-        debugPrint('FCM token: ' + (token ?? 'null'));
+        debugPrint('FCM token: ${token ?? 'null'}');
       }
 
       // Local notifications init
@@ -241,6 +252,13 @@ class _MyAppState extends State<MyApp> {
           >()
           ?.createNotificationChannel(_androidChannel);
 
+      // iOS: explicitly request notification permissions for local notifications
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+
       // Initialize scheduler with plugin
       NotificationScheduler.init(_localNotifications);
 
@@ -271,9 +289,7 @@ class _MyAppState extends State<MyApp> {
             // Encode route + args so deep links can include parameters
             payload: jsonEncode({
               'route': (message.data['route'] as String?) ?? '/home',
-              'args': {
-                'tag': (message.data['tag'] as String?) ?? '',
-              },
+              'args': {'tag': (message.data['tag'] as String?) ?? ''},
             }),
           );
         }
@@ -300,8 +316,10 @@ class _MyAppState extends State<MyApp> {
       // After init, (re)schedule local notifications based on user prefs
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         try {
-          final notif =
-              Provider.of<NotificationProvider>(context, listen: false);
+          final notif = Provider.of<NotificationProvider>(
+            context,
+            listen: false,
+          );
           await NotificationScheduler.scheduleAll(
             dailyInspiration: notif.catDailyInspiration,
             mealPrep: notif.catMealPrep,
