@@ -192,11 +192,7 @@ class _DynamicBannerState extends State<DynamicBanner>
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () {
-                      if (hasImage) {
-                        Navigator.pushNamed(context, '/discover');
-                      } else {
-                        _handleTap(context);
-                      }
+                      _handleTap(context);
                     },
                   ),
                 ),

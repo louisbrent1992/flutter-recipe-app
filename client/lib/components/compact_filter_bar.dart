@@ -75,7 +75,7 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                     child: TextField(
                       controller: widget.searchController,
                       decoration: InputDecoration(
-                        hintText: 'Search recipes...',
+                        hintText: 'Search recipes… e.g. chicken, broccoli, keto',
                         hintStyle: TextStyle(
                           fontSize: 14,
                           color: Theme.of(

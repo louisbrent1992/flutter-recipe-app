@@ -23,7 +23,7 @@ router.get("/ui/config", (req, res) => {
         title: "Holiday Recipes",
         subtitle: "Warm flavors for cozy nights",
         ctaText: "Discover",
-        ctaUrl: "app://discover",
+        ctaUrl: "app://discover?tag=holliday, fall,thanksgiving, turkey, christmas, winter, pumpkin, cranberry, cinnamon",
         imageUrl: "https://res.cloudinary.com/client-images/image/upload/v1762055982/Recipe%20App/holliday_recipes_banner_tmk4u3.png",
         backgroundColor: "#FFF3E0",
         textColor: "#7B3F00",

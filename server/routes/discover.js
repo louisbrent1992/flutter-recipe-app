@@ -13,36 +13,60 @@ const db = getFirestore();
 // Search recipes from Spoonacular API
 router.get("/search", auth, async (req, res) => {
 	try {
-		const { query, difficulty, tag, random } = req.query;
+        const { query, difficulty, tag, random } = req.query;
 		const page = parseInt(req.query.page) || 1;
 		const limitParam = parseInt(req.query.limit);
 		const limit = isNaN(limitParam) ? 10 : Math.min(limitParam, 100);
 		const isRandom = random === 'true';
 
-		// Build Firestore query
-		let recipesRef = db.collection("recipes");
+        // Build Firestore query
+        let recipesRef = db.collection("recipes");
 
-		if (query) {
-			console.log("Search query:", query);
-			const searchTerms = query
-				.toLowerCase()
-				.split(/\s+/)
-				.filter((term) => term.length > 0);
-			console.log("Search terms:", searchTerms);
+        // Aggregate tokens from query and tag, treating comma-separated chunks as phrases.
+        // For each phrase, prefer the full phrase token, then (if room) include individual word tokens.
+        const gatherTokens = (input) => {
+            if (!input || typeof input !== 'string') return [];
+            return input
+                .toLowerCase()
+                .split(',') // split on commas only; keep spaces inside phrase
+                .map((s) => s.trim().replace(/\s+/g, ' ')) // normalize inner spaces
+                .filter((s) => s.length > 0);
+        };
 
-			recipesRef = db.collection("recipes");
+        let phraseTokens = [];
+        phraseTokens = phraseTokens.concat(gatherTokens(query));
+        phraseTokens = phraseTokens.concat(gatherTokens(tag));
 
-			const searchQueries = searchTerms.map((term) => {
-				return db
-					.collection("recipes")
-					.where("searchableFields", "array-contains", term);
-			});
+        // De-duplicate phrases
+        phraseTokens = Array.from(new Set(phraseTokens));
 
-			if (searchQueries.length > 0) {
-				recipesRef = searchQueries[0];
-			}
-		}
-		if (difficulty) {
+        // Build final tokens list with phrases first, then individual words from those phrases
+        let tokens = [...phraseTokens];
+        // Add individual words if space permits (Firestore limit 10)
+        for (const phrase of phraseTokens) {
+            if (tokens.length >= 10) break;
+            const words = phrase.split(/\s+/).filter((w) => w.length > 0);
+            for (const w of words) {
+                if (tokens.length >= 10) break;
+                if (!tokens.includes(w)) tokens.push(w);
+            }
+        }
+        if (tokens.length > 10) {
+            console.warn(
+                `array-contains-any supports up to 10 values; capped to 10 (had ${tokens.length})`
+            );
+            tokens = tokens.slice(0, 10);
+        }
+
+        if (tokens.length > 0) {
+            recipesRef = recipesRef.where(
+                "searchableFields",
+                "array-contains-any",
+                tokens
+            );
+        }
+
+        if (difficulty) {
 			// Normalize difficulty to capitalized (Easy/Medium/Hard) for stored format
 			recipesRef = recipesRef.where(
 				"difficulty",
@@ -50,14 +74,7 @@ router.get("/search", auth, async (req, res) => {
 				difficulty.charAt(0).toUpperCase() + difficulty.slice(1).toLowerCase()
 			);
 		}
-		if (tag) {
-			// Match tags case-insensitively using searchableFields which contains lower-cased tags
-			recipesRef = recipesRef.where(
-				"searchableFields",
-				"array-contains",
-				tag.toLowerCase()
-			);
-		}
+        // Note: 'tag' terms are already merged into tokens above for OR semantics
 
 		// Get total count for pagination (before deduplication)
 		const totalQuery = await recipesRef.count().get();
@@ -104,7 +121,7 @@ router.get("/search", auth, async (req, res) => {
 				break;
 			}
 
-			// Collect recipes from this batch
+            // Collect recipes from this batch
 			const batchRecipes = [];
 			snapshot.forEach((doc) => {
 				const data = doc.data();
@@ -114,8 +131,35 @@ router.get("/search", auth, async (req, res) => {
 				});
 			});
 
-			// Add unique recipes to our map
-			for (const recipe of batchRecipes) {
+            // Helper: ensure token matches only title, ingredients, or tags
+            const tokensSet = new Set(tokens || []);
+            const matchesAllowedFields = (recipe) => {
+                // Build normalized fields
+                const title = (recipe.title || "").toString().toLowerCase();
+                const ingredients = Array.isArray(recipe.ingredients)
+                    ? recipe.ingredients.map((v) => (v || "").toString().toLowerCase())
+                    : [];
+                const tags = Array.isArray(recipe.tags)
+                    ? recipe.tags.map((v) => (v || "").toString().toLowerCase())
+                    : [];
+
+                // For each token (phrase or word), check containment in allowed fields
+                for (const tok of tokensSet) {
+                    if (!tok || typeof tok !== 'string') continue;
+                    if (title.includes(tok)) return true;
+                    if (ingredients.some((ing) => ing.includes(tok))) return true;
+                    // Tags are typically single words; use contains to allow phrases too
+                    if (tags.some((tagVal) => tagVal.includes(tok))) return true;
+                }
+                return false;
+            };
+
+            // Add unique recipes to our map (union across terms already applied in query),
+            // but only if matches occur in title, ingredients, or tags (omit description/instructions)
+            for (const recipe of batchRecipes) {
+                if (tokens && tokens.length > 0 && !matchesAllowedFields(recipe)) {
+                    continue;
+                }
 				const key = `${recipe.title?.toLowerCase() || ""}|${
 					recipe.description?.toLowerCase() || ""
 				}`;
