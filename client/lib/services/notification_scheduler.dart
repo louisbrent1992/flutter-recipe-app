@@ -76,7 +76,7 @@ class NotificationScheduler {
           title: 'Meal Prep Sunday 🍱',
           body: 'Plan your week with batch-friendly recipes.',
           route: '/discover',
-          args: {'tag': 'meal_prep'},
+          args: {'tag': 'meal prep'},
         );
         break;
       case AppNotificationCategory.seasonal:
@@ -85,10 +85,10 @@ class NotificationScheduler {
           weekday: DateTime.friday,
           hour: 12,
           minute: 0,
-          title: 'Holiday Favorites 🎄',
+          title: 'Holliday Favorites 🎄',
           body: 'New festive recipes just dropped.',
           route: '/discover',
-          args: {'tag': 'holiday'},
+          args: {'tag': 'holliday'},
         );
         break;
       case AppNotificationCategory.quickMeals:
@@ -100,7 +100,7 @@ class NotificationScheduler {
           title: '20-Minute Dinners ⏱️',
           body: 'Fast, tasty, and minimal cleanup.',
           route: '/discover',
-          args: {'tag': 'quick'},
+          args: {'tag': 'easy'},
         );
         break;
       case AppNotificationCategory.budget:

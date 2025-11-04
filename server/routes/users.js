@@ -2,6 +2,12 @@ const express = require("express");
 const router = express.Router();
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const auth = require("../middleware/auth");
+const axios = require("axios");
+
+// Google Custom Search configuration (same as in generatedRecipes)
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const GOOGLE_CX = process.env.GOOGLE_CX;
+const GOOGLE_SEARCH_URL = "https://www.googleapis.com/customsearch/v1";
 
 // Get Firestore database instance
 const db = getFirestore();
@@ -222,6 +228,118 @@ router.post("/recipes", auth, async (req, res) => {
 		errorHandler.serverError(
 			res,
 			"We couldn't save your recipe right now. Please try again shortly."
+		);
+	}
+});
+
+// Refresh a recipe's image by querying Google Custom Search and persisting the new URL
+router.post("/recipes/:id/refresh-image", auth, async (req, res) => {
+	try {
+		if (!GOOGLE_API_KEY || !GOOGLE_CX) {
+			return res.status(500).json({
+				error: "Google Custom Search is not configured",
+				message: "Missing GOOGLE_API_KEY or GOOGLE_CX",
+			});
+		}
+
+		const userId = req.user.uid;
+		const recipeId = req.params.id;
+
+		// Load recipe and verify ownership
+		const db = getFirestore();
+		const recipeRef = db.collection("recipes").doc(recipeId);
+		const recipeDoc = await recipeRef.get();
+		if (!recipeDoc.exists) {
+			return res.status(404).json({ error: "Recipe not found" });
+		}
+		const recipeData = recipeDoc.data();
+		if (recipeData.userId !== userId) {
+			return res.status(403).json({ error: "Not authorized to update this recipe" });
+		}
+
+		const query = (recipeData.title || "recipe").trim().toLowerCase();
+		let newImageUrl = null;
+		const started = Date.now();
+		try {
+			const resp = await axios.get(GOOGLE_SEARCH_URL, {
+				params: {
+					key: GOOGLE_API_KEY,
+					cx: GOOGLE_CX,
+					q: `${query}`,
+					searchType: "image",
+					num: 3,
+					safe: "active",
+					start: 1,
+				},
+			});
+			// Pick first valid link
+			const items = (resp.data && resp.data.items) || [];
+			for (const item of items) {
+				if (item && item.link) {
+					newImageUrl = item.link;
+					break;
+				}
+			}
+		} catch (err) {
+			console.error("Error fetching replacement image from Google:", err?.response?.status || err?.message || err);
+		}
+
+		if (!newImageUrl) {
+			return res.status(200).json({
+				success: false,
+				message: "No replacement image found",
+			});
+		}
+
+		// Update recipe imageUrl
+		await recipeRef.update({
+			imageUrl: newImageUrl,
+			updatedAt: new Date().toISOString(),
+		});
+
+		// Optionally update embedded copies in user's collections
+		let collectionsUpdated = 0;
+		try {
+			const collectionsSnapshot = await db
+				.collection("users")
+				.doc(userId)
+				.collection("collections")
+				.get();
+			for (const collectionDoc of collectionsSnapshot.docs) {
+				const data = collectionDoc.data();
+				const recipes = Array.isArray(data.recipes) ? data.recipes : [];
+				let changed = false;
+				const updatedRecipes = recipes.map((r) => {
+					if (r && r.id === recipeId) {
+						changed = true;
+						return { ...r, imageUrl: newImageUrl };
+					}
+					return r;
+				});
+				if (changed) {
+					await collectionDoc.ref.update({
+						recipes: updatedRecipes,
+						updatedAt: new Date().toISOString(),
+					});
+					collectionsUpdated++;
+				}
+			}
+		} catch (e) {
+			console.error("Error updating embedded recipes in collections:", e?.message || e);
+		}
+
+		return res.json({
+			success: true,
+			recipeId,
+			imageUrl: newImageUrl,
+			collectionsUpdated,
+		});
+	} catch (error) {
+		console.error("Error refreshing recipe image:", error);
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't refresh the image right now. Please try again shortly."
 		);
 	}
 });
