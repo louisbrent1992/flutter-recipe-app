@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
+import '../models/notification_config.dart';
 
 enum AppNotificationCategory {
   dailyInspiration,
@@ -14,9 +15,15 @@ enum AppNotificationCategory {
 
 class NotificationScheduler {
   static FlutterLocalNotificationsPlugin? _plugin;
+  static Map<String, NotificationCategoryConfig>? _configByKey;
 
   static void init(FlutterLocalNotificationsPlugin plugin) {
     _plugin = plugin;
+  }
+
+  // Provide dynamic config from server (call before scheduling)
+  static void applyConfig(NotificationConfig config) {
+    _configByKey = config.toMapByKey();
   }
 
   static Future<void> cancelAllCategorySchedules() async {
@@ -55,16 +62,47 @@ class NotificationScheduler {
     await _plugin?.cancel(id);
     if (!enabled) return;
 
+    // If server config is available, use it
+    final key = _enumKey(category);
+    final cfg = _configByKey?[key];
+    if (cfg != null) {
+      final sch = cfg.schedule;
+      if (sch.type == 'weekly' && sch.weekday != null) {
+        await _scheduleWeekly(
+          id: id,
+          weekday: _weekdayToDart(sch.weekday!),
+          hour: sch.hour,
+          minute: sch.minute,
+          title: cfg.title,
+          body: cfg.body,
+          route: cfg.route,
+          args: cfg.args,
+        );
+      } else {
+        await _scheduleDaily(
+          id: id,
+          hour: sch.hour,
+          minute: sch.minute,
+          title: cfg.title,
+          body: cfg.body,
+          route: cfg.route,
+          args: cfg.args,
+        );
+      }
+      return;
+    }
+
+    // Fallback to baked-in defaults if server config missing
     switch (category) {
       case AppNotificationCategory.dailyInspiration:
         await _scheduleDaily(
           id: id,
           hour: 9,
           minute: 0,
-          title: 'Today’s Pick 🍽️',
-          body: 'A handpicked recipe we think you’ll love.',
+          title: 'Today’s Picks 🍽️',
+          body: 'Handpicked recipes we think you’ll love.',
           route: '/discover',
-          args: {'tag': 'today'},
+          args: {'tag': '', 'random': 'true'},
         );
         break;
       case AppNotificationCategory.mealPrep:
@@ -76,7 +114,9 @@ class NotificationScheduler {
           title: 'Meal Prep Sunday 🍱',
           body: 'Plan your week with batch-friendly recipes.',
           route: '/discover',
-          args: {'tag': 'meal prep'},
+          args: {
+            'tag': 'meal prep, batch cooking, prep ahead, prep for the week',
+          },
         );
         break;
       case AppNotificationCategory.seasonal:
@@ -88,7 +128,10 @@ class NotificationScheduler {
           title: 'Holliday Favorites 🎄',
           body: 'New festive recipes just dropped.',
           route: '/discover',
-          args: {'tag': 'holliday'},
+          args: {
+            'tag':
+                'holliday, fall, thanksgiving, turkey, christmas, winter, pumpkin, cranberry, cinnamon',
+          },
         );
         break;
       case AppNotificationCategory.quickMeals:
@@ -100,7 +143,7 @@ class NotificationScheduler {
           title: '20-Minute Dinners ⏱️',
           body: 'Fast, tasty, and minimal cleanup.',
           route: '/discover',
-          args: {'tag': 'easy'},
+          args: {'tag': 'easy, 20 minutes, quick, minimal cleanup'},
         );
         break;
       case AppNotificationCategory.budget:
@@ -112,7 +155,7 @@ class NotificationScheduler {
           title: 'Save on Groceries 💸',
           body: 'Delicious meals under \$10.',
           route: '/discover',
-          args: {'tag': 'budget'},
+          args: {'tag': 'budget, under \$10, frugal, cheap, affordable'},
         );
         break;
       case AppNotificationCategory.keto:
@@ -216,5 +259,43 @@ class NotificationScheduler {
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       payload: payload,
     );
+  }
+
+  static String _enumKey(AppNotificationCategory cat) {
+    switch (cat) {
+      case AppNotificationCategory.dailyInspiration:
+        return 'dailyInspiration';
+      case AppNotificationCategory.mealPrep:
+        return 'mealPrep';
+      case AppNotificationCategory.seasonal:
+        return 'seasonal';
+      case AppNotificationCategory.quickMeals:
+        return 'quickMeals';
+      case AppNotificationCategory.budget:
+        return 'budget';
+      case AppNotificationCategory.keto:
+        return 'keto';
+    }
+  }
+
+  // Convert 0..6 (Sun..Sat) to Dart's DateTime weekday constants
+  static int _weekdayToDart(int zeroBased) {
+    switch (zeroBased) {
+      case 0:
+        return DateTime.sunday;
+      case 1:
+        return DateTime.monday;
+      case 2:
+        return DateTime.tuesday;
+      case 3:
+        return DateTime.wednesday;
+      case 4:
+        return DateTime.thursday;
+      case 5:
+        return DateTime.friday;
+      case 6:
+      default:
+        return DateTime.saturday;
+    }
   }
 }

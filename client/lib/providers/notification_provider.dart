@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:recipease/services/notification_scheduler.dart';
+import 'package:recipease/services/notification_config_service.dart';
+import 'package:recipease/models/notification_config.dart';
 
 class NotificationProvider with ChangeNotifier {
   final Box _prefs;
@@ -32,6 +34,13 @@ class NotificationProvider with ChangeNotifier {
   bool get catKeto => _catKeto;
 
   Future<void> _loadPreferences() async {
+    // Fetch remote notification config first
+    final NotificationConfigService svc = NotificationConfigService();
+    final NotificationConfig? remoteCfg = await svc.fetchConfig();
+    if (remoteCfg != null) {
+      NotificationScheduler.applyConfig(remoteCfg);
+    }
+
     _dailyRecipeReminder = _prefs.get(
       'dailyRecipeReminder',
       defaultValue: true,
