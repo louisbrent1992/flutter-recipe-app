@@ -94,7 +94,8 @@ const fetchImage = async (query, start = 1) => {
 
 	// Normalize the query by trimming and converting to lowercase
 	const normalizedQuery = query.trim().toLowerCase();
-	const cacheKey = `${normalizedQuery}_${start}`;
+	const safeStart = Number.isFinite(start) && start > 0 ? start : 1;
+	const cacheKey = `${normalizedQuery}_${safeStart}`;
 
 	// Check if the image is already cached
 	if (imageCache[cacheKey]) {
@@ -102,8 +103,30 @@ const fetchImage = async (query, start = 1) => {
 		return imageCache[cacheKey];
 	}
 
+	// Validate Google CSE configuration early to avoid noisy errors
+	if (!GOOGLE_API_KEY || !GOOGLE_CX) {
+		console.warn("Google CSE not configured (missing GOOGLE_API_KEY or GOOGLE_CX)");
+		return null;
+	}
+
+	const tryExtractImageFromItems = (items = []) => {
+		for (const item of items) {
+			// Prefer direct link when it's an image
+			if (item.link && typeof item.link === "string" && /\.(png|jpe?g|gif|webp)$/i.test(item.link)) {
+				return item.link;
+			}
+			// Fallback to pagemap cse_image or cse_thumbnail
+			const imageFromMap =
+				(item.pagemap && Array.isArray(item.pagemap.cse_image) && item.pagemap.cse_image[0]?.src) ||
+				(item.pagemap && Array.isArray(item.pagemap.cse_thumbnail) && item.pagemap.cse_thumbnail[0]?.src);
+			if (imageFromMap) return imageFromMap;
+		}
+		return null;
+	};
+
 	const startTime = Date.now();
 	try {
+		// Primary attempt: Image search endpoint
 		const response = await axios.get(GOOGLE_SEARCH_URL, {
 			params: {
 				key: GOOGLE_API_KEY,
@@ -112,7 +135,7 @@ const fetchImage = async (query, start = 1) => {
 				searchType: "image",
 				num: 3, // Get more results to have options
 				safe: "active",
-				start: start,
+				start: safeStart,
 			},
 		});
 
@@ -125,18 +148,45 @@ const fetchImage = async (query, start = 1) => {
 		}
 
 		// Try to find the best image from the results
-		for (const item of response.data.items) {
-			const imageUrl = item.link;
-			if (imageUrl) {
-				imageCache[cacheKey] = imageUrl;
-				return imageUrl;
-			}
+		const directImage = tryExtractImageFromItems(response.data.items);
+		if (directImage) {
+			imageCache[cacheKey] = directImage;
+			return directImage;
 		}
 
 		return null;
 	} catch (error) {
-		console.error("Error fetching image from Google:", error);
+		// Sanitize error logging to avoid leaking API keys
+		const status = error?.response?.status;
+		const message = error?.response?.data?.error?.message || error?.message;
+		console.error("Error fetching image from Google (sanitized):", { status, message });
 		logPerformance(`Google Image Search FAILED for "${normalizedQuery}"`, startTime);
+
+		// Fallback: Some CSEs do not have Image Search enabled -> retry without searchType
+		try {
+			const fallbackStart = Date.now();
+			const fallbackResp = await axios.get(GOOGLE_SEARCH_URL, {
+				params: {
+					key: GOOGLE_API_KEY,
+					cx: GOOGLE_CX,
+					q: `${normalizedQuery}`,
+					num: 3,
+					safe: "active",
+					start: safeStart,
+				},
+			});
+			logPerformance(`Google Web Search fallback for "${normalizedQuery}"`, fallbackStart);
+			const imageFromWeb = tryExtractImageFromItems(fallbackResp.data.items || []);
+			if (imageFromWeb) {
+				imageCache[cacheKey] = imageFromWeb;
+				return imageFromWeb;
+			}
+		} catch (fallbackErr) {
+			const fStatus = fallbackErr?.response?.status;
+			const fMessage = fallbackErr?.response?.data?.error?.message || fallbackErr?.message;
+			console.error("Fallback Google web search failed (sanitized):", { status: fStatus, message: fMessage });
+		}
+
 		return null;
 	}
 };
