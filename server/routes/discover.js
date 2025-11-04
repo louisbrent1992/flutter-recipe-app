@@ -76,20 +76,21 @@ router.get("/search", auth, async (req, res) => {
 		}
         // Note: 'tag' terms are already merged into tokens above for OR semantics
 
-		// Get total count for pagination (before deduplication)
-		const totalQuery = await recipesRef.count().get();
-		const totalRecipes = totalQuery.data().count;
+        // Get total count for pagination (before deduplication)
+        const totalQuery = await recipesRef.count().get();
+        const totalRecipes = totalQuery.data().count;
 
-		// Fetch recipes ensuring we get enough unique ones
-		const startAt = Math.max(0, (page - 1) * limit);
-		const uniqueRecipesMap = new Map();
-		let currentOffset = startAt;
-		let fetchAttempts = 0;
-		const maxFetchAttempts = 3;
-		const batchSize = Math.max(limit * 2, 50); // Fetch larger batches to account for deduplication
+        // Fetch recipes ensuring we get enough unique results for the requested page
+        // We collect up to targetUnique = page * limit unique items, then slice the page segment
+        const uniqueRecipesMap = new Map();
+        const targetUnique = Math.max(page * limit, limit);
+        let currentOffset = 0;
+        let fetchAttempts = 0;
+        const maxFetchAttempts = 10; // allow more attempts to satisfy deeper pages
+        const batchSize = Math.max(limit * 2, 50); // Fetch larger batches to account for deduplication
 
 		// Keep fetching until we have enough unique recipes or hit max attempts
-		while (uniqueRecipesMap.size < limit && fetchAttempts < maxFetchAttempts) {
+        while (uniqueRecipesMap.size < targetUnique && fetchAttempts < maxFetchAttempts) {
 			let snapshot;
 			try {
 				if (isRandom) {
@@ -163,16 +164,16 @@ router.get("/search", auth, async (req, res) => {
 				const key = `${recipe.title?.toLowerCase() || ""}|${
 					recipe.description?.toLowerCase() || ""
 				}`;
-				if (!uniqueRecipesMap.has(key)) {
-					uniqueRecipesMap.set(key, recipe);
-					// Stop if we have enough unique recipes
-					if (uniqueRecipesMap.size >= limit) {
-						break;
-					}
-				}
+                if (!uniqueRecipesMap.has(key)) {
+                    uniqueRecipesMap.set(key, recipe);
+                    // Stop if we have enough unique recipes for the requested page window
+                    if (uniqueRecipesMap.size >= targetUnique) {
+                        break;
+                    }
+                }
 			}
 
-			currentOffset += batchSize;
+            currentOffset += batchSize;
 			fetchAttempts++;
 		}
 
@@ -188,7 +189,8 @@ router.get("/search", auth, async (req, res) => {
 			}
 		}
 		
-		const paginatedRecipes = deduplicatedRecipes.slice(0, limit);
+        const pageStart = Math.max(0, (page - 1) * limit);
+        const paginatedRecipes = deduplicatedRecipes.slice(pageStart, pageStart + limit);
 
 		console.log(
 			`Performed ${fetchAttempts} fetch attempts, deduplicated to ${deduplicatedRecipes.length} unique recipes, returning ${paginatedRecipes.length}`
@@ -196,9 +198,8 @@ router.get("/search", auth, async (req, res) => {
 
 		// Calculate pagination info based on deduplicated results
 		// More accurate now since we have fewer duplicates
-		const estimatedTotalPages = Math.ceil((totalRecipes * 0.95) / limit); // Assume ~5% duplicates now
-		const hasMore =
-			deduplicatedRecipes.length > limit || page * limit < totalRecipes;
+        const estimatedTotalPages = Math.ceil((totalRecipes * 0.95) / limit); // Rough estimate
+        const hasMore = deduplicatedRecipes.length > pageStart + paginatedRecipes.length || page * limit < totalRecipes;
 
 		res.json({
 			recipes: paginatedRecipes,
