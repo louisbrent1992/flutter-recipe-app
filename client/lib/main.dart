@@ -46,6 +46,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_native_timezone/flutter_native_timezone.dart';
 import 'dart:convert';
 import 'package:recipease/services/notification_scheduler.dart';
+import 'package:recipease/services/game_center_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -121,6 +122,14 @@ void main() async {
 
   await Hive.initFlutter();
   await Hive.openBox('preferences');
+
+  // Initialize Game Center (iOS only, fails silently on other platforms)
+  try {
+    final gameCenterService = GameCenterService();
+    await gameCenterService.initialize();
+  } catch (e) {
+    debugPrint('Game Center initialization skipped: $e');
+  }
 
   runApp(MyApp(Key('key')));
 }

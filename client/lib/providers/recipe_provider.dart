@@ -5,6 +5,7 @@ import '../models/recipe.dart';
 import '../models/api_response.dart';
 import '../services/recipe_service.dart';
 import '../services/collection_service.dart';
+import '../services/game_center_service.dart';
 
 class RecipeProvider extends ChangeNotifier {
   // Cross-screen refresh mechanism
@@ -101,6 +102,10 @@ class RecipeProvider extends ChangeNotifier {
 
       if (response.success && response.data != null) {
         _generatedRecipes = response.data ?? [];
+
+        // Unlock first generation achievement
+        _unlockFirstGenerationAchievement();
+
         notifyListeners();
       } else {
         _setError(response.message ?? 'Failed to generate recipes');
@@ -158,6 +163,10 @@ class RecipeProvider extends ChangeNotifier {
         }
 
         _importedRecipe = recipe;
+
+        // Unlock first import achievement
+        _unlockFirstImportAchievement();
+
         notifyListeners();
         return _importedRecipe;
       } else {
@@ -416,6 +425,9 @@ class RecipeProvider extends ChangeNotifier {
 
           // Force refresh collections to update recently added
           await collectionService.getCollections(forceRefresh: true);
+
+          // Sync with Game Center for achievements
+          _syncGameCenter();
 
           notifyListeners();
           emitRecipesChanged();
@@ -714,6 +726,70 @@ class RecipeProvider extends ChangeNotifier {
   // Emit cross-screen refresh event
   void emitRecipesChanged() {
     _recipesChangedController.add(null);
+  }
+
+  /// Sync chef ranking with Game Center
+  Future<void> _syncGameCenter() async {
+    try {
+      final gameCenter = GameCenterService();
+      if (!gameCenter.isAuthenticated) {
+        await gameCenter.initialize();
+      }
+
+      // Calculate chef ranking (similar to nav_drawer logic)
+      int stars = 1;
+      final recipeCount = _totalUserRecipes;
+
+      // Calculate average difficulty (simplified - would need full recipe data)
+      // For now, base stars on recipe count
+      if (recipeCount >= 300) {
+        stars = 5;
+      } else if (recipeCount >= 100) {
+        stars = 4;
+      } else if (recipeCount >= 50) {
+        stars = 3;
+      } else if (recipeCount >= 10) {
+        stars = 2;
+      } else {
+        stars = 1;
+      }
+
+      // Sync with Game Center
+      await gameCenter.syncChefRanking(stars: stars, recipeCount: recipeCount);
+    } catch (e) {
+      // Silently fail - Game Center is optional
+      debugPrint('Game Center sync failed: $e');
+    }
+  }
+
+  /// Unlock first generation achievement
+  Future<void> _unlockFirstGenerationAchievement() async {
+    try {
+      final gameCenter = GameCenterService();
+      if (!gameCenter.isAuthenticated) {
+        await gameCenter.initialize();
+      }
+      if (gameCenter.isAuthenticated) {
+        await gameCenter.unlockFirstGeneration();
+      }
+    } catch (e) {
+      debugPrint('Game Center achievement unlock failed: $e');
+    }
+  }
+
+  /// Unlock first import achievement
+  Future<void> _unlockFirstImportAchievement() async {
+    try {
+      final gameCenter = GameCenterService();
+      if (!gameCenter.isAuthenticated) {
+        await gameCenter.initialize();
+      }
+      if (gameCenter.isAuthenticated) {
+        await gameCenter.unlockFirstImport();
+      }
+    } catch (e) {
+      debugPrint('Game Center achievement unlock failed: $e');
+    }
   }
 
   @override

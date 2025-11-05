@@ -7,6 +7,7 @@ import '../theme/theme.dart';
 import '../providers/recipe_provider.dart';
 import '../models/recipe.dart';
 import '../models/recipe_collection.dart';
+import '../services/game_center_service.dart';
 import 'dart:ui';
 
 class NavDrawer extends StatefulWidget {
@@ -83,33 +84,33 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     // Ensure stars are between 1 and 5
     stars = stars.clamp(1, 5);
 
-    // Determine title based on stars
+    // Determine title based on stars (using professional chef hierarchy)
     String title;
     String description;
     switch (stars) {
       case 1:
-        title = 'Novice Chef';
-        description = 'Just getting started';
+        title = 'Commis Chef';
+        description = 'Junior chef learning the basics';
         break;
       case 2:
-        title = 'Home Cook';
-        description = 'Building skills';
+        title = 'Line Cook';
+        description = 'Chef de Partie - station specialist';
         break;
       case 3:
-        title = 'Skilled Chef';
-        description = 'Confident cooking';
+        title = 'Sous Chef';
+        description = 'Assistant head chef';
         break;
       case 4:
-        title = 'Expert Chef';
-        description = 'Advanced techniques';
+        title = 'Executive Chef';
+        description = 'Chef de Cuisine - kitchen leader';
         break;
       case 5:
         title = 'Master Chef';
-        description = 'Culinary excellence';
+        description = 'Culinary excellence - kitchen master';
         break;
       default:
-        title = 'Chef';
-        description = 'Cooking enthusiast';
+        title = 'Commis Chef';
+        description = 'Starting your culinary journey';
     }
 
     return {'stars': stars, 'title': title, 'description': description};
@@ -121,7 +122,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
 
     // Load user recipes if not already loaded
     // Ensure we load page 1 to get the total count for accurate stats
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final recipeProvider = Provider.of<RecipeProvider>(
         context,
         listen: false,
@@ -133,6 +134,9 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
         ); // Explicitly load page 1 for total count
         // Favorites removed: no favorites preloading
       }
+
+      // Sync chef ranking with Game Center when drawer opens
+      _syncChefRankingWithGameCenter();
     });
 
     // Main controllers with smoother timing
@@ -1025,6 +1029,44 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                   ),
                 ),
                 const SizedBox(height: 20),
+                // Game Center buttons (iOS only)
+                if (Theme.of(context).platform == TargetPlatform.iOS) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            Navigator.of(context).pop();
+                            final gameCenter = GameCenterService();
+                            await gameCenter.showLeaderboards();
+                          },
+                          icon: const Icon(Icons.leaderboard, size: 18),
+                          label: const Text('Leaderboards'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            Navigator.of(context).pop();
+                            final gameCenter = GameCenterService();
+                            await gameCenter.showAchievements();
+                          },
+                          icon: const Icon(Icons.emoji_events, size: 18),
+                          label: const Text('Achievements'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 // Close button
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -1063,6 +1105,25 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     return 'Mostly ${most.key} recipes';
   }
 
+  /// Sync chef ranking with Game Center
+  Future<void> _syncChefRankingWithGameCenter() async {
+    try {
+      final ranking = chefRanking;
+      final int stars = ranking['stars'];
+      final gameCenter = GameCenterService();
+
+      if (gameCenter.isAuthenticated || await gameCenter.initialize()) {
+        await gameCenter.syncChefRanking(
+          stars: stars,
+          recipeCount: savedRecipesCount,
+        );
+      }
+    } catch (e) {
+      // Silently fail - Game Center is optional
+      debugPrint('Game Center sync failed: $e');
+    }
+  }
+
   String _getNextLevelText() {
     final ranking = chefRanking;
     final int currentStars = ranking['stars'];
@@ -1075,13 +1136,13 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     String nextTitle;
     switch (nextLevel) {
       case 2:
-        nextTitle = 'Home Cook';
+        nextTitle = 'Line Cook';
         break;
       case 3:
-        nextTitle = 'Skilled Chef';
+        nextTitle = 'Sous Chef';
         break;
       case 4:
-        nextTitle = 'Expert Chef';
+        nextTitle = 'Executive Chef';
         break;
       case 5:
         nextTitle = 'Master Chef';
