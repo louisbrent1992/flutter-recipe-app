@@ -596,7 +596,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       // Longer delay to ensure any previous platform views (ads) are fully dismissed
                       await Future.delayed(const Duration(milliseconds: 300));
                       final shareText = _buildShareText(recipe);
-                      await Share.share(shareText, subject: recipe.title);
+                      // iPad requires a source rect; provide a safe fallback
+                      final renderBox =
+                          context.findRenderObject() as RenderBox?;
+                      final origin =
+                          renderBox != null
+                              ? renderBox.localToGlobal(Offset.zero) &
+                                  renderBox.size
+                              : const Rect.fromLTWH(0, 0, 1, 1);
+                      await Share.share(
+                        shareText,
+                        subject: recipe.title,
+                        sharePositionOrigin: origin,
+                      );
                     } catch (e) {
                       // Handle platform view conflicts gracefully
                       // Fallback to copying the full recipe text

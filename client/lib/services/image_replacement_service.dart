@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/recipe.dart';
 import '../services/google_image_service.dart';
@@ -44,7 +43,6 @@ class ImageReplacementService {
       final downloadUrl = await uploadTask.ref.getDownloadURL();
       return downloadUrl;
     } catch (e) {
-      debugPrint('[ImageReplacementService] pick/upload failed: $e');
       return null;
     }
   }
@@ -65,7 +63,6 @@ class ImageReplacementService {
       final ct = head.headers['content-type'] ?? '';
       return ct.startsWith('image/');
     } catch (e) {
-      debugPrint('[ImageReplacementService] validate failed for $url: $e');
       return false;
     }
   }
@@ -99,7 +96,6 @@ class ImageReplacementService {
       final saved = await saveFn(updated);
       return saved != null;
     } catch (e) {
-      debugPrint('[ImageReplacementService] persist failed: $e');
       return false;
     }
   }
@@ -116,7 +112,6 @@ class ImageReplacementService {
         await CachedNetworkImage.evictFromCache(oldUrl);
       }
     } catch (e) {
-      debugPrint('[ImageReplacementService] bustCaches error: $e');
     }
   }
 }
