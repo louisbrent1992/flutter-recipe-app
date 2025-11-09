@@ -748,23 +748,30 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               },
               itemBuilder: (context) {
                 final List<PopupMenuEntry<MenuAction>> items = [];
-                // Common
-                items.add(
-                  PopupMenuItem<MenuAction>(
-                    value: MenuAction.fixImage,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.image,
-                          size: 18,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('Replace image'),
-                      ],
+                // Gate "Replace image" in production for discover recipes unless saved (devs allowed via kDebugMode)
+                final recipe = _currentRecipe;
+                final bool isDiscover =
+                    recipe.id.isNotEmpty && (recipe.sourceUrl == null);
+                final bool canShowReplaceImage =
+                    _isSaved || kDebugMode || !isDiscover;
+                if (canShowReplaceImage) {
+                  items.add(
+                    PopupMenuItem<MenuAction>(
+                      value: MenuAction.fixImage,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.image,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Replace image'),
+                        ],
+                      ),
                     ),
-                  ),
-                );
+                  );
+                }
                 if (!_isSaved) {
                   items.add(
                     PopupMenuItem<MenuAction>(

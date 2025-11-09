@@ -361,23 +361,23 @@ class _ExpandedImageViewState extends State<_ExpandedImageView>
                     offset: _offset,
                     child: Transform.scale(
                       scale: _scale,
-                      alignment: Alignment.center,
-                      child: ScaleTransition(
-                        scale: _scaleAnimation,
-                        child: CachedNetworkImage(
-                          imageUrl: widget.imageUrl,
-                          fit: BoxFit.contain,
-                          placeholder:
-                              (context, url) => const Center(
-                                child: CircularProgressIndicator(),
+                    alignment: Alignment.center,
+                    child: ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: CachedNetworkImage(
+                        imageUrl: widget.imageUrl,
+                        fit: BoxFit.contain,
+                        placeholder:
+                            (context, url) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                        errorWidget:
+                            (context, url, error) => const Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: Colors.red,
                               ),
-                          errorWidget:
-                              (context, url, error) => const Icon(
-                                Icons.error_outline,
-                                size: 48,
-                                color: Colors.red,
-                              ),
-                        ),
+                            ),
                       ),
                     ),
                   ),

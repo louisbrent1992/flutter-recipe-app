@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
-import '../components/credits_badge.dart';
+import '../components/custom_app_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../components/dynamic_banner.dart';
 import '../providers/dynamic_ui_provider.dart';
 import '../providers/subscription_provider.dart';
 import '../models/purchase_product.dart';
 import '../components/error_display.dart';
-import '../theme/theme.dart';
+// import '../theme/theme.dart';
 // import '../components/floating_bottom_bar.dart';
 
 class SubscriptionScreen extends StatefulWidget {
@@ -50,17 +50,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Shop'),
-        elevation: AppElevation.appBar,
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: colorScheme.onSurface,
-        actions: const [CreditsPill()],
+      appBar: CustomAppBar(
+        title: 'Shop',
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: colorScheme.onPrimary,
-          labelColor: colorScheme.onPrimary,
-          unselectedLabelColor: colorScheme.onPrimary.withValues(alpha: 0.6),
+          indicatorColor: colorScheme.onSurface,
+          labelColor: colorScheme.onSurface,
+          unselectedLabelColor: colorScheme.onSurface.withValues(alpha: 0.6),
           tabs: const [
             Tab(text: 'Subscriptions'),
             Tab(text: 'Bundles'),

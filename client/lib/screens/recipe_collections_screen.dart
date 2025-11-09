@@ -275,19 +275,10 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // Background decoration
+            // Background aligned to global scaffold background
             Positioned.fill(
               child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      colorScheme.surface,
-                      colorScheme.surface.withValues(alpha: 0.8),
-                    ],
-                  ),
-                ),
+                color: Theme.of(context).scaffoldBackgroundColor,
               ),
             ),
 

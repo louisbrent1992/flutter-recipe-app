@@ -57,7 +57,7 @@ class _SplashScreenState extends State<SplashScreen>
     // This ensures we have the correct auth state before navigation
     // Give Firebase Auth time to restore session if user was previously logged in
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     // Wait for minimum splash duration
     final elapsed = DateTime.now().difference(_startTime!);
     final remainingTime =
@@ -114,19 +114,9 @@ class _SplashScreenState extends State<SplashScreen>
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              colorScheme.primary.withValues(alpha: 0.1),
-              colorScheme.surface,
-              colorScheme.secondary.withValues(alpha: 0.05),
-            ],
-          ),
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: Center(
           child: AnimatedBuilder(
             animation: _animationController,

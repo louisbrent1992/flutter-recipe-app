@@ -167,23 +167,23 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
 
         // Show success message
         if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Recipes generated successfully!',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withValues(
-                  alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Recipes generated successfully!',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(
+                    alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+                  ),
                 ),
               ),
+              backgroundColor: Colors.green,
             ),
-            backgroundColor: Colors.green,
-          ),
-        );
+          );
 
-        // Navigate to generated recipes screen
-        Navigator.pushNamed(context, '/generatedRecipes');
-      }
+          // Navigate to generated recipes screen
+          Navigator.pushNamed(context, '/generatedRecipes');
+        }
       }
       if (context.mounted) {
         // Show error message if no recipes were generated
@@ -242,27 +242,16 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Generate Recipe',
-      ),
+      appBar: const CustomAppBar(title: 'Generate Recipe'),
       body: Consumer<RecipeProvider>(
         builder: (context, recipeProvider, _) {
           return Stack(
             fit: StackFit.expand,
             children: [
-              // Background decoration with pattern
+              // Background aligned to global scaffold background with subtle pattern
               Positioned.fill(
                 child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.surface,
-                        colorScheme.surface.withAlpha(204), // 0.8 alpha
-                      ],
-                    ),
-                  ),
+                  color: Theme.of(context).scaffoldBackgroundColor,
                   child: CustomPaint(
                     painter: _BackgroundPatternPainter(
                       color: colorScheme.primary.withAlpha(8), // 0.03 alpha

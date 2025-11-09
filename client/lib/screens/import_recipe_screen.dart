@@ -267,19 +267,10 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
             fit: StackFit.expand,
 
             children: [
-              // Background decoration with pattern
+              // Background aligned to global scaffold background with subtle pattern
               Positioned.fill(
                 child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.surface,
-                        colorScheme.surface.withAlpha(204), // 0.8 alpha
-                      ],
-                    ),
-                  ),
+                  color: Theme.of(context).scaffoldBackgroundColor,
                   child: CustomPaint(
                     painter: _BackgroundPatternPainter(
                       color: colorScheme.primary.withAlpha(8), // 0.03 alpha
