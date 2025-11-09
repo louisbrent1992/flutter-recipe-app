@@ -748,12 +748,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               },
               itemBuilder: (context) {
                 final List<PopupMenuEntry<MenuAction>> items = [];
-                // Gate "Replace image" in production for discover recipes unless saved (devs allowed via kDebugMode)
-                final recipe = _currentRecipe;
-                final bool isDiscover =
-                    recipe.id.isNotEmpty && (recipe.sourceUrl == null);
-                final bool canShowReplaceImage =
-                    _isSaved || kDebugMode || !isDiscover;
+                // Only allow replacing image when the recipe is saved by the user, or in debug builds
+                final bool canShowReplaceImage = _isSaved || kDebugMode;
                 if (canShowReplaceImage) {
                   items.add(
                     PopupMenuItem<MenuAction>(
@@ -908,7 +904,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                   // Ignore failures to prevent global error overlay
                                 }
                               }
-                              if (recipe.id.isNotEmpty) {
+                              // Only allow discover DB image updates during debug sessions
+                              if (kDebugMode && recipe.id.isNotEmpty) {
                                 try {
                                   await RecipeService.updateDiscoverRecipeImage(
                                     recipeId: recipe.id,
