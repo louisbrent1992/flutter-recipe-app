@@ -597,18 +597,21 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       await Future.delayed(const Duration(milliseconds: 300));
                       final shareText = _buildShareText(recipe);
                       // iPad requires a source rect; provide a safe fallback
-                      final renderBox =
-                          context.findRenderObject() as RenderBox?;
-                      final origin =
-                          renderBox != null
-                              ? renderBox.localToGlobal(Offset.zero) &
-                                  renderBox.size
-                              : const Rect.fromLTWH(0, 0, 1, 1);
-                      await Share.share(
-                        shareText,
-                        subject: recipe.title,
-                        sharePositionOrigin: origin,
-                      );
+                      if (context.mounted) {
+                        final renderBox =
+                            context.findRenderObject() as RenderBox?;
+
+                        final origin =
+                            renderBox != null
+                                ? renderBox.localToGlobal(Offset.zero) &
+                                    renderBox.size
+                                : const Rect.fromLTWH(0, 0, 1, 1);
+                        await Share.share(
+                          shareText,
+                          subject: recipe.title,
+                          sharePositionOrigin: origin,
+                        );
+                      }
                     } catch (e) {
                       // Handle platform view conflicts gracefully
                       // Fallback to copying the full recipe text
@@ -1473,22 +1476,68 @@ Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
   String? candidateUrl;
   String? oldUrl = recipe.imageUrl;
 
-  if (choice == 'device') {
-    candidateUrl = await ImageReplacementService.pickFromDeviceAndUpload(
-      recipe,
-    );
-  } else if (choice == 'url') {
-    final controller = TextEditingController();
-    final ok = await showDialog<bool>(
+  if (context.mounted) {
+    if (choice == 'device') {
+      candidateUrl = await ImageReplacementService.pickFromDeviceAndUpload(
+        recipe,
+      );
+    } else if (choice == 'url') {
+      final controller = TextEditingController();
+      final ok = await showDialog<bool>(
+        context: context,
+        builder:
+            (ctx) => AlertDialog(
+              title: const Text('Paste image URL'),
+              content: TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  hintText: 'https://example.com/image.jpg',
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Validate'),
+                ),
+              ],
+            ),
+      );
+      if (ok == true) {
+        final url = controller.text.trim();
+        if (await ImageReplacementService.validateImageUrl(url)) {
+          candidateUrl = url;
+        } else {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('That link doesn\'t point to a valid image.'),
+              ),
+            );
+          }
+        }
+      }
+    } else if (choice == 'regen') {
+      candidateUrl = await ImageReplacementService.searchSuggestion(
+        recipe.title,
+        starts: const [4, 7, 10, 13, 16],
+      );
+    }
+  }
+  if (candidateUrl == null) return;
+  if (context.mounted) {
+    // Preview dialog
+    final confirm = await showDialog<bool>(
       context: context,
       builder:
           (ctx) => AlertDialog(
-            title: const Text('Paste image URL'),
-            content: TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                hintText: 'https://example.com/image.jpg',
-              ),
+            title: const Text('Replace image?'),
+            content: SizedBox(
+              width: 300,
+              child: Image.network(candidateUrl!, fit: BoxFit.contain),
             ),
             actions: [
               TextButton(
@@ -1497,95 +1546,52 @@ Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Validate'),
+                child: const Text('Replace'),
               ),
             ],
           ),
     );
-    if (ok == true) {
-      final url = controller.text.trim();
-      if (await ImageReplacementService.validateImageUrl(url)) {
-        candidateUrl = url;
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('That link doesn\'t point to a valid image.'),
-            ),
-          );
-        }
+
+    if (confirm != true) return;
+
+    // Persist and refresh
+    final saved = await ImageReplacementService.persistRecipeImage(
+      recipe: recipe,
+      newImageUrl: candidateUrl,
+      saveFn: (updated) async {
+        try {
+          // Debug: allow updating discover items directly
+          if (kDebugMode && updated.id.isNotEmpty) {
+            final resp = await RecipeService.updateDiscoverRecipeImage(
+              recipeId: updated.id,
+              imageUrl: candidateUrl!,
+            );
+            return resp.success ? updated : null;
+          }
+          // Production: only user-saved recipes via user endpoint
+          final resp = await RecipeService.updateUserRecipe(updated);
+          return resp.success ? resp.data : null;
+        } catch (_) {}
+        return updated; // Optimistic for transient contexts
+      },
+    );
+
+    await ImageReplacementService.bustCaches(recipe, oldUrl: oldUrl);
+
+    if (saved && context.mounted) {
+      // Force UI to show new image immediately
+      if (context.mounted) {
+        final state =
+            context.findAncestorStateOfType<_RecipeDetailScreenState>();
+        state?.applyImageReplacement(candidateUrl);
       }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Image replaced successfully.')),
+      );
+    } else if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not update image right now.')),
+      );
     }
-  } else if (choice == 'regen') {
-    candidateUrl = await ImageReplacementService.searchSuggestion(
-      recipe.title,
-      starts: const [4, 7, 10, 13, 16],
-    );
-  }
-
-  if (candidateUrl == null) return;
-
-  // Preview dialog
-  final confirm = await showDialog<bool>(
-    context: context,
-    builder:
-        (ctx) => AlertDialog(
-          title: const Text('Replace image?'),
-          content: SizedBox(
-            width: 300,
-            child: Image.network(candidateUrl!, fit: BoxFit.contain),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Replace'),
-            ),
-          ],
-        ),
-  );
-
-  if (confirm != true) return;
-
-  // Persist and refresh
-  final saved = await ImageReplacementService.persistRecipeImage(
-    recipe: recipe,
-    newImageUrl: candidateUrl,
-    saveFn: (updated) async {
-      try {
-        // Debug: allow updating discover items directly
-        if (kDebugMode && updated.id.isNotEmpty) {
-          final resp = await RecipeService.updateDiscoverRecipeImage(
-            recipeId: updated.id,
-            imageUrl: candidateUrl!,
-          );
-          return resp.success ? updated : null;
-        }
-        // Production: only user-saved recipes via user endpoint
-        final resp = await RecipeService.updateUserRecipe(updated);
-        return resp.success ? resp.data : null;
-      } catch (_) {}
-      return updated; // Optimistic for transient contexts
-    },
-  );
-
-  await ImageReplacementService.bustCaches(recipe, oldUrl: oldUrl);
-
-  if (saved && context.mounted) {
-    // Force UI to show new image immediately
-    if (context.mounted) {
-      final state = context.findAncestorStateOfType<_RecipeDetailScreenState>();
-      state?.applyImageReplacement(candidateUrl);
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Image replaced successfully.')),
-    );
-  } else if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Could not update image right now.')),
-    );
   }
 }

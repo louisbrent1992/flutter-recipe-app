@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
-import 'package:recipease/components/floating_bottom_bar.dart';
 
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/providers/recipe_provider.dart';
@@ -171,36 +170,39 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
           },
         );
       }
-
-      final recipe = await recipeProvider.importRecipeFromUrl(url, context);
-
-      // Close loading dialog
       if (context.mounted) {
-        Navigator.pop(context);
-      }
+        final recipe = await recipeProvider.importRecipeFromUrl(url, context);
 
-      if (context.mounted && recipe != null) {
-        // Always deduct one import credit after successful import
-        await subscriptionProvider.useCredits(
-          CreditType.recipeImport,
-          reason: 'Recipe import from URL',
-        );
+        // Close loading dialog
+        if (context.mounted) {
+          Navigator.pop(context);
+        }
 
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Recipe imported successfully!'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(10)),
-            ),
-          ),
-        );
+        if (context.mounted && recipe != null) {
+          // Always deduct one import credit after successful import
+          await subscriptionProvider.useCredits(
+            CreditType.recipeImport,
+            reason: 'Recipe import from URL',
+          );
 
-        // Navigate to details screen
-        _navigateToRecipeDetails(recipe);
+          // Show success message
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Recipe imported successfully!'),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                ),
+              ),
+            );
+
+            // Navigate to details screen
+            _navigateToRecipeDetails(recipe);
+          }
+        }
       }
     } catch (e) {
       // Close loading dialog if it's still showing

@@ -112,6 +112,7 @@ class ImageReplacementService {
         await CachedNetworkImage.evictFromCache(oldUrl);
       }
     } catch (e) {
+      print('Error busting caches: $e');
     }
   }
 }

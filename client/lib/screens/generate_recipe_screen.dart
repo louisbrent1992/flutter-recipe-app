@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
-import 'package:recipease/components/floating_bottom_bar.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/providers/subscription_provider.dart';
 import 'package:recipease/services/credits_service.dart';
@@ -167,6 +166,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
         );
 
         // Show success message
+        if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -183,7 +183,9 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
 
         // Navigate to generated recipes screen
         Navigator.pushNamed(context, '/generatedRecipes');
-      } else if (context.mounted) {
+      }
+      }
+      if (context.mounted) {
         // Show error message if no recipes were generated
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

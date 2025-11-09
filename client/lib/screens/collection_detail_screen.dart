@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/custom_app_bar.dart';
-import 'package:recipease/components/floating_bottom_bar.dart';
 import '../theme/theme.dart';
 
 import 'package:recipease/models/recipe.dart';

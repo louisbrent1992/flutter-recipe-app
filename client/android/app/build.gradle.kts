@@ -23,10 +23,11 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = "17"
     }
 
     // Enable BuildConfig feature
@@ -109,4 +110,5 @@ dependencies {
 
     compileOnly("com.google.dagger:dagger:2.56.2")
     annotationProcessor("com.google.dagger:dagger-compiler:2.56.2")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

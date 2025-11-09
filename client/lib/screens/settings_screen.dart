@@ -787,7 +787,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     color: Theme.of(context).colorScheme.error,
                     onTap: () async {
                       final removed = await ImageResolverCache.clearAll();
-                      if (mounted) {
+                      if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('Cleared $removed cached images'),

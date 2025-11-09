@@ -34,7 +34,6 @@ import 'package:recipease/services/collection_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:recipease/services/permission_service.dart';
-// import 'package:receive_sharing_intent/receive_sharing_intent.dart'; // REPLACED WITH share_handler
 import 'dart:async';
 import 'screens/generated_recipes_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -43,7 +42,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter_native_timezone/flutter_native_timezone.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'dart:convert';
 import 'package:recipease/services/notification_scheduler.dart';
 import 'package:recipease/services/game_center_service.dart';
@@ -94,8 +93,26 @@ void main() async {
   // Initialize timezone database for scheduled notifications (optional)
   tz.initializeTimeZones();
   try {
-    final String timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timeZoneName));
+    final dynamic tzValue = await FlutterTimezone.getLocalTimezone();
+    String resolvedTz;
+    if (tzValue is String) {
+      resolvedTz = tzValue;
+    } else {
+      // Try common field names on TimezoneInfo; fall back to toString()
+      try {
+        // ignore: avoid_dynamic_calls
+        resolvedTz =
+            (tzValue.name as String?) ??
+            // ignore: avoid_dynamic_calls
+            (tzValue.ianaName as String?) ??
+            // ignore: avoid_dynamic_calls
+            (tzValue.timezone as String?) ??
+            tzValue.toString();
+      } catch (_) {
+        resolvedTz = tzValue.toString();
+      }
+    }
+    tz.setLocalLocation(tz.getLocation(resolvedTz));
   } catch (_) {
     // Fallback: keep default tz.local
   }

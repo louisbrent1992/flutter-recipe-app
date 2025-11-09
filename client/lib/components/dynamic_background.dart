@@ -118,12 +118,12 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
                   Container(
                     color: _parseColor(
                       bg.colors.first,
-                    )?.withOpacity(overlayOpacity),
+                    )?.withValues(alpha: overlayOpacity),
                   ),
 
                 if (bg.hasImage && overlayOpacity < 1.0)
                   Container(
-                    color: Colors.black.withOpacity(1.0 - overlayOpacity),
+                    color: Colors.black.withValues(alpha: 1.0 - overlayOpacity),
                   ),
               ],
             ),

@@ -11,7 +11,6 @@ import '../theme/theme.dart';
 import '../providers/recipe_provider.dart';
 import '../models/recipe.dart';
 import '../models/recipe_collection.dart';
-import '../components/floating_bottom_bar.dart';
 import '../components/dynamic_banner.dart';
 import '../providers/dynamic_ui_provider.dart';
 

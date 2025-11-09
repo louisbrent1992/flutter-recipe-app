@@ -31,15 +31,6 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
-// Align Kotlin jvmTarget for modules that still build Java with 1.8
-// Note: receive_sharing_intent replaced with share_handler, so this configuration is no longer needed
-// project(":receive_sharing_intent") {
-//     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class.java).configureEach {
-//         kotlinOptions {
-//             jvmTarget = "1.8"
-//         }
-//     }
-// }
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
