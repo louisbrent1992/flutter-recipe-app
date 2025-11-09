@@ -321,9 +321,6 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                     ),
                   ),
                 ),
-
-            // Floating bottom bar with add action
-            FloatingBottomBar(),
           ],
         ),
       ),

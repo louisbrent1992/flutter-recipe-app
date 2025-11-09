@@ -117,14 +117,16 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string></string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Photos can be shared to and used in this app</string>
-	<key>NSUserNotificationsUsageDescription</key>
-	<string>RecipEase would like to send you recipe reminders and updates to help you discover new recipes.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>INSendMessageIntent</string>
 	</array>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>RecipEase would like to send you recipe reminders and updates to help you discover new recipes.</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>

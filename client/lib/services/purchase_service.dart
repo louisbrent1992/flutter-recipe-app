@@ -83,25 +83,33 @@ class PurchaseService {
       final ProductDetailsResponse response = await _inAppPurchase
           .queryProductDetails(ProductIds.allProductIds);
 
-      // Verbose store logging removed
+      // Log what the store returned
+      debugPrint(
+        '[IAP] Store query: products=${response.productDetails.length}, notFound=${response.notFoundIDs.length}',
+      );
 
       // Prefer store-backed details whenever available; avoid dev fallback unless nothing loads
       final Map<String, ProductDetails> byId = {
         for (final d in response.productDetails) d.id: d,
       };
 
-      final storeBacked = ProductConfigurations.allProducts
-          .where((p) => byId.containsKey(p.id))
-          .map((p) => p.copyWith(productDetails: byId[p.id]))
-          .toList();
+      final storeBacked =
+          ProductConfigurations.allProducts
+              .where((p) => byId.containsKey(p.id))
+              .map((p) => p.copyWith(productDetails: byId[p.id]))
+              .toList();
 
       // Coverage computation removed (no longer needed for logging)
 
       if (storeBacked.isNotEmpty) {
+        debugPrint('[IAP] Using store-backed products: ${storeBacked.length}');
         _availableProducts = storeBacked;
         _productsController.add(_availableProducts);
       } else {
         // Development fallback (no products returned). Prices may be mock values.
+        debugPrint(
+          '[IAP] No store-backed products found. Falling back to local configuration.',
+        );
         _availableProducts = ProductConfigurations.allProducts;
         _productsController.add(_availableProducts);
       }
@@ -131,10 +139,17 @@ class PurchaseService {
   /// Purchase a product
   Future<bool> purchaseProduct(PurchaseProduct product) async {
     if (product.productDetails == null) {
-      // Verbose missing details logging removed
-      // For development, simulate a successful purchase
-      await _simulatePurchase(product);
-      return true;
+      // If ProductDetails are missing, only simulate in debug builds.
+      if (kDebugMode) {
+        await _simulatePurchase(product);
+        return true;
+      }
+      debugPrint(
+        'Cannot purchase ${product.id}: missing ProductDetails from the store. '
+        'Ensure product IDs exist in App Store Connect/Play Console and that '
+        'queryProductDetails() returns them on device.',
+      );
+      return false;
     }
 
     try {
@@ -212,7 +227,9 @@ class PurchaseService {
         purchaseDetails.productID,
       );
       if (productConfig == null) {
-        debugPrint('Product configuration not found: ${purchaseDetails.productID}');
+        debugPrint(
+          'Product configuration not found: ${purchaseDetails.productID}',
+        );
         return;
       }
 
@@ -275,30 +292,32 @@ class PurchaseService {
         updates['subscriptionStartDate'] = FieldValue.serverTimestamp();
 
         // Unlimited tier: enable unlimitedUsage, no trials or credits
-        if (product.productType == ProductType.unlimitedPremium || product.unlimitedUsage) {
+        if (product.productType == ProductType.unlimitedPremium ||
+            product.unlimitedUsage) {
           updates['unlimitedUsage'] = true;
           // If user had an active trial, end it immediately
           updates['trialActive'] = false;
         } else {
-        // If this is the first time enabling subscription (no prior sub/trial),
-        // start a 7-day trial and grant capped trial credits (total 12).
-        final bool hasActiveSub = (data?['subscriptionActive'] ?? false) == true;
-        final bool hasTrial = (data?['trialActive'] ?? false) == true;
-        if (!hasActiveSub && !hasTrial) {
-          // Mark trial active and set end timestamp (7 days from now)
-          updates['trialActive'] = true;
-          updates['trialUsed'] = true;
-          updates['trialEndAt'] = Timestamp.fromDate(
-            DateTime.now().add(const Duration(days: 7)),
-          );
+          // If this is the first time enabling subscription (no prior sub/trial),
+          // start a 7-day trial and grant capped trial credits (total 12).
+          final bool hasActiveSub =
+              (data?['subscriptionActive'] ?? false) == true;
+          final bool hasTrial = (data?['trialActive'] ?? false) == true;
+          if (!hasActiveSub && !hasTrial) {
+            // Mark trial active and set end timestamp (7 days from now)
+            updates['trialActive'] = true;
+            updates['trialUsed'] = true;
+            updates['trialEndAt'] = Timestamp.fromDate(
+              DateTime.now().add(const Duration(days: 7)),
+            );
 
-          // Grant capped trial credits: 12 total → 7 imports + 5 generations
-          await _creditsService.addCredits(
-            recipeImports: 7,
-            recipeGenerations: 5,
-            reason: 'Subscription trial start: ${product.title}',
-          );
-        }
+            // Grant capped trial credits: 12 total → 7 imports + 5 generations
+            await _creditsService.addCredits(
+              recipeImports: 7,
+              recipeGenerations: 5,
+              reason: 'Subscription trial start: ${product.title}',
+            );
+          }
         }
       }
 

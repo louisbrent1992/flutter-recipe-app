@@ -353,7 +353,6 @@ class _AddRecipesToCollectionScreenState
                         ),
                       ],
                     ),
-                    const FloatingBottomBar(),
                   ],
                 ),
               ),

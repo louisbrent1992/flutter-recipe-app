@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../services/ad_helper.dart';
 import 'package:provider/provider.dart';
@@ -17,6 +18,8 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
   bool _isAdLoaded = false;
   int _retryCount = 0;
   static const int _maxRetries = 3;
+  bool _showCloseButton = false;
+  Timer? _closeTimer;
 
   @override
   void initState() {
@@ -42,6 +45,16 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
           setState(() {
             _isAdLoaded = true;
             _retryCount = 0; // Reset retry count on successful load
+            _showCloseButton = false;
+          });
+          // Reveal the close button after a 15-second delay
+          _closeTimer?.cancel();
+          _closeTimer = Timer(const Duration(seconds: 10), () {
+            if (mounted) {
+              setState(() {
+                _showCloseButton = true;
+              });
+            }
           });
         },
         onAdFailedToLoad: (ad, error) {
@@ -50,14 +63,20 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
           setState(() {
             _isAdLoaded = false;
             _retryCount++;
+            _showCloseButton = false;
+            _bannerAd = null; // Clear the ad reference
           });
 
-          // Retry loading after a delay
-          Future.delayed(const Duration(seconds: 5), () {
-            if (mounted) {
-              _loadAd();
-            }
-          });
+          // Only retry if we haven't exceeded max retries
+          if (_retryCount < _maxRetries) {
+            Future.delayed(const Duration(seconds: 5), () {
+              if (mounted && _retryCount < _maxRetries) {
+                _loadAd();
+              }
+            });
+          } else {
+            debugPrint('Banner ad disabled after $_maxRetries failed attempts');
+          }
         },
       ),
     );
@@ -68,6 +87,7 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
   @override
   void dispose() {
     _bannerAd?.dispose();
+    _closeTimer?.cancel();
     super.dispose();
   }
 
@@ -84,7 +104,8 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
           return const SizedBox.shrink();
         }
 
-        if (!_isAdLoaded) {
+        // Don't render anything if ad isn't loaded - prevents blocking touches
+        if (!_isAdLoaded || _bannerAd == null) {
           return const SizedBox.shrink();
         }
 
@@ -98,7 +119,7 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
                 Container(
                   alignment: Alignment.center,
                   width: double.infinity,
-                  height: _bannerAd?.size.height.toDouble(),
+                  height: _bannerAd!.size.height.toDouble(),
                   color: Colors.transparent,
                   child: Center(
                     child: SizedBox(
@@ -107,29 +128,30 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
                     ),
                   ),
                 ),
-                Positioned(
-                  top: 0,
-                  right: 10,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: _navigateToSubscription,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.close,
-                          size: 8,
-                          color: Theme.of(context).colorScheme.surface,
+                if (_showCloseButton)
+                  Positioned(
+                    top: 0,
+                    right: 10,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: _navigateToSubscription,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.close,
+                            size: 8,
+                            color: Theme.of(context).colorScheme.surface,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
           ),

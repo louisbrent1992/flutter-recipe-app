@@ -17,8 +17,7 @@ class CreditsHeader extends StatelessWidget {
     return Consumer<SubscriptionProvider>(
       builder: (context, provider, _) {
         final credits = provider.credits;
-        return Container
-          (
+        return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -37,17 +36,21 @@ class CreditsHeader extends StatelessWidget {
                 icon: Icons.share,
                 label: 'Imports',
                 count: credits['recipeImports'] ?? 0,
+                unlimited: provider.unlimitedUsage,
               ),
               _creditBadge(
                 context,
                 icon: Icons.auto_awesome_rounded,
                 label: 'Generations',
                 count: credits['recipeGenerations'] ?? 0,
+                unlimited: provider.unlimitedUsage,
               ),
               if (provider.isPremium)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.amber,
                     borderRadius: BorderRadius.circular(20),
@@ -79,18 +82,31 @@ class CreditsHeader extends StatelessWidget {
     required IconData icon,
     required String label,
     required int count,
+    bool unlimited = false,
   }) {
     final theme = Theme.of(context);
     return Column(
       children: [
-        Icon(icon, size: 20),
-        const SizedBox(height: 2),
-        Text(
-          '$count',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
+        if (unlimited) ...[
+          const Icon(Icons.all_inclusive, size: 20, color: Colors.purple),
+          const SizedBox(height: 2),
+          Text(
+            'Unlimited',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.purple,
+            ),
           ),
-        ),
+        ] else ...[
+          Icon(icon, size: 20),
+          const SizedBox(height: 2),
+          Text(
+            '$count',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
         Text(label, style: theme.textTheme.bodySmall),
       ],
     );
@@ -109,101 +125,111 @@ class CreditsPill extends StatelessWidget {
         final imports = provider.credits['recipeImports'] ?? 0;
         final gens = provider.credits['recipeGenerations'] ?? 0;
         final theme = Theme.of(context);
-        return InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface.withValues(
-                alpha: theme.colorScheme.alphaHigh,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: theme.colorScheme.outline.withValues(
-                  alpha: theme.colorScheme.overlayLight,
+        return Padding(
+          padding: const EdgeInsets.all(4.0),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface.withValues(
+                  alpha: theme.colorScheme.alphaHigh,
                 ),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.shadow.withValues(
-                    alpha: theme.colorScheme.shadowLight,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(
+                    alpha: theme.colorScheme.overlayLight,
                   ),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  width: 1.5,
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                if (provider.unlimitedUsage) ...[
-                  const Icon(Icons.all_inclusive, size: 16, color: Colors.purple),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Unlimited',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.shadow.withValues(
+                      alpha: theme.colorScheme.shadowLight,
+                    ),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  if (provider.unlimitedUsage) ...[
+                    const Icon(
+                      Icons.all_inclusive,
+                      size: 16,
                       color: Colors.purple,
                     ),
-                  ),
-                  // For unlimited, do not show numeric balances
-                ] else if (provider.trialActive) ...[
-                  const Icon(Icons.rocket_launch, size: 14, color: Colors.blue),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Trial',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(width: 6),
+                    Text(
+                      'Unlimited',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple,
+                      ),
+                    ),
+                    // For unlimited, do not show numeric balances
+                  ] else if (provider.trialActive) ...[
+                    const Icon(
+                      Icons.rocket_launch,
+                      size: 14,
                       color: Colors.blue,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                ] else if (provider.isPremium) ...[
-                  const Icon(Icons.star, size: 14, color: Colors.amber),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Premium',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber.shade700,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ] else ...[
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(
-                        alpha: theme.colorScheme.overlayMedium,
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      'Free',
+                    const SizedBox(width: 4),
+                    Text(
+                      'Trial',
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
+                    const SizedBox(width: 8),
+                  ] else if (provider.isPremium) ...[
+                    const Icon(Icons.star, size: 14, color: Colors.amber),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Premium',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amber.shade700,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(
+                          alpha: theme.colorScheme.overlayMedium,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        'Free',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  if (!provider.unlimitedUsage) ...[
+                    const Icon(Icons.share, size: 14),
+                    const SizedBox(width: 4),
+                    Text('$imports', style: theme.textTheme.labelMedium),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.auto_awesome_rounded, size: 14),
+                    const SizedBox(width: 4),
+                    Text('$gens', style: theme.textTheme.labelMedium),
+                  ],
                 ],
-                if (!provider.unlimitedUsage) ...[
-                  const Icon(Icons.share, size: 14),
-                  const SizedBox(width: 4),
-                  Text('$imports', style: theme.textTheme.labelMedium),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.auto_awesome_rounded, size: 14),
-                  const SizedBox(width: 4),
-                  Text('$gens', style: theme.textTheme.labelMedium),
-                ] else ...[
-                  const SizedBox(width: 6),
-                  const Icon(Icons.all_inclusive, size: 16),
-                ]
-              ],
+              ),
             ),
           ),
         );
@@ -211,5 +237,3 @@ class CreditsPill extends StatelessWidget {
     );
   }
 }
-
-

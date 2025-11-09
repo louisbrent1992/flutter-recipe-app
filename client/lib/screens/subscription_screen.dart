@@ -9,6 +9,7 @@ import '../providers/subscription_provider.dart';
 import '../models/purchase_product.dart';
 import '../components/error_display.dart';
 import '../theme/theme.dart';
+// import '../components/floating_bottom_bar.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -67,97 +68,112 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           ],
         ),
       ),
-      body: Consumer<SubscriptionProvider>(
-        builder: (context, subscriptionProvider, _) {
-          if (subscriptionProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Stack(
+        children: [
+          Consumer<SubscriptionProvider>(
+            builder: (context, subscriptionProvider, _) {
+              if (subscriptionProvider.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-          if (subscriptionProvider.error != null) {
-            return ErrorDisplay(
-              message: subscriptionProvider.error!,
-              isNetworkError:
-                  subscriptionProvider.error!.toLowerCase().contains(
-                    'network',
-                  ) ||
-                  subscriptionProvider.error!.toLowerCase().contains(
-                    'connection',
-                  ),
-              isAuthError:
-                  subscriptionProvider.error!.toLowerCase().contains('auth') ||
-                  subscriptionProvider.error!.toLowerCase().contains('login'),
-              isFormatError:
-                  subscriptionProvider.error!.toLowerCase().contains(
-                    'format',
-                  ) ||
-                  subscriptionProvider.error!.toLowerCase().contains('parse'),
-              onRetry: () {
-                subscriptionProvider.reinitialize();
-              },
-            );
-          }
-
-          return Column(
-            children: [
-              // Trial countdown banner (only during trial)
-              _buildTrialCountdownBanner(context, subscriptionProvider),
-              // Credits Display
-              _tabController.index == 2
-                  ? _buildCreditsHeader(context, subscriptionProvider)
-                  : const SizedBox.shrink(),
-
-              // Tab Content
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    // Subscriptions Tab
-                    _buildSubscriptionsTab(context, subscriptionProvider),
-
-                    // Bundles Tab
-                    _buildBundlesTab(context, subscriptionProvider),
-
-                    // Credits Tab
-                    _buildCreditsTab(context, subscriptionProvider),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
-                child: GestureDetector(
-                  onTap: () async {
-                    final url = Uri.parse(
-                      'https://www.recipease.kitchen/fair-use',
-                    );
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(
-                        url,
-                        mode: LaunchMode.externalApplication,
-                      );
-                    }
+              if (subscriptionProvider.error != null) {
+                return ErrorDisplay(
+                  message: subscriptionProvider.error!,
+                  isNetworkError:
+                      subscriptionProvider.error!.toLowerCase().contains(
+                        'network',
+                      ) ||
+                      subscriptionProvider.error!.toLowerCase().contains(
+                        'connection',
+                      ),
+                  isAuthError:
+                      subscriptionProvider.error!.toLowerCase().contains(
+                        'auth',
+                      ) ||
+                      subscriptionProvider.error!.toLowerCase().contains(
+                        'login',
+                      ),
+                  isFormatError:
+                      subscriptionProvider.error!.toLowerCase().contains(
+                        'format',
+                      ) ||
+                      subscriptionProvider.error!.toLowerCase().contains(
+                        'parse',
+                      ),
+                  onRetry: () {
+                    subscriptionProvider.reinitialize();
                   },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: 14,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Fair‑use policy',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ],
+                );
+              }
+
+              return Column(
+                children: [
+                  // Trial countdown banner (only during trial)
+                  _buildTrialCountdownBanner(context, subscriptionProvider),
+                  // Credits Display
+                  _tabController.index == 2
+                      ? _buildCreditsHeader(context, subscriptionProvider)
+                      : const SizedBox.shrink(),
+
+                  // Tab Content
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // Subscriptions Tab
+                        _buildSubscriptionsTab(context, subscriptionProvider),
+
+                        // Bundles Tab
+                        _buildBundlesTab(context, subscriptionProvider),
+
+                        // Credits Tab
+                        _buildCreditsTab(context, subscriptionProvider),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-            ],
-          );
-        },
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+                    child: GestureDetector(
+                      onTap: () async {
+                        final url = Uri.parse(
+                          'https://www.recipease.kitchen/fair-use',
+                        );
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(
+                            url,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 14,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Fair‑use policy',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+
+          // Floating navigation bar
+          // sconst FloatingBottomBar(),
+        ],
       ),
     );
   }
@@ -274,6 +290,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final credits = provider.credits;
+    final bool isUnlimited = provider.unlimitedUsage;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -293,12 +310,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             icon: Icons.share,
             label: 'Imports',
             count: credits['recipeImports'] ?? 0,
+            unlimited: isUnlimited,
           ),
           _buildCreditBadge(
             context,
             icon: Icons.auto_awesome_rounded,
             label: 'Generations',
             count: credits['recipeGenerations'] ?? 0,
+            unlimited: isUnlimited,
           ),
           if (provider.isPremium)
             Container(
@@ -331,6 +350,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     required IconData icon,
     required String label,
     required int count,
+    required bool unlimited,
   }) {
     final theme = Theme.of(context);
     return Column(
@@ -338,7 +358,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         Icon(icon, size: 24),
         const SizedBox(height: 4),
         Text(
-          '$count',
+          unlimited ? '∞' : '$count',
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -347,6 +367,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       ],
     );
   }
+  // _buildCreditBadge removed in favor of shared CreditsHeader from credits_badge.dart
 
   Widget _buildSubscriptionsTab(
     BuildContext context,

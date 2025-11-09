@@ -9,11 +9,11 @@ import '../providers/subscription_provider.dart';
 import '../theme/theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../components/floating_bottom_bar.dart';
 import '../components/credits_badge.dart';
 import '../services/bulk_image_refresh_service.dart';
 import '../models/recipe.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import '../services/image_resolver_cache.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -770,6 +770,34 @@ class _SettingsScreenState extends State<SettingsScreen>
                     _buildImageRefreshTile(colorScheme),
                   ],
 
+                  // Storage & Cache
+                  SizedBox(height: AppSpacing.xxl),
+                  const Divider(height: 1, thickness: 0.1),
+                  SizedBox(height: AppSpacing.md),
+                  _buildSectionHeader(
+                    title: 'Storage & Cache',
+                    icon: Icons.delete_sweep_rounded,
+                    colorScheme: colorScheme,
+                  ),
+                  SizedBox(height: AppSpacing.md),
+                  _buildAnimatedListTile(
+                    title: 'Clear Image Cache',
+                    subtitle: 'Remove cached image resolutions to force fresh fetch',
+                    icon: Icons.delete_sweep_rounded,
+                    color: Theme.of(context).colorScheme.error,
+                    onTap: () async {
+                      final removed = await ImageResolverCache.clearAll();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Cleared $removed cached images'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+
                   SizedBox(height: AppSpacing.xxl),
                   const Divider(height: 1, thickness: 0.1),
                   SizedBox(height: AppSpacing.md),
@@ -946,8 +974,6 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
             ),
           ),
-
-          FloatingBottomBar(),
         ],
       ),
     );

@@ -178,11 +178,11 @@ router.post("/recipes", auth, async (req, res) => {
 		}
 
         // Generate searchable fields (only title, ingredients, and tags)
-        const searchableFields = [
-            title.toLowerCase(),
-            ...ingredients.map((i) => i.toLowerCase()),
-            ...tags.map((t) => t.toLowerCase()),
-        ].filter((field) => field.length > 0);
+		const searchableFields = [
+			title.toLowerCase(),
+			...ingredients.map((i) => i.toLowerCase()),
+			...tags.map((t) => t.toLowerCase()),
+		].filter((field) => field.length > 0);
 
 		const newRecipe = {
 			userId,
@@ -362,13 +362,13 @@ router.put("/recipes/:id", auth, async (req, res) => {
 		}
 
         // Generate searchable fields from the updated data (only title, ingredients, tags)
-        const searchableFields = [
+		const searchableFields = [
             (req.body.title || recipeData.title).toLowerCase(),
-            ...(req.body.ingredients || recipeData.ingredients).map((i) =>
-                i.toLowerCase()
-            ),
-            ...(req.body.tags || recipeData.tags).map((t) => t.toLowerCase()),
-        ].filter((field) => field.length > 0);
+			...(req.body.ingredients || recipeData.ingredients).map((i) =>
+				i.toLowerCase()
+			),
+			...(req.body.tags || recipeData.tags).map((t) => t.toLowerCase()),
+		].filter((field) => field.length > 0);
 
 		const updates = {
 			...req.body,

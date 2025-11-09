@@ -190,7 +190,7 @@ class GameCenterService {
           androidID: achievementId,
         ),
       );
-      debugPrint('✅ Unlocked achievement: $achievementId (${stars} stars)');
+      debugPrint('✅ Unlocked achievement: $achievementId ($stars stars)');
     } catch (e) {
       debugPrint('Error unlocking chef achievement: $e');
     }

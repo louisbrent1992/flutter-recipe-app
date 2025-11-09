@@ -1022,7 +1022,6 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                   ),
                 ),
               ),
-              FloatingBottomBar(),
             ],
           );
         },

@@ -272,8 +272,6 @@ class _HomeScreenState extends State<HomeScreen>
               },
             ),
           ),
-          // Floating bottom bar
-          FloatingBottomBar(),
         ],
       ),
     );

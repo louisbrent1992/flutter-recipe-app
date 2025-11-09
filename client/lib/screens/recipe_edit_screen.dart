@@ -14,8 +14,8 @@ import '../providers/recipe_provider.dart';
 import '../components/error_display.dart';
 import '../models/api_response.dart';
 import '../theme/theme.dart';
-import 'package:recipease/components/floating_bottom_bar.dart';
 import '../utils/image_utils.dart';
+import '../services/google_image_service.dart';
 
 class RecipeEditScreen extends StatefulWidget {
   final Recipe? recipe;
@@ -43,37 +43,106 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isUploading = false;
 
+  Future<void> _regenerateImage() async {
+    if (currentRecipe.id.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Save the recipe first to regenerate image.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+      return;
+    }
+    try {
+      setState(() => _isUploading = true);
+      final query =
+          (_titleController.text.isNotEmpty
+                  ? _titleController.text
+                  : currentRecipe.title)
+              .trim();
+      final next = await GoogleImageService.fetchImageForQuery(
+        '$query recipe',
+        start: 4,
+      );
+      if (next == null || next.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Unable to find a new image right now.'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+        return;
+      }
+      setState(() {
+        currentRecipe = currentRecipe.copyWith(imageUrl: next);
+        _imageController.text = next;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Image updated.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Error while regenerating image.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.recipe?.title ?? '');
+    // Prime currentRecipe from constructor (preferred path when editing)
+    if (widget.recipe != null) {
+      currentRecipe = widget.recipe!.copyWith(toEdit: true);
+    }
+
+    _titleController = TextEditingController(text: currentRecipe.title);
     _descriptionController = TextEditingController(
-      text: widget.recipe?.description ?? '',
+      text: currentRecipe.description,
     );
     _instructionsController = TextEditingController(
-      text: widget.recipe?.instructions.join('\n') ?? '',
+      text: currentRecipe.instructions.join('\n'),
     );
     _ingredientsController = TextEditingController(
-      text: widget.recipe?.ingredients.join('\n') ?? '',
+      text: currentRecipe.ingredients.join('\n'),
     );
-    _imageController.text = widget.recipe?.imageUrl ?? '';
-    _cuisineTypeController.text = widget.recipe?.cuisineType ?? '';
-    _sourceController.text = widget.recipe?.source ?? '';
-    _cookingTimeController.text = widget.recipe?.cookingTime ?? '';
-    _servingsController.text = widget.recipe?.servings ?? '';
+    _imageController.text = currentRecipe.imageUrl;
+    _cuisineTypeController.text = currentRecipe.cuisineType;
+    _sourceController.text = currentRecipe.source ?? '';
+    _cookingTimeController.text = currentRecipe.cookingTime;
+    _servingsController.text = currentRecipe.servings;
 
     // We need to use addPostFrameCallback because we can't access context in initState directly
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final arguments = ModalRoute.of(context)?.settings.arguments;
       if (arguments != null && arguments is Recipe) {
         setState(() {
-          currentRecipe = arguments;
+          currentRecipe = arguments.copyWith(toEdit: true);
           // Also update all the controllers with the new values
           _imageController.text = arguments.imageUrl;
           _cuisineTypeController.text = arguments.cuisineType;
           _sourceController.text = arguments.source ?? '';
           _cookingTimeController.text = arguments.cookingTime;
           _servingsController.text = arguments.servings;
+          _titleController.text = arguments.title;
+          _descriptionController.text = arguments.description;
+          _instructionsController.text = arguments.instructions.join('\n');
+          _ingredientsController.text = arguments.ingredients.join('\n');
         });
       }
     });
@@ -120,8 +189,10 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
       );
       final recipe = Recipe(
         id:
-            widget.recipe?.id ??
-            DateTime.now().millisecondsSinceEpoch.toString(),
+            currentRecipe.id.isNotEmpty
+                ? currentRecipe.id
+                : (widget.recipe?.id ??
+                    DateTime.now().millisecondsSinceEpoch.toString()),
         title: _titleController.text,
         description: _descriptionController.text,
         instructions:
@@ -151,13 +222,13 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
         tiktok: currentRecipe.tiktok,
         youtube: currentRecipe.youtube,
         aiGenerated: currentRecipe.aiGenerated,
-        createdAt: widget.recipe?.createdAt ?? DateTime.now(),
+        createdAt: currentRecipe.createdAt,
         updatedAt: DateTime.now(),
-        toEdit: widget.recipe?.toEdit ?? false,
+        toEdit: true,
         tags: currentRecipe.tags,
       );
 
-      if (widget.recipe?.toEdit == true) {
+      if (widget.recipe?.toEdit == true || currentRecipe.toEdit == true) {
         final updatedRecipe = await recipeProvider.updateUserRecipe(recipe);
         if (updatedRecipe != null && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -335,7 +406,10 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: widget.recipe?.toEdit == true ? 'Edit Recipe' : 'New Recipe',
+        title:
+            (widget.recipe?.toEdit == true || currentRecipe.toEdit == true)
+                ? 'Edit Recipe'
+                : 'New Recipe',
         floatingButtons: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -356,7 +430,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                     AppSpacing.responsive(context),
                     AppSpacing.responsive(context),
                     AppSpacing.responsive(context),
-                    60,
+                    AppSpacing.responsive(context),
                   ),
                   child: Consumer<RecipeProvider>(
                     builder: (context, recipeProvider, _) {
@@ -448,36 +522,114 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                     Positioned(
                                       bottom: 10,
                                       right: 10,
-                                      child: Material(
-                                        elevation: AppElevation.button,
-                                        shape: const CircleBorder(),
-                                        clipBehavior: Clip.hardEdge,
-                                        child: InkWell(
-                                          onTap:
-                                              _isUploading
-                                                  ? null
-                                                  : _uploadRecipeImage,
-                                          child: Container(
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  Theme.of(
-                                                    context,
-                                                  ).colorScheme.primary,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Icon(
-                                              _isUploading
-                                                  ? Icons.upload
-                                                  : Icons.add_a_photo_rounded,
-                                              size: 24,
-                                              color:
-                                                  Theme.of(
-                                                    context,
-                                                  ).colorScheme.onPrimary,
+                                      child: Row(
+                                        children: [
+                                          // Regenerate (only for saved recipes)
+                                          Material(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest
+                                                .withValues(alpha: 0.9),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              side: BorderSide(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary
+                                                    .withValues(alpha: 0.3),
+                                                width: 1,
+                                              ),
                                             ),
                                           ),
-                                        ),
+                                          InkWell(
+                                            onTap:
+                                                (_isUploading ||
+                                                        currentRecipe
+                                                            .id
+                                                            .isEmpty)
+                                                    ? null
+                                                    : _regenerateImage,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .surfaceContainerHighest
+                                                    .withValues(alpha: 0.9),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                                border: Border.all(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary
+                                                      .withValues(alpha: 0.3),
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: Icon(
+                                                Icons.image_search,
+                                                size: 20,
+                                                color:
+                                                    (_isUploading ||
+                                                            currentRecipe
+                                                                .id
+                                                                .isEmpty)
+                                                        ? Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurfaceVariant
+                                                            .withValues(
+                                                              alpha: 0.5,
+                                                            )
+                                                        : Theme.of(
+                                                          context,
+                                                        ).colorScheme.primary,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          // Add photo (upload)
+                                          InkWell(
+                                            onTap:
+                                                _isUploading
+                                                    ? null
+                                                    : _uploadRecipeImage,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .surfaceContainerHighest
+                                                    .withValues(alpha: 0.9),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                                border: Border.all(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary
+                                                      .withValues(alpha: 0.3),
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: Icon(
+                                                _isUploading
+                                                    ? Icons.upload
+                                                    : Icons.add_a_photo_rounded,
+                                                size: 20,
+                                                color:
+                                                    Theme.of(
+                                                      context,
+                                                    ).colorScheme.primary,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
@@ -698,61 +850,8 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                               },
                             ),
                             const SizedBox(height: 15),
-                            // Action Buttons
-                            Center(
-                              child: Wrap(
-                                spacing: 10,
-                                alignment: WrapAlignment.center,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                          Theme.of(context).colorScheme.error,
-                                    ),
-                                    child: Text(
-                                      'Cancel',
-                                      style: TextStyle(
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.onError,
-                                      ),
-                                    ),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () => _saveRecipe(),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
-                                    ),
-                                    child: Text(
-                                      widget.recipe?.toEdit == true
-                                          ? 'Update'
-                                          : 'Save',
-                                    ),
-                                  ),
-                                  if (currentRecipe.id.isNotEmpty)
-                                    ElevatedButton(
-                                      onPressed:
-                                          () => Navigator.pushNamed(
-                                            context,
-                                            '/myRecipes',
-                                          ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
-                                      ),
-                                      child: Text('My Recipes'),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 20),
+                            // Bottom buttons removed; Save is available in the app bar
+                            const SizedBox(height: 8),
                           ],
                         ),
                       );
@@ -762,7 +861,6 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
               ),
             ),
           ),
-          FloatingBottomBar(),
         ],
       ),
     );

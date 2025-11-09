@@ -84,6 +84,8 @@ class FloatingBottomBar extends StatelessWidget {
       bottom: 0,
       left: 0,
       right: 0,
+      child: Material(
+        color: Colors.transparent,
       child: Container(
         height: shouldShowPagination ? 72 : 40,
         margin: const EdgeInsets.all(16),
@@ -106,6 +108,7 @@ class FloatingBottomBar extends StatelessWidget {
             shouldShowPagination
                 ? _buildWithPagination(context)
                 : _buildNavOnly(context),
+        ),
       ),
     );
   }
@@ -349,7 +352,9 @@ class FloatingBottomBar extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
-    return InkWell(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -370,6 +375,7 @@ class FloatingBottomBar extends StatelessWidget {
               isSelected
                   ? theme.colorScheme.primary
                   : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
         ),
       ),
     );

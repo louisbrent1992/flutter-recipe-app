@@ -1041,10 +1041,22 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                             final gameCenter = GameCenterService();
                             await gameCenter.showLeaderboards();
                           },
-                          icon: const Icon(Icons.leaderboard, size: 18),
-                          label: const Text('Leaderboards'),
+                          icon: const Icon(Icons.leaderboard, size: 14),
+                          label: const Text(
+                            'Leaderboards',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                          ),
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                           ),
                         ),
                       ),
@@ -1056,10 +1068,22 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                             final gameCenter = GameCenterService();
                             await gameCenter.showAchievements();
                           },
-                          icon: const Icon(Icons.emoji_events, size: 18),
-                          label: const Text('Achievements'),
+                          icon: const Icon(Icons.emoji_events, size: 14),
+                          label: const Text(
+                            'Achievements',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                           ),
                         ),
                       ),

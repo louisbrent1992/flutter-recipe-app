@@ -1,0 +1,189 @@
+{
+  "info": {
+    "version": 2,
+    "author": "Xcode"
+  },
+  "products": [
+    {
+      "id": "recipease_imports_10",
+      "type": "consumable",
+      "referenceName": "Quick Import Pack",
+      "displayName": "Quick Import Pack",
+      "price": 2.49,
+      "localizations": [
+        {
+          "locale": "en_US",
+          "title": "Quick Import Pack",
+          "description": "Import 10 recipes from any cooking website. Perfect for trying the feature!"
+        }
+      ]
+    },
+    {
+      "id": "recipease_imports_20",
+      "type": "consumable",
+      "referenceName": "20 Recipe Imports",
+      "displayName": "20 Recipe Imports",
+      "price": 4.49,
+      "localizations": [
+        {
+          "locale": "en_US",
+          "title": "20 Recipe Imports",
+          "description": "Import 20 recipes from Instagram, TikTok, YouTube, AllRecipes, and thousands more sites"
+        }
+      ]
+    },
+    {
+      "id": "recipease_generations_50",
+      "type": "consumable",
+      "referenceName": "30 Recipe Generations",
+      "displayName": "30 Recipe Generations",
+      "price": 4.99,
+      "localizations": [
+        {
+          "locale": "en_US",
+          "title": "30 Recipe Generations",
+          "description": "Generate 30 custom recipes based on your ingredients and preferences"
+        }
+      ]
+    },
+
+    {
+      "id": "recipease_ad_free",
+      "type": "nonConsumable",
+      "referenceName": "Ad-Free",
+      "displayName": "Ad-Free",
+      "price": 4.99,
+      "familyShareable": true,
+      "localizations": [
+        {
+          "locale": "en_US",
+          "title": "Ad-Free",
+          "description": "Remove all ads permanently. Clean, distraction-free cooking experience forever"
+        }
+      ]
+    },
+    {
+      "id": "recipease_ad_free_imports_20",
+      "type": "nonConsumable",
+      "referenceName": "Ad-Free + Import Starter",
+      "displayName": "Ad-Free + Import Starter",
+      "price": 6.99,
+      "familyShareable": true,
+      "localizations": [
+        {
+          "locale": "en_US",
+          "title": "Ad-Free + Import Starter",
+          "description": "Remove ads FOREVER + get 20 recipe imports. Perfect way to get started!"
+        }
+      ]
+    },
+    {
+      "id": "recipease_ad_free_generations_50",
+      "type": "nonConsumable",
+      "referenceName": "Ad-Free + Recipe Pack",
+      "displayName": "Ad-Free + Recipe Pack",
+      "price": 9.99,
+      "familyShareable": true,
+      "localizations": [
+        {
+          "locale": "en_US",
+          "title": "Ad-Free + Recipe Pack",
+          "description": "Remove ads FOREVER + generate 30 recipes. Perfect for creative cooks!"
+        }
+      ]
+    },
+    {
+      "id": "recipease_ultimate_bundle",
+      "type": "nonConsumable",
+      "referenceName": "Ultimate Bundle",
+      "displayName": "Ultimate Bundle",
+      "price": 11.99,
+      "familyShareable": true,
+      "localizations": [
+        {
+          "locale": "en_US",
+          "title": "Ultimate Bundle",
+          "description": "Remove ads forever + 20 recipe imports + 30 recipe generations. Everything you need!"
+        }
+      ]
+    },
+
+    {
+      "id": "recipease_premium_monthly",
+      "type": "autoRenewableSubscription",
+      "referenceName": "Premium - Monthly",
+      "displayName": "Premium - Monthly",
+      "price": 5.99,
+      "subscription": {
+        "group": "premium",
+        "duration": "P1M",
+        "introductoryOffer": { "mode": "freeTrial", "duration": "P7D" }
+      },
+      "localizations": [
+        {
+          "locale": "en_US",
+          "title": "Premium - Monthly",
+          "description": "No ads + 25 recipe imports + 25 recipe generations every month"
+        }
+      ]
+    },
+    {
+      "id": "recipease_premium_yearly",
+      "type": "autoRenewableSubscription",
+      "referenceName": "Premium - Yearly",
+      "displayName": "Premium - Yearly",
+      "price": 34.99,
+      "subscription": {
+        "group": "premium",
+        "duration": "P1Y",
+        "introductoryOffer": { "mode": "freeTrial", "duration": "P7D" }
+      },
+      "localizations": [
+        {
+          "locale": "en_US",
+          "title": "Premium - Yearly",
+          "description": "SAVE 50%! No ads + 25 recipe imports + 25 generations per month"
+        }
+      ]
+    },
+    {
+      "id": "recipease_premium_unlimited",
+      "type": "autoRenewableSubscription",
+      "referenceName": "Premium - Unlimited",
+      "displayName": "Premium - Unlimited",
+      "price": 14.99,
+      "subscription": { "group": "premium", "duration": "P1M" },
+      "localizations": [
+        {
+          "locale": "en_US",
+          "title": "Premium - Unlimited",
+          "description": "Unlimited imports and generations. No ads. Fair-use policy applies."
+        }
+      ]
+    },
+    {
+      "id": "recipease_premium_unlimited_yearly",
+      "type": "autoRenewableSubscription",
+      "referenceName": "Premium - Unlimited (Yearly)",
+      "displayName": "Premium - Unlimited (Yearly)",
+      "price": 119.99,
+      "subscription": { "group": "premium", "duration": "P1Y" },
+      "localizations": [
+        {
+          "locale": "en_US",
+          "title": "Premium - Unlimited (Yearly)",
+          "description": "Unlimited imports and generations. No ads. Save 33% with annual plan."
+        }
+      ]
+    }
+  ],
+  "subscriptionGroups": [
+    {
+      "id": "premium",
+      "referenceName": "Premium Subscriptions"
+    }
+  ],
+  "storefront": "USA"
+}
+
+

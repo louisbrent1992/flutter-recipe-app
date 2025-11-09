@@ -192,7 +192,7 @@ class _DynamicBannerState extends State<DynamicBanner>
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () {
-                      _handleTap(context);
+                        _handleTap(context);
                     },
                   ),
                 ),

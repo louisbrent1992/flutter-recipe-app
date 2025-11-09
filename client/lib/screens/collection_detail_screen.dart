@@ -400,7 +400,6 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                   ],
                 ),
               ),
-          FloatingBottomBar(),
         ],
       ),
     );

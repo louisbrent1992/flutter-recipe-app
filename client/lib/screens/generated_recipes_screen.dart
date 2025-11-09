@@ -153,7 +153,6 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
               );
             },
           ),
-          const FloatingBottomBar(),
         ],
       ),
     );

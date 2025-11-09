@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/recipe.dart';
@@ -54,20 +53,19 @@ class _RecipeCardState extends State<RecipeCard> {
     super.initState();
   }
 
-  /// Determines if the refresh button should be shown based on debug mode
-  bool _shouldShowRefreshButton() {
-    // Only show individual refresh buttons in debug mode
-    // In production, users should use the bulk refresh in settings
-    return kDebugMode;
-  }
-
-  // Favorites removed
+  // Refresh button removed from cards
 
   Future<void> _shareRecipe() async {
     if (_isShareLoading) return;
 
     setState(() => _isShareLoading = true);
     try {
+      // Calculate share origin rect (needed for iPad popover; safe elsewhere)
+      final renderBox = context.findRenderObject() as RenderBox?;
+      final origin = renderBox != null
+          ? renderBox.localToGlobal(Offset.zero) & renderBox.size
+          : const Rect.fromLTWH(0, 0, 1, 1);
+
       final String shareText = '''
 ${widget.recipe.title}
 
@@ -89,7 +87,10 @@ ${widget.recipe.tags.isNotEmpty ? 'Tags: ${widget.recipe.tags.join(', ')}' : ''}
 Shared from Recipe App
 ''';
 
-      await Share.share(shareText);
+      await Share.share(
+        shareText,
+        sharePositionOrigin: origin,
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -408,7 +409,7 @@ Shared from Recipe App
                         widget.recipe.cuisineType,
                       ),
                       fit: BoxFit.cover,
-                      showRefreshButton: _shouldShowRefreshButton(),
+                      showRefreshButton: false,
                       onRefreshStart: () {
                         // no-op in card for now
                       },
@@ -521,11 +522,10 @@ Shared from Recipe App
                     ),
                   ),
                 ),
-                // Action buttons positioned with conditional spacing for refresh button
+                // Action buttons overlay (refresh removed)
                 Positioned(
                   top: 8,
-                  // Add extra right spacing in debug mode to make room for refresh button
-                  right: _shouldShowRefreshButton() ? 46 : 6,
+                  right: 6,
                   child: Row(
                     children: [
                       if (widget.showEditButton)

@@ -10,9 +10,23 @@ import 'package:recipease/screens/recipe_edit_screen.dart';
 import '../models/recipe.dart';
 import '../components/custom_app_bar.dart';
 import '../providers/user_profile_provider.dart';
-import '../components/floating_bottom_bar.dart';
 import '../theme/theme.dart';
 import '../components/smart_recipe_image.dart';
+import '../components/inline_banner_ad.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
+import '../services/image_replacement_service.dart';
+
+// Overflow menu actions for the recipe details screen
+enum MenuAction {
+  fixImage,
+  save,
+  addToCollection,
+  share,
+  copyIngredients,
+  edit,
+  delete,
+}
 
 class RecipeDetailScreen extends StatefulWidget {
   final Recipe recipe;
@@ -26,6 +40,90 @@ class RecipeDetailScreen extends StatefulWidget {
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   bool _isSaved = false;
   late Recipe _currentRecipe;
+  Key _imageKey = UniqueKey();
+
+  String? _deriveSourceUrl(Recipe recipe) {
+    if (recipe.sourceUrl != null && recipe.sourceUrl!.isNotEmpty) {
+      return recipe.sourceUrl;
+    }
+    final instagram = recipe.instagram;
+    final tiktok = recipe.tiktok;
+    final youtube = recipe.youtube;
+    if (instagram?.shortcode != null && instagram!.shortcode!.isNotEmpty) {
+      return 'https://www.instagram.com/p/${instagram.shortcode!}/';
+    }
+    if (tiktok?.videoId != null &&
+        tiktok!.videoId!.isNotEmpty &&
+        (tiktok.username != null && tiktok.username!.isNotEmpty)) {
+      return 'https://www.tiktok.com/@${tiktok.username!}/video/${tiktok.videoId!}';
+    }
+    if (youtube?.videoId != null && youtube!.videoId!.isNotEmpty) {
+      return 'https://www.youtube.com/watch?v=${youtube.videoId!}';
+    }
+    if (recipe.source != null && recipe.source!.isNotEmpty) {
+      final s = recipe.source!.trim();
+      final looksLikeUrl =
+          s.startsWith('http://') ||
+          s.startsWith('https://') ||
+          s.startsWith('www.');
+      if (looksLikeUrl) {
+        return s.startsWith('http') ? s : 'https://$s';
+      }
+    }
+    return null;
+  }
+
+  String _buildShareText(Recipe recipe) {
+    final buffer = StringBuffer();
+    buffer.writeln(recipe.title);
+    buffer.writeln('');
+    // Meta
+    final time = _formatCookingTime(recipe.cookingTime);
+    final servings = recipe.servings;
+    final difficulty = recipe.difficulty;
+    buffer.writeln(
+      'Time: $time  •  Servings: $servings  •  Difficulty: $difficulty',
+    );
+    buffer.writeln('');
+    // Description
+    if (recipe.description.trim().isNotEmpty) {
+      buffer.writeln(recipe.description.trim());
+      buffer.writeln('');
+    }
+    // Source
+    final sourceUrl = _deriveSourceUrl(recipe);
+    if (sourceUrl != null && sourceUrl.isNotEmpty) {
+      buffer.writeln('Source: $sourceUrl');
+      buffer.writeln('');
+    }
+    // Ingredients
+    if (recipe.ingredients.isNotEmpty) {
+      buffer.writeln('Ingredients:');
+      for (final ing in recipe.ingredients) {
+        buffer.writeln('• $ing');
+      }
+      buffer.writeln('');
+    }
+    // Instructions
+    if (recipe.instructions.isNotEmpty) {
+      buffer.writeln('Instructions:');
+      for (int i = 0; i < recipe.instructions.length; i++) {
+        final step = recipe.instructions[i];
+        buffer.writeln('${i + 1}. $step');
+      }
+      buffer.writeln('');
+    }
+    buffer.writeln('Shared from RecipEase');
+    return buffer.toString();
+  }
+
+  // Apply image replacement and trigger immediate UI refresh
+  void applyImageReplacement(String newUrl) {
+    setState(() {
+      _currentRecipe = _currentRecipe.copyWith(imageUrl: newUrl);
+      _imageKey = UniqueKey();
+    });
+  }
 
   @override
   void initState() {
@@ -35,11 +133,56 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     _checkSavedStatus();
   }
 
-  /// Determines if the refresh button should be shown based on debug mode
-  bool _shouldShowRefreshButton() {
-    // Only show individual refresh buttons in debug mode
-    // In production, users should use the bulk refresh in settings
-    return kDebugMode;
+  // Image viewer
+  void _openImageViewer(String imageUrl) {
+    if (imageUrl.isEmpty) return;
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black.withValues(alpha: 0.8),
+        pageBuilder: (context, animation, secondary) {
+          return Scaffold(
+            backgroundColor: Colors.black.withValues(alpha: 0.9),
+            body: Stack(
+              children: [
+                Center(
+                  child: InteractiveViewer(
+                    minScale: 0.5,
+                    maxScale: 4.0,
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder:
+                          (_, __, ___) => const Icon(
+                            Icons.broken_image_outlined,
+                            color: Colors.white,
+                            size: 48,
+                          ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 8,
+                  right: 16,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+        transitionsBuilder: (context, animation, secondary, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 200),
+      ),
+    );
   }
 
   Widget _nutritionRow(BuildContext context, String label, String value) {
@@ -123,18 +266,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     setState(() {
       _isSaved = userRecipes.any((recipe) => recipe.id == widget.recipe.id);
     });
-  }
-
-  /// Determines if a recipe is custom (user-created or imported) vs external API
-  bool _isCustomRecipe(Recipe recipe) {
-    // Custom recipes are those that:
-    // 1. Are AI-generated (user created with AI assistance)
-    // 2. Have no external source (user created manually)
-    // 3. Are imported from external sources (have source but are user-saved)
-    return recipe.aiGenerated ||
-        (recipe.source == null &&
-            recipe.sourceUrl == null &&
-            recipe.sourcePlatform == null);
   }
 
   Widget _buildSourceLink() {
@@ -380,41 +511,40 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         appBar: CustomAppBar(
           title: 'Recipe Details',
           floatingButtons: [
-            // Show edit button only for custom recipes (user-created or imported)
-            if (_isSaved && _isCustomRecipe(recipe))
-              IconButton(
-                icon: const Icon(Icons.edit),
-                tooltip: 'Edit Recipe',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => RecipeEditScreen(recipe: widget.recipe),
-                    ),
-                  );
-                },
+            // Overflow menu (Edit/Delete)
+            PopupMenuButton<MenuAction>(
+              tooltip: 'More',
+              icon: const Icon(Icons.more_vert),
+              color: Theme.of(context).colorScheme.surface.withValues(
+                alpha: Theme.of(context).colorScheme.alphaVeryHigh,
               ),
-            // Show save button for unsaved recipes
-            if (!_isSaved)
-              IconButton(
-                icon: const Icon(Icons.save),
-                tooltip: 'Save Recipe',
-                onPressed: () async {
-                  final recipeProvider = context.read<RecipeProvider>();
-                  final savedRecipe = await recipeProvider.createUserRecipe(
-                    widget.recipe,
-                    context,
-                  );
-                  if (context.mounted) {
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.outline.withValues(
+                    alpha: Theme.of(context).colorScheme.overlayLight,
+                  ),
+                  width: 1,
+                ),
+              ),
+              onSelected: (action) async {
+                switch (action) {
+                  case MenuAction.save:
+                    if (_isSaved) break;
+                    final recipeProvider = context.read<RecipeProvider>();
+                    final savedRecipe = await recipeProvider.createUserRecipe(
+                      widget.recipe,
+                      context,
+                    );
+                    if (!context.mounted) break;
                     if (savedRecipe != null) {
                       setState(() {
                         _isSaved = true;
                       });
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Recipe saved successfully!'),
-                          duration: Duration(seconds: 4),
+                          content: const Text('Recipe saved successfully!'),
+                          duration: const Duration(seconds: 4),
                           action: SnackBarAction(
                             label: 'View Recipes',
                             onPressed: () {
@@ -442,50 +572,145 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         ),
                       );
                     }
-                  }
-                },
-              ),
-            // Show delete button for all saved recipes
-            if (_isSaved)
-              IconButton(
-                icon: const Icon(Icons.delete),
-                tooltip: 'Delete Recipe',
-                onPressed: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder:
-                        (context) => AlertDialog(
-                          title: const Text('Delete Recipe'),
-                          content: const Text(
-                            'Are you sure you want to delete this recipe?',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(false),
-                              child: const Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(true),
-                              child: const Text('Delete'),
-                            ),
-                          ],
-                        ),
-                  );
-
-                  if (confirmed == true && context.mounted) {
-                    final recipeProvider = context.read<RecipeProvider>();
-                    final success = await recipeProvider.deleteUserRecipe(
-                      widget.recipe.id,
+                    break;
+                  case MenuAction.edit:
+                    Navigator.push(
                       context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => RecipeEditScreen(
+                              recipe: _currentRecipe.copyWith(toEdit: true),
+                            ),
+                      ),
                     );
+                    break;
+                  case MenuAction.fixImage:
+                    await _showReplaceImageSheet(context, recipe);
+                    break;
+                  case MenuAction.addToCollection:
+                    // Navigate to collections screen where user can add recipe
+                    Navigator.pushNamed(context, '/collections');
+                    break;
+                  case MenuAction.share:
+                    try {
+                      // Longer delay to ensure any previous platform views (ads) are fully dismissed
+                      await Future.delayed(const Duration(milliseconds: 300));
+                      final shareText = _buildShareText(recipe);
+                      await Share.share(shareText, subject: recipe.title);
+                    } catch (e) {
+                      // Handle platform view conflicts gracefully
+                      // Fallback to copying the full recipe text
+                      final shareText = _buildShareText(recipe);
+                      try {
+                        await Clipboard.setData(ClipboardData(text: shareText));
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text(
+                                'Share sheet unavailable. Recipe copied to clipboard.',
+                              ),
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              behavior: SnackBarBehavior.floating,
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(10),
+                                ),
+                              ),
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                      } catch (clipboardError) {
+                        // If clipboard also fails, show error message
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text(
+                                'Unable to open share sheet. Please try again.',
+                              ),
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.error,
+                              behavior: SnackBarBehavior.floating,
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(10),
+                                ),
+                              ),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      }
+                    }
+                    break;
+                  case MenuAction.copyIngredients:
+                    final text = recipe.ingredients.join('\n');
+                    await Clipboard.setData(ClipboardData(text: text));
                     if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Ingredients copied'),
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          behavior: SnackBarBehavior.floating,
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(10)),
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                    break;
+                  case MenuAction.delete:
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder:
+                          (context) => AlertDialog(
+                            title: const Text('Delete Recipe'),
+                            content: const Text(
+                              'Are you sure you want to delete this recipe?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed:
+                                    () => Navigator.of(context).pop(false),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed:
+                                    () => Navigator.of(context).pop(true),
+                                child: const Text('Delete'),
+                              ),
+                            ],
+                          ),
+                    );
+                    if (confirmed == true && context.mounted) {
+                      final recipeProvider = context.read<RecipeProvider>();
+                      final success = await recipeProvider.deleteUserRecipe(
+                        widget.recipe.id,
+                        context,
+                      );
+                      if (!context.mounted) break;
                       if (success) {
                         setState(() {
                           _isSaved = false;
                         });
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Recipe deleted successfully!'),
+                            content: const Text('Recipe deleted successfully!'),
                             backgroundColor:
                                 Theme.of(context).colorScheme.success,
                           ),
@@ -503,9 +728,130 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         );
                       }
                     }
-                  }
-                },
-              ),
+                    break;
+                }
+              },
+              itemBuilder: (context) {
+                final List<PopupMenuEntry<MenuAction>> items = [];
+                // Common
+                items.add(
+                  PopupMenuItem<MenuAction>(
+                    value: MenuAction.fixImage,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.image,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('Replace image'),
+                      ],
+                    ),
+                  ),
+                );
+                if (!_isSaved) {
+                  items.add(
+                    PopupMenuItem<MenuAction>(
+                      value: MenuAction.save,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.bookmark_add,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Save recipe'),
+                        ],
+                      ),
+                    ),
+                  );
+                } else {
+                  items.addAll([
+                    PopupMenuItem<MenuAction>(
+                      value: MenuAction.addToCollection,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.playlist_add,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Add to collection'),
+                        ],
+                      ),
+                    ),
+                  ]);
+                }
+                items.addAll([
+                  PopupMenuItem<MenuAction>(
+                    value: MenuAction.share,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.ios_share,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('Share Recipe'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<MenuAction>(
+                    value: MenuAction.copyIngredients,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.content_copy,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('Copy ingredients'),
+                      ],
+                    ),
+                  ),
+                ]);
+                if (_isSaved) {
+                  items.add(
+                    PopupMenuItem<MenuAction>(
+                      value: MenuAction.edit,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Edit Recipe'),
+                        ],
+                      ),
+                    ),
+                  );
+                  items.add(
+                    PopupMenuItem<MenuAction>(
+                      value: MenuAction.delete,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.delete,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Delete Recipe'),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                return items;
+              },
+            ),
           ],
         ),
         body: Stack(
@@ -518,53 +864,100 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   flexibleSpace: FlexibleSpaceBar(
                     background: AspectRatio(
                       aspectRatio: 16 / 9,
-                      child: SmartRecipeImage(
-                        recipeTitle: recipe.title,
-                        primaryImageUrl: recipe.imageUrl,
-                        fallbackStaticUrl: null,
-                        fit: BoxFit.cover,
-                        showRefreshButton: _shouldShowRefreshButton(),
-                        onResolvedUrl: (url) async {
-                          if (url.isEmpty || url == recipe.imageUrl) return;
-                          final updated = recipe.copyWith(imageUrl: url);
-                          // Avoid surfacing provider-wide errors (e.g., 403)
-                          // Only attempt a silent server update if this recipe is saved
-                          if (_isSaved) {
-                            try {
-                              await RecipeService.updateUserRecipe(updated);
-                            } catch (_) {
-                              // Ignore failures to prevent global error overlay
-                            }
-                          }
-                          if (recipe.id.isNotEmpty) {
-                            try {
-                              await RecipeService.updateDiscoverRecipeImage(
-                                recipeId: recipe.id,
-                                imageUrl: url,
-                              );
-                            } catch (_) {
-                              // Ignore failures
-                            }
-                          }
-                          if (context.mounted) {
-                            setState(() {
-                              _currentRecipe = updated;
-                            });
-                            // Emit cross-screen refresh after image update
-                            context.read<RecipeProvider>().emitRecipesChanged();
-                          }
-                        },
-                        cacheKey:
-                            recipe.id.isNotEmpty
-                                ? 'discover-${recipe.id}'
-                                : 'discover-${recipe.title.toLowerCase()}-${recipe.description.toLowerCase()}',
-                        placeholder: const Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                        errorWidget: Icon(
-                          Icons.error,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
+                      child: Stack(
+                        children: [
+                          SmartRecipeImage(
+                            key: _imageKey,
+                            recipeTitle: recipe.title,
+                            primaryImageUrl: recipe.imageUrl,
+                            fallbackStaticUrl: null,
+                            fit: BoxFit.cover,
+                            // Disable inline lookup to avoid accidental changes; available via menu
+                            showRefreshButton: false,
+                            onResolvedUrl: (url) async {
+                              if (url.isEmpty || url == recipe.imageUrl) return;
+                              final updated = recipe.copyWith(imageUrl: url);
+                              // Avoid surfacing provider-wide errors (e.g., 403)
+                              // Only attempt a silent server update if this recipe is saved
+                              if (_isSaved) {
+                                try {
+                                  await RecipeService.updateUserRecipe(updated);
+                                } catch (_) {
+                                  // Ignore failures to prevent global error overlay
+                                }
+                              }
+                              if (recipe.id.isNotEmpty) {
+                                try {
+                                  await RecipeService.updateDiscoverRecipeImage(
+                                    recipeId: recipe.id,
+                                    imageUrl: url,
+                                  );
+                                } catch (_) {
+                                  // Ignore failures
+                                }
+                              }
+                              if (context.mounted) {
+                                setState(() {
+                                  _currentRecipe = updated;
+                                });
+                                // Emit cross-screen refresh after image update
+                                context
+                                    .read<RecipeProvider>()
+                                    .emitRecipesChanged();
+                              }
+                            },
+                            cacheKey:
+                                recipe.id.isNotEmpty
+                                    ? 'discover-${recipe.id}'
+                                    : 'discover-${recipe.title.toLowerCase()}-${recipe.description.toLowerCase()}',
+                            placeholder: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            errorWidget: Icon(
+                              Icons.error,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Material(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(10),
+                              child: InkWell(
+                                onTap: () => _openImageViewer(recipe.imageUrl),
+                                borderRadius: BorderRadius.circular(10),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withValues(alpha: 0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.open_in_full_rounded,
+                                    size: AppSizing.responsiveIconSize(
+                                      context,
+                                      mobile: 16,
+                                      tablet: 18,
+                                      desktop: 20,
+                                    ),
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -580,6 +973,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Inline banner ad for free users
+                        const InlineBannerAd(),
+
+                        SizedBox(height: AppSpacing.lg),
                         Text(
                           recipe.title,
                           textAlign: TextAlign.center,
@@ -1000,10 +1397,183 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 ),
               ],
             ),
-            FloatingBottomBar(),
           ],
         ),
       ),
+    );
+  }
+}
+
+Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
+  final isDiscover = recipe.id.isNotEmpty && (recipe.sourceUrl == null);
+  // Gate discover in release
+  if (isDiscover && !kDebugMode) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Image replacement is not available for discover recipes.',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    return;
+  }
+
+  final theme = Theme.of(context);
+  final choice = await showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    backgroundColor: theme.colorScheme.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (ctx) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded),
+                title: const Text('Choose from device'),
+                onTap: () => Navigator.pop(ctx, 'device'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.link_rounded),
+                title: const Text('Paste image URL'),
+                onTap: () => Navigator.pop(ctx, 'url'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.auto_awesome_rounded),
+                title: const Text('Regenerate suggestion'),
+                onTap: () => Navigator.pop(ctx, 'regen'),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+
+  if (choice == null) return;
+
+  String? candidateUrl;
+  String? oldUrl = recipe.imageUrl;
+
+  if (choice == 'device') {
+    candidateUrl = await ImageReplacementService.pickFromDeviceAndUpload(
+      recipe,
+    );
+  } else if (choice == 'url') {
+    final controller = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Paste image URL'),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: 'https://example.com/image.jpg',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Validate'),
+              ),
+            ],
+          ),
+    );
+    if (ok == true) {
+      final url = controller.text.trim();
+      if (await ImageReplacementService.validateImageUrl(url)) {
+        candidateUrl = url;
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('That link doesn\'t point to a valid image.'),
+            ),
+          );
+        }
+      }
+    }
+  } else if (choice == 'regen') {
+    candidateUrl = await ImageReplacementService.searchSuggestion(
+      recipe.title,
+      starts: const [4, 7, 10, 13, 16],
+    );
+  }
+
+  if (candidateUrl == null) return;
+
+  // Preview dialog
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder:
+        (ctx) => AlertDialog(
+          title: const Text('Replace image?'),
+          content: SizedBox(
+            width: 300,
+            child: Image.network(candidateUrl!, fit: BoxFit.contain),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Replace'),
+            ),
+          ],
+        ),
+  );
+
+  if (confirm != true) return;
+
+  // Persist and refresh
+  final saved = await ImageReplacementService.persistRecipeImage(
+    recipe: recipe,
+    newImageUrl: candidateUrl,
+    saveFn: (updated) async {
+      try {
+        // Debug: allow updating discover items directly
+        if (kDebugMode && updated.id.isNotEmpty) {
+          final resp = await RecipeService.updateDiscoverRecipeImage(
+            recipeId: updated.id,
+            imageUrl: candidateUrl!,
+          );
+          return resp.success ? updated : null;
+        }
+        // Production: only user-saved recipes via user endpoint
+        final resp = await RecipeService.updateUserRecipe(updated);
+        return resp.success ? resp.data : null;
+      } catch (_) {}
+      return updated; // Optimistic for transient contexts
+    },
+  );
+
+  await ImageReplacementService.bustCaches(recipe, oldUrl: oldUrl);
+
+  if (saved && context.mounted) {
+    // Force UI to show new image immediately
+    if (context.mounted) {
+      final state = context.findAncestorStateOfType<_RecipeDetailScreenState>();
+      state?.applyImageReplacement(candidateUrl);
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Image replaced successfully.')),
+    );
+  } else if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not update image right now.')),
     );
   }
 }
