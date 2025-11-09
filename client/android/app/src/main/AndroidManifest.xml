@@ -5,11 +5,12 @@
         android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission
         android:name="android.permission.INTERNET"/>
-    <!-- Alarm permissions for scheduled notifications (Android 12+) -->
+    <!-- Alarm permissions for scheduled notifications (Android 12+)
+         Using SCHEDULE_EXACT_ALARM instead of USE_EXACT_ALARM per Google Play policy.
+         USE_EXACT_ALARM is restricted to alarm/timer/calendar apps only.
+         SCHEDULE_EXACT_ALARM requires user consent but provides the same functionality. -->
     <uses-permission
         android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
-    <uses-permission
-        android:name="android.permission.USE_EXACT_ALARM"/>
     <!-- Receive boot completed to reschedule notifications after reboot -->
     <uses-permission
         android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
