@@ -34,7 +34,9 @@ class CreditsService {
         'lastUpdated': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } catch (e) {
-      debugPrint('Error initializing credits: $e');
+      if (kDebugMode) {
+        debugPrint('Error initializing credits: $e');
+      }
       rethrow;
     }
   }
@@ -58,7 +60,9 @@ class CreditsService {
         'recipeGenerations': data['recipeGenerations'] ?? 0,
       };
     } catch (e) {
-      debugPrint('Error getting credit balance: $e');
+      if (kDebugMode) {
+        debugPrint('Error getting credit balance: $e');
+      }
       return {'recipeImports': 0, 'recipeGenerations': 0};
     }
   }
@@ -107,12 +111,10 @@ class CreditsService {
           );
         }
       });
-
-      debugPrint(
-        'Credits added: $recipeImports imports, $recipeGenerations generations',
-      );
     } catch (e) {
-      debugPrint('Error adding credits: $e');
+      if (kDebugMode) {
+        debugPrint('Error adding credits: $e');
+      }
       rethrow;
     }
   }
@@ -168,13 +170,11 @@ class CreditsService {
         success = true;
       });
 
-      if (success) {
-        debugPrint('Credits used: $amount ${type.toString()}');
-      }
-
       return success;
     } catch (e) {
-      debugPrint('Error using credits: $e');
+      if (kDebugMode) {
+        debugPrint('Error using credits: $e');
+      }
       return false;
     }
   }
@@ -212,7 +212,9 @@ class CreditsService {
           .map((doc) => {'id': doc.id, ...doc.data()})
           .toList();
     } catch (e) {
-      debugPrint('Error getting credit history: $e');
+      if (kDebugMode) {
+        debugPrint('Error getting credit history: $e');
+      }
       return [];
     }
   }
@@ -279,7 +281,6 @@ class CreditsService {
 
         // If less than 25 days since last renewal, don't grant credits yet
         if (now.difference(lastRenewal).inDays < 25) {
-          debugPrint('Subscription credits already granted this month');
           return;
         }
       }
@@ -295,10 +296,10 @@ class CreditsService {
       await _firestore.collection('users').doc(userId).update({
         'lastSubscriptionRenewal': FieldValue.serverTimestamp(),
       });
-
-      debugPrint('Monthly subscription credits granted');
     } catch (e) {
-      debugPrint('Error handling subscription renewal: $e');
+      if (kDebugMode) {
+        debugPrint('Error handling subscription renewal: $e');
+      }
       rethrow;
     }
   }

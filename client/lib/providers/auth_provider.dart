@@ -70,14 +70,17 @@ class AuthService with ChangeNotifier {
       if (isNewUser) {
         try {
           await _collectionService.createDefaultCollections();
-          print('Default collections created for new user: ${user.uid}');
         } catch (e) {
-          print('Error creating default collections: $e');
           // Don't fail the registration if collections creation fails
+          if (kDebugMode) {
+            debugPrint('Error creating default collections: $e');
+          }
         }
       }
     } catch (e) {
-      print('Error creating/updating user profile: $e');
+      if (kDebugMode) {
+        debugPrint('Error creating/updating user profile: $e');
+      }
       rethrow;
     }
   }
@@ -130,7 +133,6 @@ class AuthService with ChangeNotifier {
 
       return _user;
     } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: ${e.code} - ${e.message}');
       switch (e.code) {
         case 'user-not-found':
           _error = 'No account found with this email. Please sign up first.';
@@ -155,7 +157,6 @@ class AuthService with ChangeNotifier {
       }
       return null;
     } catch (e) {
-      print('Unexpected error during sign in: $e');
       _error = 'An unexpected error occurred. Please try again.';
       return null;
     } finally {
@@ -184,8 +185,6 @@ class AuthService with ChangeNotifier {
         email: email,
         password: password,
       );
-
-      print('User created: ${result.user}');
 
       // Update display name
       await result.user!.updateDisplayName(displayName);
@@ -261,7 +260,6 @@ class AuthService with ChangeNotifier {
       _user = userCredential.user;
       return _user;
     } catch (e) {
-      print('Google sign in error: $e');
       _error = e.toString();
       return null;
     } finally {
@@ -277,21 +275,17 @@ class AuthService with ChangeNotifier {
     notifyListeners();
 
     try {
-      print('🍎 Starting Apple Sign In...');
-      
       // Check if Apple Sign In is available
       final isAvailable = await SignInWithApple.isAvailable();
       if (!isAvailable) {
         throw 'Apple Sign In is not available on this device';
       }
-      print('🍎 Apple Sign In is available');
 
       // Generate secure nonce for Firebase (recommended)
       final String rawNonce = _generateNonce();
       final String hashedNonce = _sha256ofString(rawNonce);
 
       // Request Apple Sign In
-      print('🍎 Requesting Apple ID credential...');
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
@@ -299,7 +293,6 @@ class AuthService with ChangeNotifier {
         ],
         nonce: hashedNonce,
       );
-      print('🍎 Got Apple ID credential: ${credential.identityToken != null ? "has token" : "NO TOKEN"}');
 
       // Create OAuth provider credential
       final oauthCredential = OAuthProvider(
@@ -310,16 +303,11 @@ class AuthService with ChangeNotifier {
         // Some Firebase versions expect the Apple authorizationCode as accessToken
         accessToken: credential.authorizationCode,
       );
-      print('🍎 Created OAuth credential');
 
       // Sign in to Firebase
-      print('🍎 Signing in to Firebase...');
-      print('🍎 Identity Token (first 50 chars): ${credential.identityToken?.substring(0, 50)}...');
-      print('🍎 User Identifier: ${credential.userIdentifier}');
       UserCredential userCredential = await _auth.signInWithCredential(
         oauthCredential,
       );
-      print('🍎 Firebase sign-in complete. User: ${userCredential.user?.uid ?? "NULL USER"}');
 
       // Create or update user profile in Firestore
       if (userCredential.user != null) {
@@ -327,39 +315,24 @@ class AuthService with ChangeNotifier {
         if (credential.givenName != null && credential.familyName != null) {
           displayName = '${credential.givenName} ${credential.familyName}';
         }
-        print('🍎 Updating user profile...');
 
         await _createOrUpdateUserProfile(
           userCredential.user!,
           displayName: displayName,
         );
-        print('🍎 Profile updated');
         
         // Force refresh ID token to ensure currentUser is properly set
         // This prevents race conditions when making API calls immediately after login
-        print('🍎 Refreshing ID token...');
         await userCredential.user!.getIdToken(true);
-        print('🍎 ID token refreshed');
         
         // Add a delay to ensure Firebase Auth state is fully propagated
         // This is crucial for preventing "User not authenticated" errors
-        print('🍎 Waiting 1500ms for auth state to propagate...');
         await Future.delayed(const Duration(milliseconds: 1500));
-        print('🍎 Auth state should be ready. Current user check: ${_auth.currentUser?.uid ?? "STILL NULL"}');
-      } else {
-        print('🍎 ERROR: userCredential.user is NULL!');
       }
 
       _user = userCredential.user;
-      print('🍎 Sign in complete. Returning user: ${_user?.uid ?? "NULL"}');
       return _user;
     } catch (e) {
-      print('🍎 ❌ ERROR during Apple Sign In: $e');
-      if (e is FirebaseAuthException) {
-        print('🍎 ❌ Firebase Error Code: ${e.code}');
-        print('🍎 ❌ Firebase Error Message: ${e.message}');
-        print('🍎 ❌ Firebase Error Details: ${e.stackTrace}');
-      }
       _error = e.toString();
       return null;
     } finally {
@@ -415,7 +388,6 @@ class AuthService with ChangeNotifier {
       await _auth.sendPasswordResetEmail(email: email);
       return true;
     } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: ${e.code} - ${e.message}');
       switch (e.code) {
         case 'user-not-found':
           _error = 'No account found with this email address.';
@@ -431,7 +403,6 @@ class AuthService with ChangeNotifier {
       }
       return false;
     } catch (e) {
-      print('Unexpected error sending password reset email: $e');
       _error = 'An unexpected error occurred. Please try again.';
       return false;
     } finally {

@@ -132,8 +132,8 @@ class PurchaseService {
     // Create mock purchase details for development
     final mockPurchaseDetails = MockPurchaseDetails(product.id);
 
-    // Deliver the purchase benefits
-    await _deliverPurchaseBenefits(product, mockPurchaseDetails);
+    // Use the same verification flow to prevent duplicate deliveries
+    await _verifyAndDeliverPurchase(mockPurchaseDetails);
   }
 
   /// Purchase a product
@@ -233,6 +233,26 @@ class PurchaseService {
         return;
       }
 
+      // Check if this purchase has already been processed
+      final purchaseRef = _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('purchases')
+          .doc(purchaseDetails.purchaseID);
+
+      final purchaseDoc = await purchaseRef.get();
+      if (purchaseDoc.exists) {
+        final data = purchaseDoc.data();
+        final bool benefitsDelivered = data?['benefitsDelivered'] ?? false;
+        
+        if (benefitsDelivered) {
+          debugPrint(
+            'Purchase ${purchaseDetails.purchaseID} already processed, skipping benefit delivery',
+          );
+          return;
+        }
+      }
+
       // Verify purchase with backend (simplified version)
       // In production, you should verify with your backend server
       final verificationData = {
@@ -243,18 +263,17 @@ class PurchaseService {
         'source': purchaseDetails.verificationData.source,
         'timestamp': FieldValue.serverTimestamp(),
         'platform': Platform.isIOS ? 'ios' : 'android',
+        'benefitsDelivered': false,
       };
 
       // Save purchase to Firestore
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('purchases')
-          .doc(purchaseDetails.purchaseID)
-          .set(verificationData, SetOptions(merge: true));
+      await purchaseRef.set(verificationData, SetOptions(merge: true));
 
       // Deliver the purchase benefits
       await _deliverPurchaseBenefits(productConfig, purchaseDetails);
+
+      // Mark benefits as delivered
+      await purchaseRef.update({'benefitsDelivered': true});
 
       // Verbose success logging removed
     } catch (e) {

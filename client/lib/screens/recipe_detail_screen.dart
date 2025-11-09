@@ -748,8 +748,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               },
               itemBuilder: (context) {
                 final List<PopupMenuEntry<MenuAction>> items = [];
-                // Only allow replacing image when the recipe is saved by the user, or in debug builds
-                final bool canShowReplaceImage = _isSaved || kDebugMode;
+                // Only allow replacing image when the recipe is saved by the user
+                // In production (release builds), this is strictly enforced
+                // In debug builds, only allow if saved OR if not a discover recipe
+                final bool canShowReplaceImage = _isSaved;
                 if (canShowReplaceImage) {
                   items.add(
                     PopupMenuItem<MenuAction>(
