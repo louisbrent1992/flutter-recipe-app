@@ -194,8 +194,6 @@ class ApiClient {
   ) async {
     final uri = Uri.parse('$baseUrl/$endpoint');
 
-    // debug logging removed
-
     // Add timeout to requests with longer timeout for recipe imports
     final isRecipeImport =
         uri.path.contains('/ai/recipes/import') ||

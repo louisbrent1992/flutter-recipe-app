@@ -180,7 +180,10 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   }
 
   Future<void> _saveRecipe() async {
-    if (!_formKey.currentState!.validate()) return;
+    // Safely check if form is valid
+    if (_formKey.currentState == null || !_formKey.currentState!.validate()) {
+      return;
+    }
 
     try {
       final recipeProvider = Provider.of<RecipeProvider>(
@@ -228,14 +231,19 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
         tags: currentRecipe.tags,
       );
 
-      if (widget.recipe?.toEdit == true || currentRecipe.toEdit == true) {
+      // Check if we're updating an existing user recipe:
+      // Only update if the original widget.recipe had toEdit=true (means it came from user's collection)
+      // If widget.recipe is null or toEdit is false/null, it's a new recipe (imported or created)
+      final bool isUpdatingExisting = widget.recipe?.toEdit == true;
+
+      if (isUpdatingExisting) {
         final updatedRecipe = await recipeProvider.updateUserRecipe(recipe);
         if (updatedRecipe != null && mounted) {
           // Clear any previous errors on successful update
           setState(() {
             _error = null;
           });
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               action: SnackBarAction(
@@ -277,7 +285,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
           setState(() {
             _error = null;
           });
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               action: SnackBarAction(
