@@ -43,6 +43,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
       });
       await recipeProvider.deleteUserRecipe(recipe.id, context);
       if (mounted) {
+        final scaffoldContext = context;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Recipe removed from your collection'),
@@ -50,9 +51,10 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
             action: SnackBarAction(
               label: 'Go to My Recipes',
               onPressed: () {
-                if (mounted) {
-                  Navigator.pushNamed(context, '/myRecipes');
-                }
+                Navigator.of(
+                  scaffoldContext,
+                  rootNavigator: false,
+                ).pushNamed('/myRecipes');
               },
             ),
           ),
@@ -66,21 +68,18 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
       final response = await RecipeService.createUserRecipe(recipe);
       if (mounted) {
         if (response.success && response.data != null) {
+          final scaffoldContext = context;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                'Recipe saved to your collection!',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
+              content: Text('Recipe saved to your collection!'),
               backgroundColor: Theme.of(context).colorScheme.success,
               action: SnackBarAction(
                 label: 'Go to My Recipes',
                 onPressed: () {
-                  if (mounted) {
-                    Navigator.pushNamed(context, '/myRecipes');
-                  }
+                  Navigator.of(
+                    scaffoldContext,
+                    rootNavigator: false,
+                  ).pushNamed('/myRecipes');
                 },
               ),
             ),
@@ -135,7 +134,6 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    
                     SizedBox(height: AppSpacing.sm),
                     ...recipeProvider.generatedRecipes.map(
                       (recipe) => RecipeCard(

@@ -231,6 +231,11 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
       if (widget.recipe?.toEdit == true || currentRecipe.toEdit == true) {
         final updatedRecipe = await recipeProvider.updateUserRecipe(recipe);
         if (updatedRecipe != null && mounted) {
+          // Clear any previous errors on successful update
+          setState(() {
+            _error = null;
+          });
+          
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               action: SnackBarAction(
@@ -256,6 +261,11 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
               backgroundColor: Colors.green,
             ),
           );
+        } else if (mounted) {
+          // Recipe update failed
+          setState(() {
+            _error = ApiResponse<Recipe>.error('Failed to update recipe');
+          });
         }
       } else {
         final newRecipe = await recipeProvider.createUserRecipe(
@@ -263,6 +273,11 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
           context,
         );
         if (newRecipe != null && mounted) {
+          // Clear any previous errors on successful save
+          setState(() {
+            _error = null;
+          });
+          
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               action: SnackBarAction(
@@ -297,6 +312,11 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
 
           // After saving a new recipe, return to the Import screen to add a new one
           Navigator.pushReplacementNamed(context, '/import');
+        } else if (mounted) {
+          // Recipe save failed
+          setState(() {
+            _error = ApiResponse<Recipe>.error('Failed to save recipe');
+          });
         }
       }
     } catch (e) {

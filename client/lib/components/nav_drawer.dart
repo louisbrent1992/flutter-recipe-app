@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:recipease/services/collection_service.dart';
 import '../theme/theme.dart';
 import '../providers/recipe_provider.dart';
+import '../providers/user_profile_provider.dart';
 import '../models/recipe.dart';
 import '../models/recipe_collection.dart';
 import '../services/game_center_service.dart';
@@ -486,20 +487,27 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                   ),
                 ],
               ),
-              child: ClipOval(
-                child:
-                    user?.photoURL != null
-                        ? CachedNetworkImage(
-                          imageUrl: user!.photoURL!,
-                          fit: BoxFit.cover,
-                          placeholder:
-                              (context, url) =>
-                                  _buildAvatarPlaceholder(isDark, isMobile),
-                          errorWidget:
-                              (context, url, error) =>
-                                  _buildAvatarPlaceholder(isDark, isMobile),
-                        )
-                        : _buildAvatarPlaceholder(isDark, isMobile),
+              child: Consumer<UserProfileProvider>(
+                builder: (context, profileProvider, _) {
+                  final photoURL = profileProvider.profile['photoURL'] as String? ?? 
+                                  user?.photoURL;
+                  
+                  return ClipOval(
+                    child:
+                        photoURL != null
+                            ? CachedNetworkImage(
+                              imageUrl: photoURL,
+                              fit: BoxFit.cover,
+                              placeholder:
+                                  (context, url) =>
+                                      _buildAvatarPlaceholder(isDark, isMobile),
+                              errorWidget:
+                                  (context, url, error) =>
+                                      _buildAvatarPlaceholder(isDark, isMobile),
+                            )
+                            : _buildAvatarPlaceholder(isDark, isMobile),
+                  );
+                },
               ),
             ),
           ),

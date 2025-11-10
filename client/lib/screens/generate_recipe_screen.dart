@@ -171,11 +171,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
             SnackBar(
               content: Text(
                 'Recipes generated successfully!',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(
-                    alpha: Theme.of(context).colorScheme.alphaVeryHigh,
-                  ),
-                ),
+                
               ),
               backgroundColor: Colors.green,
             ),

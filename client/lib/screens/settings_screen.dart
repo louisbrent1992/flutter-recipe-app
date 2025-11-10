@@ -980,41 +980,63 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Widget _buildProfileHeader(ColorScheme colorScheme) {
-    return Center(
-      child: Column(
-        children: [
-          Stack(
+    return Consumer<UserProfileProvider>(
+      builder: (context, profileProvider, _) {
+        final photoURL = profileProvider.profile['photoURL'] as String? ?? 
+                        user?.photoURL;
+        
+        return Center(
+          child: Column(
             children: [
-              Hero(
-                tag: 'profile_picture',
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [colorScheme.primary, colorScheme.secondary],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+              Stack(
+                children: [
+                  Hero(
+                    tag: 'profile_picture',
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [colorScheme.primary, colorScheme.secondary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundColor: Colors.grey[200],
+                        backgroundImage:
+                            photoURL != null
+                                ? CachedNetworkImageProvider(photoURL)
+                                : null,
+                        child:
+                            photoURL == null
+                                ? Icon(
+                                  Icons.person_rounded,
+                                  size: 60,
+                                  color: Colors.grey[400],
+                                )
+                                : null,
+                      ),
                     ),
                   ),
-                  child: CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Colors.grey[200],
-                    backgroundImage:
-                        user?.photoURL != null
-                            ? CachedNetworkImageProvider(user!.photoURL!)
-                            : null,
-                    child:
-                        user?.photoURL == null
-                            ? Icon(
-                              Icons.person_rounded,
-                              size: 60,
-                              color: Colors.grey[400],
-                            )
-                            : null,
-                  ),
-                ),
-              ),
+                  // Loading overlay
+                  if (profileProvider.isLoading)
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withOpacity(0.5),
+                        ),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
               Positioned(
                 bottom: 0,
                 right: 0,
@@ -1023,7 +1045,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   shape: const CircleBorder(),
                   clipBehavior: Clip.hardEdge,
                   child: InkWell(
-                    onTap: _uploadProfilePicture,
+                    onTap: profileProvider.isLoading ? null : _uploadProfilePicture,
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -1038,32 +1060,36 @@ class _SettingsScreenState extends State<SettingsScreen>
                         color: Theme.of(
                           context,
                         ).colorScheme.onSurface.withValues(
-                          alpha: Theme.of(context).colorScheme.alphaHigh,
+                          alpha: profileProvider.isLoading 
+                              ? Theme.of(context).colorScheme.alphaLow 
+                              : Theme.of(context).colorScheme.alphaHigh,
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                user?.displayName ?? 'Recipe Enthusiast',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                user?.email ?? '',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(
+                    alpha: Theme.of(context).colorScheme.alphaHigh,
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            user?.displayName ?? 'Recipe Enthusiast',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            user?.email ?? '',
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withValues(
-                alpha: Theme.of(context).colorScheme.alphaHigh,
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
