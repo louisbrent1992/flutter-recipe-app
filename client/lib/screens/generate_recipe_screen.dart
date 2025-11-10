@@ -184,8 +184,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
           // Navigate to generated recipes screen
           Navigator.pushNamed(context, '/generatedRecipes');
         }
-      }
-      if (context.mounted) {
+      } else if (context.mounted) {
         // Show error message if no recipes were generated
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
