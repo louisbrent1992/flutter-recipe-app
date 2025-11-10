@@ -171,25 +171,34 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
         );
       }
       if (context.mounted) {
-        final recipe = await recipeProvider.importRecipeFromUrl(url, context);
+        final result = await recipeProvider.importRecipeFromUrl(url, context);
 
         // Close loading dialog
         if (context.mounted) {
           Navigator.pop(context);
         }
 
-        if (context.mounted && recipe != null) {
-          // Always deduct one import credit after successful import
-          await subscriptionProvider.useCredits(
-            CreditType.recipeImport,
-            reason: 'Recipe import from URL',
-          );
+        if (context.mounted && result != null) {
+          final recipe = result['recipe'];
+          final fromCache = result['fromCache'] as bool? ?? false;
+
+          // Only deduct credit if recipe was NOT from cache
+          if (!fromCache) {
+            await subscriptionProvider.useCredits(
+              CreditType.recipeImport,
+              reason: 'Recipe import from URL',
+            );
+          }
 
           // Show success message
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text('Recipe imported successfully!'),
+                content: Text(
+                  fromCache
+                      ? 'Recipe loaded from cache (no credit charged)!'
+                      : 'Recipe imported successfully!',
+                ),
                 backgroundColor: Colors.green,
                 behavior: SnackBarBehavior.floating,
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

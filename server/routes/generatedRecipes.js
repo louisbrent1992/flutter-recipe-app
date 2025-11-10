@@ -463,7 +463,7 @@ router.post("/import", async (req, res) => {
 			console.log("✅ Recipe found in cache, returning cached result");
 			logPerformance("TOTAL IMPORT TIME (from cache)", totalStartTime);
 			console.log(`✓ ========== IMPORT COMPLETE ==========\n`);
-			return res.json(cachedRecipe);
+			return res.json({ ...cachedRecipe, fromCache: true });
 		}
 		logPerformance("Cache lookup (MISS)", cacheStartTime);
 
@@ -547,7 +547,7 @@ router.post("/import", async (req, res) => {
 		console.log(`✓ Recipe import completed: "${importedRecipe.title}"`);
 		console.log(`✓ ========== IMPORT COMPLETE ==========\n`);
 		
-		res.json(importedRecipe);
+		res.json({ ...importedRecipe, fromCache: false });
 	} catch (error) {
 		console.error("❌ Error importing recipe:", error);
 		logPerformance("TOTAL IMPORT TIME (failed - error)", totalStartTime);

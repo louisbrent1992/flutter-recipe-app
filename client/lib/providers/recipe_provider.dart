@@ -120,7 +120,8 @@ class RecipeProvider extends ChangeNotifier {
   }
 
   // Import recipe from social media URL
-  Future<Recipe?> importRecipeFromUrl(String url, BuildContext context) async {
+  // Returns a Map with 'recipe' and 'fromCache' keys
+  Future<Map<String, dynamic>?> importRecipeFromUrl(String url, BuildContext context) async {
     _setLoading(true);
     clearError();
 
@@ -129,6 +130,7 @@ class RecipeProvider extends ChangeNotifier {
 
       if (response.success && response.data != null) {
         final recipe = response.data!;
+        final fromCache = response.metadata?['fromCache'] as bool? ?? false;
 
         // Check for duplicates
         if (isDuplicateRecipe(recipe)) {
@@ -168,7 +170,7 @@ class RecipeProvider extends ChangeNotifier {
         _unlockFirstImportAchievement();
 
         notifyListeners();
-        return _importedRecipe;
+        return {'recipe': _importedRecipe, 'fromCache': fromCache};
       } else {
         _setError(response.message ?? 'Failed to import recipe');
         if (context.mounted) {

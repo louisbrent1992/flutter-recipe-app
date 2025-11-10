@@ -72,9 +72,11 @@ class RecipeService {
     );
 
     if (response.success && response.data != null) {
+      final fromCache = response.data!['fromCache'] as bool? ?? false;
       return ApiResponse.success(
         Recipe.fromJson(response.data!),
         message: 'Recipe imported successfully',
+        metadata: {'fromCache': fromCache},
       );
     }
 
