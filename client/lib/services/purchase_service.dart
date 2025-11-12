@@ -330,12 +330,11 @@ class PurchaseService {
               DateTime.now().add(const Duration(days: 7)),
             );
 
-            // Grant capped trial credits: 12 total → 7 imports + 5 generations
-            await _creditsService.addCredits(
-              recipeImports: 7,
-              recipeGenerations: 5,
-              reason: 'Subscription trial start: ${product.title}',
-            );
+            // No trial credits needed - users get unlimited usage during trial!
+            // Trial provides full unlimited access for 7 days
+            if (kDebugMode) {
+              debugPrint('✨ Trial activated: Unlimited usage for 7 days');
+            }
           }
         }
       }
@@ -348,29 +347,29 @@ class PurchaseService {
         final int generationCredits;
 
         switch (product.productType) {
-          case ProductType.recipeImports10:
-            importCredits = 10;
+          case ProductType.recipeImports15:
+            importCredits = 15;
             generationCredits = 0;
             break;
-          case ProductType.recipeImports20:
-            importCredits = 20;
+          case ProductType.recipeImports25:
+            importCredits = 25;
             generationCredits = 0;
             break;
-          case ProductType.recipeGenerations50:
+          case ProductType.recipeGenerations25:
             importCredits = 0;
-            generationCredits = 50;
+            generationCredits = 25;
             break;
-          case ProductType.adFreePlus20Imports:
-            importCredits = 20;
+          case ProductType.adFreePlus25Imports:
+            importCredits = 25;
             generationCredits = 0;
             break;
-          case ProductType.adFreePlus50Generations:
+          case ProductType.adFreePlus25Generations:
             importCredits = 0;
-            generationCredits = 50;
+            generationCredits = 25;
             break;
           case ProductType.ultimateBundle:
-            importCredits = 30;
-            generationCredits = 50;
+            importCredits = 25;
+            generationCredits = 25;
             break;
           default:
             importCredits = 0;

@@ -207,7 +207,8 @@ class SubscriptionProvider with ChangeNotifier {
 
   /// Check if user has enough credits for an action
   Future<bool> hasEnoughCredits(CreditType type, {int amount = 1}) async {
-    if (_unlimitedUsage) return true;
+    // Unlimited usage for: unlimited subscriptions OR active trials
+    if (_unlimitedUsage || _trialActive) return true;
     return await _creditsService.hasEnoughCredits(type: type, amount: amount);
   }
 
@@ -217,7 +218,8 @@ class SubscriptionProvider with ChangeNotifier {
     int amount = 1,
     String? reason,
   }) async {
-    if (_unlimitedUsage) {
+    // Unlimited usage for: unlimited subscriptions OR active trials
+    if (_unlimitedUsage || _trialActive) {
       await _loadCredits();
       return true;
     }

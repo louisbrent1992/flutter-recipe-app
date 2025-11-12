@@ -35,7 +35,7 @@ router.get("/ui/config", (req, res) => {
         id: "shop_discount",
         placement: "shop_top",
         title: "Limited-Time Offer",
-        subtitle: "Save 20% on Unlimited (Yearly)",
+        subtitle: "Save 67% on Unlimited (Yearly)",
         ctaText: "Shop Now",
         ctaUrl: "app://subscription", // open in-app route
         imageUrl: null,

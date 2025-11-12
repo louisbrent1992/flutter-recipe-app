@@ -127,41 +127,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
-                    child: GestureDetector(
-                      onTap: () async {
-                        final url = Uri.parse(
-                          'https://www.recipease.kitchen/fair-use',
-                        );
-                        if (await canLaunchUrl(url)) {
-                          await launchUrl(
-                            url,
-                            mode: LaunchMode.externalApplication,
-                          );
-                        }
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            size: 14,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Fair‑use policy',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
               );
             },
@@ -427,6 +392,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               child: const Text('Restore Purchases'),
             ),
           ),
+          const SizedBox(height: 80), // Extra padding for bottom bar
         ],
       ),
     );
@@ -465,6 +431,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               onTap: () => _purchaseProduct(context, provider, product),
             ),
           ),
+          const SizedBox(height: 80), // Extra padding for bottom bar
         ],
       ),
     );
@@ -503,6 +470,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               onTap: () => _purchaseProduct(context, provider, product),
             ),
           ),
+          const SizedBox(height: 80), // Extra padding for bottom bar
         ],
       ),
     );
@@ -819,6 +787,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
+                // Display subscription details (required by App Store)
+                if (isSubscription) ...[
+                  const SizedBox(height: 8),
+                  _buildSubscriptionDetails(context, product, trialEligible),
+                ],
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -989,7 +962,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               ),
               const SizedBox(width: 8),
               Text(
-                'Free Trial Terms',
+                'Subscription Terms',
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -998,15 +971,180 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            '• Start your 7-day free trial today\n'
-            '• Full access to all premium features\n'
-            '• Cancel anytime during the trial\n'
-            '• No charge if you cancel before trial ends\n'
-            '• Auto-renews after trial period',
+            '• Premium Monthly: \$6.99/month with 7-day free trial\n'
+            '• Premium Yearly: \$44.99/year (\$3.75/month) with 7-day free trial\n'
+            '• Premium Unlimited: \$19.99/month (no trial)\n'
+            '• Premium Unlimited Yearly: \$79.99/year (\$6.67/month)\n'
+            '• Auto-renewable subscriptions\n'
+            '• Cancel anytime in Account Settings\n'
+            '• No charge if cancelled during trial period\n'
+            '• Payment charged to Apple ID at confirmation\n'
+            '• Subscription auto-renews unless cancelled 24 hours before end of period\n'
+            '• Unlimited plans subject to fair-use policy for personal use',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               height: 1.5,
             ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            children: [
+              _buildTextLink(
+                context,
+                'Privacy Policy',
+                'https://recipease.kitchen/privacy',
+              ),
+              _buildTextLink(
+                context,
+                'Terms of Use',
+                'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+              ),
+              _buildTextLink(
+                context,
+                'Fair-Use Policy',
+                'https://recipease.kitchen/fair-use',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextLink(BuildContext context, String text, String url) {
+    return InkWell(
+      onTap: () async {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+          decoration: TextDecoration.underline,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubscriptionDetails(
+    BuildContext context,
+    PurchaseProduct product,
+    bool trialEligible,
+  ) {
+    final theme = Theme.of(context);
+    String duration = '';
+    String pricePerUnit = '';
+
+    // Determine duration and price per unit
+    switch (product.productType) {
+      case ProductType.monthlyPremium:
+        duration = '1 month';
+        pricePerUnit = '\$6.99/month';
+        break;
+      case ProductType.yearlyPremium:
+        duration = '1 year';
+        pricePerUnit = '\$44.99/year (\$3.75/month)';
+        break;
+      case ProductType.unlimitedPremium:
+        duration = '1 month';
+        pricePerUnit = '\$19.99/month';
+        break;
+      case ProductType.unlimitedPremiumYearly:
+        duration = '1 year';
+        pricePerUnit = '\$79.99/year (\$6.67/month)';
+        break;
+      default:
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (trialEligible &&
+              product.productType != ProductType.unlimitedPremium &&
+              product.productType != ProductType.unlimitedPremiumYearly) ...[
+            Row(
+              children: [
+                Icon(
+                  Icons.celebration,
+                  size: 14,
+                  color: Colors.green,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '7-day free trial, then $pricePerUnit',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+          ] else ...[
+            Row(
+              children: [
+                Icon(
+                  Icons.calendar_today,
+                  size: 14,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Price: $pricePerUnit',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+          ],
+          Row(
+            children: [
+              Icon(
+                Icons.access_time,
+                size: 14,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Duration: $duration',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Icon(
+                Icons.autorenew,
+                size: 14,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Auto-renewable subscription',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+            ],
           ),
         ],
       ),

@@ -348,7 +348,7 @@ const processRecipeData = async (
 	console.log("🤖 Starting AI recipe parsing...");
 	
 	const response = await client.beta.chat.completions.parse({
-		model: "gpt-4o-mini",
+		model: "gpt-5-nano",
 		messages: [
 			{
 				role: "system",

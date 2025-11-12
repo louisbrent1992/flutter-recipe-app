@@ -8,6 +8,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../services/api_client.dart';
 import '../services/collection_service.dart';
+import '../services/credits_service.dart';
 import '../firebase_options.dart';
 
 class AuthService with ChangeNotifier {
@@ -23,6 +24,7 @@ class AuthService with ChangeNotifier {
   );
   final ApiClient _apiClient = ApiClient();
   final CollectionService _collectionService = CollectionService();
+  final CreditsService _creditsService = CreditsService();
 
   User? _user;
   bool _isLoading = false;
@@ -66,7 +68,7 @@ class AuthService with ChangeNotifier {
       // Update or create the document
       await userDoc.set(userData, SetOptions(merge: true));
 
-      // If this is a new user, create default collections
+      // If this is a new user, create default collections and grant welcome credits
       if (isNewUser) {
         try {
           await _collectionService.createDefaultCollections();
@@ -74,6 +76,23 @@ class AuthService with ChangeNotifier {
           // Don't fail the registration if collections creation fails
           if (kDebugMode) {
             debugPrint('Error creating default collections: $e');
+          }
+        }
+
+        // Grant welcome credits to new users
+        try {
+          await _creditsService.addCredits(
+            recipeImports: 5,
+            recipeGenerations: 5,
+            reason: '🎁 Welcome bonus - 10 free credits to get you started!',
+          );
+          if (kDebugMode) {
+            debugPrint('✅ Welcome credits granted: 5 imports + 5 generations');
+          }
+        } catch (e) {
+          // Don't fail the registration if credit grant fails
+          if (kDebugMode) {
+            debugPrint('Error granting welcome credits: $e');
           }
         }
       }
