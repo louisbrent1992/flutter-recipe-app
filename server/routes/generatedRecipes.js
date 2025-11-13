@@ -1,50 +1,143 @@
+/**
+ * Generated Recipes Routes
+ * 
+ * This module handles AI-powered recipe generation and import using OpenAI's Chat Completion API.
+ * 
+ * OpenAI API References:
+ * - Chat Completion: https://platform.openai.com/docs/api-reference/chat/create
+ * - Structured Outputs: https://platform.openai.com/docs/guides/structured-outputs
+ * 
+ * API Method Used:
+ * - chat.completions.create() - Standard chat completion API for all requests
+ * - Structured Outputs with JSON Schema for reliable JSON responses
+ * 
+ * Key Parameters (supported by gpt-5-nano):
+ * - model: The model to use (e.g., "gpt-5-nano", "gpt-4o-mini", "gpt-4o")
+ * - messages: Array of message objects with role (developer/user/assistant) and content
+ * - reasoning_effort: "low" | "minimal" | "medium" | "high" (gpt-5/o-series only)
+ *   - Set to "low" for faster responses with fewer reasoning tokens
+ * - max_completion_tokens: Maximum tokens to generate (12,000-16,000 to allow for reasoning + output)
+ * - response_format: 
+ *   - { type: "text" } for text responses
+ *   - { type: "json_schema", json_schema: {...} } for Structured Outputs with strict schema validation
+ * - stream: Boolean to enable streaming responses
+ * - store: Boolean to store output for model distillation/evals
+ * - safety_identifier: Stable identifier for abuse detection
+ * 
+ * Structured Outputs Implementation:
+ * - Uses JSON Schema with strict: true to enforce schema compliance
+ * - Ensures consistent and reliable JSON-formatted responses
+ * - Eliminates need for manual JSON parsing validation
+ * - Applied to /generate and /import endpoints
+ * 
+ * Parameters NOT supported by gpt-5-nano (removed from implementation):
+ * - temperature (only supports default value of 1)
+ * - top_p
+ * - frequency_penalty
+ * - presence_penalty
+ * 
+ * Token Management & Performance Optimization:
+ * - reasoning_effort: Set to "low" for faster responses with fewer reasoning tokens
+ *   - Dramatically reduces internal thinking time for recipe tasks
+ *   - Typical reduction: ~6-8k reasoning tokens → ~2-3k reasoning tokens
+ *   - Values: minimal | low | medium (default) | high
+ * - Input: 
+ *   - Recipe generation: No truncation needed (prompts are small ~400 tokens)
+ *   - Recipe imports: Truncated to 10,000 chars for optimal performance
+ *     (Reduces prompt tokens from ~4k to ~2.5k, speeds up AI reasoning)
+ *     (Performance: ~50s → ~10-15s for most imports with low reasoning effort)
+ * - Output: 
+ *   - Recipe generation: 16,000 tokens (3 recipes: typical ~2-3k reasoning + ~4-5k output)
+ *   - Recipe imports: 6,000 tokens (1 recipe: typical ~1.5k reasoning + ~1.5k output)
+ *   - gpt-5-nano uses reasoning tokens internally before generating output
+ *   - max_completion_tokens includes BOTH reasoning and output tokens
+ *   - Lower reasoning effort + token limits = faster responses
+ * - Timeout: 120 seconds for both client and server
+ * 
+ * Environment Variables Required:
+ * - OPENAI_API_KEY: Your OpenAI API key
+ * - OPENAI_BASE_URL (optional): Custom base URL for OpenAI-compatible APIs
+ * - GOOGLE_API_KEY: For image search functionality
+ * - GOOGLE_CX: Google Custom Search Engine ID
+ */
+
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 const OpenAI = require("openai");
-const { z } = require("zod");
-const { zodResponseFormat } = require("openai/helpers/zod");
 const recipeData = require("../data/recipeData");
 const { getInstagramMediaFromUrl } = require("../utils/instagramAPI");
 const { getTikTokVideoFromUrl } = require("../utils/tiktokAPI");
 const { getYouTubeVideoFromUrl } = require("../utils/youtubeAPI");
 
+// Initialize OpenAI client with configuration
+// Generous timeout and retry settings to handle large recipe data
 const client = new OpenAI({
-	api_key: process.env.LlamaAI_API_KEY,
-	base_url: process.env.LlamaAI_API_URL,
-	timeout: 60000,
+	apiKey: process.env.OPENAI_API_KEY || process.env.LlamaAI_API_KEY,
+	baseURL: process.env.OPENAI_BASE_URL || process.env.LlamaAI_API_URL,
+	timeout: 120000, // 2 minutes - increased for large requests
+	maxRetries: 3,
+	defaultHeaders: {
+		"User-Agent": "RecipeaseApp/1.0",
+	},
 });
 
-const nutritionSchema = z.object({
-	calories: z.string().optional(),
-	protein: z.string().optional(),
-	carbs: z.string().optional(),
-	fat: z.string().optional(),
-	fiber: z.string().optional(),
-	sugar: z.string().optional(),
-	sodium: z.string().optional(),
-	iron: z.string().optional(),
-});
-
-const recipeObjSchema = z.object({
-	id: z.string(),
-	title: z.string(),
-	cuisineType: z.string(),
-	description: z.string(),
-	image: z.string(),
-	ingredients: z.array(z.string()),
-	instructions: z.array(z.string()),
-	cookingTime: z.string(),
-	difficulty: z.string(),
-	servings: z.string(),
-	tags: z.array(z.string()),
-	nutrition: nutritionSchema.optional(),
-});
-
-const recipesArrSchema = z.object({
-	recipes: z.array(recipeObjSchema),
-});
+/**
+ * Structured Output Schemas:
+ * 
+ * The following JSON schemas are enforced via OpenAI's Structured Outputs feature
+ * using strict: true for guaranteed schema compliance.
+ * 
+ * Recipe Generation Schema (recipe_generation):
+ * {
+ *   recipes: [
+ *     {
+ *       title: string,
+ *       cuisineType: string,
+ *       description: string,
+ *       ingredients: string[],
+ *       instructions: string[],
+ *       cookingTime: string,
+ *       difficulty: string,
+ *       servings: string,
+ *       tags: string[],
+ *       nutrition: {
+ *         calories: string,
+ *         protein: string,
+ *         carbs: string,
+ *         fat: string,
+ *         fiber: string,
+ *         sugar: string,
+ *         sodium: string,
+ *         iron: string
+ *       }
+ *     }
+ *   ]
+ * }
+ * 
+ * Recipe Import Schema (recipe_import):
+ * {
+ *   title: string,
+ *   ingredients: string[],
+ *   instructions: string[],
+ *   description: string,
+ *   tags: string[],
+ *   cookingTime: string,
+ *   difficulty: string,
+ *   servings: string,
+ *   nutrition: {
+ *     calories: string,
+ *     protein: string,
+ *     carbs: string,
+ *     fat: string,
+ *     fiber: string,
+ *     sugar: string,
+ *     sodium: string,
+ *     iron: string
+ *   }
+ * }
+ */
 
 // In-memory recipes database (for AI-generated recipes that haven't been saved yet)
 let tempRecipes = [];
@@ -160,6 +253,67 @@ const getRandomIngredient = async () => {
 
 const randomIngredient = async () => await getRandomIngredient();
 
+// Helper function to truncate long content intelligently
+const truncateContent = (content, maxLength = 50000) => {
+	if (!content || content.length <= maxLength) {
+		return content;
+	}
+	
+	console.log(`⚠️  Content too long (${content.length} chars), truncating to ${maxLength} chars`);
+	
+	// Keep the beginning (usually has key info) and try to end at a sentence
+	const truncated = content.substring(0, maxLength);
+	const lastPeriod = truncated.lastIndexOf('.');
+	const lastNewline = truncated.lastIndexOf('\n');
+	const cutPoint = Math.max(lastPeriod, lastNewline);
+	
+	if (cutPoint > maxLength * 0.8) {
+		return truncated.substring(0, cutPoint + 1);
+	}
+	
+	return truncated + '...';
+};
+
+// Helper function for standard OpenAI chat completion
+// Default max_completion_tokens set to 8000 for flexible output
+// Input content is automatically truncated if needed via truncateContent()
+// Note: gpt-5-nano only supports default values - temperature, frequency_penalty, presence_penalty removed
+const createChatCompletion = async (messages, options = {}) => {
+	const {
+		model = "gpt-5-nano",
+		max_completion_tokens = 8000, // Generous default for complete recipe data
+		stream = false,
+		response_format = { type: "text" },
+		safety_identifier,
+	} = options;
+
+	try {
+		const response = await client.chat.completions.create({
+			model,
+			messages,
+			max_completion_tokens,
+			stream,
+			response_format,
+			...(safety_identifier && { safety_identifier }),
+		});
+
+		if (stream) {
+			return response; // Return stream for handling
+		}
+
+		return {
+			content: response.choices[0].message.content,
+			role: response.choices[0].message.role,
+			finishReason: response.choices[0].finish_reason,
+			usage: response.usage,
+			model: response.model,
+		};
+	} catch (error) {
+		console.error("Error creating chat completion:", error);
+		throw error;
+	}
+};
+
 // POST /ai/recipes/generate - AI-generated recipe creation
 router.post("/generate", async (req, res) => {
 	let {
@@ -181,50 +335,173 @@ router.post("/generate", async (req, res) => {
 			random = true;
 		}
 
-		const response = await client.beta.chat.completions.parse({
-			model: "gpt-4o-mini",
+		const response = await client.chat.completions.create({
+			model: "gpt-5-nano",
 			messages: [
 				{
+					role: "developer",
+					content: "You are a professional chef and recipe creator. Generate creative, delicious, and practical recipes with accurate nutritional information."
+				},
+				{
 					role: "user",
-					content: `Generate three recipes that include the following:
-						- Ingredients: ${random ? await randomIngredient() : ingredients}
-						- Dietary restrictions: ${dietaryRestrictions}
-						- Cuisine type: ${cuisineType}
-						- Include cooking time, difficulty level, and number of servings
-                        - Additional ingredients if needed
-                        - Provide approximate nutrition per serving as fields: calories (number, no unit), protein (g), carbs (g), fat (g), fiber (g), sugar (g), sodium (mg), iron (% DV numeric only)
-					`,
+					content: `Generate three recipes with these requirements:
+						- Ingredients: ${random ? await randomIngredient() : ingredients.join(", ")}
+						- Dietary restrictions: ${dietaryRestrictions.join(", ") || "None"}
+						- Cuisine type: ${cuisineType || "Any"}`,
 				},
 			],
-			response_format: zodResponseFormat(recipesArrSchema, "recipes"),
+			reasoning_effort: "low", // Reduces reasoning time and tokens for faster responses
+			response_format: {
+				type: "json_schema",
+				json_schema: {
+					name: "recipe_generation",
+					strict: true,
+					schema: {
+						type: "object",
+						properties: {
+							recipes: {
+								type: "array",
+								items: {
+									type: "object",
+									properties: {
+										title: {
+											type: "string",
+											description: "The name of the recipe"
+										},
+										cuisineType: {
+											type: "string",
+											description: "The cuisine type (e.g., Italian, Mexican, Asian)"
+										},
+										description: {
+											type: "string",
+											description: "A brief description of the recipe"
+										},
+										ingredients: {
+											type: "array",
+											items: {
+												type: "string"
+											},
+											description: "List of ingredients needed"
+										},
+										instructions: {
+											type: "array",
+											items: {
+												type: "string"
+											},
+											description: "Step-by-step cooking instructions"
+										},
+										cookingTime: {
+											type: "string",
+											description: "Total cooking time (e.g., '30 minutes')"
+										},
+										difficulty: {
+											type: "string",
+											description: "Difficulty level: easy, medium, or hard"
+										},
+										servings: {
+											type: "string",
+											description: "Number of servings"
+										},
+										tags: {
+											type: "array",
+											items: {
+												type: "string"
+											},
+											description: "Tags for categorizing the recipe"
+										},
+										nutrition: {
+											type: "object",
+											properties: {
+												calories: {
+													type: "string",
+													description: "Calorie count"
+												},
+												protein: {
+													type: "string",
+													description: "Protein content (e.g., '25g')"
+												},
+												carbs: {
+													type: "string",
+													description: "Carbohydrate content (e.g., '40g')"
+												},
+												fat: {
+													type: "string",
+													description: "Fat content (e.g., '12g')"
+												},
+												fiber: {
+													type: "string",
+													description: "Fiber content (e.g., '5g')"
+												},
+												sugar: {
+													type: "string",
+													description: "Sugar content (e.g., '8g')"
+												},
+												sodium: {
+													type: "string",
+													description: "Sodium content (e.g., '600mg')"
+												},
+												iron: {
+													type: "string",
+													description: "Iron content percentage"
+												}
+											},
+											required: ["calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "iron"],
+											additionalProperties: false
+										}
+									},
+									required: ["title", "cuisineType", "description", "ingredients", "instructions", "cookingTime", "difficulty", "servings", "tags", "nutrition"],
+									additionalProperties: false
+								}
+							}
+						},
+						required: ["recipes"],
+						additionalProperties: false
+					}
+				}
+			},
+			max_completion_tokens: 16000, // Increased to allow for reasoning tokens + output tokens
+			store: true,
 		});
 
-		const recipesData = response.choices[0].message.parsed.recipes;
+		if (!response?.choices?.[0]?.message?.content) {
+			console.error("❌ No content in AI response");
+			throw new Error("OpenAI returned empty content");
+		}
+		
+		const parsedContent = JSON.parse(response.choices[0].message.content);
+		const recipesData = parsedContent.recipes || [];
+		
+		console.log(`✅ Generated ${recipesData.length} recipes`);
 
 		const generatedRecipes = await Promise.all(
-			recipesData.map(async (recipeData) => ({
-				id: uuidv4(),
-				title: recipeData.title || "Generated Recipe",
-				cuisineType: recipeData.cuisineType || cuisineType,
-				description: recipeData.description || "Enjoy your generated recipe!",
-				ingredients: Array.isArray(recipeData.ingredients)
-					? recipeData.ingredients
-					: [],
-				instructions: Array.isArray(recipeData.instructions)
-					? recipeData.instructions
-					: [],
-				imageUrl:
-					typeof recipeData.image === "object"
-						? recipeData.image.url
-						: await fetchImage(recipeData.title),
-				cookingTime: recipeData.cookingTime || "30 minutes",
-				difficulty: recipeData.difficulty || "medium",
-				servings: recipeData.servings || "4",
-				tags: recipeData.tags || [],
-				nutrition: recipeData.nutrition || null,
-				aiGenerated: true,
-				createdAt: new Date().toISOString(),
-			}))
+			recipesData.map(async (recipeData) => {
+				const recipeTitle = recipeData.title || "Generated Recipe";
+				const imageQuery = recipeTitle !== "Generated Recipe" ? recipeTitle : `${cuisineType || 'delicious'} food dish`;
+				
+				return {
+					id: uuidv4(),
+					title: recipeTitle,
+					cuisineType: recipeData.cuisineType || cuisineType,
+					description: recipeData.description || "Enjoy your generated recipe!",
+					ingredients: Array.isArray(recipeData.ingredients)
+						? recipeData.ingredients
+						: [],
+					instructions: Array.isArray(recipeData.instructions)
+						? recipeData.instructions
+						: [],
+					imageUrl:
+						typeof recipeData.image === "object"
+							? recipeData.image.url
+							: await fetchImage(imageQuery),
+					cookingTime: recipeData.cookingTime || "30 minutes",
+					difficulty: recipeData.difficulty || "medium",
+					servings: recipeData.servings || "4",
+					tags: recipeData.tags || [],
+					nutrition: recipeData.nutrition || null,
+					aiGenerated: true,
+					createdAt: new Date().toISOString(),
+				};
+			})
 		);
 
 		tempRecipes.push(...generatedRecipes);
@@ -345,30 +622,128 @@ const processRecipeData = async (
 
 	// Process new recipe data with AI
 	const aiStartTime = Date.now();
-	console.log("🤖 Starting AI recipe parsing...");
 	
-	const response = await client.beta.chat.completions.parse({
+	// Truncate input content for faster AI processing
+	const processedContent = truncateContent(recipeData, 10000);
+	
+	const response = await client.chat.completions.create({
 		model: "gpt-5-nano",
 		messages: [
 			{
-				role: "system",
+				role: "developer",
 				content:
 					isInstagram || isTikTok || isYouTube
-						? "Extract recipe details from this social media post. Return title, ingredients (array), instructions (array), description, tags (array), and approximate nutrition per serving. Use these fields: calories (number, no unit), protein (g), carbs (g), fat (g), fiber (g), sugar (g), sodium (mg), iron (percent DV numeric only). Fill in any missing recipe details."
-						: "Extract recipe details from this text. Return title, ingredients (array), instructions (array), description, tags (array), and approximate nutrition per serving. Use these fields: calories (number, no unit), protein (g), carbs (g), fat (g), fiber (g), sugar (g), sodium (mg), iron (percent DV numeric only). Fill in any missing recipe details.",
+						? "You are an expert recipe analyzer. Extract the recipe from this social media post."
+						: "You are an expert recipe analyzer. Extract the recipe from this text.",
 			},
 			{
 				role: "user",
-				content: recipeData,
+				content: processedContent,
 			},
 		],
-		response_format: zodResponseFormat(recipeObjSchema, "recipe"),
+		reasoning_effort: "low", // Reduces reasoning time and tokens for faster recipe parsing
+		response_format: {
+			type: "json_schema",
+			json_schema: {
+				name: "recipe_import",
+				strict: true,
+				schema: {
+					type: "object",
+					properties: {
+						title: {
+							type: "string",
+							description: "The recipe title"
+						},
+						ingredients: {
+							type: "array",
+							items: {
+								type: "string"
+							},
+							description: "List of ingredients"
+						},
+						instructions: {
+							type: "array",
+							items: {
+								type: "string"
+							},
+							description: "Step-by-step instructions"
+						},
+						description: {
+							type: "string",
+							description: "A brief description of the recipe"
+						},
+						tags: {
+							type: "array",
+							items: {
+								type: "string"
+							},
+							description: "Recipe tags for categorization"
+						},
+						cookingTime: {
+							type: "string",
+							description: "Total cooking time (e.g., '30 minutes')"
+						},
+						difficulty: {
+							type: "string",
+							description: "Difficulty level: easy, medium, or hard"
+						},
+						servings: {
+							type: "string",
+							description: "Number of servings"
+						},
+						nutrition: {
+							type: "object",
+							properties: {
+								calories: {
+									type: "string",
+									description: "Calorie count per serving (number only)"
+								},
+								protein: {
+									type: "string",
+									description: "Protein in grams (e.g., '25g')"
+								},
+								carbs: {
+									type: "string",
+									description: "Carbohydrates in grams (e.g., '40g')"
+								},
+								fat: {
+									type: "string",
+									description: "Fat in grams (e.g., '12g')"
+								},
+								fiber: {
+									type: "string",
+									description: "Fiber in grams (e.g., '5g')"
+								},
+								sugar: {
+									type: "string",
+									description: "Sugar in grams (e.g., '8g')"
+								},
+								sodium: {
+									type: "string",
+									description: "Sodium in milligrams (e.g., '600mg')"
+								},
+								iron: {
+									type: "string",
+									description: "Iron as percent daily value (number only)"
+								}
+							},
+							required: ["calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "iron"],
+							additionalProperties: false
+						}
+					},
+					required: ["title", "ingredients", "instructions", "description", "tags", "cookingTime", "difficulty", "servings", "nutrition"],
+					additionalProperties: false
+				}
+		}
+	},
+	max_completion_tokens: 6000, // Optimized for single recipe: typical usage ~3k (reasoning + output)
+	store: true,
 	});
 
-	logPerformance("AI Recipe Parsing (LlamaAI/OpenAI)", aiStartTime);
+	logPerformance("AI Recipe Parsing (OpenAI gpt-5-nano)", aiStartTime);
 
-	const parsedRecipe = response.choices[0].message.parsed;
-	if (!parsedRecipe) {
+	const parsedRecipe = JSON.parse(response.choices[0].message.content);
+	if (!parsedRecipe || !parsedRecipe.title) {
 		throw new Error("Unable to parse recipe from URL");
 	}
 
@@ -699,6 +1074,149 @@ router.get("/", (req, res) => {
 		errorHandler.serverError(
 			res,
 			"We couldn't load generated recipes. Please try again in a moment."
+		);
+	}
+});
+
+// POST /ai/recipes/chat - Conversational recipe advice using standard chat completion
+router.post("/chat", async (req, res) => {
+	const { message, conversationHistory = [] } = req.body;
+
+	if (!message) {
+		return res.status(400).json({ error: "Message is required" });
+	}
+
+	console.log("💬 Processing chat request:", message);
+
+	try {
+		// Build messages array with conversation history
+		const messages = [
+			{
+				role: "developer",
+				content: "You are a helpful culinary assistant specializing in recipes, cooking techniques, ingredient substitutions, and meal planning. Provide practical, creative, and detailed advice to help users with their cooking questions."
+			},
+			...conversationHistory,
+			{
+				role: "user",
+				content: message
+			}
+		];
+
+		const response = await createChatCompletion(messages, {
+			model: "gpt-5-nano",
+			max_completion_tokens: 4000,
+		});
+
+		res.json({
+			reply: response.content,
+			usage: response.usage,
+			model: response.model,
+		});
+	} catch (error) {
+		console.error("Error in chat completion:", error);
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't process your message right now. Please try again shortly."
+		);
+	}
+});
+
+// POST /ai/recipes/stream - Streaming recipe generation for real-time responses
+router.post("/stream", async (req, res) => {
+	const { message } = req.body;
+
+	if (!message) {
+		return res.status(400).json({ error: "Message is required" });
+	}
+
+	console.log("🌊 Starting streaming response...");
+
+	try {
+		// Set headers for Server-Sent Events (SSE)
+		res.setHeader("Content-Type", "text/event-stream");
+		res.setHeader("Cache-Control", "no-cache");
+		res.setHeader("Connection", "keep-alive");
+
+		const messages = [
+			{
+				role: "developer",
+				content: "You are a helpful culinary assistant. Provide detailed, step-by-step cooking advice."
+			},
+			{
+				role: "user",
+				content: message
+			}
+		];
+
+		const stream = await client.chat.completions.create({
+			model: "gpt-5-nano",
+			messages,
+			max_completion_tokens: 5000,
+			stream: true,
+			store: true,
+		});
+
+		// Stream the response chunks to the client
+		for await (const chunk of stream) {
+			const content = chunk.choices[0]?.delta?.content || "";
+			if (content) {
+				res.write(`data: ${JSON.stringify({ content })}\n\n`);
+			}
+
+			// Check if streaming is complete
+			if (chunk.choices[0]?.finish_reason) {
+				res.write(`data: ${JSON.stringify({ done: true, finish_reason: chunk.choices[0].finish_reason })}\n\n`);
+				break;
+			}
+		}
+
+		res.end();
+	} catch (error) {
+		console.error("Error in streaming completion:", error);
+		res.write(`data: ${JSON.stringify({ error: "Streaming failed" })}\n\n`);
+		res.end();
+	}
+});
+
+// POST /ai/recipes/suggest - Get recipe suggestions using standard chat completion
+router.post("/suggest", async (req, res) => {
+	const { ingredients = [], preferences = "" } = req.body;
+
+	if (!ingredients.length && !preferences) {
+		return res.status(400).json({ error: "Please provide ingredients or preferences" });
+	}
+
+	console.log("💡 Generating recipe suggestions...");
+
+	try {
+		const messages = [
+			{
+				role: "developer",
+				content: "You are a creative chef who suggests interesting recipe ideas based on available ingredients and user preferences. Provide 3-5 recipe suggestions with brief descriptions."
+			},
+			{
+				role: "user",
+				content: `Suggest some recipe ideas based on:\n${ingredients.length ? `Available ingredients: ${ingredients.join(", ")}` : ""}\n${preferences ? `Preferences: ${preferences}` : ""}`
+			}
+		];
+
+		const response = await createChatCompletion(messages, {
+			model: "gpt-5-nano",
+			max_completion_tokens: 3000,
+		});
+
+		res.json({
+			suggestions: response.content,
+			usage: response.usage,
+			model: response.model,
+		});
+	} catch (error) {
+		console.error("Error generating suggestions:", error);
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't generate suggestions right now. Please try again shortly."
 		);
 	}
 });

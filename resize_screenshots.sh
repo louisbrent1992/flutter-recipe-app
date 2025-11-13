@@ -3,18 +3,25 @@
 
 echo "Resizing screenshots to App Store dimensions..."
 echo ""
-echo "Choose screenshot dimensions:"
-echo "1. 1284 × 2778 (Portrait)"
-echo "2. 2736 × 1260 (Landscape)"
-echo "3. 1290 × 2796 (Portrait)"
-echo "4. 2796 × 1290 (Landscape)"
-echo "5. 1320 × 2868 (Portrait)"
-echo "6. 2868 × 1320 (Landscape)"
-echo "7. 2064 × 2752 (iPad Portrait)"
-echo "8. 2752 × 2064 (iPad Landscape)"
-echo "9. 2048 × 2732 (iPad Portrait)"
-echo "10. 2732 × 2048 (iPad Landscape)"
-read -p "Enter choice (1-10): " choice
+
+# Accept command-line argument or prompt for input
+if [ -n "$1" ]; then
+    choice=$1
+    echo "Using dimension option: $choice"
+else
+    echo "Choose screenshot dimensions:"
+    echo "1. 1284 × 2778 (Portrait)"
+    echo "2. 2736 × 1260 (Landscape)"
+    echo "3. 1290 × 2796 (Portrait)"
+    echo "4. 2796 × 1290 (Landscape)"
+    echo "5. 1320 × 2868 (Portrait)"
+    echo "6. 2868 × 1320 (Landscape)"
+    echo "7. 2064 × 2752 (iPad Portrait)"
+    echo "8. 2752 × 2064 (iPad Landscape)"
+    echo "9. 2048 × 2732 (iPad Portrait)"
+    echo "10. 2732 × 2048 (iPad Landscape)"
+    read -p "Enter choice (1-10): " choice
+fi
 
 case $choice in
     1)

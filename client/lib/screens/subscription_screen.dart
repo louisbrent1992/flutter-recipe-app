@@ -684,14 +684,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                           Expanded(
                             child: Text(
                               product.title,
-                              style: theme.textTheme.titleMedium?.copyWith(
+                              style: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                               overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
                           if (product.unlimitedUsage) ...[
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,

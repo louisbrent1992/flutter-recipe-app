@@ -194,13 +194,15 @@ class ApiClient {
   ) async {
     final uri = Uri.parse('$baseUrl/$endpoint');
 
-    // Add timeout to requests with longer timeout for recipe imports
-    final isRecipeImport =
+    // Add timeout to requests with longer timeout for AI recipe operations
+    final isAIRecipeOperation =
         uri.path.contains('/ai/recipes/import') ||
-        uri.path.contains('/generatedRecipes/import');
+        uri.path.contains('/ai/recipes/generate') ||
+        uri.path.contains('/generatedRecipes/import') ||
+        uri.path.contains('/generatedRecipes/generate');
     final timeoutDuration =
-        isRecipeImport
-            ? const Duration(seconds: 120) // 2 minutes for recipe imports
+        isAIRecipeOperation
+            ? const Duration(seconds: 120) // 2 minutes for AI recipe operations
             : const Duration(seconds: 30); // 30 seconds for other requests
 
     final response = await http
@@ -228,13 +230,15 @@ class ApiClient {
 
     // debug logging removed
 
-    // Add timeout to requests with longer timeout for recipe imports
-    final isRecipeImport =
+    // Add timeout to requests with longer timeout for AI recipe operations
+    final isAIRecipeOperation =
         uri.path.contains('/ai/recipes/import') ||
-        uri.path.contains('/generatedRecipes/import');
+        uri.path.contains('/ai/recipes/generate') ||
+        uri.path.contains('/generatedRecipes/import') ||
+        uri.path.contains('/generatedRecipes/generate');
     final timeoutDuration =
-        isRecipeImport
-            ? const Duration(seconds: 120) // 2 minutes for recipe imports
+        isAIRecipeOperation
+            ? const Duration(seconds: 120) // 2 minutes for AI recipe operations
             : const Duration(seconds: 30); // 30 seconds for other requests
 
     final response = await http
@@ -262,13 +266,15 @@ class ApiClient {
 
     // debug logging removed
 
-    // Add timeout to requests with longer timeout for recipe imports
-    final isRecipeImport =
+    // Add timeout to requests with longer timeout for AI recipe operations
+    final isAIRecipeOperation =
         uri.path.contains('/ai/recipes/import') ||
-        uri.path.contains('/generatedRecipes/import');
+        uri.path.contains('/ai/recipes/generate') ||
+        uri.path.contains('/generatedRecipes/import') ||
+        uri.path.contains('/generatedRecipes/generate');
     final timeoutDuration =
-        isRecipeImport
-            ? const Duration(seconds: 120) // 2 minutes for recipe imports
+        isAIRecipeOperation
+            ? const Duration(seconds: 120) // 2 minutes for AI recipe operations
             : const Duration(seconds: 30); // 30 seconds for other requests
 
     final response = await http
@@ -295,13 +301,15 @@ class ApiClient {
 
     // debug logging removed
 
-    // Add timeout to requests with longer timeout for recipe imports
-    final isRecipeImport =
+    // Add timeout to requests with longer timeout for AI recipe operations
+    final isAIRecipeOperation =
         uri.path.contains('/ai/recipes/import') ||
-        uri.path.contains('/generatedRecipes/import');
+        uri.path.contains('/ai/recipes/generate') ||
+        uri.path.contains('/generatedRecipes/import') ||
+        uri.path.contains('/generatedRecipes/generate');
     final timeoutDuration =
-        isRecipeImport
-            ? const Duration(seconds: 120) // 2 minutes for recipe imports
+        isAIRecipeOperation
+            ? const Duration(seconds: 120) // 2 minutes for AI recipe operations
             : const Duration(seconds: 30); // 30 seconds for other requests
 
     final response = await http
