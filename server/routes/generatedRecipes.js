@@ -177,6 +177,12 @@ const logPerformance = (label, startTime) => {
 	return duration;
 };
 
+// Helper function to check if a URL is a placeholder
+const isPlaceholderUrl = (url) => {
+	if (!url || typeof url !== 'string') return false;
+	return url.includes('placeholder.com') || url.includes('via.placeholder.com');
+};
+
 // Function to fetch an image from Google with caching
 const fetchImage = async (query, start = 1) => {
 	// Handle undefined or null query
@@ -191,8 +197,15 @@ const fetchImage = async (query, start = 1) => {
 
 	// Check if the image is already cached
 	if (imageCache[cacheKey]) {
-		console.log("✅ Image found in cache");
-		return imageCache[cacheKey];
+		const cachedUrl = imageCache[cacheKey];
+		// Don't return cached placeholder URLs
+		if (isPlaceholderUrl(cachedUrl)) {
+			console.log("⚠️ Cached image is a placeholder, fetching new one");
+			delete imageCache[cacheKey];
+		} else {
+			console.log("✅ Image found in cache");
+			return cachedUrl;
+		}
 	}
 
 	const startTime = Date.now();
@@ -217,13 +230,19 @@ const fetchImage = async (query, start = 1) => {
 			return null;
 		}
 
-		// Try to find the best image from the results
+		// Try to find the best image from the results (excluding placeholders)
 		for (const item of response.data.items) {
 			const imageUrl = item.link;
-			if (imageUrl) {
+			if (imageUrl && !isPlaceholderUrl(imageUrl)) {
 				imageCache[cacheKey] = imageUrl;
 				return imageUrl;
 			}
+		}
+
+		// If all results were placeholders, try next page
+		if (start === 1) {
+			console.log("All results were placeholders, trying next page");
+			return await fetchImage(query, 4);
 		}
 
 		return null;
@@ -478,6 +497,20 @@ router.post("/generate", async (req, res) => {
 				const recipeTitle = recipeData.title || "Generated Recipe";
 				const imageQuery = recipeTitle !== "Generated Recipe" ? recipeTitle : `${cuisineType || 'delicious'} food dish`;
 				
+				// Get image URL, filtering out placeholders
+				let imageUrl = null;
+				if (typeof recipeData.image === "object" && recipeData.image.url) {
+					// Check if AI provided image is a placeholder
+					if (!isPlaceholderUrl(recipeData.image.url)) {
+						imageUrl = recipeData.image.url;
+					}
+				}
+				
+				// If no valid image from AI, fetch from Google
+				if (!imageUrl) {
+					imageUrl = await fetchImage(imageQuery);
+				}
+				
 				return {
 					id: uuidv4(),
 					title: recipeTitle,
@@ -489,10 +522,7 @@ router.post("/generate", async (req, res) => {
 					instructions: Array.isArray(recipeData.instructions)
 						? recipeData.instructions
 						: [],
-					imageUrl:
-						typeof recipeData.image === "object"
-							? recipeData.image.url
-							: await fetchImage(imageQuery),
+					imageUrl: imageUrl || null, // Use null instead of placeholder
 					cookingTime: recipeData.cookingTime || "30 minutes",
 					difficulty: recipeData.difficulty || "medium",
 					servings: recipeData.servings || "4",
@@ -591,10 +621,15 @@ const processRecipeData = async (
 	if (cachedRecipe) {
 		console.log("✅ Recipe parsing found in cache");
 		const imageStartTime = Date.now();
-		const imageUrl = socialData?.imageUrl ||
+		let imageUrl = socialData?.imageUrl ||
 			socialData?.coverUrl ||
 			socialData?.thumbnailUrl ||
 			(await fetchImage(cachedRecipe.title || "recipe"));
+		
+		// Filter out placeholder URLs
+		if (isPlaceholderUrl(imageUrl)) {
+			imageUrl = null;
+		}
 		
 		if (!socialData?.imageUrl && !socialData?.coverUrl && !socialData?.thumbnailUrl) {
 			logPerformance("Image fetch (from cache hit)", imageStartTime);
@@ -603,7 +638,7 @@ const processRecipeData = async (
 		return {
 			...cachedRecipe,
 			id: uuidv4(),
-			imageUrl,
+			imageUrl: imageUrl || null,
 			sourceUrl: url,
 			sourcePlatform: isInstagram
 				? "instagram"
@@ -751,10 +786,15 @@ const processRecipeData = async (
 
 	// Fetch image
 	const imageStartTime = Date.now();
-	const imageUrl = socialData?.imageUrl ||
+	let imageUrl = socialData?.imageUrl ||
 		socialData?.coverUrl ||
 		socialData?.thumbnailUrl ||
 		(await fetchImage(parsedRecipe.title || "recipe"));
+	
+	// Filter out placeholder URLs
+	if (isPlaceholderUrl(imageUrl)) {
+		imageUrl = null;
+	}
 	
 	if (!socialData?.imageUrl && !socialData?.coverUrl && !socialData?.thumbnailUrl) {
 		logPerformance("Image fetch (after AI parsing)", imageStartTime);
@@ -770,7 +810,7 @@ const processRecipeData = async (
 			? parsedRecipe.instructions
 			: [],
 		description: parsedRecipe.description || "Imported recipe",
-		imageUrl,
+		imageUrl: imageUrl || null,
 		cookingTime: parsedRecipe.cookingTime || "30 minutes",
 		difficulty: parsedRecipe.difficulty || "medium",
 		servings: parsedRecipe.servings || "4",
