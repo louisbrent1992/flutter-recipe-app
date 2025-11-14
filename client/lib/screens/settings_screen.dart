@@ -612,8 +612,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                             title: 'Daily Inspiration',
                             subtitle: 'Receive a daily pick at 9:00 AM',
                             value: notificationProvider.catDailyInspiration,
-                            onChanged: (v) => notificationProvider
-                                .setCatDailyInspiration(v),
+                            onChanged:
+                                (v) => notificationProvider
+                                    .setCatDailyInspiration(v),
                             icon: Icons.lightbulb_rounded,
                             color: Colors.orange,
                           ),
@@ -624,8 +625,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                             title: 'Meal Prep Sunday',
                             subtitle: 'Weekly reminder Sundays 5:00 PM',
                             value: notificationProvider.catMealPrep,
-                            onChanged: (v) =>
-                                notificationProvider.setCatMealPrep(v),
+                            onChanged:
+                                (v) => notificationProvider.setCatMealPrep(v),
                             icon: Icons.calendar_month_rounded,
                             color: Colors.teal,
                           ),
@@ -636,8 +637,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                             title: 'Seasonal Collections',
                             subtitle: 'Weekly Friday highlights at 12:00 PM',
                             value: notificationProvider.catSeasonal,
-                            onChanged: (v) =>
-                                notificationProvider.setCatSeasonal(v),
+                            onChanged:
+                                (v) => notificationProvider.setCatSeasonal(v),
                             icon: Icons.snowing,
                             color: Colors.redAccent,
                           ),
@@ -648,8 +649,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                             title: 'Quick Meals',
                             subtitle: 'Weekly Tuesdays at 6:00 PM',
                             value: notificationProvider.catQuickMeals,
-                            onChanged: (v) =>
-                                notificationProvider.setCatQuickMeals(v),
+                            onChanged:
+                                (v) => notificationProvider.setCatQuickMeals(v),
                             icon: Icons.flash_on_rounded,
                             color: Colors.amber,
                           ),
@@ -660,8 +661,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                             title: 'Budget-Friendly',
                             subtitle: 'Weekly Wednesdays at 6:00 PM',
                             value: notificationProvider.catBudget,
-                            onChanged: (v) =>
-                                notificationProvider.setCatBudget(v),
+                            onChanged:
+                                (v) => notificationProvider.setCatBudget(v),
                             icon: Icons.attach_money_rounded,
                             color: Colors.green,
                           ),
@@ -672,7 +673,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                             title: 'Keto Spotlight',
                             subtitle: 'Weekly Mondays at 12:00 PM',
                             value: notificationProvider.catKeto,
-                            onChanged: (v) => notificationProvider.setCatKeto(v),
+                            onChanged:
+                                (v) => notificationProvider.setCatKeto(v),
                             icon: Icons.restaurant_rounded,
                             color: Colors.blue,
                           ),
@@ -782,7 +784,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                   SizedBox(height: AppSpacing.md),
                   _buildAnimatedListTile(
                     title: 'Clear Image Cache',
-                    subtitle: 'Remove cached image resolutions to force fresh fetch',
+                    subtitle:
+                        'Remove cached image resolutions to force fresh fetch',
                     icon: Icons.delete_sweep_rounded,
                     color: Theme.of(context).colorScheme.error,
                     onTap: () async {
@@ -982,9 +985,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget _buildProfileHeader(ColorScheme colorScheme) {
     return Consumer<UserProfileProvider>(
       builder: (context, profileProvider, _) {
-        final photoURL = profileProvider.profile['photoURL'] as String? ?? 
-                        user?.photoURL;
-        
+        final photoURL =
+            profileProvider.profile['photoURL'] as String? ?? user?.photoURL;
+
         return Center(
           child: Column(
             children: [
@@ -1026,7 +1029,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       child: Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                         ),
                         child: Center(
                           child: CircularProgressIndicator(
@@ -1037,38 +1040,45 @@ class _SettingsScreenState extends State<SettingsScreen>
                         ),
                       ),
                     ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Material(
-                  elevation: AppElevation.button,
-                  shape: const CircleBorder(),
-                  clipBehavior: Clip.hardEdge,
-                  child: InkWell(
-                    onTap: profileProvider.isLoading ? null : _uploadProfilePicture,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.error.withValues(
-                          alpha: Theme.of(context).colorScheme.overlayMedium,
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.camera_alt_rounded,
-                        size: 20,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(
-                          alpha: profileProvider.isLoading 
-                              ? Theme.of(context).colorScheme.alphaLow 
-                              : Theme.of(context).colorScheme.alphaHigh,
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Material(
+                      elevation: AppElevation.button,
+                      shape: const CircleBorder(),
+                      clipBehavior: Clip.hardEdge,
+                      child: InkWell(
+                        onTap:
+                            profileProvider.isLoading
+                                ? null
+                                : _uploadProfilePicture,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.error.withValues(
+                              alpha:
+                                  Theme.of(context).colorScheme.overlayMedium,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.camera_alt_rounded,
+                            size: 20,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(
+                              alpha:
+                                  profileProvider.isLoading
+                                      ? Theme.of(context).colorScheme.alphaLow
+                                      : Theme.of(context).colorScheme.alphaHigh,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
                 ],
               ),
               const SizedBox(height: 16),
