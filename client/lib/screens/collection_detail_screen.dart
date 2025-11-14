@@ -331,7 +331,12 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                     // Search field
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        padding: EdgeInsets.fromLTRB(
+                          AppSpacing.responsive(context),
+                          AppSpacing.responsive(context) * 0.5,
+                          AppSpacing.responsive(context),
+                          AppSpacing.responsive(context),
+                        ),
                         child: _buildSearchField(colorScheme),
                       ),
                     ),
@@ -345,18 +350,34 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                               children: [
                                 Icon(
                                   Icons.no_meals,
-                                  size: 64,
+                                  size: AppSizing.responsiveIconSize(
+                                    context,
+                                    mobile: 64,
+                                    tablet: 80,
+                                    desktop: 96,
+                                  ),
                                   color: colorScheme.onSurface.withValues(
                                     alpha: 0.2,
                                   ),
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(
+                                  height: AppBreakpoints.isDesktop(context)
+                                      ? 24
+                                      : AppBreakpoints.isTablet(context)
+                                          ? 20
+                                          : 16,
+                                ),
                                 Text(
                                   _searchQuery.isEmpty
                                       ? 'No recipes in this collection yet'
                                       : 'No recipes match your search',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: AppTypography.responsiveFontSize(
+                                      context,
+                                      mobile: 16,
+                                      tablet: 18,
+                                      desktop: 20,
+                                    ),
                                     color: colorScheme.onSurface.withValues(
                                       alpha: 0.6,
                                     ),
@@ -367,14 +388,20 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                           ),
                         )
                         : SliverPadding(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(
+                            AppSpacing.responsive(context),
+                          ),
                           sliver: SliverGrid(
                             gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  childAspectRatio: 0.75,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount:
+                                      AppSizing.responsiveGridCount(context),
+                                  childAspectRatio:
+                                      AppSizing.responsiveAspectRatio(context),
+                                  crossAxisSpacing:
+                                      AppSpacing.responsive(context),
+                                  mainAxisSpacing:
+                                      AppSpacing.responsive(context),
                                 ),
                             delegate: SliverChildBuilderDelegate((
                               context,
@@ -405,6 +432,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
   }
 
   Widget _buildCollectionHeader(ColorScheme colorScheme) {
+    final responsivePadding = AppSpacing.responsive(context);
+
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -417,41 +446,101 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
         );
       },
       child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        padding: const EdgeInsets.all(16),
+        margin: EdgeInsets.fromLTRB(
+          responsivePadding,
+          responsivePadding,
+          responsivePadding,
+          responsivePadding * 0.5,
+        ),
+        padding: EdgeInsets.all(
+          AppBreakpoints.isDesktop(context)
+              ? 24
+              : AppBreakpoints.isTablet(context)
+                  ? 20
+                  : 16,
+        ),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(
+            AppBreakpoints.isDesktop(context)
+                ? 20
+                : AppBreakpoints.isTablet(context)
+                    ? 18
+                    : 16,
+          ),
           color: _collection.color.withValues(alpha: 0.2),
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(
+                AppBreakpoints.isDesktop(context)
+                    ? 16
+                    : AppBreakpoints.isTablet(context)
+                        ? 14
+                        : 12,
+              ),
               decoration: BoxDecoration(
                 color: _collection.color.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(
+                  AppBreakpoints.isDesktop(context)
+                      ? 16
+                      : AppBreakpoints.isTablet(context)
+                          ? 14
+                          : 12,
+                ),
               ),
-              child: Icon(_collection.icon, size: 32, color: _collection.color),
+              child: Icon(
+                _collection.icon,
+                size: AppSizing.responsiveIconSize(
+                  context,
+                  mobile: 32,
+                  tablet: 40,
+                  desktop: 48,
+                ),
+                color: _collection.color,
+              ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(
+              width: AppBreakpoints.isDesktop(context)
+                  ? 20
+                  : AppBreakpoints.isTablet(context)
+                      ? 18
+                      : 16,
+            ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     _collection.name,
-                    style: const TextStyle(
-                      fontSize: 22,
+                    style: TextStyle(
+                      fontSize: AppTypography.responsiveHeadingSize(
+                        context,
+                        mobile: 22,
+                        tablet: 26,
+                        desktop: 30,
+                      ),
                       fontWeight: FontWeight.bold,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(
+                    height: AppBreakpoints.isDesktop(context)
+                        ? 6
+                        : AppBreakpoints.isTablet(context)
+                            ? 5
+                            : 4,
+                  ),
                   Text(
                     '${_collection.recipes.length} ${_collection.recipes.length == 1 ? 'recipe' : 'recipes'}',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: AppTypography.responsiveFontSize(
+                        context,
+                        mobile: 14,
+                        tablet: 16,
+                        desktop: 18,
+                      ),
                       color: colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
@@ -498,17 +587,35 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
           filled: true,
           fillColor: colorScheme.surface,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(
+              AppBreakpoints.isDesktop(context)
+                  ? 16
+                  : AppBreakpoints.isTablet(context)
+                      ? 14
+                      : 12,
+            ),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(
+              AppBreakpoints.isDesktop(context)
+                  ? 16
+                  : AppBreakpoints.isTablet(context)
+                      ? 14
+                      : 12,
+            ),
             borderSide: BorderSide(
               color: colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(
+              AppBreakpoints.isDesktop(context)
+                  ? 16
+                  : AppBreakpoints.isTablet(context)
+                      ? 14
+                      : 12,
+            ),
             borderSide: BorderSide(
               color: colorScheme.primary.withValues(alpha: 0.5),
               width: 2,

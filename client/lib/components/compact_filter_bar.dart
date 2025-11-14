@@ -53,18 +53,24 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
           // Compact header with search and expand button
           Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
+              horizontal: AppSpacing.responsive(context, mobile: 16, tablet: 20, desktop: 24),
+              vertical: AppSpacing.responsive(context, mobile: 12, tablet: 14, desktop: 16),
             ),
             child: Row(
               children: [
                 // Search field - more compact
                 Expanded(
                   child: Container(
-                    height: 36,
+                    height: AppBreakpoints.isDesktop(context)
+                        ? 48
+                        : AppBreakpoints.isTablet(context)
+                            ? 44
+                            : 36,
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(
+                        AppBreakpoints.isDesktop(context) ? 24 : 18,
+                      ),
                       border: Border.all(
                         color: Theme.of(
                           context,
@@ -77,25 +83,39 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                       decoration: InputDecoration(
                         hintText: 'Search recipes… e.g. chicken, broccoli, keto',
                         hintStyle: TextStyle(
-                          fontSize: 14,
+                          fontSize: AppBreakpoints.isDesktop(context)
+                              ? 16
+                              : AppBreakpoints.isTablet(context)
+                                  ? 15
+                                  : 14,
                           color: Theme.of(
                             context,
                           ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                         ),
                         prefixIcon: Icon(
                           Icons.search,
-                          size: 18,
+                          size: AppBreakpoints.isDesktop(context)
+                              ? 24
+                              : AppBreakpoints.isTablet(context)
+                                  ? 22
+                                  : 18,
                           color: Theme.of(
                             context,
                           ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                         ),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: AppBreakpoints.isDesktop(context) ? 20 : 16,
+                          vertical: AppBreakpoints.isDesktop(context) ? 12 : 8,
                         ),
                       ),
-                      style: const TextStyle(fontSize: 14),
+                      style: TextStyle(
+                        fontSize: AppBreakpoints.isDesktop(context)
+                            ? 16
+                            : AppBreakpoints.isTablet(context)
+                                ? 15
+                                : 14,
+                      ),
                       onChanged: widget.onSearchChanged,
                     ),
                   ),
@@ -112,10 +132,20 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                         _isFilterExpanded = !_isFilterExpanded;
                       });
                     },
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(
+                      AppBreakpoints.isDesktop(context) ? 24 : 18,
+                    ),
                     child: Container(
-                      height: 36,
-                      width: 36,
+                      height: AppBreakpoints.isDesktop(context)
+                          ? 48
+                          : AppBreakpoints.isTablet(context)
+                              ? 44
+                              : 36,
+                      width: AppBreakpoints.isDesktop(context)
+                          ? 48
+                          : AppBreakpoints.isTablet(context)
+                              ? 44
+                              : 36,
                       decoration: BoxDecoration(
                         color:
                             _isFilterExpanded ||
@@ -125,7 +155,9 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                                   context,
                                 ).colorScheme.primary.withValues(alpha: 0.1)
                                 : Colors.transparent,
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(
+                          AppBreakpoints.isDesktop(context) ? 24 : 18,
+                        ),
                         border: Border.all(
                           color:
                               _isFilterExpanded ||
@@ -142,7 +174,11 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                       ),
                       child: Icon(
                         _isFilterExpanded ? Icons.expand_less : Icons.tune,
-                        size: 18,
+                        size: AppBreakpoints.isDesktop(context)
+                            ? 24
+                            : AppBreakpoints.isTablet(context)
+                                ? 22
+                                : 18,
                         color:
                             widget.selectedDifficulty != 'All' ||
                                     widget.selectedTag != 'All'
@@ -183,24 +219,33 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                                   children: [
                                     Text(
                                       'Difficulty',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant
-                                            .withValues(alpha: 0.8),
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                      style: AppBreakpoints.isDesktop(context)
+                                          ? Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant
+                                                .withValues(alpha: 0.8),
+                                            fontWeight: FontWeight.w500,
+                                          )
+                                          : Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant
+                                                .withValues(alpha: 0.8),
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                     ),
-                                    const SizedBox(height: 4),
+                                    SizedBox(height: AppBreakpoints.isDesktop(context) ? 6 : 4),
                                     Wrap(
-                                      spacing: 4,
+                                      spacing: AppBreakpoints.isDesktop(context) ? 6 : 4,
                                       children:
                                           widget.difficulties.map((difficulty) {
                                             final isSelected =
                                                 widget.selectedDifficulty ==
                                                 difficulty;
+                                            final borderRadius = AppBreakpoints.isDesktop(context) ? 16.0 : 12.0;
                                             return InkWell(
                                               onTap:
                                                   () => widget
@@ -208,13 +253,12 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                                                         difficulty,
                                                       ),
                                               borderRadius:
-                                                  BorderRadius.circular(12),
+                                                  BorderRadius.circular(borderRadius),
                                               child: Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 8,
-                                                      vertical: 4,
-                                                    ),
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: AppBreakpoints.isDesktop(context) ? 12 : 8,
+                                                  vertical: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color:
                                                       isSelected
@@ -226,7 +270,7 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                                                               )
                                                           : Colors.transparent,
                                                   borderRadius:
-                                                      BorderRadius.circular(12),
+                                                      BorderRadius.circular(borderRadius),
                                                   border: Border.all(
                                                     color:
                                                         isSelected
@@ -248,7 +292,11 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                                                 child: Text(
                                                   difficulty,
                                                   style: TextStyle(
-                                                    fontSize: 12,
+                                                    fontSize: AppBreakpoints.isDesktop(context)
+                                                        ? 14
+                                                        : AppBreakpoints.isTablet(context)
+                                                            ? 13
+                                                            : 12,
                                                     color:
                                                         isSelected
                                                             ? Theme.of(context)
@@ -276,7 +324,7 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                             ],
                           ),
 
-                          const SizedBox(height: 12),
+                          SizedBox(height: AppBreakpoints.isDesktop(context) ? 16 : 12),
 
                           // Tag filter
                           Row(
@@ -287,38 +335,46 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                                   children: [
                                     Text(
                                       'Tags',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant
-                                            .withValues(alpha: 0.8),
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                      style: AppBreakpoints.isDesktop(context)
+                                          ? Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant
+                                                .withValues(alpha: 0.8),
+                                            fontWeight: FontWeight.w500,
+                                          )
+                                          : Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant
+                                                .withValues(alpha: 0.8),
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                     ),
-                                    const SizedBox(height: 4),
+                                    SizedBox(height: AppBreakpoints.isDesktop(context) ? 6 : 4),
                                     Wrap(
-                                      spacing: 4,
-                                      runSpacing: 4,
+                                      spacing: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                                      runSpacing: AppBreakpoints.isDesktop(context) ? 6 : 4,
                                       children:
                                           widget.availableTags.take(8).map((
                                             tag,
                                           ) {
                                             final isSelected =
                                                 widget.selectedTag == tag;
+                                            final tagBorderRadius = AppBreakpoints.isDesktop(context) ? 16.0 : 12.0;
                                             return InkWell(
                                               onTap:
                                                   () =>
                                                       widget.onTagSelected(tag),
                                               borderRadius:
-                                                  BorderRadius.circular(12),
+                                                  BorderRadius.circular(tagBorderRadius),
                                               child: Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 8,
-                                                      vertical: 4,
-                                                    ),
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: AppBreakpoints.isDesktop(context) ? 12 : 8,
+                                                  vertical: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color:
                                                       isSelected
@@ -330,7 +386,7 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                                                               )
                                                           : Colors.transparent,
                                                   borderRadius:
-                                                      BorderRadius.circular(12),
+                                                      BorderRadius.circular(tagBorderRadius),
                                                   border: Border.all(
                                                     color:
                                                         isSelected
@@ -352,7 +408,11 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                                                 child: Text(
                                                   tag,
                                                   style: TextStyle(
-                                                    fontSize: 12,
+                                                    fontSize: AppBreakpoints.isDesktop(context)
+                                                        ? 14
+                                                        : AppBreakpoints.isTablet(context)
+                                                            ? 13
+                                                            : 12,
                                                     color:
                                                         isSelected
                                                             ? Theme.of(context)
@@ -383,15 +443,17 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                           // Reset button
                           if (widget.showResetButton)
                             Padding(
-                              padding: const EdgeInsets.only(top: 8),
+                              padding: EdgeInsets.only(
+                                top: AppBreakpoints.isDesktop(context) ? 12 : 8,
+                              ),
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
                                   onPressed: widget.onResetFilters,
                                   style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 4,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: AppBreakpoints.isDesktop(context) ? 16 : 12,
+                                      vertical: AppBreakpoints.isDesktop(context) ? 6 : 4,
                                     ),
                                     minimumSize: Size.zero,
                                     tapTargetSize:
@@ -400,7 +462,11 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                                   child: Text(
                                     'Clear filters',
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: AppBreakpoints.isDesktop(context)
+                                          ? 14
+                                          : AppBreakpoints.isTablet(context)
+                                              ? 13
+                                              : 12,
                                       color:
                                           Theme.of(context).colorScheme.primary,
                                     ),
@@ -418,3 +484,4 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
     );
   }
 }
+

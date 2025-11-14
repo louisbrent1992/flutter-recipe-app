@@ -437,14 +437,22 @@ class _SettingsScreenState extends State<SettingsScreen>
         children: [
           SingleChildScrollView(
             controller: _scrollController,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.responsive(context),
-                AppSpacing.responsive(context),
-                AppSpacing.responsive(context),
-                30,
-              ),
-              child: Column(
+            child: Center(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: AppBreakpoints.isDesktop(context)
+                      ? 800
+                      : AppBreakpoints.isTablet(context)
+                          ? 700
+                          : double.infinity,
+                ),
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.responsive(context),
+                  AppSpacing.responsive(context),
+                  AppSpacing.responsive(context),
+                  30,
+                ),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Profile Header
@@ -974,6 +982,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                   SizedBox(height: AppSpacing.xxl),
                 ],
+              ),
               ),
             ),
           ),

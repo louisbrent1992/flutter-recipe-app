@@ -887,20 +887,60 @@ class _ImportingRecipeDialogState extends State<_ImportingRecipeDialog>
       child: ScaleTransition(
         scale: _pulse,
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 24),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          constraints: const BoxConstraints(maxWidth: 360),
+          margin: EdgeInsets.symmetric(
+            horizontal: AppBreakpoints.isDesktop(context)
+                ? 32
+                : AppBreakpoints.isTablet(context)
+                    ? 28
+                    : 24,
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppBreakpoints.isDesktop(context)
+                ? 28
+                : AppBreakpoints.isTablet(context)
+                    ? 24
+                    : 20,
+            vertical: AppBreakpoints.isDesktop(context)
+                ? 28
+                : AppBreakpoints.isTablet(context)
+                    ? 24
+                    : 20,
+          ),
+          constraints: BoxConstraints(
+            maxWidth: AppBreakpoints.isDesktop(context)
+                ? 440
+                : AppBreakpoints.isTablet(context)
+                    ? 400
+                    : 360,
+          ),
           decoration: BoxDecoration(
             color:
                 theme.brightness == Brightness.dark
                     ? cs.surfaceContainerHigh.withValues(alpha: 0.9)
                     : cs.surface.withValues(alpha: 0.95),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(
+              AppBreakpoints.isDesktop(context)
+                  ? 24
+                  : AppBreakpoints.isTablet(context)
+                      ? 22
+                      : 20,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
+                blurRadius: AppBreakpoints.isDesktop(context)
+                    ? 32
+                    : AppBreakpoints.isTablet(context)
+                        ? 28
+                        : 24,
+                offset: Offset(
+                  0,
+                  AppBreakpoints.isDesktop(context)
+                      ? 16
+                      : AppBreakpoints.isTablet(context)
+                          ? 14
+                          : 12,
+                ),
               ),
             ],
             border: Border.all(

@@ -879,11 +879,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             CustomScrollView(
               slivers: [
                 SliverAppBar(
-                  expandedHeight: AppBreakpoints.isMobile(context) ? 180 : 220,
+                  expandedHeight: AppBreakpoints.isMobile(context)
+                      ? 180
+                      : AppBreakpoints.isTablet(context)
+                          ? 300
+                          : 400,
                   automaticallyImplyLeading: false,
                   flexibleSpace: FlexibleSpaceBar(
                     background: AspectRatio(
-                      aspectRatio: 16 / 9,
+                      aspectRatio: AppBreakpoints.isDesktop(context)
+                          ? 21 / 9
+                          : AppBreakpoints.isTablet(context)
+                              ? 18 / 9
+                              : 16 / 9,
                       child: Stack(
                         children: [
                           SmartRecipeImage(
@@ -1445,32 +1453,118 @@ Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
     context: context,
     showDragHandle: true,
     backgroundColor: theme.colorScheme.surface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(
+          AppDialog.responsiveBorderRadius(context),
+        ),
+      ),
     ),
     builder: (ctx) {
       return SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library_rounded),
-                title: const Text('Choose from device'),
-                onTap: () => Navigator.pop(ctx, 'device'),
+        child: Center(
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: AppDialog.responsiveMaxWidth(context),
+            ),
+            child: Padding(
+              padding: AppDialog.responsivePadding(context),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: Icon(
+                      Icons.photo_library_rounded,
+                      size: AppSizing.responsiveIconSize(
+                        context,
+                        mobile: 24,
+                        tablet: 28,
+                        desktop: 32,
+                      ),
+                    ),
+                    title: Text(
+                      'Choose from device',
+                      style: TextStyle(
+                        fontSize: AppDialog.responsiveContentSize(context),
+                      ),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: AppBreakpoints.isDesktop(ctx)
+                          ? 20
+                          : AppBreakpoints.isTablet(ctx)
+                              ? 18
+                              : 16,
+                      vertical: AppBreakpoints.isDesktop(ctx)
+                          ? 12
+                          : AppBreakpoints.isTablet(ctx)
+                              ? 10
+                              : 8,
+                    ),
+                    onTap: () => Navigator.pop(ctx, 'device'),
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      Icons.link_rounded,
+                      size: AppSizing.responsiveIconSize(
+                        context,
+                        mobile: 24,
+                        tablet: 28,
+                        desktop: 32,
+                      ),
+                    ),
+                    title: Text(
+                      'Paste image URL',
+                      style: TextStyle(
+                        fontSize: AppDialog.responsiveContentSize(context),
+                      ),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: AppBreakpoints.isDesktop(ctx)
+                          ? 20
+                          : AppBreakpoints.isTablet(ctx)
+                              ? 18
+                              : 16,
+                      vertical: AppBreakpoints.isDesktop(ctx)
+                          ? 12
+                          : AppBreakpoints.isTablet(ctx)
+                              ? 10
+                              : 8,
+                    ),
+                    onTap: () => Navigator.pop(ctx, 'url'),
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      Icons.auto_awesome_rounded,
+                      size: AppSizing.responsiveIconSize(
+                        context,
+                        mobile: 24,
+                        tablet: 28,
+                        desktop: 32,
+                      ),
+                    ),
+                    title: Text(
+                      'Regenerate suggestion',
+                      style: TextStyle(
+                        fontSize: AppDialog.responsiveContentSize(context),
+                      ),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: AppBreakpoints.isDesktop(ctx)
+                          ? 20
+                          : AppBreakpoints.isTablet(ctx)
+                              ? 18
+                              : 16,
+                      vertical: AppBreakpoints.isDesktop(ctx)
+                          ? 12
+                          : AppBreakpoints.isTablet(ctx)
+                              ? 10
+                              : 8,
+                    ),
+                    onTap: () => Navigator.pop(ctx, 'regen'),
+                  ),
+                ],
               ),
-              ListTile(
-                leading: const Icon(Icons.link_rounded),
-                title: const Text('Paste image URL'),
-                onTap: () => Navigator.pop(ctx, 'url'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.auto_awesome_rounded),
-                title: const Text('Regenerate suggestion'),
-                onTap: () => Navigator.pop(ctx, 'regen'),
-              ),
-            ],
+            ),
           ),
         ),
       );

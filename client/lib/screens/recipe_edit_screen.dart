@@ -453,14 +453,22 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
               controller: _scrollController,
               child: SingleChildScrollView(
                 controller: _scrollController,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    AppSpacing.responsive(context),
-                    AppSpacing.responsive(context),
-                    AppSpacing.responsive(context),
-                    AppSpacing.responsive(context),
-                  ),
-                  child: Consumer<RecipeProvider>(
+                child: Center(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: AppBreakpoints.isDesktop(context)
+                          ? 800
+                          : AppBreakpoints.isTablet(context)
+                              ? 700
+                              : double.infinity,
+                    ),
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.responsive(context),
+                      AppSpacing.responsive(context),
+                      AppSpacing.responsive(context),
+                      AppSpacing.responsive(context),
+                    ),
+                    child: Consumer<RecipeProvider>(
                     builder: (context, recipeProvider, _) {
                       if (recipeProvider.error != null) {
                         return ErrorDisplay(
@@ -498,9 +506,19 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                   children: [
                                     SizedBox(
                                       width: double.infinity,
-                                      height: 250,
+                                      height: AppBreakpoints.isDesktop(context)
+                                          ? 350
+                                          : AppBreakpoints.isTablet(context)
+                                              ? 300
+                                              : 250,
                                       child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(
+                                          AppBreakpoints.isDesktop(context)
+                                              ? 16
+                                              : AppBreakpoints.isTablet(context)
+                                                  ? 14
+                                                  : 12,
+                                        ),
                                         child:
                                             _isUploading
                                                 ? Container(
@@ -514,24 +532,55 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                                   imageUrl:
                                                       currentRecipe.imageUrl,
                                                   width: double.infinity,
-                                                  height: 250,
+                                                  height: AppBreakpoints
+                                                          .isDesktop(context)
+                                                      ? 350
+                                                      : AppBreakpoints.isTablet(
+                                                              context,
+                                                            )
+                                                          ? 300
+                                                          : 250,
                                                   fit: BoxFit.cover,
                                                   errorWidget: Container(
                                                     width: double.infinity,
-                                                    height: 250,
+                                                    height: AppBreakpoints
+                                                            .isDesktop(context)
+                                                        ? 350
+                                                        : AppBreakpoints
+                                                                .isTablet(
+                                                              context,
+                                                            )
+                                                            ? 300
+                                                            : 250,
                                                     color: Colors.grey[300],
                                                     child: Column(
                                                       mainAxisAlignment:
                                                           MainAxisAlignment
                                                               .center,
                                                       children: [
-                                                        const Icon(
+                                                        Icon(
                                                           Icons.restaurant,
-                                                          size: 64,
+                                                          size: AppSizing
+                                                              .responsiveIconSize(
+                                                            context,
+                                                            mobile: 64,
+                                                            tablet: 80,
+                                                            desktop: 96,
+                                                          ),
                                                           color: Colors.grey,
                                                         ),
-                                                        const SizedBox(
-                                                          height: 8,
+                                                        SizedBox(
+                                                          height: AppBreakpoints
+                                                                  .isDesktop(
+                                                                context,
+                                                              )
+                                                              ? 12
+                                                              : AppBreakpoints
+                                                                      .isTablet(
+                                                                    context,
+                                                                  )
+                                                                  ? 10
+                                                                  : 8,
                                                         ),
                                                         Text(
                                                           'Failed to load image',
@@ -884,6 +933,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                         ),
                       );
                     },
+                  ),
                   ),
                 ),
               ),

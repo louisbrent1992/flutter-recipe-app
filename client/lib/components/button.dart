@@ -17,8 +17,8 @@ class Button extends StatefulWidget {
     this.onPressed,
     this.backgroundColor,
     this.iconColor,
-    this.size = 40,
-    this.iconSize = 24,
+    this.size = 40, // Can be overridden, but defaults will be responsive in build
+    this.iconSize = 24, // Can be overridden, but defaults will be responsive in build
     this.showShadow = true,
     this.icon = Icons.home_rounded,
     this.tooltip,
@@ -70,6 +70,19 @@ class _ButtonState extends State<Button> with SingleTickerProviderStateMixin {
     final backgroundColor = widget.backgroundColor ?? theme.colorScheme.primary;
     final iconColor = widget.iconColor ?? theme.colorScheme.onPrimary;
 
+    // Make sizes responsive - scale based on screen size
+    final responsiveSize = AppBreakpoints.isDesktop(context)
+        ? widget.size * 1.25
+        : AppBreakpoints.isTablet(context)
+            ? widget.size * 1.1
+            : widget.size;
+    
+    final responsiveIconSize = AppBreakpoints.isDesktop(context)
+        ? widget.iconSize * 1.25
+        : AppBreakpoints.isTablet(context)
+            ? widget.iconSize * 1.1
+            : widget.iconSize;
+
     return MouseRegion(
       onEnter: (_) => _handleHover(true),
       onExit: (_) => _handleHover(false),
@@ -81,8 +94,8 @@ class _ButtonState extends State<Button> with SingleTickerProviderStateMixin {
             child: Container(
               margin: EdgeInsets.all(AppSpacing.responsive(context)),
               clipBehavior: Clip.antiAlias,
-              width: widget.size,
-              height: widget.size,
+              width: responsiveSize,
+              height: responsiveSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: backgroundColor,
@@ -131,7 +144,11 @@ class _ButtonState extends State<Button> with SingleTickerProviderStateMixin {
                         shape: WidgetStateProperty.all(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
-                              AppBreakpoints.isMobile(context) ? 8 : 10,
+                              AppBreakpoints.isDesktop(context)
+                                  ? 12
+                                  : AppBreakpoints.isTablet(context)
+                                      ? 10
+                                      : 8,
                             ),
                           ),
                         ),
@@ -139,12 +156,12 @@ class _ButtonState extends State<Button> with SingleTickerProviderStateMixin {
                       icon: Icon(
                         widget.icon,
                         color: iconColor,
-                        size: widget.iconSize,
+                        size: responsiveIconSize,
                       ),
                       padding: EdgeInsets.zero,
                       constraints: BoxConstraints(
-                        minWidth: widget.size,
-                        minHeight: widget.size,
+                        minWidth: responsiveSize,
+                        minHeight: responsiveSize,
                       ),
                       onPressed: widget.onPressed,
                     ),

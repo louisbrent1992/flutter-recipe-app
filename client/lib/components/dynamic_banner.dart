@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/dynamic_ui.dart';
+import '../theme/theme.dart';
 
 class DynamicBanner extends StatefulWidget {
   final DynamicBannerConfig banner;
@@ -83,15 +84,25 @@ class _DynamicBannerState extends State<DynamicBanner>
         _parseColor(widget.banner.textColor) ??
         Theme.of(context).colorScheme.onSurface;
 
-    const double radius = 12;
+    final double radius = AppBreakpoints.isDesktop(context) ? 16 : 12;
     final bool hasImage =
         widget.banner.imageUrl != null && widget.banner.imageUrl!.isNotEmpty;
 
+    // Responsive banner height based on screen size
+    final double bannerHeight =
+        AppBreakpoints.isDesktop(context)
+            ? 290
+            : AppBreakpoints.isTablet(context)
+            ? 170
+            : 96;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(
+        bottom: AppBreakpoints.isDesktop(context) ? 16 : 12,
+      ),
       child: SizedBox(
         width: double.infinity,
-        height: 96, // finite height for ListView child
+        height: bannerHeight,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(radius),
           child: Stack(
@@ -142,7 +153,9 @@ class _DynamicBannerState extends State<DynamicBanner>
                     hasImage
                         ? const SizedBox.shrink()
                         : Padding(
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(
+                            AppBreakpoints.isDesktop(context) ? 24 : 12,
+                          ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
@@ -153,24 +166,50 @@ class _DynamicBannerState extends State<DynamicBanner>
                                   children: [
                                     Text(
                                       widget.banner.title,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleMedium?.copyWith(
-                                        color: fg,
-                                        fontWeight: FontWeight.w700,
-                                      ),
+                                      style:
+                                          AppBreakpoints.isDesktop(context)
+                                              ? Theme.of(
+                                                context,
+                                              ).textTheme.titleLarge?.copyWith(
+                                                color: fg,
+                                                fontWeight: FontWeight.w700,
+                                              )
+                                              : Theme.of(
+                                                context,
+                                              ).textTheme.titleMedium?.copyWith(
+                                                color: fg,
+                                                fontWeight: FontWeight.w700,
+                                              ),
                                     ),
                                     if (widget.banner.subtitle != null &&
                                         widget.banner.subtitle!.isNotEmpty)
                                       Padding(
-                                        padding: const EdgeInsets.only(top: 2),
+                                        padding: EdgeInsets.only(
+                                          top:
+                                              AppBreakpoints.isDesktop(context)
+                                                  ? 4
+                                                  : 2,
+                                        ),
                                         child: Text(
                                           widget.banner.subtitle!,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall?.copyWith(
-                                            color: fg.withValues(alpha: 0.8),
-                                          ),
+                                          style:
+                                              AppBreakpoints.isDesktop(context)
+                                                  ? Theme.of(context)
+                                                      .textTheme
+                                                      .bodyMedium
+                                                      ?.copyWith(
+                                                        color: fg.withValues(
+                                                          alpha: 0.8,
+                                                        ),
+                                                      )
+                                                  : Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                        color: fg.withValues(
+                                                          alpha: 0.8,
+                                                        ),
+                                                      ),
                                         ),
                                       ),
                                   ],
@@ -180,7 +219,24 @@ class _DynamicBannerState extends State<DynamicBanner>
                                   widget.banner.ctaText!.isNotEmpty)
                                 TextButton(
                                   onPressed: () => _handleTap(context),
-                                  child: Text(widget.banner.ctaText!),
+                                  style:
+                                      AppBreakpoints.isDesktop(context)
+                                          ? TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 24,
+                                              vertical: 12,
+                                            ),
+                                          )
+                                          : null,
+                                  child: Text(
+                                    widget.banner.ctaText!,
+                                    style: TextStyle(
+                                      fontSize:
+                                          AppBreakpoints.isDesktop(context)
+                                              ? 16
+                                              : 14,
+                                    ),
+                                  ),
                                 ),
                             ],
                           ),
@@ -192,7 +248,7 @@ class _DynamicBannerState extends State<DynamicBanner>
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () {
-                        _handleTap(context);
+                      _handleTap(context);
                     },
                   ),
                 ),

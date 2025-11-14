@@ -142,7 +142,15 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
           // Favorites removed
           // New Recipe button
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: Icon(
+              Icons.add,
+              size: AppSizing.responsiveIconSize(
+                context,
+                mobile: 24,
+                tablet: 28,
+                desktop: 30,
+              ),
+            ),
             tooltip: 'New Recipe',
             onPressed: () => Navigator.pushNamed(context, '/recipeEdit'),
           ),
@@ -211,36 +219,70 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                   return Stack(
                     children: [
                       Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              allRecipes.isEmpty
-                                  ? Icons.restaurant_menu_rounded
-                                  : Icons.search_off,
-                              size: 64,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              allRecipes.isEmpty
-                                  ? 'No recipes found'
-                                  : 'No matching recipes',
-                              style: const TextStyle(
-                                fontSize: 18,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.responsive(context),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                allRecipes.isEmpty
+                                    ? Icons.restaurant_menu_rounded
+                                    : Icons.search_off,
+                                size: AppSizing.responsiveIconSize(
+                                  context,
+                                  mobile: 64,
+                                  tablet: 80,
+                                  desktop: 96,
+                                ),
                                 color: Colors.grey,
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            if (allRecipes.isEmpty)
-                              Text(
-                                'Add your first recipe to get started',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade600,
+                              SizedBox(
+                                height: AppSpacing.responsive(
+                                  context,
+                                  mobile: 16,
+                                  tablet: 20,
+                                  desktop: 24,
                                 ),
                               ),
-                          ],
+                              Text(
+                                allRecipes.isEmpty
+                                    ? 'No recipes found'
+                                    : 'No matching recipes',
+                                style: TextStyle(
+                                  fontSize: AppTypography.responsiveHeadingSize(
+                                    context,
+                                    mobile: 18,
+                                    tablet: 22,
+                                    desktop: 26,
+                                  ),
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              SizedBox(
+                                height: AppSpacing.responsive(
+                                  context,
+                                  mobile: 8,
+                                  tablet: 10,
+                                  desktop: 12,
+                                ),
+                              ),
+                              if (allRecipes.isEmpty)
+                                Text(
+                                  'Add your first recipe to get started',
+                                  style: TextStyle(
+                                    fontSize: AppTypography.responsiveCaptionSize(
+                                      context,
+                                      mobile: 14,
+                                      tablet: 16,
+                                      desktop: 18,
+                                    ),
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                       // Persistent bottom navigation, even when empty

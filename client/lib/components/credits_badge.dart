@@ -125,19 +125,31 @@ class CreditsPill extends StatelessWidget {
         final imports = provider.credits['recipeImports'] ?? 0;
         final gens = provider.credits['recipeGenerations'] ?? 0;
         final theme = Theme.of(context);
+        final isDesktop = AppBreakpoints.isDesktop(context);
+        final isTablet = AppBreakpoints.isTablet(context);
+        
         return Padding(
-          padding: const EdgeInsets.all(4.0),
+          padding: EdgeInsets.all(isDesktop ? 6.0 : isTablet ? 5.0 : 4.0),
           child: InkWell(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(
+              isDesktop ? 20 : isTablet ? 18 : 16,
+            ),
             onTap: onTap,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              margin: const EdgeInsets.only(right: 8),
+              padding: EdgeInsets.symmetric(
+                horizontal: isDesktop ? 14 : isTablet ? 12 : 10,
+                vertical: isDesktop ? 8 : isTablet ? 7 : 6,
+              ),
+              margin: EdgeInsets.only(
+                right: isDesktop ? 12 : isTablet ? 10 : 8,
+              ),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface.withValues(
                   alpha: theme.colorScheme.alphaHigh,
                 ),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(
+                  isDesktop ? 20 : isTablet ? 18 : 16,
+                ),
                 border: Border.all(
                   color: theme.colorScheme.outline.withValues(
                     alpha: theme.colorScheme.overlayLight,
@@ -149,84 +161,110 @@ class CreditsPill extends StatelessWidget {
                     color: theme.colorScheme.shadow.withValues(
                       alpha: theme.colorScheme.shadowLight,
                     ),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    blurRadius: isDesktop ? 12 : isTablet ? 10 : 8,
+                    offset: Offset(0, isDesktop ? 3 : isTablet ? 2.5 : 2),
                   ),
                 ],
               ),
               child: Row(
                 children: [
                   if (provider.unlimitedUsage) ...[
-                    const Icon(
+                    Icon(
                       Icons.all_inclusive,
-                      size: 16,
+                      size: isDesktop ? 20 : isTablet ? 18 : 16,
                       color: Colors.purple,
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: isDesktop ? 8 : isTablet ? 7 : 6),
                     Text(
                       'Unlimited',
                       style: theme.textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.purple,
+                        fontSize: isDesktop ? 14 : isTablet ? 13 : 12,
                       ),
                     ),
                     // For unlimited, do not show numeric balances
                   ] else if (provider.trialActive) ...[
-                    const Icon(
+                    Icon(
                       Icons.rocket_launch,
-                      size: 14,
+                      size: isDesktop ? 18 : isTablet ? 16 : 14,
                       color: Colors.blue,
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: isDesktop ? 6 : isTablet ? 5 : 4),
                     Text(
                       'Trial',
                       style: theme.textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.blue,
+                        fontSize: isDesktop ? 14 : isTablet ? 13 : 12,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: isDesktop ? 10 : isTablet ? 9 : 8),
                   ] else if (provider.isPremium) ...[
-                    const Icon(Icons.star, size: 14, color: Colors.amber),
-                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.star,
+                      size: isDesktop ? 18 : isTablet ? 16 : 14,
+                      color: Colors.amber,
+                    ),
+                    SizedBox(width: isDesktop ? 6 : isTablet ? 5 : 4),
                     Text(
                       'Premium',
                       style: theme.textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.amber.shade700,
+                        fontSize: isDesktop ? 14 : isTablet ? 13 : 12,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: isDesktop ? 10 : isTablet ? 9 : 8),
                   ] else ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isDesktop ? 8 : isTablet ? 7 : 6,
+                        vertical: isDesktop ? 3 : isTablet ? 2.5 : 2,
                       ),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primary.withValues(
                           alpha: theme.colorScheme.overlayMedium,
                         ),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(
+                          isDesktop ? 12 : isTablet ? 11 : 10,
+                        ),
                       ),
                       child: Text(
                         'Free',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.primary,
                           fontWeight: FontWeight.w700,
+                          fontSize: isDesktop ? 13 : isTablet ? 12 : 11,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: isDesktop ? 10 : isTablet ? 9 : 8),
                   ],
                   if (!provider.unlimitedUsage) ...[
-                    const Icon(Icons.share, size: 14),
-                    const SizedBox(width: 4),
-                    Text('$imports', style: theme.textTheme.labelMedium),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.auto_awesome_rounded, size: 14),
-                    const SizedBox(width: 4),
-                    Text('$gens', style: theme.textTheme.labelMedium),
+                    Icon(
+                      Icons.share,
+                      size: isDesktop ? 18 : isTablet ? 16 : 14,
+                    ),
+                    SizedBox(width: isDesktop ? 6 : isTablet ? 5 : 4),
+                    Text(
+                      '$imports',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontSize: isDesktop ? 15 : isTablet ? 14 : 13,
+                      ),
+                    ),
+                    SizedBox(width: isDesktop ? 10 : isTablet ? 9 : 8),
+                    Icon(
+                      Icons.auto_awesome_rounded,
+                      size: isDesktop ? 18 : isTablet ? 16 : 14,
+                    ),
+                    SizedBox(width: isDesktop ? 6 : isTablet ? 5 : 4),
+                    Text(
+                      '$gens',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontSize: isDesktop ? 15 : isTablet ? 14 : 13,
+                      ),
+                    ),
                   ],
                 ],
               ),

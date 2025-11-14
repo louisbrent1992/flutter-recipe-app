@@ -184,7 +184,7 @@ class AppSizing {
     BuildContext context, {
     int mobile = 2,
     int tablet = 2,
-    int desktop = 3,
+    int desktop = 2,
   }) {
     if (AppBreakpoints.isMobile(context)) return mobile;
     if (AppBreakpoints.isTablet(context)) return tablet;
@@ -194,8 +194,8 @@ class AppSizing {
   /// Get responsive grid aspect ratio
   static double responsiveAspectRatio(
     BuildContext context, {
-    double mobile = 0.75,
-    double tablet = 0.8,
+    double mobile = 0.72,
+    double tablet = 0.80,
     double desktop = 0.85,
   }) {
     if (AppBreakpoints.isMobile(context)) return mobile;
@@ -494,4 +494,68 @@ class AppTheme {
     ),
     useMaterial3: true,
   );
+}
+
+/// Responsive dialog utilities
+class AppDialog {
+  /// Get responsive max width for dialogs
+  static double responsiveMaxWidth(BuildContext context) {
+    if (AppBreakpoints.isDesktop(context)) return 500;
+    if (AppBreakpoints.isTablet(context)) return 450;
+    return 400;
+  }
+
+  /// Get responsive padding for dialog content
+  static EdgeInsets responsivePadding(BuildContext context) {
+    return EdgeInsets.all(
+      AppBreakpoints.isDesktop(context)
+          ? 28
+          : AppBreakpoints.isTablet(context)
+              ? 24
+              : 20,
+    );
+  }
+
+  /// Get responsive title font size
+  static double responsiveTitleSize(BuildContext context) {
+    return AppBreakpoints.isDesktop(context)
+        ? 24
+        : AppBreakpoints.isTablet(context)
+            ? 22
+            : 20;
+  }
+
+  /// Get responsive content font size
+  static double responsiveContentSize(BuildContext context) {
+    return AppBreakpoints.isDesktop(context)
+        ? 16
+        : AppBreakpoints.isTablet(context)
+            ? 15
+            : 14;
+  }
+
+  /// Get responsive border radius for dialogs
+  static double responsiveBorderRadius(BuildContext context) {
+    return AppBreakpoints.isDesktop(context)
+        ? 24
+        : AppBreakpoints.isTablet(context)
+            ? 20
+            : 16;
+  }
+
+  /// Get responsive button padding
+  static EdgeInsets responsiveButtonPadding(BuildContext context) {
+    return EdgeInsets.symmetric(
+      horizontal: AppBreakpoints.isDesktop(context)
+          ? 24
+          : AppBreakpoints.isTablet(context)
+              ? 20
+              : 16,
+      vertical: AppBreakpoints.isDesktop(context)
+          ? 14
+          : AppBreakpoints.isTablet(context)
+              ? 12
+              : 10,
+    );
+  }
 }

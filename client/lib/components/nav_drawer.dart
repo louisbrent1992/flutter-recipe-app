@@ -237,7 +237,11 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     final isMobile = AppBreakpoints.isMobile(context);
 
     return Drawer(
-      width: MediaQuery.of(context).size.width * 0.85,
+      width: AppBreakpoints.isDesktop(context)
+          ? 360
+          : AppBreakpoints.isTablet(context)
+              ? 320
+              : MediaQuery.of(context).size.width * 0.85,
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -399,13 +403,25 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                     // Content
                     Positioned.fill(
                       child: Container(
-                        padding: EdgeInsets.all(isMobile ? 12 : 16),
+                        padding: EdgeInsets.all(
+                          AppBreakpoints.isDesktop(context)
+                              ? 14
+                              : AppBreakpoints.isTablet(context)
+                                  ? 14
+                                  : 12,
+                        ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             _buildAnimatedAvatar(colorScheme, isDark, isMobile),
-                            SizedBox(height: isMobile ? 6 : 8),
+                            SizedBox(
+                              height: AppBreakpoints.isDesktop(context)
+                                  ? 6
+                                  : AppBreakpoints.isTablet(context)
+                                      ? 6
+                                      : 6,
+                            ),
                             _buildUserInfo(
                               context,
                               colorScheme,
@@ -413,7 +429,13 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                               isMobile,
                             ),
                             if (!isMobile || screenHeight > 400) ...[
-                              SizedBox(height: isMobile ? 8 : 10),
+                              SizedBox(
+                                height: AppBreakpoints.isDesktop(context)
+                                    ? 6
+                                    : AppBreakpoints.isTablet(context)
+                                        ? 8
+                                        : 8,
+                              ),
                               _buildQuickStats(
                                 context,
                                 colorScheme,
@@ -442,7 +464,11 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     bool isDark,
     bool isMobile,
   ) {
-    final double avatarSize = isMobile ? 50 : 70;
+    final double avatarSize = AppBreakpoints.isDesktop(context)
+        ? 80
+        : AppBreakpoints.isTablet(context)
+            ? 70
+            : 50;
 
     return AnimatedBuilder(
       animation: Listenable.merge([_scaleController, _pulseController]),
@@ -943,12 +969,19 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(
+              AppDialog.responsiveBorderRadius(context),
+            ),
           ),
           child: Container(
-            padding: const EdgeInsets.all(24),
+            constraints: BoxConstraints(
+              maxWidth: AppDialog.responsiveMaxWidth(context),
+            ),
+            padding: AppDialog.responsivePadding(context),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(
+                AppDialog.responsiveBorderRadius(context),
+              ),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -969,34 +1002,72 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                     return Icon(
                       isActive ? Icons.star_rounded : Icons.star_border_rounded,
                       color: isActive ? Colors.amber : Colors.grey.shade300,
-                      size: 32,
+                      size: AppSizing.responsiveIconSize(
+                        context,
+                        mobile: 32,
+                        tablet: 40,
+                        desktop: 48,
+                      ),
                     );
                   }),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(
+                  height: AppBreakpoints.isDesktop(context)
+                      ? 20
+                      : AppBreakpoints.isTablet(context)
+                          ? 18
+                          : 16,
+                ),
                 // Title
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 24,
+                  style: TextStyle(
+                    fontSize: AppDialog.responsiveTitleSize(context),
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(
+                  height: AppBreakpoints.isDesktop(context)
+                      ? 12
+                      : AppBreakpoints.isTablet(context)
+                          ? 10
+                          : 8,
+                ),
                 // Description
                 Text(
                   description,
-                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                  style: TextStyle(
+                    fontSize: AppDialog.responsiveContentSize(context),
+                    color: Colors.grey.shade600,
+                  ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(
+                  height: AppBreakpoints.isDesktop(context)
+                      ? 32
+                      : AppBreakpoints.isTablet(context)
+                          ? 28
+                          : 24,
+                ),
                 // Stats breakdown
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(
+                    AppBreakpoints.isDesktop(context)
+                        ? 20
+                        : AppBreakpoints.isTablet(context)
+                            ? 18
+                            : 16,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(
+                      AppBreakpoints.isDesktop(context)
+                          ? 16
+                          : AppBreakpoints.isTablet(context)
+                              ? 14
+                              : 12,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1004,31 +1075,43 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                       Text(
                         'Ranking Breakdown:',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: AppDialog.responsiveContentSize(context) * 0.875,
                           fontWeight: FontWeight.bold,
                           color: Colors.grey.shade700,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: AppBreakpoints.isDesktop(context)
+                            ? 10
+                            : AppBreakpoints.isTablet(context)
+                                ? 9
+                                : 8,
+                      ),
                       Text(
                         '• Recipe Difficulty: ${_getAverageDifficultyText()}',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: AppDialog.responsiveContentSize(context) * 0.75,
                           color: Colors.grey.shade600,
                         ),
                       ),
                       Text(
                         '• Saved Recipes: $savedRecipesCount',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: AppDialog.responsiveContentSize(context) * 0.75,
                           color: Colors.grey.shade600,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: AppBreakpoints.isDesktop(context)
+                            ? 10
+                            : AppBreakpoints.isTablet(context)
+                                ? 9
+                                : 8,
+                      ),
                       Text(
                         _getNextLevelText(),
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: AppDialog.responsiveContentSize(context) * 0.75,
                           fontStyle: FontStyle.italic,
                           color: Colors.blue.shade600,
                         ),
@@ -1036,7 +1119,13 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(
+                  height: AppBreakpoints.isDesktop(context)
+                      ? 24
+                      : AppBreakpoints.isTablet(context)
+                          ? 22
+                          : 20,
+                ),
                 // Game Center buttons (iOS only)
                 if (Theme.of(context).platform == TargetPlatform.iOS) ...[
                   Row(
@@ -1049,11 +1138,20 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                             final gameCenter = GameCenterService();
                             await gameCenter.showLeaderboards();
                           },
-                          icon: const Icon(Icons.leaderboard, size: 14),
-                          label: const Text(
+                          icon: Icon(
+                            Icons.leaderboard,
+                            size: AppSizing.responsiveIconSize(
+                              context,
+                              mobile: 14,
+                              tablet: 16,
+                              desktop: 18,
+                            ),
+                          ),
+                          label: Text(
                             'Leaderboards',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: AppDialog.responsiveContentSize(context) *
+                                  0.625,
                               fontWeight: FontWeight.bold,
                             ),
                             maxLines: 1,
@@ -1061,14 +1159,28 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                             softWrap: false,
                           ),
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppBreakpoints.isDesktop(context)
+                                  ? 16
+                                  : AppBreakpoints.isTablet(context)
+                                      ? 14
+                                      : 12,
+                              vertical: AppBreakpoints.isDesktop(context)
+                                  ? 12
+                                  : AppBreakpoints.isTablet(context)
+                                      ? 11
+                                      : 10,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: AppBreakpoints.isDesktop(context)
+                            ? 16
+                            : AppBreakpoints.isTablet(context)
+                                ? 14
+                                : 12,
+                      ),
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () async {
@@ -1076,43 +1188,74 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                             final gameCenter = GameCenterService();
                             await gameCenter.showAchievements();
                           },
-                          icon: const Icon(Icons.emoji_events, size: 14),
-                          label: const Text(
+                          icon: Icon(
+                            Icons.emoji_events,
+                            size: AppSizing.responsiveIconSize(
+                              context,
+                              mobile: 14,
+                              tablet: 16,
+                              desktop: 18,
+                            ),
+                          ),
+                          label: Text(
                             'Achievements',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             softWrap: false,
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: AppDialog.responsiveContentSize(context) *
+                                  0.625,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppBreakpoints.isDesktop(context)
+                                  ? 16
+                                  : AppBreakpoints.isTablet(context)
+                                      ? 14
+                                      : 12,
+                              vertical: AppBreakpoints.isDesktop(context)
+                                  ? 12
+                                  : AppBreakpoints.isTablet(context)
+                                      ? 11
+                                      : 10,
                             ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: AppBreakpoints.isDesktop(context)
+                        ? 16
+                        : AppBreakpoints.isTablet(context)
+                            ? 14
+                            : 12,
+                  ),
                 ],
                 // Close button
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.amber,
+                    padding: AppDialog.responsiveButtonPadding(context),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(
+                        AppBreakpoints.isDesktop(context)
+                            ? 16
+                            : AppBreakpoints.isTablet(context)
+                                ? 14
+                                : 12,
+                      ),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Got it!',
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontSize: AppDialog.responsiveContentSize(context),
                     ),
                   ),
                 ),

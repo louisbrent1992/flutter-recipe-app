@@ -421,11 +421,17 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
         SizedBox(
-          height: 120,
+          height: AppBreakpoints.isDesktop(context)
+              ? 160
+              : AppBreakpoints.isTablet(context)
+                  ? 140
+                  : 120,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: categories.length,
-            separatorBuilder: (_, __) => SizedBox(width: AppSpacing.sm),
+            separatorBuilder: (_, __) => SizedBox(
+              width: AppSpacing.responsive(context, mobile: 12, tablet: 16, desktop: 20),
+            ),
             itemBuilder: (context, index) {
               final cat = categories[index];
               return _buildCategoryCard(context, cat);
@@ -439,34 +445,55 @@ class _HomeScreenState extends State<HomeScreen>
   /// Builds a single category card.
   Widget _buildCategoryCard(BuildContext context, _CategoryItem cat) {
     final theme = Theme.of(context);
+    final cardHeight = AppBreakpoints.isDesktop(context)
+        ? 140.0
+        : AppBreakpoints.isTablet(context)
+            ? 120.0
+            : 100.0;
+    final cardWidth = AppBreakpoints.isDesktop(context)
+        ? 300.0
+        : AppBreakpoints.isTablet(context)
+            ? 250.0
+            : 200.0;
+    final borderRadius = AppBreakpoints.isDesktop(context) ? 20.0 : 16.0;
+    
     return SizedBox(
-      height: 100,
-      width: 200,
+      height: cardHeight,
+      width: cardWidth,
       child: Card(
         color: Theme.of(context).colorScheme.surface.withValues(
           alpha: Theme.of(context).colorScheme.alphaVeryHigh,
         ),
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: AppBreakpoints.isDesktop(context) ? 3 : 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius)),
         child: InkWell(
           onTap: () => Navigator.pushNamed(context, cat.route),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(borderRadius),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: EdgeInsets.symmetric(
+              horizontal: AppBreakpoints.isDesktop(context) ? 20 : 16,
+              vertical: AppBreakpoints.isDesktop(context) ? 16 : 12,
+            ),
             child: Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: AppBreakpoints.isDesktop(context) ? 56 : 40,
+                  height: AppBreakpoints.isDesktop(context) ? 56 : 40,
                   decoration: BoxDecoration(
                     color: cat.color.withValues(
                       alpha: Theme.of(context).colorScheme.overlayMedium,
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(
+                      AppBreakpoints.isDesktop(context) ? 16 : 12,
+                    ),
                   ),
-                  child: Icon(cat.icon, color: cat.color, size: 20),
+                  child: Icon(
+                    cat.icon,
+                    color: cat.color,
+                    size: AppBreakpoints.isDesktop(context) ? 28 : 20,
+                  ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: AppBreakpoints.isDesktop(context) ? 16 : 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -474,20 +501,32 @@ class _HomeScreenState extends State<HomeScreen>
                     children: [
                       Text(
                         cat.title,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                        style: AppBreakpoints.isDesktop(context)
+                            ? theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            )
+                            : theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: AppBreakpoints.isDesktop(context) ? 6 : 4),
                       Text(
                         _getCategoryDescription(cat.title),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          height: 1.3,
-                        ),
+                        style: AppBreakpoints.isDesktop(context)
+                            ? theme.textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              height: 1.3,
+                            )
+                            : theme.textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              height: 1.3,
+                            ),
+                        maxLines: AppBreakpoints.isDesktop(context) ? 2 : 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -619,24 +658,33 @@ class _HomeScreenState extends State<HomeScreen>
   /// Builds an individual recipe card used within carousels.
   Widget _buildRecipeCard(BuildContext context, Recipe recipe) {
     final theme = Theme.of(context);
+    final cardWidth = AppBreakpoints.isDesktop(context)
+        ? 220.0
+        : AppBreakpoints.isTablet(context)
+            ? 180.0
+            : 140.0;
     return InkWell(
       onTap:
           () =>
               Navigator.pushNamed(context, '/recipeDetail', arguments: recipe),
       child: Container(
-        width: 140,
+        width: cardWidth,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(
+            AppBreakpoints.isDesktop(context) ? 16 : 12,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              blurRadius: AppBreakpoints.isDesktop(context) ? 6 : 4,
+              offset: Offset(0, AppBreakpoints.isDesktop(context) ? 3 : 2),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(
+            AppBreakpoints.isDesktop(context) ? 16 : 12,
+          ),
           child: Stack(
             children: [
               // Image
@@ -669,7 +717,7 @@ class _HomeScreenState extends State<HomeScreen>
                 left: 0,
                 right: 0,
                 bottom: 0,
-                height: 60,
+                height: AppBreakpoints.isDesktop(context) ? 80 : 60,
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -687,17 +735,22 @@ class _HomeScreenState extends State<HomeScreen>
               ),
               // Title
               Positioned(
-                left: 8,
-                right: 8,
-                bottom: 8,
+                left: AppBreakpoints.isDesktop(context) ? 12 : 8,
+                right: AppBreakpoints.isDesktop(context) ? 12 : 8,
+                bottom: AppBreakpoints.isDesktop(context) ? 12 : 8,
                 child: Text(
                   recipe.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: AppBreakpoints.isDesktop(context)
+                      ? theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      )
+                      : theme.textTheme.labelSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               ),
             ],
@@ -998,12 +1051,19 @@ class _HomeScreenState extends State<HomeScreen>
     final recipesWithImages =
         collection.recipes.where((r) => r.imageUrl.isNotEmpty).toList();
 
+    final collectionCardWidth = AppBreakpoints.isDesktop(context)
+        ? 260.0
+        : AppBreakpoints.isTablet(context)
+            ? 220.0
+            : 180.0;
+    final borderRadius = AppBreakpoints.isDesktop(context) ? 24.0 : 20.0;
+    
     return SizedBox(
-      width: 180,
+      width: collectionCardWidth,
       child: Card(
-        elevation: 4,
+        elevation: AppBreakpoints.isDesktop(context) ? 6 : 4,
         shadowColor: collection.color.withValues(alpha: 0.3),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius)),
         child: InkWell(
           onTap:
               () => Navigator.pushNamed(
@@ -1011,9 +1071,9 @@ class _HomeScreenState extends State<HomeScreen>
                 '/collectionDetail',
                 arguments: collection,
               ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(borderRadius),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(borderRadius),
             child: Stack(
               children: [
                 // Background with recipe images or gradient
@@ -1046,26 +1106,30 @@ class _HomeScreenState extends State<HomeScreen>
 
                 // Collection icon (top-right corner)
                 Positioned(
-                  top: 12,
-                  right: 12,
+                  top: AppBreakpoints.isDesktop(context) ? 16 : 12,
+                  right: AppBreakpoints.isDesktop(context) ? 16 : 12,
                   child: Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(
+                      AppBreakpoints.isDesktop(context) ? 12 : 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface.withValues(
                         alpha: Theme.of(context).colorScheme.alphaVeryHigh,
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(
+                        AppBreakpoints.isDesktop(context) ? 16 : 12,
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+                          blurRadius: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                          offset: Offset(0, AppBreakpoints.isDesktop(context) ? 3 : 2),
                         ),
                       ],
                     ),
                     child: Icon(
                       collection.icon,
-                      size: 20,
+                      size: AppBreakpoints.isDesktop(context) ? 28 : 20,
                       color: collection.color,
                     ),
                   ),
@@ -1073,9 +1137,9 @@ class _HomeScreenState extends State<HomeScreen>
 
                 // Collection info (bottom)
                 Positioned(
-                  left: 16,
-                  right: 16,
-                  bottom: 16,
+                  left: AppBreakpoints.isDesktop(context) ? 20 : 16,
+                  right: AppBreakpoints.isDesktop(context) ? 20 : 16,
+                  bottom: AppBreakpoints.isDesktop(context) ? 20 : 16,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -1085,43 +1149,66 @@ class _HomeScreenState extends State<HomeScreen>
                         collection.name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color:
-                              Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              blurRadius: 2,
-                              offset: const Offset(0, 1),
+                        style: AppBreakpoints.isDesktop(context)
+                            ? theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  blurRadius: 2,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            )
+                            : theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  blurRadius: 2,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: AppBreakpoints.isDesktop(context) ? 6 : 4),
                       // Recipe count with icon
                       Row(
                         children: [
                           Icon(
                             Icons.restaurant_menu_rounded,
-                            size: 14,
+                            size: AppBreakpoints.isDesktop(context) ? 18 : 14,
                             color:
                                 Theme.of(
                                   context,
                                 ).colorScheme.surfaceContainerHighest,
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: AppBreakpoints.isDesktop(context) ? 6 : 4),
                           Text(
                             '${collection.recipes.length} ${collection.recipes.length == 1 ? 'recipe' : 'recipes'}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: AppBreakpoints.isDesktop(context)
+                                ? theme.textTheme.bodyMedium?.copyWith(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                  fontWeight: FontWeight.w500,
+                                )
+                                : theme.textTheme.bodySmall?.copyWith(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                  fontWeight: FontWeight.w500,
+                                ),
                           ),
                         ],
                       ),

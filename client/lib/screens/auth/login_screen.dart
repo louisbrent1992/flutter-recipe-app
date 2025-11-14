@@ -331,19 +331,46 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Welcome Back!',
-                    style: Theme.of(context).textTheme.headlineLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
+            padding: EdgeInsets.all(
+              AppBreakpoints.isDesktop(context)
+                  ? 32.0
+                  : AppBreakpoints.isTablet(context)
+                      ? 28.0
+                      : 24.0,
+            ),
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: AppBreakpoints.isDesktop(context)
+                    ? 500
+                    : AppBreakpoints.isTablet(context)
+                        ? 450
+                        : double.infinity,
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Welcome Back!',
+                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        fontSize: AppTypography.responsiveHeadingSize(
+                          context,
+                          mobile: 28,
+                          tablet: 34,
+                          desktop: 40,
+                        ),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(
+                      height: AppBreakpoints.isDesktop(context)
+                          ? 40
+                          : AppBreakpoints.isTablet(context)
+                              ? 36
+                              : 32,
+                    ),
                   TextFormField(
                     controller: _emailController,
                     decoration: InputDecoration(
@@ -430,11 +457,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: authService.isLoading ? null : _signInWithGoogle,
                     icon: Image.network(
                       'https://www.google.com/favicon.ico',
-                      height: 24,
+                      height: AppBreakpoints.isDesktop(context)
+                          ? 28
+                          : AppBreakpoints.isTablet(context)
+                              ? 26
+                              : 24,
                     ),
                     label: const Text('Sign in with Google'),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: EdgeInsets.symmetric(
+                        vertical: AppBreakpoints.isDesktop(context)
+                            ? 16
+                            : AppBreakpoints.isTablet(context)
+                                ? 14
+                                : 12,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -452,10 +489,23 @@ class _LoginScreenState extends State<LoginScreen> {
                           return OutlinedButton.icon(
                             onPressed:
                                 authService.isLoading ? null : _signInWithApple,
-                            icon: const Icon(Icons.apple, size: 24),
+                            icon: Icon(
+                              Icons.apple,
+                              size: AppBreakpoints.isDesktop(context)
+                                  ? 28
+                                  : AppBreakpoints.isTablet(context)
+                                      ? 26
+                                      : 24,
+                            ),
                             label: const Text('Sign in with Apple'),
                             style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              padding: EdgeInsets.symmetric(
+                                vertical: AppBreakpoints.isDesktop(context)
+                                    ? 16
+                                    : AppBreakpoints.isTablet(context)
+                                        ? 14
+                                        : 12,
+                              ),
                             ),
                           );
                         }
@@ -470,7 +520,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: const Text('Don\'t have an account? Sign up'),
                   ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

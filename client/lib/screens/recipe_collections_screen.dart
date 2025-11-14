@@ -302,7 +302,13 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                           // Header section
                           _buildHeader(colorScheme),
 
-                          const SizedBox(height: 24),
+                          SizedBox(
+                            height: AppBreakpoints.isDesktop(context)
+                                ? 32
+                                : AppBreakpoints.isTablet(context)
+                                    ? 28
+                                    : 24,
+                          ),
 
                           // Grid of categories
                           _buildCategoriesGrid(colorScheme),
@@ -336,26 +342,61 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(
+              AppBreakpoints.isDesktop(context)
+                  ? 24
+                  : AppBreakpoints.isTablet(context)
+                      ? 22
+                      : 20,
+            ),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(
+                AppBreakpoints.isDesktop(context)
+                    ? 20
+                    : AppBreakpoints.isTablet(context)
+                        ? 18
+                        : 16,
+              ),
               color: colorScheme.primaryContainer.withValues(alpha: 0.3),
             ),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(
+                    AppBreakpoints.isDesktop(context)
+                        ? 16
+                        : AppBreakpoints.isTablet(context)
+                            ? 14
+                            : 12,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(
+                      AppBreakpoints.isDesktop(context)
+                          ? 16
+                          : AppBreakpoints.isTablet(context)
+                              ? 14
+                              : 12,
+                    ),
                   ),
                   child: Icon(
                     Icons.collections_bookmark_rounded,
-                    size: 32,
+                    size: AppSizing.responsiveIconSize(
+                      context,
+                      mobile: 32,
+                      tablet: 40,
+                      desktop: 48,
+                    ),
                     color: colorScheme.primary,
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(
+                  width: AppBreakpoints.isDesktop(context)
+                      ? 20
+                      : AppBreakpoints.isTablet(context)
+                          ? 18
+                          : 16,
+                ),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,16 +404,32 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                       Text(
                         'Recipe Collections',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: AppTypography.responsiveHeadingSize(
+                            context,
+                            mobile: 22,
+                            tablet: 26,
+                            desktop: 30,
+                          ),
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(
+                        height: AppBreakpoints.isDesktop(context)
+                            ? 6
+                            : AppBreakpoints.isTablet(context)
+                                ? 5
+                                : 4,
+                      ),
                       Text(
                         'Organize your recipes into categories',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: AppTypography.responsiveFontSize(
+                            context,
+                            mobile: 14,
+                            tablet: 16,
+                            desktop: 18,
+                          ),
                           color: colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
@@ -471,9 +528,17 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     required RecipeCollection collection,
     required ColorScheme colorScheme,
   }) {
+    final cardBorderRadius = AppBreakpoints.isDesktop(context)
+        ? 20.0
+        : AppBreakpoints.isTablet(context)
+            ? 18.0
+            : 16.0;
+
     return Card(
       elevation: AppElevation.responsive(context),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(cardBorderRadius),
+      ),
       color:
           colorScheme.brightness == Brightness.dark
               ? colorScheme.surface.withValues(alpha: 0.1)
@@ -488,7 +553,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
             arguments: collection,
           ).then((_) => _loadCollections()); // Refresh after returning
         },
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(cardBorderRadius),
         child: LayoutBuilder(
           builder: (context, constraints) {
             final cardWidth = constraints.maxWidth;
@@ -630,8 +695,16 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                 // Delete button positioned absolutely in top right corner
                 if (!_isDefaultCollection(collection))
                   Positioned(
-                    top: 8,
-                    right: 8,
+                    top: AppBreakpoints.isDesktop(context)
+                        ? 12
+                        : AppBreakpoints.isTablet(context)
+                            ? 10
+                            : 8,
+                    right: AppBreakpoints.isDesktop(context)
+                        ? 12
+                        : AppBreakpoints.isTablet(context)
+                            ? 10
+                            : 8,
                     child: IconButton(
                       icon: Icon(Icons.delete_outline, size: deleteButtonSize),
                       onPressed:

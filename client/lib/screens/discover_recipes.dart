@@ -382,30 +382,59 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                 children: [
                                   Icon(
                                     Icons.search_off,
-                                    size: 64,
+                                    size: AppSizing.responsiveIconSize(
+                                      context,
+                                      mobile: 64,
+                                      tablet: 80,
+                                      desktop: 96,
+                                    ),
                                     color: Theme.of(context).colorScheme.primary
                                         .withValues(alpha: 0.5),
                                   ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'No recipes found$contextLine',
-                                    textAlign: TextAlign.center,
-                                    style:
-                                        Theme.of(
-                                          context,
-                                        ).textTheme.headlineLarge,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Try a different tag, change filters, or clear filters to see more.',
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(
+                                  SizedBox(
+                                    height: AppSpacing.responsive(
                                       context,
-                                    ).textTheme.bodyMedium?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.7),
+                                      mobile: 16,
+                                      tablet: 20,
+                                      desktop: 24,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.responsive(context),
+                                    ),
+                                    child: Text(
+                                      'No recipes found$contextLine',
+                                      textAlign: TextAlign.center,
+                                      style:
+                                          Theme.of(
+                                            context,
+                                          ).textTheme.headlineLarge,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: AppSpacing.responsive(
+                                      context,
+                                      mobile: 8,
+                                      tablet: 10,
+                                      desktop: 12,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.responsive(context),
+                                    ),
+                                    child: Text(
+                                      'Try a different tag, change filters, or clear filters to see more.',
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.7),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -494,22 +523,51 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
                                         children: [
-                                          CircularProgressIndicator(
-                                            color:
-                                                Theme.of(
-                                                  context,
-                                                ).colorScheme.primary,
-                                          ),
-                                          const SizedBox(height: 16),
-                                          Text(
-                                            'Fetching delicious recipes for you...',
-                                            style: Theme.of(
-                                              context,
-                                            ).textTheme.bodyMedium?.copyWith(
+                                          SizedBox(
+                                            width: AppBreakpoints.isDesktop(context)
+                                                ? 48
+                                                : AppBreakpoints.isTablet(context)
+                                                    ? 44
+                                                    : 40,
+                                            height: AppBreakpoints.isDesktop(context)
+                                                ? 48
+                                                : AppBreakpoints.isTablet(context)
+                                                    ? 44
+                                                    : 40,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: AppBreakpoints.isDesktop(context) ? 4 : 3,
                                               color:
                                                   Theme.of(
                                                     context,
-                                                  ).colorScheme.onSurface,
+                                                  ).colorScheme.primary,
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: AppSpacing.responsive(
+                                              context,
+                                              mobile: 16,
+                                              tablet: 20,
+                                              desktop: 24,
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: AppSpacing.responsive(context),
+                                            ),
+                                            child: Text(
+                                              'Fetching delicious recipes for you...',
+                                              style: AppBreakpoints.isDesktop(context)
+                                                  ? Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                                    color: Theme.of(context).colorScheme.onSurface,
+                                                  )
+                                                  : Theme.of(
+                                                    context,
+                                                  ).textTheme.bodyMedium?.copyWith(
+                                                    color:
+                                                        Theme.of(
+                                                          context,
+                                                        ).colorScheme.onSurface,
+                                                  ),
                                             ),
                                           ),
                                         ],

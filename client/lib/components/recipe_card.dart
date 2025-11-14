@@ -62,9 +62,10 @@ class _RecipeCardState extends State<RecipeCard> {
     try {
       // Calculate share origin rect (needed for iPad popover; safe elsewhere)
       final renderBox = context.findRenderObject() as RenderBox?;
-      final origin = renderBox != null
-          ? renderBox.localToGlobal(Offset.zero) & renderBox.size
-          : const Rect.fromLTWH(0, 0, 1, 1);
+      final origin =
+          renderBox != null
+              ? renderBox.localToGlobal(Offset.zero) & renderBox.size
+              : const Rect.fromLTWH(0, 0, 1, 1);
 
       final String shareText = '''
 ${widget.recipe.title}
@@ -87,10 +88,7 @@ ${widget.recipe.tags.isNotEmpty ? 'Tags: ${widget.recipe.tags.join(', ')}' : ''}
 Shared from Recipe App
 ''';
 
-      await Share.share(
-        shareText,
-        sharePositionOrigin: origin,
-      );
+      await Share.share(shareText, sharePositionOrigin: origin);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -238,75 +236,24 @@ Shared from Recipe App
       return const SizedBox.shrink();
     }
 
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Wrap(
-          spacing: AppSpacing.responsive(context),
-          alignment: WrapAlignment.spaceBetween,
-          children: [
-            if (widget.showCookingTime)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.timer_rounded,
-                    size: AppSizing.responsiveIconSize(
-                      context,
-                      mobile: 12,
-                      tablet: 14,
-                      desktop: 16,
-                    ),
-                    color: Colors.grey[600],
-                  ),
-                  SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: Text(
-                      _formatCookingTime(widget.recipe.cookingTime),
-                      style: TextStyle(
-                        fontSize: AppTypography.responsiveCaptionSize(context),
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            if (widget.showServings)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.people,
-                    size: AppSizing.responsiveIconSize(
-                      context,
-                      mobile: 12,
-                      tablet: 14,
-                      desktop: 16,
-                    ),
-                    color: Colors.grey[600],
-                  ),
-                  SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: Text(
-                      '${widget.recipe.servings} servings',
-                      style: TextStyle(
-                        fontSize: AppTypography.responsiveCaptionSize(context),
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
+      padding: EdgeInsets.only(top: AppBreakpoints.isDesktop(context) ? 6 : 4),
+      child: Wrap(
+        spacing: AppSpacing.responsive(
+          context,
+          mobile: 16,
+          tablet: 12,
+          desktop: 12,
+        ),
+        runSpacing: AppBreakpoints.isDesktop(context) ? 4 : 4,
+        children: [
+          if (widget.showCookingTime)
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.restaurant_menu_rounded,
+                  Icons.timer_rounded,
                   size: AppSizing.responsiveIconSize(
                     context,
                     mobile: 12,
@@ -316,21 +263,69 @@ Shared from Recipe App
                   color: Colors.grey[600],
                 ),
                 SizedBox(width: AppSpacing.xs),
-                Expanded(
-                  child: Text(
-                    widget.recipe.difficulty,
-                    style: TextStyle(
-                      fontSize: AppTypography.responsiveCaptionSize(context),
-                      color: Colors.grey[600],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                Text(
+                  _formatCookingTime(widget.recipe.cookingTime),
+                  style: TextStyle(
+                    fontSize: AppTypography.responsiveCaptionSize(context),
+                    color: Colors.grey[600],
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-          ],
-        ),
+          if (widget.showServings)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.people,
+                  size: AppSizing.responsiveIconSize(
+                    context,
+                    mobile: 12,
+                    tablet: 14,
+                    desktop: 16,
+                  ),
+                  color: Colors.grey[600],
+                ),
+                SizedBox(width: AppSpacing.xs),
+                Text(
+                  '${widget.recipe.servings} servings',
+                  style: TextStyle(
+                    fontSize: AppTypography.responsiveCaptionSize(context),
+                    color: Colors.grey[600],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.restaurant_menu_rounded,
+                size: AppSizing.responsiveIconSize(
+                  context,
+                  mobile: 12,
+                  tablet: 14,
+                  desktop: 16,
+                ),
+                color: Colors.grey[600],
+              ),
+              SizedBox(width: AppSpacing.xs),
+              Text(
+                widget.recipe.difficulty,
+                style: TextStyle(
+                  fontSize: AppTypography.responsiveCaptionSize(context),
+                  color: Colors.grey[600],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -585,12 +580,33 @@ Shared from Recipe App
             // Recipe details
             Padding(
               padding: EdgeInsets.fromLTRB(
-                AppSpacing.responsive(context),
-                AppSpacing.responsive(context),
-                AppSpacing.responsive(context),
-                AppSpacing.responsive(context),
+                AppSpacing.responsive(
+                  context,
+                  mobile: 16,
+                  tablet: 16,
+                  desktop: 20,
+                ),
+                AppSpacing.responsive(
+                  context,
+                  mobile: 16,
+                  tablet: 14,
+                  desktop: 16,
+                ),
+                AppSpacing.responsive(
+                  context,
+                  mobile: 16,
+                  tablet: 16,
+                  desktop: 20,
+                ),
+                AppSpacing.responsive(
+                  context,
+                  mobile: 16,
+                  tablet: 14,
+                  desktop: 16,
+                ),
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -599,8 +615,8 @@ Shared from Recipe App
                       fontSize: AppTypography.responsiveHeadingSize(
                         context,
                         mobile: 16.0,
-                        tablet: 18.0,
-                        desktop: 20.0,
+                        tablet: 19.0,
+                        desktop: 22.0,
                       ),
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurface,
