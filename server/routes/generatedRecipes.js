@@ -657,6 +657,91 @@ const processRecipeData = async (
 
 	if (cachedRecipe) {
 		console.log("✅ Recipe parsing found in cache");
+		
+		// Check if cached recipe has empty ingredients or instructions
+		const cachedIngredients = Array.isArray(cachedRecipe.ingredients) && cachedRecipe.ingredients.length > 0
+			? cachedRecipe.ingredients
+			: [];
+		const cachedInstructions = Array.isArray(cachedRecipe.instructions) && cachedRecipe.instructions.length > 0
+			? cachedRecipe.instructions
+			: [];
+		
+		let finalIngredients = cachedIngredients;
+		let finalInstructions = cachedInstructions;
+		
+		// If either is empty, generate them from the recipe title
+		if (finalIngredients.length === 0 || finalInstructions.length === 0) {
+			console.log("⚠️ Cached recipe missing details, generating from title...");
+			const generateStartTime = Date.now();
+			
+			try {
+				const generateResponse = await client.chat.completions.create({
+					model: "gpt-5-nano",
+					messages: [
+						{
+							role: "developer",
+							content: "You are an expert chef. Generate a complete recipe based on the recipe title provided. Create realistic ingredients and step-by-step cooking instructions.",
+						},
+						{
+							role: "user",
+							content: `Generate a complete recipe for: ${cachedRecipe.title}\n\nProvide a list of ingredients and step-by-step cooking instructions.`,
+						},
+					],
+					reasoning_effort: "low",
+					response_format: {
+						type: "json_schema",
+						json_schema: {
+							name: "recipe_generation_fallback",
+							strict: true,
+							schema: {
+								type: "object",
+								properties: {
+									ingredients: {
+										type: "array",
+										items: { type: "string" },
+										description: "List of ingredients needed for this recipe",
+										minItems: 3,
+									},
+									instructions: {
+										type: "array",
+										items: { type: "string" },
+										description: "Step-by-step cooking instructions",
+										minItems: 3,
+									},
+								},
+								required: ["ingredients", "instructions"],
+								additionalProperties: false,
+							},
+						},
+					},
+					max_completion_tokens: 4000,
+				});
+
+				const generatedRecipe = JSON.parse(generateResponse.choices[0].message.content);
+				
+				if (finalIngredients.length === 0 && Array.isArray(generatedRecipe.ingredients) && generatedRecipe.ingredients.length > 0) {
+					finalIngredients = generatedRecipe.ingredients;
+					console.log("✅ Generated ingredients from title (cached recipe)");
+				}
+				
+				if (finalInstructions.length === 0 && Array.isArray(generatedRecipe.instructions) && generatedRecipe.instructions.length > 0) {
+					finalInstructions = generatedRecipe.instructions;
+					console.log("✅ Generated instructions from title (cached recipe)");
+				}
+				
+				logPerformance("AI Recipe Generation (fallback from title - cached)", generateStartTime);
+			} catch (error) {
+				console.error("Error generating recipe details from title (cached):", error);
+				// If generation fails, at least ensure we have some default values
+				if (finalIngredients.length === 0) {
+					finalIngredients = ["Ingredients not available"];
+				}
+				if (finalInstructions.length === 0) {
+					finalInstructions = ["Instructions not available"];
+				}
+			}
+		}
+		
 		const imageStartTime = Date.now();
 		let imageUrl = socialData?.imageUrl ||
 			socialData?.coverUrl ||
@@ -675,6 +760,8 @@ const processRecipeData = async (
 		return {
 			...cachedRecipe,
 			id: uuidv4(),
+			ingredients: finalIngredients,
+			instructions: finalInstructions,
 			imageUrl: imageUrl || null,
 			sourceUrl: url,
 			sourcePlatform: isInstagram
@@ -821,6 +908,87 @@ const processRecipeData = async (
 
 	handleCache(aiResponseCache, contentKey, parsedRecipe);
 
+	// Check if ingredients or instructions are empty and generate them from title if needed
+	let finalIngredients = Array.isArray(parsedRecipe.ingredients) && parsedRecipe.ingredients.length > 0
+		? parsedRecipe.ingredients
+		: [];
+	let finalInstructions = Array.isArray(parsedRecipe.instructions) && parsedRecipe.instructions.length > 0
+		? parsedRecipe.instructions
+		: [];
+
+	// If either is empty, generate them from the recipe title
+	if (finalIngredients.length === 0 || finalInstructions.length === 0) {
+		console.log("⚠️ Missing recipe details detected, generating from title...");
+		const generateStartTime = Date.now();
+		
+		try {
+			const generateResponse = await client.chat.completions.create({
+				model: "gpt-5-nano",
+				messages: [
+					{
+						role: "developer",
+						content: "You are an expert chef. Generate a complete recipe based on the recipe title provided. Create realistic ingredients and step-by-step cooking instructions.",
+					},
+					{
+						role: "user",
+						content: `Generate a complete recipe for: ${parsedRecipe.title}\n\nProvide a list of ingredients and step-by-step cooking instructions.`,
+					},
+				],
+				reasoning_effort: "low",
+				response_format: {
+					type: "json_schema",
+					json_schema: {
+						name: "recipe_generation_fallback",
+						strict: true,
+						schema: {
+							type: "object",
+							properties: {
+								ingredients: {
+									type: "array",
+									items: { type: "string" },
+									description: "List of ingredients needed for this recipe",
+									minItems: 3,
+								},
+								instructions: {
+									type: "array",
+									items: { type: "string" },
+									description: "Step-by-step cooking instructions",
+									minItems: 3,
+								},
+							},
+							required: ["ingredients", "instructions"],
+							additionalProperties: false,
+						},
+					},
+				},
+				max_completion_tokens: 4000,
+			});
+
+			const generatedRecipe = JSON.parse(generateResponse.choices[0].message.content);
+			
+			if (finalIngredients.length === 0 && Array.isArray(generatedRecipe.ingredients) && generatedRecipe.ingredients.length > 0) {
+				finalIngredients = generatedRecipe.ingredients;
+				console.log("✅ Generated ingredients from title");
+			}
+			
+			if (finalInstructions.length === 0 && Array.isArray(generatedRecipe.instructions) && generatedRecipe.instructions.length > 0) {
+				finalInstructions = generatedRecipe.instructions;
+				console.log("✅ Generated instructions from title");
+			}
+			
+			logPerformance("AI Recipe Generation (fallback from title)", generateStartTime);
+		} catch (error) {
+			console.error("Error generating recipe details from title:", error);
+			// If generation fails, at least ensure we have some default values
+			if (finalIngredients.length === 0) {
+				finalIngredients = ["Ingredients not available"];
+			}
+			if (finalInstructions.length === 0) {
+				finalInstructions = ["Instructions not available"];
+			}
+		}
+	}
+
 	// Fetch image
 	const imageStartTime = Date.now();
 	let imageUrl = socialData?.imageUrl ||
@@ -840,12 +1008,8 @@ const processRecipeData = async (
 	return {
 		id: uuidv4(),
 		title: parsedRecipe.title || "Imported Recipe",
-		ingredients: Array.isArray(parsedRecipe.ingredients)
-			? parsedRecipe.ingredients
-			: [],
-		instructions: Array.isArray(parsedRecipe.instructions)
-			? parsedRecipe.instructions
-			: [],
+		ingredients: finalIngredients,
+		instructions: finalInstructions,
 		description: parsedRecipe.description || "Imported recipe",
 		imageUrl: imageUrl || null,
 		cookingTime: parsedRecipe.cookingTime || "30 minutes",
