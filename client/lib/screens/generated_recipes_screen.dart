@@ -103,7 +103,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Generated Recipes'),
+      appBar: const CustomAppBar(title: 'Generated'),
       body: Stack(
         children: [
           Consumer<RecipeProvider>(

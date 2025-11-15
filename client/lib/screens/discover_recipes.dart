@@ -278,7 +278,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(
-        title: 'Discover Recipes',
+        title: 'Discover',
       ),
       body: Stack(
         children: [

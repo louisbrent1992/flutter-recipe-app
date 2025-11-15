@@ -509,7 +509,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       },
       child: Scaffold(
         appBar: CustomAppBar(
-          title: 'Recipe Details',
+          title: 'Details',
           floatingButtons: [
             // Overflow menu (Edit/Delete)
             PopupMenuButton<MenuAction>(

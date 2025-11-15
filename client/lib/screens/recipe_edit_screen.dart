@@ -436,8 +436,8 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
       appBar: CustomAppBar(
         title:
             (widget.recipe?.toEdit == true || currentRecipe.toEdit == true)
-                ? 'Edit Recipe'
-                : 'New Recipe',
+                ? 'Edit'
+                : 'New',
         floatingButtons: [
           IconButton(
             icon: const Icon(Icons.save),

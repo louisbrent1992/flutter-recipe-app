@@ -256,7 +256,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Import Recipe',
+        title: 'Import',
         floatingButtons: [
           IconButton(
             icon: const Icon(Icons.add_rounded),

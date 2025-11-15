@@ -160,10 +160,14 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
 
       if (context.mounted && recipeProvider.generatedRecipes.isNotEmpty) {
         // Always deduct one generation credit after successful generation
+        // Only deduct if user doesn't have unlimited usage or active trial
         await subscriptionProvider.useCredits(
           CreditType.recipeGeneration,
           reason: 'AI recipe generation',
         );
+
+        // Refresh credits display to show updated balance
+        await subscriptionProvider.refreshData();
 
         // Show success message
         if (context.mounted) {
@@ -237,7 +241,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Generate Recipe'),
+      appBar: const CustomAppBar(title: 'Generate'),
       body: Consumer<RecipeProvider>(
         builder: (context, recipeProvider, _) {
           return Stack(

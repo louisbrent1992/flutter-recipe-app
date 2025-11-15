@@ -294,7 +294,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: '${_collection.name} Recipes',
+        title: _collection.name,
         actions: [
           if (!_isDefaultCollection(_collection))
             IconButton(

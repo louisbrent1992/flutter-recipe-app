@@ -250,7 +250,7 @@ Shared from Recipe App
         children: [
           if (widget.showCookingTime)
             Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: MainAxisSize.max,
               children: [
                 Icon(
                   Icons.timer_rounded,
@@ -276,7 +276,7 @@ Shared from Recipe App
             ),
           if (widget.showServings)
             Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: MainAxisSize.max,
               children: [
                 Icon(
                   Icons.people,
@@ -301,7 +301,7 @@ Shared from Recipe App
               ],
             ),
           Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.max,
             children: [
               Icon(
                 Icons.restaurant_menu_rounded,

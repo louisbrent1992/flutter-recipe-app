@@ -137,13 +137,13 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'My Recipes',
+        title: 'Recipes',
         floatingButtons: [
-          // Favorites removed
-          // New Recipe button
-          IconButton(
+          // Context menu
+          PopupMenuButton<String>(
+            tooltip: 'More',
             icon: Icon(
-              Icons.add,
+              Icons.more_vert,
               size: AppSizing.responsiveIconSize(
                 context,
                 mobile: 24,
@@ -151,8 +151,58 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                 desktop: 30,
               ),
             ),
-            tooltip: 'New Recipe',
-            onPressed: () => Navigator.pushNamed(context, '/recipeEdit'),
+            color: Theme.of(context).colorScheme.surface.withValues(
+              alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withValues(
+                  alpha: Theme.of(context).colorScheme.overlayLight,
+                ),
+                width: 1,
+              ),
+            ),
+            onSelected: (value) async {
+              switch (value) {
+                case 'new_recipe':
+                  Navigator.pushNamed(context, '/recipeEdit');
+                  break;
+                case 'refresh':
+                  await _loadRecipes(forceRefresh: true);
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem<String>(
+                value: 'new_recipe',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.add,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('New Recipe'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'refresh',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.refresh,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('Refresh'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -308,64 +358,73 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                   children: [
                     RefreshIndicator(
                       onRefresh: () => _loadRecipes(forceRefresh: true),
-                      child: GridView.builder(
-                        key: const PageStorageKey('my_recipes_grid'),
-                        padding: EdgeInsets.fromLTRB(
-                          AppSpacing.responsive(context),
-                          AppSpacing.responsive(context),
-                          AppSpacing.responsive(context),
-                          100,
-                        ),
-                        controller: _scrollController,
-                        itemBuilder: (context, index) {
-                          final recipe = filteredRecipes[index];
-                          return RecipeCard(
-                            recipe: recipe,
-                            showEditButton: true,
-                            showRemoveButton: true,
-                            // Favorites removed
-                            onTap: () async {
-                              final result = await Navigator.pushNamed(
-                                context,
-                                '/recipeDetail',
-                                arguments: recipe,
-                              );
-                              if (result is Recipe && mounted) {
-                                setState(() {
-                                  final idx = allRecipes.indexWhere(
-                                    (r) => r.id == result.id,
-                                  );
-                                  if (idx != -1) {
-                                    allRecipes[idx] = result;
-                                  }
-                                });
-                              }
-                            },
-                            onRecipeUpdated: (updatedRecipe) {
-                              // Update the recipe in the list
-                              setState(() {
-                                final index = allRecipes.indexWhere(
-                                  (r) => r.id == updatedRecipe.id,
+                      child: filteredRecipes.isEmpty
+                          ? ListView(
+                              padding: EdgeInsets.fromLTRB(
+                                AppSpacing.responsive(context),
+                                AppSpacing.responsive(context),
+                                AppSpacing.responsive(context),
+                                100,
+                              ),
+                            )
+                          : GridView.builder(
+                              key: const PageStorageKey('my_recipes_grid'),
+                              padding: EdgeInsets.fromLTRB(
+                                AppSpacing.responsive(context),
+                                AppSpacing.responsive(context),
+                                AppSpacing.responsive(context),
+                                100,
+                              ),
+                              controller: _scrollController,
+                              itemBuilder: (context, index) {
+                                final recipe = filteredRecipes[index];
+                                return RecipeCard(
+                                  recipe: recipe,
+                                  showEditButton: true,
+                                  showRemoveButton: true,
+                                  // Favorites removed
+                                  onTap: () async {
+                                    final result = await Navigator.pushNamed(
+                                      context,
+                                      '/recipeDetail',
+                                      arguments: recipe,
+                                    );
+                                    if (result is Recipe && mounted) {
+                                      setState(() {
+                                        final idx = allRecipes.indexWhere(
+                                          (r) => r.id == result.id,
+                                        );
+                                        if (idx != -1) {
+                                          allRecipes[idx] = result;
+                                        }
+                                      });
+                                    }
+                                  },
+                                  onRecipeUpdated: (updatedRecipe) {
+                                    // Update the recipe in the list
+                                    setState(() {
+                                      final index = allRecipes.indexWhere(
+                                        (r) => r.id == updatedRecipe.id,
+                                      );
+                                      if (index != -1) {
+                                        allRecipes[index] = updatedRecipe;
+                                      }
+                                    });
+                                  },
                                 );
-                                if (index != -1) {
-                                  allRecipes[index] = updatedRecipe;
-                                }
-                              });
-                            },
-                          );
-                        },
-                        itemCount: filteredRecipes.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: AppSizing.responsiveGridCount(
-                            context,
-                          ),
-                          childAspectRatio: AppSizing.responsiveAspectRatio(
-                            context,
-                          ),
-                          crossAxisSpacing: AppSpacing.responsive(context),
-                          mainAxisSpacing: AppSpacing.responsive(context),
-                        ),
-                      ),
+                              },
+                              itemCount: filteredRecipes.length,
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: AppSizing.responsiveGridCount(
+                                  context,
+                                ),
+                                childAspectRatio: AppSizing.responsiveAspectRatio(
+                                  context,
+                                ),
+                                crossAxisSpacing: AppSpacing.responsive(context),
+                                mainAxisSpacing: AppSpacing.responsive(context),
+                              ),
+                            ),
                     ),
 
                     // Loading overlay only on the recipe grid

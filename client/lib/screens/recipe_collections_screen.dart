@@ -263,12 +263,72 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     return SafeArea(
       child: Scaffold(
         appBar: CustomAppBar(
-          title: 'Recipe Collections',
+          title: 'Collections',
           floatingButtons: [
-            IconButton(
-              icon: const Icon(Icons.add_rounded),
-              tooltip: 'Add Collection',
-              onPressed: () => _showAddCategoryDialog(),
+            // Context menu
+            PopupMenuButton<String>(
+              tooltip: 'More',
+              icon: Icon(
+                Icons.more_vert,
+                size: AppSizing.responsiveIconSize(
+                  context,
+                  mobile: 24,
+                  tablet: 28,
+                  desktop: 30,
+                ),
+              ),
+              color: Theme.of(context).colorScheme.surface.withValues(
+                alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.outline.withValues(
+                    alpha: Theme.of(context).colorScheme.overlayLight,
+                  ),
+                  width: 1,
+                ),
+              ),
+              onSelected: (value) async {
+                switch (value) {
+                  case 'add_collection':
+                    _showAddCategoryDialog();
+                    break;
+                  case 'refresh':
+                    await _loadCollections(forceRefresh: true);
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem<String>(
+                  value: 'add_collection',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.add_rounded,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Add Collection'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'refresh',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.refresh,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Refresh'),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),
