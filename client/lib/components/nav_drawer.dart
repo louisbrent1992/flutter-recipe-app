@@ -237,9 +237,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     final isMobile = AppBreakpoints.isMobile(context);
 
     return Drawer(
-      width: AppBreakpoints.isDesktop(context)
-          ? 360
-          : AppBreakpoints.isTablet(context)
+      width:
+          AppBreakpoints.isDesktop(context)
+              ? 360
+              : AppBreakpoints.isTablet(context)
               ? 320
               : MediaQuery.of(context).size.width * 0.85,
       child: Container(
@@ -407,8 +408,8 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                           AppBreakpoints.isDesktop(context)
                               ? 14
                               : AppBreakpoints.isTablet(context)
-                                  ? 14
-                                  : 12,
+                              ? 14
+                              : 12,
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -416,9 +417,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                           children: [
                             _buildAnimatedAvatar(colorScheme, isDark, isMobile),
                             SizedBox(
-                              height: AppBreakpoints.isDesktop(context)
-                                  ? 6
-                                  : AppBreakpoints.isTablet(context)
+                              height:
+                                  AppBreakpoints.isDesktop(context)
+                                      ? 6
+                                      : AppBreakpoints.isTablet(context)
                                       ? 6
                                       : 6,
                             ),
@@ -430,9 +432,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                             ),
                             if (!isMobile || screenHeight > 400) ...[
                               SizedBox(
-                                height: AppBreakpoints.isDesktop(context)
-                                    ? 6
-                                    : AppBreakpoints.isTablet(context)
+                                height:
+                                    AppBreakpoints.isDesktop(context)
+                                        ? 6
+                                        : AppBreakpoints.isTablet(context)
                                         ? 8
                                         : 8,
                               ),
@@ -464,9 +467,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     bool isDark,
     bool isMobile,
   ) {
-    final double avatarSize = AppBreakpoints.isDesktop(context)
-        ? 80
-        : AppBreakpoints.isTablet(context)
+    final double avatarSize =
+        AppBreakpoints.isDesktop(context)
+            ? 80
+            : AppBreakpoints.isTablet(context)
             ? 70
             : 50;
 
@@ -515,9 +519,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               ),
               child: Consumer<UserProfileProvider>(
                 builder: (context, profileProvider, _) {
-                  final photoURL = profileProvider.profile['photoURL'] as String? ?? 
-                                  user?.photoURL;
-                  
+                  final photoURL =
+                      profileProvider.profile['photoURL'] as String? ??
+                      user?.photoURL;
+
                   return ClipOval(
                     child:
                         photoURL != null
@@ -1012,9 +1017,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                   }),
                 ),
                 SizedBox(
-                  height: AppBreakpoints.isDesktop(context)
-                      ? 20
-                      : AppBreakpoints.isTablet(context)
+                  height:
+                      AppBreakpoints.isDesktop(context)
+                          ? 20
+                          : AppBreakpoints.isTablet(context)
                           ? 18
                           : 16,
                 ),
@@ -1028,9 +1034,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(
-                  height: AppBreakpoints.isDesktop(context)
-                      ? 12
-                      : AppBreakpoints.isTablet(context)
+                  height:
+                      AppBreakpoints.isDesktop(context)
+                          ? 12
+                          : AppBreakpoints.isTablet(context)
                           ? 10
                           : 8,
                 ),
@@ -1044,9 +1051,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(
-                  height: AppBreakpoints.isDesktop(context)
-                      ? 32
-                      : AppBreakpoints.isTablet(context)
+                  height:
+                      AppBreakpoints.isDesktop(context)
+                          ? 32
+                          : AppBreakpoints.isTablet(context)
                           ? 28
                           : 24,
                 ),
@@ -1056,8 +1064,8 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                     AppBreakpoints.isDesktop(context)
                         ? 20
                         : AppBreakpoints.isTablet(context)
-                            ? 18
-                            : 16,
+                        ? 18
+                        : 16,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade50,
@@ -1065,8 +1073,8 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                       AppBreakpoints.isDesktop(context)
                           ? 16
                           : AppBreakpoints.isTablet(context)
-                              ? 14
-                              : 12,
+                          ? 14
+                          : 12,
                     ),
                   ),
                   child: Column(
@@ -1075,43 +1083,49 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                       Text(
                         'Ranking Breakdown:',
                         style: TextStyle(
-                          fontSize: AppDialog.responsiveContentSize(context) * 0.875,
+                          fontSize:
+                              AppDialog.responsiveContentSize(context) * 0.875,
                           fontWeight: FontWeight.bold,
                           color: Colors.grey.shade700,
                         ),
                       ),
                       SizedBox(
-                        height: AppBreakpoints.isDesktop(context)
-                            ? 10
-                            : AppBreakpoints.isTablet(context)
+                        height:
+                            AppBreakpoints.isDesktop(context)
+                                ? 10
+                                : AppBreakpoints.isTablet(context)
                                 ? 9
                                 : 8,
                       ),
                       Text(
                         '• Recipe Difficulty: ${_getAverageDifficultyText()}',
                         style: TextStyle(
-                          fontSize: AppDialog.responsiveContentSize(context) * 0.75,
+                          fontSize:
+                              AppDialog.responsiveContentSize(context) * 0.75,
                           color: Colors.grey.shade600,
                         ),
                       ),
                       Text(
                         '• Saved Recipes: $savedRecipesCount',
                         style: TextStyle(
-                          fontSize: AppDialog.responsiveContentSize(context) * 0.75,
+                          fontSize:
+                              AppDialog.responsiveContentSize(context) * 0.75,
                           color: Colors.grey.shade600,
                         ),
                       ),
                       SizedBox(
-                        height: AppBreakpoints.isDesktop(context)
-                            ? 10
-                            : AppBreakpoints.isTablet(context)
+                        height:
+                            AppBreakpoints.isDesktop(context)
+                                ? 10
+                                : AppBreakpoints.isTablet(context)
                                 ? 9
                                 : 8,
                       ),
                       Text(
                         _getNextLevelText(),
                         style: TextStyle(
-                          fontSize: AppDialog.responsiveContentSize(context) * 0.75,
+                          fontSize:
+                              AppDialog.responsiveContentSize(context) * 0.75,
                           fontStyle: FontStyle.italic,
                           color: Colors.blue.shade600,
                         ),
@@ -1120,9 +1134,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                   ),
                 ),
                 SizedBox(
-                  height: AppBreakpoints.isDesktop(context)
-                      ? 24
-                      : AppBreakpoints.isTablet(context)
+                  height:
+                      AppBreakpoints.isDesktop(context)
+                          ? 24
+                          : AppBreakpoints.isTablet(context)
                           ? 22
                           : 20,
                 ),
@@ -1150,7 +1165,8 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                           label: Text(
                             'Leaderboards',
                             style: TextStyle(
-                              fontSize: AppDialog.responsiveContentSize(context) *
+                              fontSize:
+                                  AppDialog.responsiveContentSize(context) *
                                   0.625,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1160,14 +1176,16 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                           ),
                           style: OutlinedButton.styleFrom(
                             padding: EdgeInsets.symmetric(
-                              horizontal: AppBreakpoints.isDesktop(context)
-                                  ? 16
-                                  : AppBreakpoints.isTablet(context)
+                              horizontal:
+                                  AppBreakpoints.isDesktop(context)
+                                      ? 16
+                                      : AppBreakpoints.isTablet(context)
                                       ? 14
                                       : 12,
-                              vertical: AppBreakpoints.isDesktop(context)
-                                  ? 12
-                                  : AppBreakpoints.isTablet(context)
+                              vertical:
+                                  AppBreakpoints.isDesktop(context)
+                                      ? 12
+                                      : AppBreakpoints.isTablet(context)
                                       ? 11
                                       : 10,
                             ),
@@ -1175,9 +1193,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                         ),
                       ),
                       SizedBox(
-                        width: AppBreakpoints.isDesktop(context)
-                            ? 16
-                            : AppBreakpoints.isTablet(context)
+                        width:
+                            AppBreakpoints.isDesktop(context)
+                                ? 16
+                                : AppBreakpoints.isTablet(context)
                                 ? 14
                                 : 12,
                       ),
@@ -1203,21 +1222,24 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                             overflow: TextOverflow.ellipsis,
                             softWrap: false,
                             style: TextStyle(
-                              fontSize: AppDialog.responsiveContentSize(context) *
+                              fontSize:
+                                  AppDialog.responsiveContentSize(context) *
                                   0.625,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
                             padding: EdgeInsets.symmetric(
-                              horizontal: AppBreakpoints.isDesktop(context)
-                                  ? 16
-                                  : AppBreakpoints.isTablet(context)
+                              horizontal:
+                                  AppBreakpoints.isDesktop(context)
+                                      ? 16
+                                      : AppBreakpoints.isTablet(context)
                                       ? 14
                                       : 12,
-                              vertical: AppBreakpoints.isDesktop(context)
-                                  ? 12
-                                  : AppBreakpoints.isTablet(context)
+                              vertical:
+                                  AppBreakpoints.isDesktop(context)
+                                      ? 12
+                                      : AppBreakpoints.isTablet(context)
                                       ? 11
                                       : 10,
                             ),
@@ -1227,9 +1249,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                     ],
                   ),
                   SizedBox(
-                    height: AppBreakpoints.isDesktop(context)
-                        ? 16
-                        : AppBreakpoints.isTablet(context)
+                    height:
+                        AppBreakpoints.isDesktop(context)
+                            ? 16
+                            : AppBreakpoints.isTablet(context)
                             ? 14
                             : 12,
                   ),
@@ -1245,8 +1268,8 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                         AppBreakpoints.isDesktop(context)
                             ? 16
                             : AppBreakpoints.isTablet(context)
-                                ? 14
-                                : 12,
+                            ? 14
+                            : 12,
                       ),
                     ),
                   ),
@@ -1389,7 +1412,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               ),
               _NavItem(
                 Icons.add_box_rounded,
-                'Import Recipe (Beta)',
+                'Import Recipe',
                 '/import',
                 const Color(0xFF0984E3),
 
@@ -1397,7 +1420,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               ),
               _NavItem(
                 Icons.auto_awesome_rounded,
-                'Generate Recipes (Beta)',
+                'Generate Recipes',
                 '/generate',
                 colorScheme.onTertiary,
                 6,
