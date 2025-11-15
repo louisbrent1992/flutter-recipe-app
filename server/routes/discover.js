@@ -76,140 +76,85 @@ router.get("/search", auth, async (req, res) => {
 		}
         // Note: 'tag' terms are already merged into tokens above for OR semantics
 
-        // Get total count for pagination (before deduplication)
+        // Get total count for pagination
         const totalQuery = await recipesRef.count().get();
         const totalRecipes = totalQuery.data().count;
 
-        // Fetch recipes ensuring we get enough unique results for the requested page
-        // We collect up to targetUnique = page * limit unique items, then slice the page segment
-        const uniqueRecipesMap = new Map();
-        const targetUnique = Math.max(page * limit, limit);
-        let currentOffset = 0;
-        let fetchAttempts = 0;
-        const maxFetchAttempts = 10; // allow more attempts to satisfy deeper pages
-        const batchSize = Math.max(limit * 2, 50); // Fetch larger batches to account for deduplication
+        // Calculate pagination offsets
+        const startAt = (page - 1) * limit;
 
-		// Keep fetching until we have enough unique recipes or hit max attempts
-        while (uniqueRecipesMap.size < targetUnique && fetchAttempts < maxFetchAttempts) {
-			let snapshot;
-			try {
-				if (isRandom) {
-					// For random ordering, fetch more recipes and randomize client-side
-					const randomBatchSize = Math.min(batchSize * 3, 300); // Fetch more for better randomization
-					snapshot = await recipesRef
-						.limit(randomBatchSize)
-						.offset(currentOffset)
-						.get();
-				} else {
-					// Default: order by creation date (latest first)
-					snapshot = await recipesRef
-						.orderBy("createdAt", "desc")
-						.limit(batchSize)
-						.offset(currentOffset)
-						.get();
-				}
-			} catch (orderErr) {
-				// Fallback if some docs have non-timestamp createdAt or field missing
-				console.warn(
-					"Falling back to un-ordered fetch due to createdAt orderBy error:",
-					orderErr?.message || orderErr
-				);
-				snapshot = await recipesRef.limit(batchSize).offset(currentOffset).get();
-			}
+        // Fetch recipes with simple Firestore pagination
+        let snapshot;
+        try {
+            if (isRandom) {
+                // For random: fetch a larger sample, shuffle, then paginate
+                // Fetch up to 500 recipes to get a good random sample
+                const randomSampleSize = Math.min(500, totalRecipes);
+                snapshot = await recipesRef
+                    .limit(randomSampleSize)
+                    .get();
+            } else {
+                // Default: order by creation date (latest first)
+                snapshot = await recipesRef
+                    .orderBy("createdAt", "desc")
+                    .limit(limit)
+                    .offset(startAt)
+                    .get();
+            }
+        } catch (orderErr) {
+            // Fallback if some docs have non-timestamp createdAt or field missing
+            console.warn(
+                "Falling back to un-ordered fetch due to createdAt orderBy error:",
+                orderErr?.message || orderErr
+            );
+            snapshot = await recipesRef
+                .limit(limit)
+                .offset(startAt)
+                .get();
+        }
 
-			// If no more recipes, break
-			if (snapshot.empty) {
-				break;
-			}
+        // Collect recipes from snapshot
+        const recipes = [];
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            recipes.push({
+                id: doc.id,
+                ...data,
+            });
+        });
 
-            // Collect recipes from this batch
-			const batchRecipes = [];
-			snapshot.forEach((doc) => {
-				const data = doc.data();
-				batchRecipes.push({
-					id: doc.id,
-					...data,
-				});
-			});
+        // Apply random shuffling if requested (after fetching)
+        let paginatedRecipes = recipes;
+        if (isRandom && recipes.length > 0) {
+            // Fisher-Yates shuffle algorithm for true randomization
+            const shuffled = [...recipes];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            // Then apply pagination to shuffled results
+            const pageStart = Math.max(0, (page - 1) * limit);
+            paginatedRecipes = shuffled.slice(pageStart, pageStart + limit);
+        }
 
-            // Helper: ensure token matches only title, ingredients, or tags
-            const tokensSet = new Set(tokens || []);
-            const matchesAllowedFields = (recipe) => {
-                // Build normalized fields
-                const title = (recipe.title || "").toString().toLowerCase();
-                const ingredients = Array.isArray(recipe.ingredients)
-                    ? recipe.ingredients.map((v) => (v || "").toString().toLowerCase())
-                    : [];
-                const tags = Array.isArray(recipe.tags)
-                    ? recipe.tags.map((v) => (v || "").toString().toLowerCase())
-                    : [];
+        // Calculate accurate pagination info
+        const totalPages = Math.ceil(totalRecipes / limit);
+        const hasNextPage = page < totalPages;
+        const hasPrevPage = page > 1;
 
-                // For each token (phrase or word), check containment in allowed fields
-                for (const tok of tokensSet) {
-                    if (!tok || typeof tok !== 'string') continue;
-                    if (title.includes(tok)) return true;
-                    if (ingredients.some((ing) => ing.includes(tok))) return true;
-                    // Tags are typically single words; use contains to allow phrases too
-                    if (tags.some((tagVal) => tagVal.includes(tok))) return true;
-                }
-                return false;
-            };
-
-            // Add unique recipes to our map (union across terms already applied in query),
-            // but only if matches occur in title, ingredients, or tags (omit description/instructions)
-            for (const recipe of batchRecipes) {
-                if (tokens && tokens.length > 0 && !matchesAllowedFields(recipe)) {
-                    continue;
-                }
-				const key = `${recipe.title?.toLowerCase() || ""}|${
-					recipe.description?.toLowerCase() || ""
-				}`;
-                if (!uniqueRecipesMap.has(key)) {
-                    uniqueRecipesMap.set(key, recipe);
-                    // Stop if we have enough unique recipes for the requested page window
-                    if (uniqueRecipesMap.size >= targetUnique) {
-                        break;
-                    }
-                }
-			}
-
-            currentOffset += batchSize;
-			fetchAttempts++;
-		}
-
-		// Convert back to array and apply pagination to deduplicated results
-		let deduplicatedRecipes = Array.from(uniqueRecipesMap.values());
-		
-		// Apply random shuffling if requested
-		if (isRandom) {
-			// Fisher-Yates shuffle algorithm for true randomization
-			for (let i = deduplicatedRecipes.length - 1; i > 0; i--) {
-				const j = Math.floor(Math.random() * (i + 1));
-				[deduplicatedRecipes[i], deduplicatedRecipes[j]] = [deduplicatedRecipes[j], deduplicatedRecipes[i]];
-			}
-		}
-		
-        const pageStart = Math.max(0, (page - 1) * limit);
-        const paginatedRecipes = deduplicatedRecipes.slice(pageStart, pageStart + limit);
-
-		console.log(
-			`Performed ${fetchAttempts} fetch attempts, deduplicated to ${deduplicatedRecipes.length} unique recipes, returning ${paginatedRecipes.length}`
-		);
-
-		// Calculate pagination info based on deduplicated results
-		// More accurate now since we have fewer duplicates
-        const estimatedTotalPages = Math.ceil((totalRecipes * 0.95) / limit); // Rough estimate
-        const hasMore = deduplicatedRecipes.length > pageStart + paginatedRecipes.length || page * limit < totalRecipes;
+        console.log(
+            `Fetched ${recipes.length} recipes, returning ${paginatedRecipes.length} for page ${page} of ${totalPages} (total: ${totalRecipes})`
+        );
 
 		res.json({
 			recipes: paginatedRecipes,
 			pagination: {
-				total: Math.floor(totalRecipes * 0.95), // Estimated total after minimal deduplication
+				total: totalRecipes,
 				page,
 				limit,
-				totalPages: estimatedTotalPages,
-				hasNextPage: hasMore && page < estimatedTotalPages,
-				hasPrevPage: page > 1,
+				totalPages,
+				hasNextPage,
+				hasPrevPage,
 			},
 		});
 	} catch (error) {

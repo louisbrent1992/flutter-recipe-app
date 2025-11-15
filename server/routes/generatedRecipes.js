@@ -1085,7 +1085,8 @@ router.post("/import", async (req, res) => {
 
 		const isInstagram =
 			url.includes("instagram.com/p/") || url.includes("instagram.com/reel/");
-		const isTikTok = url.includes("tiktok.com/");
+		// Detect TikTok URLs (case-insensitive, handles www, short links, etc.)
+		const isTikTok = /tiktok\.com/i.test(url) || /vm\.tiktok\.com/i.test(url) || /vt\.tiktok\.com/i.test(url);
 		const isYouTube = url.includes("youtube.com/") || url.includes("youtu.be/");
 		let socialData = null;
 		let pageContent = "";

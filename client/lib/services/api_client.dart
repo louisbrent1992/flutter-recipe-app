@@ -27,9 +27,7 @@ class ApiClient {
             ? 'http://10.0.2.2:$port/api'
             : 'http://localhost:$port/api';
 
-    return const bool.fromEnvironment('dart.vm.product')
-        ? productionUrl
-        : developmentUrl;
+    return productionUrl;
   }
 
   /// Get headers with Firebase authentication token

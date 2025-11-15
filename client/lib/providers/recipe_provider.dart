@@ -666,24 +666,86 @@ class RecipeProvider extends ChangeNotifier {
         // Safely handle pagination data
         final pagination = data['pagination'];
         if (pagination != null && pagination is Map<String, dynamic>) {
-          _currentPage = pagination['page'] ?? 1;
-          _totalPages = pagination['totalPages'] ?? 1;
-          _hasNextPage = pagination['hasNextPage'] ?? false;
-          _hasPrevPage = pagination['hasPrevPage'] ?? false;
-          _totalRecipes = pagination['total'] ?? 0;
+          _currentPage = pagination['page'] ?? page;
+          
+          // Validate pagination against actual results
+          // If we got fewer results than the limit, or no results on page > 1,
+          // adjust the total pages accordingly
+          final actualResultsCount = recipes.length;
+          final serverTotalPages = pagination['totalPages'] ?? 1;
+          
+          // If we're on page 1 and got fewer results than the limit, there's only 1 page
+          if (page == 1 && actualResultsCount < limit) {
+            _totalPages = 1;
+            _hasNextPage = false;
+          }
+          // If we're on page > 1 and got 0 results, adjust totalPages to previous page
+          else if (page > 1 && actualResultsCount == 0) {
+            _totalPages = page - 1;
+            _hasNextPage = false;
+            // If we're now beyond the actual total pages, go back to page 1
+            if (_currentPage > _totalPages) {
+              _currentPage = _totalPages;
+            }
+          }
+          // Otherwise, use server's pagination but validate it makes sense
+          else {
+            _totalPages = serverTotalPages;
+            // Ensure totalPages is at least 1
+            if (_totalPages < 1) {
+              _totalPages = 1;
+            }
+            // If we got a full page of results, trust the server's hasNextPage
+            // Otherwise, if we got fewer results, there's no next page
+            if (actualResultsCount < limit) {
+              _hasNextPage = false;
+            } else {
+              _hasNextPage = pagination['hasNextPage'] ?? false;
+            }
+          }
+          
+          _hasPrevPage = pagination['hasPrevPage'] ?? (page > 1);
+          _totalRecipes = pagination['total'] ?? actualResultsCount;
+          
+          // Ensure hasNextPage is false if we're on the last page
+          if (_currentPage >= _totalPages) {
+            _hasNextPage = false;
+          }
+          
+          // Ensure hasPrevPage is false if we're on page 1
+          if (_currentPage <= 1) {
+            _hasPrevPage = false;
+          }
+          
           _generatedPaginationCache.putIfAbsent(
             cacheKey,
             () => <int, Map<String, dynamic>>{},
           );
-          _generatedPaginationCache[cacheKey]![page] =
-              Map<String, dynamic>.from(pagination);
+          _generatedPaginationCache[cacheKey]![page] = {
+            'page': _currentPage,
+            'totalPages': _totalPages,
+            'hasNextPage': _hasNextPage,
+            'hasPrevPage': _hasPrevPage,
+            'total': _totalRecipes,
+          };
         } else {
           // Fallback values if pagination data is missing
-          _currentPage = 1;
-          _totalPages = 1;
-          _hasNextPage = false;
-          _hasPrevPage = false;
+          // Calculate pagination based on actual results
+          _currentPage = page;
+          
+          // If we got fewer results than the limit, there's only 1 page
+          if (recipes.length < limit) {
+            _totalPages = 1;
+            _hasNextPage = false;
+          } else {
+            // Estimate total pages from results (this is a fallback, server should provide this)
+            _totalPages = 1; // Default to 1 if we can't determine
+            _hasNextPage = false; // Can't know for sure without server data
+          }
+          
+          _hasPrevPage = page > 1;
           _totalRecipes = recipes.length;
+          
           _generatedPaginationCache.putIfAbsent(
             cacheKey,
             () => <int, Map<String, dynamic>>{},

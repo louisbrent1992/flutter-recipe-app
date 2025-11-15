@@ -331,13 +331,52 @@ Shared from Recipe App
   }
 
   String _formatCookingTime(String cookingTime) {
-    // If already contains 'hour' or 'minute', it's already formatted
-    if (cookingTime.contains('hour') || cookingTime.contains('minute')) {
-      return cookingTime;
+    // Clean up the cooking time string - remove words like "approximately", "about", "around", etc.
+    String cleaned = cookingTime.toLowerCase().trim();
+
+    // Remove common qualifiers that cause overflow
+    cleaned = cleaned.replaceAll(
+      RegExp(
+        r'\b(approximately|about|around|roughly|nearly|almost|over|under|up to|at least|at most)\b\s*',
+        caseSensitive: true,
+      ),
+      '',
+    );
+
+    // Extract numeric value and time unit
+    // Pattern: number followed by optional space and time unit (min, minute, minutes, hr, hour, hours, h, m)
+    final timePattern = RegExp(
+      r'(\d+)\s*(min|minute|minutes|hr|hour|hours|h|m)\b',
+      caseSensitive: true,
+    );
+    final match = timePattern.firstMatch(cleaned);
+
+    if (match != null) {
+      final number = int.tryParse(match.group(1) ?? '');
+      final unit = match.group(2)?.toLowerCase() ?? '';
+
+      if (number != null) {
+        // Normalize the unit
+        if (unit.contains('hour') || unit == 'hr' || unit == 'h') {
+          // Handle hours
+          if (number == 1) {
+            return '1 hour';
+          } else {
+            return '$number hours';
+          }
+        } else if (unit.contains('minute') || unit == 'min' || unit == 'm') {
+          // Handle minutes
+          if (number == 1) {
+            return '1 minute';
+          } else {
+            return '$number minutes';
+          }
+        }
+      }
     }
 
-    // Try to parse as integer
-    int? minutes = int.tryParse(cookingTime);
+    // Try to parse as pure integer (assume minutes)
+    int? minutes = int.tryParse(cookingTime.trim());
     if (minutes != null) {
       if (minutes >= 60) {
         int hours = minutes ~/ 60;
@@ -353,12 +392,12 @@ Shared from Recipe App
     }
 
     // Default case: just append 'minutes' if it's a number-like string
-    if (RegExp(r'^\d+$').hasMatch(cookingTime)) {
-      return '$cookingTime minutes';
+    if (RegExp(r'^\d+$').hasMatch(cookingTime.trim())) {
+      return '${cookingTime.trim()} minutes';
     }
 
-    // If we can't parse it, return as is
-    return cookingTime;
+    // If we can't parse it, return cleaned version (without qualifiers)
+    return cleaned.isEmpty ? cookingTime : cleaned;
   }
 
   @override

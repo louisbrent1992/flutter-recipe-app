@@ -136,6 +136,23 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
       limit: _itemsPerPage,
       forceRefresh: forceRefresh,
     );
+    
+    // If current page is beyond total pages, reset to page 1
+    if (mounted && _currentPage > recipeProvider.totalPages && recipeProvider.totalPages > 0) {
+      setState(() {
+        _currentPage = 1;
+      });
+      // Reload with page 1
+      await recipeProvider.searchExternalRecipes(
+        query: _searchQuery.isEmpty ? null : _searchQuery,
+        difficulty: _selectedDifficulty == 'All' ? null : _selectedDifficulty,
+        tag: _selectedTag == 'All' ? null : _selectedTag,
+        page: 1,
+        limit: _itemsPerPage,
+        forceRefresh: true,
+      );
+    }
+    
     _updateAvailableTagsFromRecipes();
   }
 
