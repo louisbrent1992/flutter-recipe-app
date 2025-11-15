@@ -222,15 +222,28 @@ class PurchaseService {
     }
 
     try {
-      // Get product configuration
-      final productConfig = ProductConfigurations.getProductById(
+      // Migrate old product IDs to new ones for backward compatibility
+      final migratedProductId = ProductIds.migrateProductId(
         purchaseDetails.productID,
       );
+      
+      // Get product configuration using migrated ID
+      final productConfig = ProductConfigurations.getProductById(
+        migratedProductId,
+      );
+      
       if (productConfig == null) {
         debugPrint(
-          'Product configuration not found: ${purchaseDetails.productID}',
+          'Product configuration not found: ${purchaseDetails.productID} (migrated to: $migratedProductId)',
         );
         return;
+      }
+      
+      // Log migration if product ID was changed
+      if (migratedProductId != purchaseDetails.productID) {
+        debugPrint(
+          '🔄 Migrated old product ID "${purchaseDetails.productID}" to "$migratedProductId"',
+        );
       }
 
       // Check if this purchase has already been processed

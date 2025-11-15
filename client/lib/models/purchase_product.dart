@@ -154,9 +154,21 @@ class ProductIds {
     unlimitedPremiumYearly,
   };
 
+  /// Map old product IDs to new ones for backward compatibility
+  static String migrateProductId(String oldId) {
+    const migrationMap = {
+      'recipease_imports_10': 'recipease_imports_15', // Old 10-pack → new 15-pack
+      'recipease_ultimate_bundle': 'recipease_ultimate_bundle_v2', // Old bundle → new bundle
+      // Add more migrations as needed
+    };
+    return migrationMap[oldId] ?? oldId;
+  }
+
   /// Get product type from ID
   static ProductType? getProductType(String id) {
-    switch (id) {
+    // Try migrated ID first
+    final migratedId = migrateProductId(id);
+    switch (migratedId) {
       case recipeImports15:
         return ProductType.recipeImports15;
       case recipeImports25:

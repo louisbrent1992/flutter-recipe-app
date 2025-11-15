@@ -197,9 +197,16 @@ const fetchImage = async (query, start = 1) => {
 
 	// Check if the image is already cached
 	if (imageCache[cacheKey]) {
-		const cachedUrl = imageCache[cacheKey];
-		// Don't return cached placeholder URLs
-		if (isPlaceholderUrl(cachedUrl)) {
+		const cached = imageCache[cacheKey];
+		// Handle both old format (string) and new format (object with url and timestamp)
+		const cachedUrl = typeof cached === 'string' ? cached : cached.url;
+		const cachedTimestamp = typeof cached === 'string' ? Date.now() : cached.timestamp;
+		
+		// Check if cache entry is expired
+		if (Date.now() - cachedTimestamp > CACHE_DURATIONS.IMAGES) {
+			console.log("⚠️ Cached image expired, fetching new one");
+			delete imageCache[cacheKey];
+		} else if (isPlaceholderUrl(cachedUrl)) {
 			console.log("⚠️ Cached image is a placeholder, fetching new one");
 			delete imageCache[cacheKey];
 		} else {
@@ -210,6 +217,12 @@ const fetchImage = async (query, start = 1) => {
 
 	const startTime = Date.now();
 	try {
+		// Check if Google API credentials are configured
+		if (!GOOGLE_API_KEY || !GOOGLE_CX) {
+			console.error("Google Custom Search API not configured");
+			return null;
+		}
+
 		const response = await axios.get(GOOGLE_SEARCH_URL, {
 			params: {
 				key: GOOGLE_API_KEY,
@@ -220,6 +233,7 @@ const fetchImage = async (query, start = 1) => {
 				safe: "active",
 				start: start,
 			},
+			timeout: 10000, // 10 second timeout
 		});
 
 		logPerformance(`Google Image Search for "${normalizedQuery}"`, startTime);
@@ -234,7 +248,11 @@ const fetchImage = async (query, start = 1) => {
 		for (const item of response.data.items) {
 			const imageUrl = item.link;
 			if (imageUrl && !isPlaceholderUrl(imageUrl)) {
-				imageCache[cacheKey] = imageUrl;
+				// Store with timestamp for proper cache management
+				imageCache[cacheKey] = {
+					url: imageUrl,
+					timestamp: Date.now()
+				};
 				return imageUrl;
 			}
 		}
@@ -247,7 +265,26 @@ const fetchImage = async (query, start = 1) => {
 
 		return null;
 	} catch (error) {
-		console.error("Error fetching image from Google:", error);
+		// Handle specific error cases
+		if (error.response) {
+			const status = error.response.status;
+			const statusText = error.response.statusText;
+			
+			if (status === 429) {
+				console.error("⚠️ Google API rate limit exceeded. Please try again later.");
+			} else if (status === 403) {
+				console.error("⚠️ Google API access forbidden. Check API key and quota.");
+			} else if (status === 400) {
+				console.error("⚠️ Google API bad request:", error.response.data?.error?.message || statusText);
+			} else {
+				console.error(`⚠️ Google API error (${status}):`, statusText);
+			}
+		} else if (error.code === 'ECONNABORTED') {
+			console.error("⚠️ Google API request timeout");
+		} else {
+			console.error("Error fetching image from Google:", error.message || error);
+		}
+		
 		logPerformance(`Google Image Search FAILED for "${normalizedQuery}"`, startTime);
 		return null;
 	}
@@ -1011,32 +1048,66 @@ const cleanupCaches = () => {
 
 	// Clean up image cache
 	entriesProcessed = 0;
-	const imageEntries = Object.entries(imageCache);
-	if (imageEntries.length > MAX_CACHE_SIZE) {
+	const initialImageCacheSize = Object.keys(imageCache).length;
+	
+	// Always clean up expired entries, regardless of cache size
+	for (const [key, value] of Object.entries(imageCache)) {
+		if (entriesProcessed >= MAX_ENTRIES_PER_CLEANUP) break;
+		
+		// Handle both old format (string) and new format (object with timestamp)
+		let entryTimestamp;
+		if (typeof value === 'string') {
+			// Old format: treat as expired to migrate to new format
+			entryTimestamp = 0;
+		} else if (value && typeof value === 'object' && value.timestamp) {
+			entryTimestamp = value.timestamp;
+		} else {
+			// Invalid entry, remove it
+			delete imageCache[key];
+			entriesProcessed++;
+			continue;
+		}
+		
+		// Remove expired entries
+		if (now - entryTimestamp > CACHE_DURATIONS.IMAGES) {
+			delete imageCache[key];
+			entriesProcessed++;
+		}
+	}
+	
+	// If cache is still too large after cleanup, trim to most recent entries
+	const currentCacheSize = Object.keys(imageCache).length;
+	if (currentCacheSize > MAX_CACHE_SIZE) {
+		const sortedEntries = Object.entries(imageCache)
+			.map(([key, value]) => {
+				// Handle both formats for sorting
+				const timestamp = typeof value === 'string' 
+					? 0  // Old format entries go to the end
+					: (value?.timestamp || 0);
+				return { key, value, timestamp };
+			})
+			.sort((a, b) => b.timestamp - a.timestamp) // Sort by most recent
+			.slice(0, MAX_CACHE_SIZE); // Keep most recent entries
+		
+		// Rebuild cache with only the most recent entries
 		const newImageCache = {};
-		imageEntries
-			.sort((a, b) => b[1].timestamp - a[1].timestamp) // Sort by most recent
-			.slice(0, MAX_CACHE_SIZE) // Keep most recent entries
-			.forEach(([key, value]) => {
-				if (entriesProcessed >= MAX_ENTRIES_PER_CLEANUP) return;
-				if (now - value.timestamp > CACHE_DURATIONS.IMAGES) {
-					delete imageCache[key];
-					entriesProcessed++;
-				} else {
-					newImageCache[key] = value;
-				}
-			});
-
+		sortedEntries.forEach(({ key, value }) => {
+			newImageCache[key] = value;
+		});
+		
 		// Replace the old cache with the new one
 		Object.keys(imageCache).forEach((key) => delete imageCache[key]);
 		Object.entries(newImageCache).forEach(([key, value]) => {
 			imageCache[key] = value;
 		});
+		
+		console.log(`🧹 Trimmed image cache from ${currentCacheSize} to ${Object.keys(newImageCache).length} entries`);
 	}
 };
 
 // Run cleanup more frequently but process fewer items each time
-setInterval(cleanupCaches, 1 * 60 * 60 * 1000); // Every hour
+// Clean up every 30 minutes to prevent memory buildup
+setInterval(cleanupCaches, 30 * 60 * 1000);
 
 // Enhanced cache status endpoint
 router.get("/cache/status", (req, res) => {
