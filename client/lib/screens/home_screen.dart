@@ -38,7 +38,8 @@ class _HomeScreenState extends State<HomeScreen>
   final String username =
       FirebaseAuth.instance.currentUser?.displayName ?? 'User';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final String _heroImageUrl = 'assets/images/hero_image.jpg';
+  final String _heroImageUrl =
+      'https://res.cloudinary.com/client-images/image/upload/v1763258691/Recipe%20App/Gemini_Generated_Image_fu4kt1fu4kt1fu4k_pphj0l.png';
   bool _isBooting = true;
   StreamSubscription<void>? _recipesChangedSubscription;
 
@@ -259,11 +260,9 @@ class _HomeScreenState extends State<HomeScreen>
                             );
                           },
                         ),
-
                         SizedBox(height: AppSpacing.responsive(context)),
-                        SizedBox(height: AppSpacing.responsive(context)),
-                        // Category scroller with quick links
-                        _buildCategoryScroller(context, title: 'Quick Links'),
+                        // Category scroller with features
+                        _buildCategoryScroller(context, title: 'Features'),
                       ],
                     ),
                   ),
@@ -279,111 +278,170 @@ class _HomeScreenState extends State<HomeScreen>
   /// Builds the top hero banner with an enticing recipe photo and overlay text.
   Widget _buildHeroSection(BuildContext context) {
     final theme = Theme.of(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Stack(
-        alignment: Alignment.bottomLeft,
-        children: [
-          // Background image
-          AspectRatio(
-            aspectRatio: 3 / 2,
-            child: Image.asset(
-              _heroImageUrl,
-              fit: BoxFit.cover,
-              cacheWidth: 800, // Add cache width to optimize memory
-              cacheHeight: 450, // Add cache height to optimize memory
-              filterQuality:
-                  FilterQuality.medium, // Adjust quality for better performance
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomLeft,
-                      end: Alignment.topRight,
-                      colors: [
-                        Theme.of(context).colorScheme.primary.withValues(
-                          alpha: Theme.of(context).colorScheme.alphaMedium,
-                        ),
-                        Theme.of(context).colorScheme.primary.withValues(
-                          alpha: Theme.of(context).colorScheme.alphaHigh,
-                        ),
-                        Theme.of(context).colorScheme.primary,
-                      ],
-                    ),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          size: 48,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Failed to load image',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            fontSize: 16,
+    return Padding(
+      padding: EdgeInsets.only(
+        top: AppSpacing.responsive(context),
+        bottom: AppSpacing.responsive(context),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          alignment: Alignment.bottomLeft,
+          children: [
+            // Background image
+            AspectRatio(
+              aspectRatio: 3 / 2,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final devicePixelRatio =
+                      MediaQuery.of(context).devicePixelRatio;
+                  return Image.network(
+                    _heroImageUrl,
+                    fit: BoxFit.fitWidth,
+                    cacheWidth:
+                        (constraints.maxWidth * devicePixelRatio).round(),
+                    cacheHeight:
+                        (constraints.maxHeight * devicePixelRatio).round(),
+                    filterQuality: FilterQuality.high,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomLeft,
+                            end: Alignment.topRight,
+                            colors: [
+                              Theme.of(context).colorScheme.primary.withValues(
+                                alpha:
+                                    Theme.of(context).colorScheme.alphaMedium,
+                              ),
+                              Theme.of(context).colorScheme.primary.withValues(
+                                alpha: Theme.of(context).colorScheme.alphaHigh,
+                              ),
+                              Theme.of(context).colorScheme.primary,
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Please check the image file',
-                          style: TextStyle(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onPrimary.withValues(
-                              alpha: Theme.of(context).colorScheme.alphaHigh,
-                            ),
-                            fontSize: 12,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                size: 48,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Failed to load image',
+                                style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Please check the image file',
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary.withValues(
+                                    alpha:
+                                        Theme.of(context).colorScheme.alphaHigh,
+                                  ),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-          // Gradient overlay
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Theme.of(context).colorScheme.surface.withValues(
-                      alpha: Theme.of(context).colorScheme.surfaceHeavy,
+            // Gradient overlay - reduced opacity for clearer background image
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Theme.of(context).colorScheme.surface.withValues(
+                        alpha: Theme.of(context).colorScheme.alphaMedium,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Text overlay
+            Padding(
+              padding: AppSpacing.allResponsive(context),
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.responsive(context) * 0.75,
+                  vertical: AppSpacing.responsive(context) * 0.5,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface.withValues(
+                    alpha: Theme.of(context).colorScheme.alphaHigh,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome,',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        shadows: [
+                          Shadow(
+                            offset: const Offset(0, 1),
+                            blurRadius: 2,
+                            color: Colors.black.withValues(alpha: 0.3),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      username,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        shadows: [
+                          Shadow(
+                            offset: const Offset(0, 1),
+                            blurRadius: 2,
+                            color: Colors.black.withValues(alpha: 0.3),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'What would you like to cook today?',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        shadows: [
+                          Shadow(
+                            offset: const Offset(0, 1),
+                            blurRadius: 2,
+                            color: Colors.black.withValues(alpha: 0.2),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
-          // Text overlay
-          Padding(
-            padding: AppSpacing.allResponsive(context),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Welcome back,', style: theme.textTheme.bodyLarge),
-                Text(username, style: theme.textTheme.headlineLarge),
-                const SizedBox(height: 4),
-                Text(
-                  'What would you like to cook today?',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -396,7 +454,8 @@ class _HomeScreenState extends State<HomeScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: EdgeInsets.all(AppSpacing.sm),
+
           child: GestureDetector(
             onTap: () {
               // Navigate based on the title
@@ -408,11 +467,25 @@ class _HomeScreenState extends State<HomeScreen>
             },
             child: Row(
               children: [
+                if (title.contains('Features')) ...[
+                  Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 24,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  SizedBox(width: AppSpacing.sm),
+                ],
                 Expanded(
                   child: Text(
                     title,
-                    style: theme.textTheme.headlineMedium?.copyWith(
+                    style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
+                      fontSize: AppTypography.responsiveFontSize(
+                        context,
+                        mobile: 20,
+                        tablet: 22,
+                        desktop: 24,
+                      ),
                     ),
                   ),
                 ),
@@ -421,17 +494,24 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
         SizedBox(
-          height: AppBreakpoints.isDesktop(context)
-              ? 160
-              : AppBreakpoints.isTablet(context)
+          height:
+              AppBreakpoints.isDesktop(context)
+                  ? 160
+                  : AppBreakpoints.isTablet(context)
                   ? 140
                   : 120,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: categories.length,
-            separatorBuilder: (_, __) => SizedBox(
-              width: AppSpacing.responsive(context, mobile: 12, tablet: 16, desktop: 20),
-            ),
+            separatorBuilder:
+                (_, __) => SizedBox(
+                  width: AppSpacing.responsive(
+                    context,
+                    mobile: 12,
+                    tablet: 16,
+                    desktop: 20,
+                  ),
+                ),
             itemBuilder: (context, index) {
               final cat = categories[index];
               return _buildCategoryCard(context, cat);
@@ -445,18 +525,20 @@ class _HomeScreenState extends State<HomeScreen>
   /// Builds a single category card.
   Widget _buildCategoryCard(BuildContext context, _CategoryItem cat) {
     final theme = Theme.of(context);
-    final cardHeight = AppBreakpoints.isDesktop(context)
-        ? 140.0
-        : AppBreakpoints.isTablet(context)
+    final cardHeight =
+        AppBreakpoints.isDesktop(context)
+            ? 140.0
+            : AppBreakpoints.isTablet(context)
             ? 120.0
             : 100.0;
-    final cardWidth = AppBreakpoints.isDesktop(context)
-        ? 300.0
-        : AppBreakpoints.isTablet(context)
+    final cardWidth =
+        AppBreakpoints.isDesktop(context)
+            ? 300.0
+            : AppBreakpoints.isTablet(context)
             ? 250.0
             : 200.0;
     final borderRadius = AppBreakpoints.isDesktop(context) ? 20.0 : 16.0;
-    
+
     return SizedBox(
       height: cardHeight,
       width: cardWidth,
@@ -465,7 +547,9 @@ class _HomeScreenState extends State<HomeScreen>
           alpha: Theme.of(context).colorScheme.alphaVeryHigh,
         ),
         elevation: AppBreakpoints.isDesktop(context) ? 3 : 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
         child: InkWell(
           onTap: () => Navigator.pushNamed(context, cat.route),
           borderRadius: BorderRadius.circular(borderRadius),
@@ -501,30 +585,42 @@ class _HomeScreenState extends State<HomeScreen>
                     children: [
                       Text(
                         cat.title,
-                        style: AppBreakpoints.isDesktop(context)
-                            ? theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            )
-                            : theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                        style:
+                            AppBreakpoints.isDesktop(context)
+                                ? theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                )
+                                : theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: AppBreakpoints.isDesktop(context) ? 6 : 4),
+                      SizedBox(
+                        height: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                      ),
                       Text(
                         _getCategoryDescription(cat.title),
-                        style: AppBreakpoints.isDesktop(context)
-                            ? theme.textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              height: 1.3,
-                            )
-                            : theme.textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          height: 1.3,
-                        ),
+                        style:
+                            AppBreakpoints.isDesktop(context)
+                                ? theme.textTheme.bodyMedium?.copyWith(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                  height: 1.3,
+                                )
+                                : theme.textTheme.bodySmall?.copyWith(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                  height: 1.3,
+                                ),
                         maxLines: AppBreakpoints.isDesktop(context) ? 2 : 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -543,6 +639,18 @@ class _HomeScreenState extends State<HomeScreen>
   List<_CategoryItem> _quickCategories() {
     return [
       _CategoryItem(
+        'Import Recipe',
+        Icons.ios_share_rounded,
+        '/import',
+        Theme.of(context).colorScheme.success,
+      ),
+      _CategoryItem(
+        'Generate Recipes',
+        Icons.auto_awesome,
+        '/generate',
+        Colors.purple,
+      ),
+      _CategoryItem(
         'My Recipes',
         Icons.restaurant_menu_rounded,
         '/myRecipes',
@@ -559,19 +667,6 @@ class _HomeScreenState extends State<HomeScreen>
         Icons.explore,
         '/discover',
         Theme.of(context).colorScheme.info,
-      ),
-      // Favorites removed
-      _CategoryItem(
-        'Import Recipe',
-        Icons.ios_share_rounded,
-        '/import',
-        Theme.of(context).colorScheme.success,
-      ),
-      _CategoryItem(
-        'Generate Recipes',
-        Icons.auto_awesome,
-        '/generate',
-        Colors.purple,
       ),
     ];
   }
@@ -625,8 +720,14 @@ class _HomeScreenState extends State<HomeScreen>
                 Expanded(
                   child: Text(
                     title,
-                    style: theme.textTheme.headlineMedium?.copyWith(
+                    style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
+                      fontSize: AppTypography.responsiveFontSize(
+                        context,
+                        mobile: 20,
+                        tablet: 22,
+                        desktop: 24,
+                      ),
                     ),
                   ),
                 ),
@@ -658,9 +759,10 @@ class _HomeScreenState extends State<HomeScreen>
   /// Builds an individual recipe card used within carousels.
   Widget _buildRecipeCard(BuildContext context, Recipe recipe) {
     final theme = Theme.of(context);
-    final cardWidth = AppBreakpoints.isDesktop(context)
-        ? 220.0
-        : AppBreakpoints.isTablet(context)
+    final cardWidth =
+        AppBreakpoints.isDesktop(context)
+            ? 220.0
+            : AppBreakpoints.isTablet(context)
             ? 180.0
             : 140.0;
     return InkWell(
@@ -689,27 +791,39 @@ class _HomeScreenState extends State<HomeScreen>
             children: [
               // Image
               Positioned.fill(
-                child: Image.network(
-                  recipe.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder:
-                      (_, __, ___) => Container(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.secondary.withValues(
-                          alpha: Theme.of(context).colorScheme.overlayMedium,
-                        ),
-                        child: Icon(
-                          Icons.restaurant,
-                          size: AppSizing.responsiveIconSize(
-                            context,
-                            mobile: 40,
-                            tablet: 48,
-                            desktop: 56,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final devicePixelRatio =
+                        MediaQuery.of(context).devicePixelRatio;
+                    return Image.network(
+                      recipe.imageUrl,
+                      fit: BoxFit.cover,
+                      cacheWidth:
+                          (constraints.maxWidth * devicePixelRatio).round(),
+                      cacheHeight:
+                          (constraints.maxHeight * devicePixelRatio).round(),
+                      filterQuality: FilterQuality.high,
+                      errorBuilder:
+                          (_, __, ___) => Container(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.secondary.withValues(
+                              alpha:
+                                  Theme.of(context).colorScheme.overlayMedium,
+                            ),
+                            child: Icon(
+                              Icons.restaurant,
+                              size: AppSizing.responsiveIconSize(
+                                context,
+                                mobile: 40,
+                                tablet: 48,
+                                desktop: 56,
+                              ),
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ),
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
+                    );
+                  },
                 ),
               ),
               // Gradient overlay bottom
@@ -742,15 +856,16 @@ class _HomeScreenState extends State<HomeScreen>
                   recipe.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppBreakpoints.isDesktop(context)
-                      ? theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      )
-                      : theme.textTheme.labelSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style:
+                      AppBreakpoints.isDesktop(context)
+                          ? theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          )
+                          : theme.textTheme.labelSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
                 ),
               ),
             ],
@@ -780,8 +895,14 @@ class _HomeScreenState extends State<HomeScreen>
                 Expanded(
                   child: Text(
                     title,
-                    style: theme.textTheme.headlineMedium?.copyWith(
+                    style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
+                      fontSize: AppTypography.responsiveFontSize(
+                        context,
+                        mobile: 20,
+                        tablet: 22,
+                        desktop: 24,
+                      ),
                       color: Theme.of(context).colorScheme.onSurface,
                       decorationColor: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -906,8 +1027,14 @@ class _HomeScreenState extends State<HomeScreen>
                   Expanded(
                     child: Text(
                       title,
-                      style: theme.textTheme.headlineMedium?.copyWith(
+                      style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
+                        fontSize: AppTypography.responsiveFontSize(
+                          context,
+                          mobile: 18,
+                          tablet: 20,
+                          desktop: 22,
+                        ),
                       ),
                     ),
                   ),
@@ -971,8 +1098,14 @@ class _HomeScreenState extends State<HomeScreen>
                   Expanded(
                     child: Text(
                       title,
-                      style: theme.textTheme.headlineMedium?.copyWith(
+                      style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
+                        fontSize: AppTypography.responsiveFontSize(
+                          context,
+                          mobile: 18,
+                          tablet: 20,
+                          desktop: 22,
+                        ),
                       ),
                     ),
                   ),
@@ -1051,9 +1184,10 @@ class _HomeScreenState extends State<HomeScreen>
     final recipesWithImages =
         collection.recipes.where((r) => r.imageUrl.isNotEmpty).toList();
 
-    final collectionCardWidth = AppBreakpoints.isDesktop(context)
-        ? 260.0
-        : AppBreakpoints.isTablet(context)
+    final collectionCardWidth =
+        AppBreakpoints.isDesktop(context)
+            ? 260.0
+            : AppBreakpoints.isTablet(context)
             ? 220.0
             : 180.0;
     final borderRadius = AppBreakpoints.isDesktop(context) ? 24.0 : 20.0;
@@ -1063,7 +1197,9 @@ class _HomeScreenState extends State<HomeScreen>
       child: Card(
         elevation: AppBreakpoints.isDesktop(context) ? 6 : 4,
         shadowColor: collection.color.withValues(alpha: 0.3),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
         child: InkWell(
           onTap:
               () => Navigator.pushNamed(
@@ -1123,7 +1259,10 @@ class _HomeScreenState extends State<HomeScreen>
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: AppBreakpoints.isDesktop(context) ? 6 : 4,
-                          offset: Offset(0, AppBreakpoints.isDesktop(context) ? 3 : 2),
+                          offset: Offset(
+                            0,
+                            AppBreakpoints.isDesktop(context) ? 3 : 2,
+                          ),
                         ),
                       ],
                     ),
@@ -1149,37 +1288,44 @@ class _HomeScreenState extends State<HomeScreen>
                         collection.name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: AppBreakpoints.isDesktop(context)
-                            ? theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color:
-                              Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              blurRadius: 2,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                            )
-                            : theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black.withValues(alpha: 0.5),
-                                  blurRadius: 2,
-                                  offset: const Offset(0, 1),
+                        style:
+                            AppBreakpoints.isDesktop(context)
+                                ? theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                      blurRadius: 2,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                )
+                                : theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                      blurRadius: 2,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
                       ),
-                      SizedBox(height: AppBreakpoints.isDesktop(context) ? 6 : 4),
+                      SizedBox(
+                        height: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                      ),
                       // Recipe count with icon
                       Row(
                         children: [
@@ -1191,24 +1337,27 @@ class _HomeScreenState extends State<HomeScreen>
                                   context,
                                 ).colorScheme.surfaceContainerHighest,
                           ),
-                          SizedBox(width: AppBreakpoints.isDesktop(context) ? 6 : 4),
+                          SizedBox(
+                            width: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                          ),
                           Text(
                             '${collection.recipes.length} ${collection.recipes.length == 1 ? 'recipe' : 'recipes'}',
-                            style: AppBreakpoints.isDesktop(context)
-                                ? theme.textTheme.bodyMedium?.copyWith(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.surfaceContainerHighest,
-                                  fontWeight: FontWeight.w500,
-                                )
-                                : theme.textTheme.bodySmall?.copyWith(
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style:
+                                AppBreakpoints.isDesktop(context)
+                                    ? theme.textTheme.bodyMedium?.copyWith(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.surfaceContainerHighest,
+                                      fontWeight: FontWeight.w500,
+                                    )
+                                    : theme.textTheme.bodySmall?.copyWith(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.surfaceContainerHighest,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                           ),
                         ],
                       ),

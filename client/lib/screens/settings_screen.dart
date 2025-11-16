@@ -38,6 +38,38 @@ class _SettingsScreenState extends State<SettingsScreen>
   String? _originalName;
   String? _originalEmail;
 
+  // Helper method to check if user signed in with OAuth provider
+  bool _isOAuthUser(User? user) {
+    if (user == null) return false;
+
+    // Check providerData for OAuth providers
+    final providers = user.providerData.map((info) => info.providerId).toList();
+
+    return providers.contains('google.com') || providers.contains('apple.com');
+  }
+
+  // Get the provider name for display
+  String? _getProviderName(User? user) {
+    if (user == null) return null;
+
+    final providers = user.providerData.map((info) => info.providerId).toList();
+
+    if (providers.contains('google.com')) return 'Google';
+    if (providers.contains('apple.com')) return 'Apple';
+    return null;
+  }
+
+  // Get provider icon
+  IconData? _getProviderIcon(User? user) {
+    if (user == null) return null;
+
+    final providers = user.providerData.map((info) => info.providerId).toList();
+
+    if (providers.contains('google.com')) return Icons.g_mobiledata_rounded;
+    if (providers.contains('apple.com')) return Icons.apple_rounded;
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -105,9 +137,10 @@ class _SettingsScreenState extends State<SettingsScreen>
   Future<void> _updateProfile() async {
     final profile = context.read<UserProfileProvider>();
     try {
+      // Email editing is disabled for all users - only update display name
       await profile.updateProfile(
         displayName: _nameController.text,
-        email: _emailController.text,
+        email: null, // Never update email
       );
       if (mounted) {
         setState(() {
@@ -533,7 +566,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       } else {
         // Entering edit mode - save current values
         _originalName = _nameController.text;
-        _originalEmail = _emailController.text;
+        // Email editing is disabled for all users
         _isEditing = true;
         _animationController.forward();
       }
@@ -868,12 +901,17 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                           SizedBox(height: AppSpacing.md),
 
-                          _buildAnimatedTextField(
-                            controller: _emailController,
-                            enabled: _isEditing,
-                            label: 'Email:',
-                            hint: user?.email ?? 'Your email',
-                            icon: Icons.email_rounded,
+                          // Email field - read-only for all users
+                          _buildReadOnlyEmailField(
+                            email: user?.email ?? '',
+                            providerName:
+                                _isOAuthUser(user)
+                                    ? (_getProviderName(user) ?? 'Provider')
+                                    : 'Email',
+                            providerIcon:
+                                _isOAuthUser(user)
+                                    ? _getProviderIcon(user)
+                                    : Icons.email_rounded,
                           ),
                         ],
                       ),
@@ -1045,29 +1083,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const Divider(height: 1, thickness: 0.1),
                     SizedBox(height: AppSpacing.md),
 
-                    // Links Section
+                    // Features Section
                     _buildSectionHeader(
-                      title: 'Quick Links',
+                      title: 'Features',
                       icon: Icons.restaurant_menu_rounded,
                       colorScheme: colorScheme,
-                    ),
-
-                    SizedBox(height: AppSpacing.md),
-                    _buildAnimatedListTile(
-                      title: 'My Recipes',
-                      subtitle: 'Explore your recipes',
-                      icon: Icons.restaurant_menu_rounded,
-                      color: Theme.of(context).colorScheme.warning,
-                      onTap: () => Navigator.pushNamed(context, '/myRecipes'),
-                    ),
-                    // Favorites removed
-                    SizedBox(height: AppSpacing.md),
-                    _buildAnimatedListTile(
-                      title: 'Discover Recipes',
-                      subtitle: 'Find new recipe ideas',
-                      icon: Icons.explore,
-                      color: Colors.blue,
-                      onTap: () => Navigator.pushNamed(context, '/discover'),
                     ),
 
                     SizedBox(height: AppSpacing.md),
@@ -1086,6 +1106,24 @@ class _SettingsScreenState extends State<SettingsScreen>
                       icon: Icons.auto_awesome_rounded,
                       color: Theme.of(context).colorScheme.primary,
                       onTap: () => Navigator.pushNamed(context, '/generate'),
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+                    _buildAnimatedListTile(
+                      title: 'My Recipes',
+                      subtitle: 'Explore your recipes',
+                      icon: Icons.restaurant_menu_rounded,
+                      color: Theme.of(context).colorScheme.warning,
+                      onTap: () => Navigator.pushNamed(context, '/myRecipes'),
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+                    _buildAnimatedListTile(
+                      title: 'Discover Recipes',
+                      subtitle: 'Find new recipe ideas',
+                      icon: Icons.explore,
+                      color: Colors.blue,
+                      onTap: () => Navigator.pushNamed(context, '/discover'),
                     ),
 
                     // Only show image refresh in production mode
@@ -1503,6 +1541,104 @@ class _SettingsScreenState extends State<SettingsScreen>
                   _animationController.forward();
                 }
               },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyEmailField({
+    required String email,
+    required String providerName,
+    IconData? providerIcon,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isOAuth = _isOAuthUser(user);
+
+    return Container(
+      margin: EdgeInsets.only(top: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Text(
+              'Email:',
+              style: TextStyle(
+                fontSize: AppTypography.responsiveFontSize(context),
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+          Container(
+            padding: AppSpacing.allResponsive(context),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: colorScheme.outline.withValues(alpha: 0.3),
+              ),
+              borderRadius: BorderRadius.circular(
+                AppBreakpoints.isMobile(context) ? 8 : 12,
+              ),
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  providerIcon ?? Icons.email_rounded,
+                  color:
+                      isOAuth
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant,
+                  size: AppSizing.responsiveIconSize(
+                    context,
+                    mobile: 20,
+                    tablet: 22,
+                    desktop: 24,
+                  ),
+                ),
+                SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        email,
+                        style: TextStyle(
+                          fontSize: AppTypography.responsiveFontSize(context),
+                          fontWeight: FontWeight.normal,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      if (isOAuth) ...[
+                        SizedBox(height: AppSpacing.xs / 2),
+                        Text(
+                          'Signed in with $providerName',
+                          style: TextStyle(
+                            fontSize:
+                                AppTypography.responsiveFontSize(context) *
+                                0.85,
+                            color: colorScheme.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.lock_rounded,
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                  size: AppSizing.responsiveIconSize(
+                    context,
+                    mobile: 16,
+                    tablet: 18,
+                    desktop: 20,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

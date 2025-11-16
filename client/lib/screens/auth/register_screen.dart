@@ -21,7 +21,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  final User? user = FirebaseAuth.instance.currentUser;
 
   // Password requirement states
   bool _hasMinLength = false;
@@ -31,12 +30,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _hasSpecialChar = false;
   bool _hasNoSpaces = true;
 
+  String? _emailError;
+
   @override
   void initState() {
     super.initState();
     _passwordController.addListener(_validatePasswordRequirements);
     _confirmPasswordController.addListener(_validatePasswordMatch);
     _emailController.addListener(_onEmailChanged);
+  }
+
+  void _onEmailChanged() {
+    final email = _emailController.text;
+    final newError =
+        email.isNotEmpty && !email.contains('@')
+            ? 'Please enter a valid email'
+            : null;
+
+    // Only update if error state actually changed to prevent unnecessary rebuilds
+    if (_emailError != newError) {
+      setState(() {
+        _emailError = newError;
+      });
+    }
   }
 
   void _validatePasswordRequirements() {
@@ -55,10 +71,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_confirmPasswordController.text.isNotEmpty) {
       setState(() {});
     }
-  }
-
-  void _onEmailChanged() {
-    setState(() {});
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
@@ -118,6 +130,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
+    _passwordController.removeListener(_validatePasswordRequirements);
+    _confirmPasswordController.removeListener(_validatePasswordMatch);
+    _emailController.removeListener(_onEmailChanged);
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -219,7 +234,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       final User? userData =
           await context.read<AuthService>().signInWithApple();
-      print('userData: $userData');
       if (mounted) {
         _showSnackBar('Successfully signed up with Apple!');
         Navigator.pushNamed(context, '/home', arguments: userData);
@@ -263,24 +277,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(
-              AppBreakpoints.isDesktop(context)
-                  ? 32.0
-                  : AppBreakpoints.isTablet(context)
-                      ? 28.0
-                      : 24.0,
+      body: Center(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(
+            AppBreakpoints.isDesktop(context)
+                ? 32.0
+                : AppBreakpoints.isTablet(context)
+                ? 28.0
+                : 24.0,
+          ),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth:
+                  AppBreakpoints.isDesktop(context)
+                      ? 500
+                      : AppBreakpoints.isTablet(context)
+                      ? 450
+                      : double.infinity,
             ),
-            child: Container(
-              constraints: BoxConstraints(
-                maxWidth: AppBreakpoints.isDesktop(context)
-                    ? 500
-                    : AppBreakpoints.isTablet(context)
-                        ? 450
-                        : double.infinity,
-              ),
             child: Form(
               key: _formKey,
               child: Column(
@@ -289,33 +303,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   Text(
                     'Create Account',
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: AppTypography.responsiveHeadingSize(
-                          context,
-                          mobile: 28,
-                          tablet: 34,
-                          desktop: 40,
-                        ),
-                      ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.headlineLarge?.copyWith(fontSize: 20),
                     textAlign: TextAlign.center,
                   ),
-                    SizedBox(
-                      height: AppBreakpoints.isDesktop(context)
-                          ? 40
-                          : AppBreakpoints.isTablet(context)
-                              ? 36
-                              : 32,
-                    ),
+                  SizedBox(
+                    height:
+                        AppBreakpoints.isDesktop(context)
+                            ? 24
+                            : AppBreakpoints.isTablet(context)
+                            ? 20
+                            : 16,
+                  ),
                   TextFormField(
                     controller: _nameController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Full Name',
-                      border: const OutlineInputBorder(),
-                      errorText:
-                          _nameController.text.isEmpty &&
-                                  _nameController.text.isNotEmpty
-                              ? 'Please enter your name'
-                              : null,
+                      border: OutlineInputBorder(),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -324,22 +329,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _emailController,
                     decoration: InputDecoration(
                       labelText: 'Email',
                       border: const OutlineInputBorder(),
-                      errorText:
-                          _emailController.text.isNotEmpty &&
-                                  !_emailController.text.contains('@')
-                              ? 'Please enter a valid email'
-                              : null,
+                      errorText: _emailError,
+                      errorMaxLines: 1,
+                      isDense: true,
                     ),
                     keyboardType: TextInputType.emailAddress,
                     validator: _validateEmail,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _passwordController,
                     decoration: InputDecoration(
@@ -362,7 +365,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     validator: _validatePassword,
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(top: 8.0, left: 4.0),
+                    padding: const EdgeInsets.only(top: 4.0, left: 4.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -370,9 +373,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           'Password must be at least 8 characters long and contain:',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: colorScheme.secondary,
+                            fontSize: 11,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         _buildRequirementText(
                           'At least one uppercase letter (A-Z)',
                           _hasUpperCase,
@@ -396,12 +400,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _confirmPasswordController,
                     decoration: InputDecoration(
                       labelText: 'Confirm Password',
                       border: const OutlineInputBorder(),
+                      errorMaxLines: 1,
+                      isDense: true,
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscureConfirmPassword
@@ -414,12 +420,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           });
                         },
                       ),
-                      errorText:
-                          _confirmPasswordController.text.isNotEmpty &&
-                                  _confirmPasswordController.text !=
-                                      _passwordController.text
-                              ? 'Passwords do not match'
-                              : null,
                     ),
                     obscureText: _obscureConfirmPassword,
                     validator: (value) {
@@ -432,7 +432,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed:
                         _isLoading ? null : _registerWithEmailAndPassword,
@@ -457,18 +457,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onPressed: _isLoading ? null : _signUpWithGoogle,
                     icon: Image.network(
                       'https://www.google.com/favicon.ico',
-                      height: AppBreakpoints.isDesktop(context)
-                          ? 28
-                          : AppBreakpoints.isTablet(context)
+                      height:
+                          AppBreakpoints.isDesktop(context)
+                              ? 28
+                              : AppBreakpoints.isTablet(context)
                               ? 26
                               : 24,
                     ),
                     label: const Text('Sign up with Google'),
                     style: OutlinedButton.styleFrom(
                       padding: EdgeInsets.symmetric(
-                        vertical: AppBreakpoints.isDesktop(context)
-                            ? 16
-                            : AppBreakpoints.isTablet(context)
+                        vertical:
+                            AppBreakpoints.isDesktop(context)
+                                ? 16
+                                : AppBreakpoints.isTablet(context)
                                 ? 14
                                 : 12,
                       ),
@@ -490,18 +492,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             onPressed: _isLoading ? null : _signUpWithApple,
                             icon: Icon(
                               Icons.apple,
-                              size: AppBreakpoints.isDesktop(context)
-                                  ? 28
-                                  : AppBreakpoints.isTablet(context)
+                              size:
+                                  AppBreakpoints.isDesktop(context)
+                                      ? 28
+                                      : AppBreakpoints.isTablet(context)
                                       ? 26
                                       : 24,
                             ),
                             label: const Text('Sign up with Apple'),
                             style: OutlinedButton.styleFrom(
                               padding: EdgeInsets.symmetric(
-                                vertical: AppBreakpoints.isDesktop(context)
-                                    ? 16
-                                    : AppBreakpoints.isTablet(context)
+                                vertical:
+                                    AppBreakpoints.isDesktop(context)
+                                        ? 16
+                                        : AppBreakpoints.isTablet(context)
                                         ? 14
                                         : 12,
                               ),
@@ -515,12 +519,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 24),
                   TextButton(
                     onPressed: () {
-                      Navigator.pop(context);
+                      Navigator.pushReplacementNamed(context, '/login');
                     },
                     child: const Text('Already have an account? Sign in'),
                   ),
                 ],
-                ),
               ),
             ),
           ),
@@ -531,20 +534,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildRequirementText(String text, bool isMet) {
     return Padding(
-      padding: const EdgeInsets.only(left: 8.0, top: 2.0),
+      padding: const EdgeInsets.only(left: 4.0, top: 1.0),
       child: Row(
         children: [
           Icon(
             isMet ? Icons.check_circle : Icons.circle_rounded,
-            size: 16,
+            size: 14,
             color: isMet ? Colors.green : Colors.grey,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Flexible(
             child: Text(
               text,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: isMet ? Colors.green : Colors.grey,
+                fontSize: 11,
               ),
             ),
           ),

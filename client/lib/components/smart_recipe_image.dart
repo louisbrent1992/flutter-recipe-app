@@ -207,10 +207,14 @@ class _SmartRecipeImageState extends State<SmartRecipeImage>
               width: widget.width,
               height: widget.height,
               fit: widget.fit,
-              memCacheWidth:
-                  (widget.width != null) ? widget.width!.toInt() : null,
-              memCacheHeight:
-                  (widget.height != null) ? widget.height!.toInt() : null,
+              memCacheWidth: widget.width != null
+                  ? (widget.width! * MediaQuery.of(context).devicePixelRatio)
+                      .round()
+                  : null,
+              memCacheHeight: widget.height != null
+                  ? (widget.height! * MediaQuery.of(context).devicePixelRatio)
+                      .round()
+                  : null,
               fadeInDuration: const Duration(milliseconds: 150),
               fadeOutDuration: const Duration(milliseconds: 100),
               placeholder: (context, u) => placeholder,

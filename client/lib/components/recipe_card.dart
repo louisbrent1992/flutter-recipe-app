@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -8,6 +9,7 @@ import '../theme/theme.dart';
 import '../utils/image_utils.dart';
 // import 'expandable_image.dart';
 import 'smart_recipe_image.dart';
+import '../services/google_image_service.dart';
 
 class RecipeCard extends StatefulWidget {
   final Recipe recipe;
@@ -20,6 +22,7 @@ class RecipeCard extends StatefulWidget {
   final bool showCookingTime;
   final bool showServings;
   final bool showEditButton;
+  final bool showRefreshButton;
   // Favorites removed
   final bool showShareButton;
   final bool showDeleteButton; // Developer-only delete button
@@ -38,6 +41,7 @@ class RecipeCard extends StatefulWidget {
     this.showCookingTime = true,
     this.showServings = true,
     this.showEditButton = false,
+    this.showRefreshButton = true,
     this.showShareButton = true,
     this.showDeleteButton = false,
     this.onDelete,
@@ -50,13 +54,90 @@ class RecipeCard extends StatefulWidget {
 
 class _RecipeCardState extends State<RecipeCard> {
   bool _isShareLoading = false;
+  bool _isRefreshingImage = false;
 
   @override
   void initState() {
     super.initState();
   }
 
-  // Refresh button removed from cards
+  Future<void> _refreshRecipeImage() async {
+    if (_isRefreshingImage) return;
+
+    setState(() {
+      _isRefreshingImage = true;
+    });
+
+    try {
+      // Trigger refresh by fetching a new image from Google
+      // Use start: 4 to get a different image from the search results
+      final newImageUrl = await GoogleImageService.fetchImageForQuery(
+        '${widget.recipe.title} recipe',
+        start: 4,
+      );
+
+      if (newImageUrl != null &&
+          newImageUrl.isNotEmpty &&
+          newImageUrl != widget.recipe.imageUrl) {
+        // Use the existing onRefreshed callback logic to update the recipe
+        final updated = widget.recipe.copyWith(imageUrl: newImageUrl);
+        if (widget.onRecipeUpdated != null) {
+          widget.onRecipeUpdated!(updated);
+        }
+
+        // Update user recipe if applicable
+        try {
+          final profile = context.read<RecipeProvider>();
+          if (widget.showRemoveButton) {
+            final userRecipe = profile.userRecipes.firstWhere(
+              (r) =>
+                  r.id == widget.recipe.id ||
+                  (r.title.toLowerCase() == widget.recipe.title.toLowerCase() &&
+                      r.description.toLowerCase() ==
+                          widget.recipe.description.toLowerCase()),
+              orElse: () => Recipe(),
+            );
+            if (userRecipe.id.isNotEmpty) {
+              await profile.updateUserRecipe(
+                userRecipe.copyWith(imageUrl: newImageUrl),
+              );
+            }
+          }
+        } catch (_) {
+          // Silently handle errors
+        }
+
+        // Update discover recipe if applicable
+        if (widget.recipe.id.isNotEmpty) {
+          try {
+            await RecipeService.updateDiscoverRecipeImage(
+              recipeId: widget.recipe.id,
+              imageUrl: newImageUrl,
+            );
+          } catch (_) {
+            // Silently handle errors
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to refresh image: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshingImage = false;
+        });
+      }
+    }
+  }
 
   Future<void> _shareRecipe() async {
     if (_isShareLoading) return;
@@ -420,8 +501,14 @@ Shared from Recipe App
 
     // Remove symbols: parentheses, dashes, commas, etc. and everything after them
     // This handles cases like "3 sizes (Small, Medium, Large)" -> "3 sizes"
-    cleaned = cleaned.replaceAll(RegExp(r'[\(\)\[\]{}]'), ' '); // Remove brackets/parentheses
-    cleaned = cleaned.split(RegExp(r'[,\-–—]'))[0].trim(); // Take only first part before commas/dashes
+    cleaned = cleaned.replaceAll(
+      RegExp(r'[\(\)\[\]{}]'),
+      ' ',
+    ); // Remove brackets/parentheses
+    cleaned =
+        cleaned
+            .split(RegExp(r'[,\-–—]'))[0]
+            .trim(); // Take only first part before commas/dashes
 
     // Extract number and determine if it's "servings" or "sizes"
     final numberPattern = RegExp(r'(\d+)');
@@ -429,10 +516,10 @@ Shared from Recipe App
 
     if (match != null) {
       final number = match.group(1) ?? '';
-      
+
       // Check if the text contains "size" or "serving"
       final hasSize = RegExp(r'\bsize', caseSensitive: false).hasMatch(cleaned);
-      
+
       // Determine the unit - prefer "sizes" if found, otherwise default to "servings"
       String unit;
       if (hasSize) {
@@ -440,15 +527,16 @@ Shared from Recipe App
       } else {
         unit = int.parse(number) == 1 ? 'serving' : 'servings';
       }
-      
+
       return '$number $unit';
     }
 
     // If we can't parse a number, try to return cleaned version
     // Remove any remaining symbols and extra words
     cleaned = cleaned.replaceAll(RegExp(r'[^\w\s]'), ''); // Remove all symbols
-    cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ').trim(); // Normalize whitespace
-    
+    cleaned =
+        cleaned.replaceAll(RegExp(r'\s+'), ' ').trim(); // Normalize whitespace
+
     // If it's just a number, add "servings"
     if (RegExp(r'^\d+$').hasMatch(cleaned)) {
       final num = int.parse(cleaned);
@@ -502,7 +590,7 @@ Shared from Recipe App
                         widget.recipe.cuisineType,
                       ),
                       fit: BoxFit.cover,
-                      showRefreshButton: false,
+
                       onRefreshStart: () {
                         // no-op in card for now
                       },
@@ -645,6 +733,22 @@ Shared from Recipe App
                               widget.showShareButton))
                         SizedBox(width: AppSpacing.xs),
 
+                      if (widget.showRefreshButton)
+                        _buildActionButton(
+                          icon: Icons.refresh_rounded,
+                          onTap: _refreshRecipeImage,
+                          tooltip: 'Refresh recipe image',
+                          isLoading: _isRefreshingImage,
+                        ),
+                      if (widget.showRefreshButton &&
+                          kDebugMode &&
+                          (widget.showRemoveButton ||
+                              widget.showSaveButton ||
+                              widget.showShareButton ||
+                              widget.showEditButton))
+                        SizedBox(width: AppSpacing.xs),
+                      if (widget.showShareButton && !widget.showRefreshButton)
+                        SizedBox(width: AppSpacing.xs),
                       if (widget.showShareButton)
                         _buildActionButton(
                           icon: Icons.share_rounded,

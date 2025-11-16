@@ -18,6 +18,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
+  String? _emailError;
+
   @override
   void initState() {
     super.initState();
@@ -25,8 +27,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _onEmailChanged() {
-    if (_emailController.text.isNotEmpty) {
-      setState(() {});
+    final email = _emailController.text;
+    final newError = email.isNotEmpty && !email.contains('@')
+        ? 'Please enter a valid email'
+        : null;
+    
+    // Only update if error state actually changed to prevent unnecessary rebuilds
+    if (_emailError != newError) {
+      setState(() {
+        _emailError = newError;
+      });
     }
   }
 
@@ -112,6 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _emailController.removeListener(_onEmailChanged);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -355,32 +366,25 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     'Welcome Back!',
                       style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: AppTypography.responsiveHeadingSize(
-                          context,
-                          mobile: 28,
-                          tablet: 34,
-                          desktop: 40,
-                        ),
+                        fontSize: 20,
                       ),
                     textAlign: TextAlign.center,
                   ),
                     SizedBox(
                       height: AppBreakpoints.isDesktop(context)
-                          ? 40
+                          ? 24
                           : AppBreakpoints.isTablet(context)
-                              ? 36
-                              : 32,
+                              ? 20
+                              : 16,
                     ),
                   TextFormField(
                     controller: _emailController,
                     decoration: InputDecoration(
                       labelText: 'Email',
                       border: const OutlineInputBorder(),
-                      errorText:
-                          _emailController.text.isNotEmpty &&
-                                  !_emailController.text.contains('@')
-                              ? 'Please enter a valid email'
-                              : null,
+                      errorText: _emailError,
+                      errorMaxLines: 1,
+                      isDense: true,
                     ),
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
