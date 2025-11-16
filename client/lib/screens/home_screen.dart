@@ -1397,6 +1397,30 @@ Shared from Recipe App
     );
   }
 
+  // Helper method to get a contrasting icon color for better visibility
+  Color _getIconColor(Color collectionColor) {
+    // Calculate brightness of the collection color
+    final brightness = collectionColor.computeLuminance();
+    
+    // If the color is light (brightness > 0.5), use a darker, more saturated version
+    // If the color is dark (brightness <= 0.5), use a lighter version
+    if (brightness > 0.5) {
+      // For light colors, use a darker, more saturated version
+      final hsl = HSLColor.fromColor(collectionColor);
+      return hsl
+          .withLightness((hsl.lightness * 0.4).clamp(0.0, 1.0))
+          .withSaturation((hsl.saturation * 1.3).clamp(0.0, 1.0))
+          .toColor();
+    } else {
+      // For dark colors, use a lighter, more vibrant version
+      final hsl = HSLColor.fromColor(collectionColor);
+      return hsl
+          .withLightness((hsl.lightness * 1.8).clamp(0.0, 1.0))
+          .withSaturation((hsl.saturation * 1.2).clamp(0.0, 1.0))
+          .toColor();
+    }
+  }
+
   /// Builds an individual collection card used within the collection carousel.
   Widget _buildCollectionCard(
     BuildContext context,
@@ -1492,7 +1516,7 @@ Shared from Recipe App
                     child: Icon(
                       collection.icon,
                       size: AppBreakpoints.isDesktop(context) ? 28 : 20,
-                      color: collection.color,
+                      color: _getIconColor(collection.color),
                     ),
                   ),
                 ),

@@ -255,6 +255,30 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     return collection.name == 'Recently Added';
   }
 
+  // Helper method to get a contrasting icon color for better visibility
+  Color _getIconColor(Color collectionColor) {
+    // Calculate brightness of the collection color
+    final brightness = collectionColor.computeLuminance();
+    
+    // If the color is light (brightness > 0.5), use a darker, more saturated version
+    // If the color is dark (brightness <= 0.5), use a lighter version
+    if (brightness > 0.5) {
+      // For light colors, use a darker, more saturated version
+      final hsl = HSLColor.fromColor(collectionColor);
+      return hsl
+          .withLightness((hsl.lightness * 0.4).clamp(0.0, 1.0))
+          .withSaturation((hsl.saturation * 1.3).clamp(0.0, 1.0))
+          .toColor();
+    } else {
+      // For dark colors, use a lighter, more vibrant version
+      final hsl = HSLColor.fromColor(collectionColor);
+      return hsl
+          .withLightness((hsl.lightness * 1.8).clamp(0.0, 1.0))
+          .withSaturation((hsl.saturation * 1.2).clamp(0.0, 1.0))
+          .toColor();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -677,10 +701,10 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                             height: iconContainerSize,
                             padding: EdgeInsets.all(containerPadding),
                             decoration: BoxDecoration(
-                              color: collection.color.withValues(alpha: 0.3),
+                              color: collection.color.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(borderRadius),
                               border: Border.all(
-                                color: collection.color.withValues(alpha: 0.5),
+                                color: collection.color.withValues(alpha: 0.3),
                                 width:
                                     AppBreakpoints.isMobile(context)
                                         ? 1.5
@@ -690,7 +714,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                             child: FittedBox(
                               child: Icon(
                                 collection.icon,
-                                color: collection.color,
+                                color: _getIconColor(collection.color),
                                 size: iconSize,
                               ),
                             ),

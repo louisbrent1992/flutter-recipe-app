@@ -100,98 +100,429 @@ class RecipeCollection {
   }
 
   // Helper to get default icon based on category name
+  // Uses keyword matching with grouped keywords for efficient icon assignment
   static IconData _getDefaultIcon(String category) {
-    final Map<String, IconData> categoryIcons = {
-      'Breakfast': Icons.free_breakfast,
-      'Lunch': Icons.lunch_dining,
-      'Dinner': Icons.dinner_dining,
-      'Snacks': Icons.cookie,
-      'Sweets': Icons.cookie,
-      'Soups': Icons.soup_kitchen,
-      'Drinks': Icons.local_bar,
-      'Baked Goods': Icons.bakery_dining,
-      'Appetizers': Icons.kebab_dining,
-      'Desserts': Icons.cake,
-      'Vegetarian': Icons.spa,
-      'Vegan': Icons.cruelty_free,
-      'Gluten-Free': Icons.not_interested,
-      'Dairy-Free': Icons.format_color_reset,
-      'Quick Meals': Icons.ramen_dining,
-      'Holiday Specials': Icons.celebration,
-      'Favorites': Icons.favorite,
-      'Recently Added': Icons.schedule,
-      // Cuisines
-      'Italian': Icons.local_pizza,
-      'Mexican': Icons.whatshot,
-      'Chinese': Icons.ramen_dining,
-      'Japanese': Icons.set_meal,
-      'Indian': Icons.local_fire_department,
-      'Thai': Icons.restaurant_menu_rounded,
-      'French': Icons.wine_bar,
-      'American': Icons.lunch_dining,
-      'Mediterranean': Icons.local_florist,
-      'Korean': Icons.ramen_dining,
-      'Greek': Icons.local_florist,
-      'Spanish': Icons.tapas,
-      'British': Icons.local_cafe,
-      'German': Icons.sports_bar,
-      'Turkish': Icons.kebab_dining,
-    };
+    final lowerCaseCategory = category.toLowerCase().trim();
 
-    // Check if category name contains any of the key values (case-insensitive)
-    final lowerCaseCategory = category.toLowerCase();
-    for (final entry in categoryIcons.entries) {
-      if (lowerCaseCategory.contains(entry.key.toLowerCase())) {
-        return entry.value;
+    // Define icon mappings with keyword groups (ordered by priority)
+    // Each entry maps a list of keywords to an icon
+    // First match wins, so order matters for priority
+    final List<MapEntry<List<String>, IconData>> iconMappings = [
+      // Meal times (highest priority)
+      MapEntry(['breakfast', 'morning', 'brunch'], Icons.free_breakfast),
+      MapEntry(['lunch', 'midday'], Icons.lunch_dining),
+      MapEntry(['dinner', 'evening', 'supper'], Icons.dinner_dining),
+
+      // Sweets & snacks (grouped keywords)
+      MapEntry([
+        'sweet',
+        'sweets',
+        'snack',
+        'snacks',
+        'candy',
+        'candies',
+        'treat',
+        'treats',
+      ], Icons.cookie),
+
+      // Soups (handles singular and plural)
+      MapEntry([
+        'soup',
+        'soups',
+        'stew',
+        'stews',
+        'broth',
+        'broths',
+      ], Icons.soup_kitchen),
+
+      // Desserts
+      MapEntry([
+        'dessert',
+        'desserts',
+        'cake',
+        'cakes',
+        'pie',
+        'pies',
+        'pudding',
+      ], Icons.cake),
+
+      // Baked goods
+      MapEntry([
+        'baked',
+        'baking',
+        'bread',
+        'breads',
+        'muffin',
+        'muffins',
+        'biscuit',
+        'biscuits',
+      ], Icons.bakery_dining),
+
+      // Drinks & beverages
+      MapEntry([
+        'drink',
+        'drinks',
+        'beverage',
+        'beverages',
+        'juice',
+        'smoothie',
+        'smoothies',
+      ], Icons.local_bar),
+
+      // Appetizers & starters
+      MapEntry([
+        'appetizer',
+        'appetizers',
+        'starter',
+        'starters',
+        'hors d\'oeuvre',
+      ], Icons.kebab_dining),
+
+      // Dietary restrictions
+      MapEntry(['vegetarian', 'veggie'], Icons.spa),
+      MapEntry(['vegan'], Icons.cruelty_free),
+      MapEntry(['gluten', 'gluten-free', 'gluten free'], Icons.not_interested),
+      MapEntry([
+        'dairy',
+        'dairy-free',
+        'dairy free',
+        'lactose',
+      ], Icons.format_color_reset),
+
+      // Quick meals
+      MapEntry([
+        'quick',
+        'fast',
+        'easy',
+        'simple',
+        '30 minute',
+        '15 minute',
+      ], Icons.ramen_dining),
+
+      // Special occasions
+      MapEntry([
+        'holiday',
+        'holidays',
+        'christmas',
+        'thanksgiving',
+        'easter',
+        'celebration',
+      ], Icons.celebration),
+      MapEntry([
+        'favorite',
+        'favourites',
+        'favorites',
+        'starred',
+        'bookmarked',
+      ], Icons.favorite),
+      MapEntry(['recent', 'recently', 'new', 'latest'], Icons.schedule),
+
+      // Cuisines (ordered by commonality)
+      MapEntry([
+        'italian',
+        'italy',
+        'pasta',
+        'pizza',
+        'risotto',
+      ], Icons.local_pizza),
+      MapEntry([
+        'mexican',
+        'mexico',
+        'taco',
+        'tacos',
+        'burrito',
+        'enchilada',
+      ], Icons.whatshot),
+      MapEntry([
+        'chinese',
+        'china',
+        'szechuan',
+        'cantonese',
+      ], Icons.ramen_dining),
+      MapEntry([
+        'japanese',
+        'japan',
+        'sushi',
+        'ramen',
+        'teriyaki',
+      ], Icons.set_meal),
+      MapEntry([
+        'indian',
+        'india',
+        'curry',
+        'curries',
+        'tandoori',
+        'masala',
+      ], Icons.local_fire_department),
+      MapEntry([
+        'thai',
+        'thailand',
+        'pad thai',
+        'tom yum',
+      ], Icons.restaurant_menu_rounded),
+      MapEntry(['french', 'france', 'bistro', 'ratatouille'], Icons.wine_bar),
+      MapEntry([
+        'american',
+        'usa',
+        'bbq',
+        'barbecue',
+        'burger',
+        'burgers',
+      ], Icons.lunch_dining),
+      MapEntry([
+        'mediterranean',
+        'mediterranean',
+        'hummus',
+        'falafel',
+      ], Icons.local_florist),
+      MapEntry(['korean', 'korea', 'kimchi', 'bulgogi'], Icons.ramen_dining),
+      MapEntry(['greek', 'greece', 'gyro', 'tzatziki'], Icons.local_florist),
+      MapEntry(['spanish', 'spain', 'paella', 'tapas'], Icons.tapas),
+      MapEntry([
+        'british',
+        'britain',
+        'uk',
+        'fish and chips',
+      ], Icons.local_cafe),
+      MapEntry([
+        'german',
+        'germany',
+        'schnitzel',
+        'bratwurst',
+      ], Icons.sports_bar),
+      MapEntry(['turkish', 'turkey', 'kebab', 'kebabs'], Icons.kebab_dining),
+    ];
+
+    // Check each mapping group (in priority order)
+    for (final mapping in iconMappings) {
+      final keywords = mapping.key;
+      // Check if any keyword in the group matches (as a word, not just substring)
+      for (final keyword in keywords) {
+        // Use word boundary matching: check if keyword appears as a whole word
+        // Handles both singular and plural: "soup" matches "soups" and "soup recipes"
+        // Pattern: word boundary + keyword + optional 's' + word boundary
+        // OR: word boundary + keyword (without trailing s) + word boundary
+        final escapedKeyword = RegExp.escape(keyword);
+        final regex = RegExp(
+          r'\b' + escapedKeyword + r'(s)?\b',
+          caseSensitive: false,
+        );
+        if (regex.hasMatch(lowerCaseCategory)) {
+          return mapping.value;
+        }
       }
     }
 
+    // Default icon if no match found
     return Icons.restaurant;
   }
 
   // Helper to get default color based on category name
+  // Uses keyword matching similar to icon matching for consistency
   static Color _getDefaultColor(String category) {
-    final Map<String, Color> categoryColors = {
-      'Breakfast': Colors.amber.shade500,
-      'Lunch': Colors.green.shade200,
-      'Dinner': Colors.indigo.shade200,
-      'Snacks': Colors.orange.shade200,
-      'Desserts': Colors.pink.shade200,
-      'Baked Goods': Colors.brown.shade200,
-      'Appetizers': Colors.teal.shade200,
-      'Sweets': Colors.pink.shade200,
-      'Soups': Colors.blue.shade200,
-      'Vegetarian': Colors.teal.shade200,
-      'Vegan': Colors.lightGreen.shade200,
-      'Gluten-Free': Colors.purple.shade200,
-      'Dairy-Free': Colors.blue.shade200,
-      'Quick Meals': Colors.red.shade200,
-      'Holiday Specials': Colors.deepPurple.shade200,
-      'Favorites': Colors.red.shade200,
-      'Recently Added': Colors.cyan.shade200,
-      // Cuisines
-      'Italian': Colors.green.shade300,
-      'Mexican': Colors.orange.shade300,
-      'Chinese': Colors.red.shade300,
-      'Japanese': Colors.pink.shade300,
-      'Indian': Colors.deepOrange.shade300,
-      'Thai': Colors.lime.shade300,
-      'French': Colors.indigo.shade300,
-      'American': Colors.blue.shade300,
-      'Mediterranean': Colors.lightBlue.shade300,
-      'Korean': Colors.purple.shade300,
-      'Greek': Colors.cyan.shade300,
-      'Spanish': Colors.amber.shade300,
-      'British': Colors.brown.shade300,
-      'German': Colors.grey.shade400,
-      'Turkish': Colors.teal.shade300,
-    };
+    final lowerCaseCategory = category.toLowerCase().trim();
 
-    // Check if category name contains any of the key values (case-insensitive)
-    final lowerCaseCategory = category.toLowerCase();
-    for (final entry in categoryColors.entries) {
-      if (lowerCaseCategory.contains(entry.key.toLowerCase())) {
-        return entry.value;
+    // Define color mappings with keyword groups (ordered by priority)
+    final List<MapEntry<List<String>, Color>> colorMappings = [
+      // Meal times
+      MapEntry(['breakfast', 'morning', 'brunch'], Colors.amber.shade500),
+      MapEntry(['lunch', 'midday'], Colors.green.shade200),
+      MapEntry(['dinner', 'evening', 'supper'], Colors.indigo.shade200),
+
+      // Sweets & snacks (grouped)
+      MapEntry([
+        'sweet',
+        'sweets',
+        'snack',
+        'snacks',
+        'candy',
+        'candies',
+        'treat',
+        'treats',
+      ], Colors.orange.shade200),
+
+      // Desserts
+      MapEntry([
+        'dessert',
+        'desserts',
+        'cake',
+        'cakes',
+        'pie',
+        'pies',
+        'pudding',
+      ], Colors.pink.shade200),
+
+      // Baked goods
+      MapEntry([
+        'baked',
+        'baking',
+        'bread',
+        'breads',
+        'muffin',
+        'muffins',
+        'biscuit',
+        'biscuits',
+      ], Colors.brown.shade200),
+
+      // Soups
+      MapEntry([
+        'soup',
+        'soups',
+        'stew',
+        'stews',
+        'broth',
+        'broths',
+      ], Colors.blue.shade200),
+
+      // Appetizers
+      MapEntry([
+        'appetizer',
+        'appetizers',
+        'starter',
+        'starters',
+        'hors d\'oeuvre',
+      ], Colors.teal.shade200),
+
+      // Dietary restrictions
+      MapEntry(['vegetarian', 'veggie'], Colors.teal.shade200),
+      MapEntry(['vegan'], Colors.lightGreen.shade200),
+      MapEntry([
+        'gluten',
+        'gluten-free',
+        'gluten free',
+      ], Colors.purple.shade200),
+      MapEntry([
+        'dairy',
+        'dairy-free',
+        'dairy free',
+        'lactose',
+      ], Colors.blue.shade200),
+
+      // Quick meals
+      MapEntry([
+        'quick',
+        'fast',
+        'easy',
+        'simple',
+        '30 minute',
+        '15 minute',
+      ], Colors.red.shade200),
+
+      // Special occasions
+      MapEntry([
+        'holiday',
+        'holidays',
+        'christmas',
+        'thanksgiving',
+        'easter',
+        'celebration',
+      ], Colors.deepPurple.shade200),
+      MapEntry([
+        'favorite',
+        'favourites',
+        'favorites',
+        'starred',
+        'bookmarked',
+      ], Colors.red.shade200),
+      MapEntry(['recent', 'recently', 'new', 'latest'], Colors.cyan.shade200),
+
+      // Cuisines
+      MapEntry([
+        'italian',
+        'italy',
+        'pasta',
+        'pizza',
+        'risotto',
+      ], Colors.green.shade300),
+      MapEntry([
+        'mexican',
+        'mexico',
+        'taco',
+        'tacos',
+        'burrito',
+        'enchilada',
+      ], Colors.orange.shade300),
+      MapEntry([
+        'chinese',
+        'china',
+        'szechuan',
+        'cantonese',
+      ], Colors.red.shade300),
+      MapEntry([
+        'japanese',
+        'japan',
+        'sushi',
+        'ramen',
+        'teriyaki',
+      ], Colors.pink.shade300),
+      MapEntry([
+        'indian',
+        'india',
+        'curry',
+        'curries',
+        'tandoori',
+        'masala',
+      ], Colors.deepOrange.shade300),
+      MapEntry([
+        'thai',
+        'thailand',
+        'pad thai',
+        'tom yum',
+      ], Colors.lime.shade300),
+      MapEntry([
+        'french',
+        'france',
+        'bistro',
+        'ratatouille',
+      ], Colors.indigo.shade300),
+      MapEntry([
+        'american',
+        'usa',
+        'bbq',
+        'barbecue',
+        'burger',
+        'burgers',
+      ], Colors.blue.shade300),
+      MapEntry([
+        'mediterranean',
+        'hummus',
+        'falafel',
+      ], Colors.lightBlue.shade300),
+      MapEntry([
+        'korean',
+        'korea',
+        'kimchi',
+        'bulgogi',
+      ], Colors.purple.shade300),
+      MapEntry(['greek', 'greece', 'gyro', 'tzatziki'], Colors.cyan.shade300),
+      MapEntry(['spanish', 'spain', 'paella', 'tapas'], Colors.amber.shade300),
+      MapEntry([
+        'british',
+        'britain',
+        'uk',
+        'fish and chips',
+      ], Colors.brown.shade300),
+      MapEntry([
+        'german',
+        'germany',
+        'schnitzel',
+        'bratwurst',
+      ], Colors.grey.shade400),
+      MapEntry(['turkish', 'turkey', 'kebab', 'kebabs'], Colors.teal.shade300),
+    ];
+
+    // Check each mapping group (in priority order)
+    for (final mapping in colorMappings) {
+      final keywords = mapping.key;
+      for (final keyword in keywords) {
+        final escapedKeyword = RegExp.escape(keyword);
+        final regex = RegExp(
+          r'\b' + escapedKeyword + r'(s)?\b',
+          caseSensitive: false,
+        );
+        if (regex.hasMatch(lowerCaseCategory)) {
+          return mapping.value;
+        }
       }
     }
 
