@@ -10,6 +10,8 @@ import '../utils/image_utils.dart';
 // import 'expandable_image.dart';
 import 'smart_recipe_image.dart';
 import '../services/google_image_service.dart';
+import '../services/collection_service.dart';
+import '../models/recipe_collection.dart';
 
 class RecipeCard extends StatefulWidget {
   final Recipe recipe;
@@ -550,27 +552,532 @@ Shared from Recipe App
     return cleaned.isNotEmpty ? cleaned : servings;
   }
 
+  Future<RecipeCollection?> _showCreateCollectionDialog() async {
+    final TextEditingController nameController = TextEditingController();
+    
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Create Collection'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(
+            labelText: 'Collection Name',
+            hintText: 'Enter collection name',
+          ),
+          autofocus: true,
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              Navigator.pop(context, value.trim());
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final value = nameController.text.trim();
+              if (value.isNotEmpty) {
+                Navigator.pop(context, value);
+              }
+            },
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+    
+    if (name == null || name.isEmpty || !mounted) return null;
+    
+    try {
+      final collectionService = CollectionService();
+      final newCollection = await collectionService.createCollection(name);
+      
+      if (newCollection != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Created collection "$name"'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        return newCollection;
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to create collection'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+    
+    return null;
+  }
+
+  Future<void> _showAddToCollectionDialog() async {
+    final collectionService = CollectionService();
+    
+    try {
+      // Fetch all collections
+      final collections = await collectionService.getCollections();
+      
+      if (!mounted) return;
+      
+      if (collections.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No collections found. Create one first!'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      
+      // Show dialog to select collection or create new
+      final result = await showDialog<dynamic>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Add to Collection'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Create new collection button
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.add_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    'Create New Collection',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () => Navigator.pop(context, 'create_new'),
+                ),
+                const Divider(),
+                // Existing collections list
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: collections.length,
+                    itemBuilder: (context, index) {
+                      final collection = collections[index];
+                      // Skip default collections like "Recently Added"
+                      if (collection.name == 'Recently Added') return const SizedBox.shrink();
+                      
+                      return ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: collection.color.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            collection.icon,
+                            color: collection.color,
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(collection.name),
+                        subtitle: Text('${collection.recipes.length} recipes'),
+                        onTap: () => Navigator.pop(context, collection),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+      
+      if (result == null || !mounted) return;
+      
+      // Handle create new collection
+      if (result == 'create_new') {
+        final newCollection = await _showCreateCollectionDialog();
+        if (newCollection != null && mounted) {
+          // Show loading indicator
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Text('Adding recipe to "${newCollection.name}"...'),
+                ],
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          
+          // Wait a moment for server to fully process the collection creation
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          // Refresh collections cache to ensure new collection is available
+          await collectionService.updateCollections(forceRefresh: true);
+          
+          // Add recipe to the newly created collection
+          final success = await collectionService.addRecipeToCollection(
+            newCollection.id,
+            widget.recipe,
+          );
+          
+          // Clear loading snackbar
+          if (mounted) {
+            ScaffoldMessenger.of(context).clearSnackBars();
+          }
+          
+          if (success && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Added to "${newCollection.name}"'),
+                backgroundColor: Colors.green,
+                action: SnackBarAction(
+                  label: 'View',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/collectionDetail',
+                      arguments: newCollection,
+                    );
+                  },
+                ),
+              ),
+            );
+          } else if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Created "${newCollection.name}" but failed to add recipe'),
+                backgroundColor: Colors.orange,
+                action: SnackBarAction(
+                  label: 'Retry',
+                  textColor: Colors.white,
+                  onPressed: () async {
+                    final retry = await collectionService.addRecipeToCollection(
+                      newCollection.id,
+                      widget.recipe,
+                    );
+                    if (retry && mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Successfully added to "${newCollection.name}"'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+            );
+          }
+        }
+        return;
+      }
+      
+      // Handle existing collection selection
+      final selectedCollection = result as RecipeCollection;
+      
+      // Add recipe to collection
+      final success = await collectionService.addRecipeToCollection(
+        selectedCollection.id,
+        widget.recipe,
+      );
+      
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Added to "${selectedCollection.name}"'),
+            backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'View',
+              textColor: Colors.white,
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  '/collectionDetail',
+                  arguments: selectedCollection,
+                );
+              },
+            ),
+          ),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to add recipe to collection'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showRecipeContextMenu(Offset position) {
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
+
+    showMenu(
+      context: context,
+      position: RelativeRect.fromRect(
+        Rect.fromLTWH(position.dx, position.dy, 0, 0),
+        Offset.zero & overlay.size,
+      ),
+      items: [
+        PopupMenuItem(
+          child: Row(
+            children: [
+              Icon(
+                Icons.visibility_rounded,
+                size: 20,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              const SizedBox(width: 12),
+              const Text('View Details'),
+            ],
+          ),
+          onTap: () {
+            Future.delayed(const Duration(milliseconds: 100), () {
+              Navigator.pushNamed(
+                context,
+                '/recipeDetail',
+                arguments: widget.recipe,
+              );
+            });
+          },
+        ),
+        if (widget.showSaveButton && widget.onSave != null)
+          PopupMenuItem(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.bookmark_add_rounded,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Save Recipe',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            onTap: () {
+              Future.delayed(const Duration(milliseconds: 100), () {
+                widget.onSave!();
+              });
+            },
+          ),
+        if (!widget.showSaveButton && widget.recipe.id.isNotEmpty)
+          PopupMenuItem(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.folder_copy_rounded,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                const SizedBox(width: 12),
+                const Text('Add to Collection'),
+              ],
+            ),
+            onTap: () {
+              Future.delayed(const Duration(milliseconds: 100), () {
+                _showAddToCollectionDialog();
+              });
+            },
+          ),
+        if (widget.showEditButton || widget.recipe.id.isNotEmpty)
+          PopupMenuItem(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.edit_rounded,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                const SizedBox(width: 12),
+                const Text('Edit Recipe'),
+              ],
+            ),
+            onTap: () {
+              Future.delayed(const Duration(milliseconds: 100), () {
+                Navigator.pushNamed(
+                  context,
+                  '/editRecipe',
+                  arguments: widget.recipe,
+                );
+              });
+            },
+          ),
+        if (widget.showShareButton)
+          PopupMenuItem(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.share_rounded,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                const SizedBox(width: 12),
+                const Text('Share Recipe'),
+              ],
+            ),
+            onTap: () {
+              Future.delayed(const Duration(milliseconds: 100), () {
+                _shareRecipe();
+              });
+            },
+          ),
+        if (widget.showRemoveButton && widget.onRemove != null)
+          PopupMenuItem(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.remove_circle_outline_rounded,
+                  size: 20,
+                  color: Colors.orange,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Remove from Collection',
+                  style: TextStyle(color: Colors.orange),
+                ),
+              ],
+            ),
+            onTap: () {
+              Future.delayed(const Duration(milliseconds: 100), () {
+                widget.onRemove!();
+              });
+            },
+          ),
+        if (widget.showDeleteButton || (kDebugMode && widget.recipe.id.isNotEmpty))
+          PopupMenuItem(
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.delete_outline_rounded,
+                  size: 20,
+                  color: Colors.red,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Delete Recipe',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ],
+            ),
+            onTap: () {
+              Future.delayed(const Duration(milliseconds: 100), () {
+                if (widget.onDelete != null) {
+                  widget.onDelete!();
+                } else {
+                  _deleteRecipe();
+                }
+              });
+            },
+          ),
+        if (widget.showRefreshButton)
+          PopupMenuItem(
+            child: Row(
+              children: [
+                Icon(
+                  Icons.refresh_rounded,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                const SizedBox(width: 12),
+                const Text('Refresh Image'),
+              ],
+            ),
+            onTap: () {
+              Future.delayed(const Duration(milliseconds: 100), () {
+                _refreshRecipeImage();
+              });
+            },
+          ),
+      ],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(
-          AppBreakpoints.isMobile(context) ? 12 : 16,
+    return GestureDetector(
+      onLongPressStart: (details) {
+        _showRecipeContextMenu(details.globalPosition);
+      },
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            AppBreakpoints.isMobile(context) ? 12 : 16,
+          ),
         ),
-      ),
-      elevation: AppElevation.responsive(context),
-      child: InkWell(
-        onTap: () {
-          Navigator.pushNamed(
-            context,
-            '/recipeDetail',
-            arguments: widget.recipe,
-          );
-        },
-        child: Column(
+        elevation: AppElevation.responsive(context),
+        child: InkWell(
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              '/recipeDetail',
+              arguments: widget.recipe,
+            );
+          },
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Recipe image
@@ -845,6 +1352,7 @@ Shared from Recipe App
           ],
         ),
       ),
+    ),
     );
   }
 }

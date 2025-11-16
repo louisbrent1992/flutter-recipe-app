@@ -18,7 +18,7 @@ class CollectionDetailScreen extends StatefulWidget {
 }
 
 class _CollectionDetailScreenState extends State<CollectionDetailScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _animationController;
   late RecipeCollection _collection;
   late ScrollController _scrollController;
@@ -43,14 +43,27 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
       duration: const Duration(milliseconds: 600),
     );
     _animationController.forward();
+    
+    // Add observer for app lifecycle events
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Refresh collection when app comes back to foreground
+    if (state == AppLifecycleState.resumed) {
+      _refreshCollection();
+    }
   }
 
   void _filterRecipes(String query) {
@@ -282,6 +295,73 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
     }
   }
 
+  Future<void> _deleteCollection() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Collection'),
+            content: Text(
+              'Are you sure you want to delete "${_collection.name}"? This action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirm == true && mounted) {
+      setState(() => _isLoading = true);
+      try {
+        final success = await _collectionService.deleteCollection(
+          _collection.id,
+        );
+
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Deleted "${_collection.name}"'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          // Navigate back to the previous screen
+          Navigator.pop(context, true);
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to delete collection'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting collection: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
+
   // Helper method to check if a collection is a default collection
   bool _isDefaultCollection(RecipeCollection collection) {
     return collection.name == 'Recently Added';
@@ -297,18 +377,89 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
         title: _collection.name,
         actions: [
           if (!_isDefaultCollection(_collection))
-            IconButton(
-              icon: const Icon(Icons.edit_note_rounded),
-              onPressed: _editCollection,
-              tooltip: 'Edit collection',
-            ),
-        ],
-        floatingButtons: [
-          if (!_isDefaultCollection(_collection))
-            IconButton(
-              icon: const Icon(Icons.add_rounded),
-              tooltip: 'Add Recipes',
-              onPressed: _searchAllRecipes,
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded),
+              tooltip: 'More options',
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              itemBuilder: (context) => [
+                PopupMenuItem<String>(
+                  value: 'refresh',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.refresh_rounded,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      const SizedBox(width: 12),
+                      const Text('Refresh Collection'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.edit_note_rounded,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      const SizedBox(width: 12),
+                      const Text('Edit Collection'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'add',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.add_rounded,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      const SizedBox(width: 12),
+                      const Text('Add Recipes'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.delete_outline_rounded,
+                        size: 20,
+                        color: Colors.red,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Delete Collection',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              onSelected: (value) {
+                switch (value) {
+                  case 'refresh':
+                    _refreshCollection();
+                    break;
+                  case 'edit':
+                    _editCollection();
+                    break;
+                  case 'add':
+                    _searchAllRecipes();
+                    break;
+                  case 'delete':
+                    _deleteCollection();
+                    break;
+                }
+              },
             ),
         ],
       ),
@@ -417,8 +568,13 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                                       '/recipeDetail',
                                       arguments: recipe,
                                     ),
+                                showRemoveButton: !_isDefaultCollection(_collection),
                                 onRemove: () => _removeRecipe(recipe),
-                                showRemoveButton: true,
+                                showRefreshButton: true,
+                                onRecipeUpdated: (updatedRecipe) {
+                                  // Refresh collection when recipe is updated
+                                  _refreshCollection();
+                                },
                               );
                             }, childCount: _filteredRecipes.length),
                           ),

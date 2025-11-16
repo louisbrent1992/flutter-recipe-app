@@ -1,5 +1,41 @@
 const express = require("express");
 const router = express.Router();
+const fs = require("fs");
+const path = require("path");
+
+/**
+ * Get daily rotating subtitle from cooking-subtitles.json
+ * Uses date-based selection to ensure same subtitle throughout the day
+ * @returns {string} Selected subtitle or default fallback
+ */
+function getDailySubtitle() {
+  const defaultSubtitle = "What would you like to cook today?";
+  
+  try {
+    const subtitlesPath = path.join(__dirname, "../data/cooking-subtitles.json");
+    const fileContent = fs.readFileSync(subtitlesPath, "utf8");
+    const subtitles = JSON.parse(fileContent);
+    
+    if (!Array.isArray(subtitles) || subtitles.length === 0) {
+      console.warn("cooking-subtitles.json is empty or invalid, using default");
+      return defaultSubtitle;
+    }
+    
+    // Calculate day of year (1-365/366)
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+    
+    // Create deterministic index based on year and day of year
+    // This ensures same subtitle for same day, different each day
+    const index = (now.getFullYear() * 365 + dayOfYear) % subtitles.length;
+    
+    return subtitles[index] || defaultSubtitle;
+  } catch (error) {
+    console.error("Error loading daily subtitle:", error.message);
+    return defaultSubtitle;
+  }
+}
 
 // Simple dynamic UI config endpoint
 // You can update this JSON (or back it with Firestore) without changing the app
@@ -10,6 +46,17 @@ router.get("/ui/config", (req, res) => {
     fetchedAt: now.toISOString(),
     // Home screen hero image - can be updated without app release
     heroImageUrl: "https://res.cloudinary.com/client-images/image/upload/v1763258640/Recipe%20App/Gemini_Generated_Image_1isjyd1isjyd1isj_jv1rvc.png",
+    // Welcome message - supports {username} placeholder
+    welcomeMessage: "Welcome,", // Default: "Welcome," or customize like "Welcome back, {username}!"
+    // Hero subtitle text - rotates daily from cooking-subtitles.json
+    heroSubtitle: getDailySubtitle(),
+    // Section visibility toggles - set to false to hide sections
+    sectionVisibility: {
+      yourRecipesCarousel: true,
+      discoverCarousel: true,
+      collectionsCarousel: true,
+      featuresSection: true
+    },
     globalBackground: {
       // Choose either imageUrl or colors (for gradient/solid)
       imageUrl: null,

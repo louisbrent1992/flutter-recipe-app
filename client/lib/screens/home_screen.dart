@@ -13,6 +13,7 @@ import '../models/recipe.dart';
 import '../models/recipe_collection.dart';
 import '../components/dynamic_banner.dart';
 import '../providers/dynamic_ui_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Lightweight model representing a quick-access category on the home screen.
 class _CategoryItem {
@@ -40,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen>
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   // Fallback hero image URL (used if dynamic UI doesn't provide one)
   static const String _defaultHeroImageUrl =
-      'https://res.cloudinary.com/client-images/image/upload/v1763258691/Recipe%20App/Gemini_Generated_Image_fu4kt1fu4kt1fu4k_pphj0l.png';
+      'https://res.cloudinary.com/client-images/image/upload/v1763258640/Recipe%20App/Gemini_Generated_Image_1isjyd1isjyd1isj_jv1rvc.png';
   bool _isBooting = true;
   StreamSubscription<void>? _recipesChangedSubscription;
 
@@ -175,95 +176,145 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         _buildHeroSection(context),
                         // --- Your Recipes carousel ---
-                        Consumer<RecipeProvider>(
-                          builder: (context, recipeProvider, _) {
-                            final saved = recipeProvider.userRecipes;
-                            if ((recipeProvider.isLoading || _isBooting) &&
-                                saved.isEmpty) {
-                              return _buildSectionLoading(
-                                context,
-                                title: 'Your Recipes',
-                                height: 180,
-                              );
+                        Consumer<DynamicUiProvider>(
+                          builder: (context, dynamicUi, _) {
+                            if (!(dynamicUi.config?.isSectionVisible(
+                                  'yourRecipesCarousel',
+                                ) ??
+                                true)) {
+                              return const SizedBox.shrink();
                             }
-                            if (saved.isEmpty && recipeProvider.error != null) {
-                              return _buildSectionMessage(
-                                context,
-                                title: 'Your Recipes',
-                                message:
-                                    recipeProvider.error!.userFriendlyMessage,
-                                onRetry: () {
-                                  _refreshAllSections(context);
-                                },
-                              );
-                            }
-                            if (saved.isEmpty) return const SizedBox();
-                            return _buildRecipeCarousel(
-                              context,
-                              title: 'Your Recipes',
-                              recipes: saved.take(10).toList(),
+                            return Consumer<RecipeProvider>(
+                              builder: (context, recipeProvider, _) {
+                                final saved = recipeProvider.userRecipes;
+                                if ((recipeProvider.isLoading || _isBooting) &&
+                                    saved.isEmpty) {
+                                  return _buildSectionLoading(
+                                    context,
+                                    title: 'Your Recipes',
+                                    height: 180,
+                                  );
+                                }
+                                if (saved.isEmpty &&
+                                    recipeProvider.error != null) {
+                                  return _buildSectionMessage(
+                                    context,
+                                    title: 'Your Recipes',
+                                    message:
+                                        recipeProvider
+                                            .error!
+                                            .userFriendlyMessage,
+                                    onRetry: () {
+                                      _refreshAllSections(context);
+                                    },
+                                  );
+                                }
+                                if (saved.isEmpty) return const SizedBox();
+                                return _buildRecipeCarousel(
+                                  context,
+                                  title: 'Your Recipes',
+                                  recipes: saved.take(10).toList(),
+                                );
+                              },
                             );
                           },
                         ),
                         SizedBox(height: AppSpacing.responsive(context)),
                         // --- Discover & Try carousel ---
-                        Consumer<RecipeProvider>(
-                          builder: (context, recipeProvider, _) {
-                            final random =
-                                recipeProvider.generatedRecipes
-                                    .where(
-                                      (r) =>
-                                          !recipeProvider.userRecipes.any(
-                                            (u) => u.id == r.id,
-                                          ),
-                                    )
-                                    .take(10)
-                                    .toList();
-                            if ((recipeProvider.isLoading || _isBooting) &&
-                                random.isEmpty) {
-                              return _buildSectionLoading(
-                                context,
-                                title: 'Discover & Try',
-                                height: 180,
-                              );
+                        Consumer<DynamicUiProvider>(
+                          builder: (context, dynamicUi, _) {
+                            if (!(dynamicUi.config?.isSectionVisible(
+                                  'discoverCarousel',
+                                ) ??
+                                true)) {
+                              return const SizedBox.shrink();
                             }
-                            if (random.isEmpty &&
-                                recipeProvider.error != null) {
-                              return _buildSectionMessage(
-                                context,
-                                title: 'Discover & Try',
-                                message:
-                                    recipeProvider.error!.userFriendlyMessage,
-                                onRetry: () {
-                                  _refreshAllSections(context);
-                                },
-                              );
-                            }
-                            if (random.isEmpty) return const SizedBox();
-                            return _buildRecipeCarousel(
-                              context,
-                              title: 'Discover & Try',
-                              recipes: random,
+                            return Consumer<RecipeProvider>(
+                              builder: (context, recipeProvider, _) {
+                                final random =
+                                    recipeProvider.generatedRecipes
+                                        .where(
+                                          (r) =>
+                                              !recipeProvider.userRecipes.any(
+                                                (u) => u.id == r.id,
+                                              ),
+                                        )
+                                        .take(10)
+                                        .toList();
+                                if ((recipeProvider.isLoading || _isBooting) &&
+                                    random.isEmpty) {
+                                  return _buildSectionLoading(
+                                    context,
+                                    title: 'Discover & Try',
+                                    height: 180,
+                                  );
+                                }
+                                if (random.isEmpty &&
+                                    recipeProvider.error != null) {
+                                  return _buildSectionMessage(
+                                    context,
+                                    title: 'Discover & Try',
+                                    message:
+                                        recipeProvider
+                                            .error!
+                                            .userFriendlyMessage,
+                                    onRetry: () {
+                                      _refreshAllSections(context);
+                                    },
+                                  );
+                                }
+                                if (random.isEmpty) return const SizedBox();
+                                return _buildRecipeCarousel(
+                                  context,
+                                  title: 'Discover & Try',
+                                  recipes: random,
+                                );
+                              },
                             );
                           },
                         ),
                         SizedBox(height: AppSpacing.responsive(context)),
                         // --- Collections carousel ---
-                        Consumer<CollectionService>(
-                          builder: (context, collectionProvider, _) {
-                            final collections = collectionProvider
-                                .getCollections(updateSpecialCollections: true)
-                                .then((value) => value.take(10).toList());
-                            return _buildCollectionCarousel(
-                              context,
-                              title: 'Collections',
-                              collections: collections,
+                        Consumer<DynamicUiProvider>(
+                          builder: (context, dynamicUi, _) {
+                            if (!(dynamicUi.config?.isSectionVisible(
+                                  'collectionsCarousel',
+                                ) ??
+                                true)) {
+                              return const SizedBox.shrink();
+                            }
+                            return Consumer<CollectionService>(
+                              builder: (context, collectionProvider, _) {
+                                final collections = collectionProvider
+                                    .getCollections(
+                                      updateSpecialCollections: true,
+                                    )
+                                    .then((value) => value.take(10).toList());
+                                return _buildCollectionCarousel(
+                                  context,
+                                  title: 'Collections',
+                                  collections: collections,
+                                );
+                              },
                             );
                           },
                         ),
                         SizedBox(height: AppSpacing.responsive(context)),
                         // Category scroller with features
-                        _buildCategoryScroller(context, title: 'Features'),
+                        Consumer<DynamicUiProvider>(
+                          builder: (context, dynamicUi, _) {
+                            if (!(dynamicUi.config?.isSectionVisible(
+                                  'featuresSection',
+                                ) ??
+                                true)) {
+                              return const SizedBox.shrink();
+                            }
+                            return _buildCategoryScroller(
+                              context,
+                              title: 'Features',
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -415,51 +466,111 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Welcome,',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        shadows: [
-                          Shadow(
-                            offset: const Offset(0, 1),
-                            blurRadius: 2,
-                            color: Colors.black.withValues(alpha: 0.3),
+                child: Consumer<DynamicUiProvider>(
+                  builder: (context, dynamicUi, _) {
+                    final config = dynamicUi.config;
+                    // Get dynamic welcome message or use default
+                    final welcomeText =
+                        config?.formatWelcomeMessage(username) ?? 'Welcome,';
+                    // Split welcome text to handle username placement
+                    final welcomeParts = welcomeText.split('{username}');
+                    final hasUsernamePlaceholder = welcomeText.contains(
+                      '{username}',
+                    );
+
+                    // Get dynamic subtitle or use default
+                    final subtitle =
+                        config?.heroSubtitle ??
+                        'What would you like to cook today?';
+
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Welcome message - handle {username} placeholder
+                        if (hasUsernamePlaceholder && welcomeParts.length == 2)
+                          RichText(
+                            text: TextSpan(
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                shadows: [
+                                  Shadow(
+                                    offset: const Offset(0, 1),
+                                    blurRadius: 2,
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                  ),
+                                ],
+                              ),
+                              children: [
+                                TextSpan(text: welcomeParts[0]),
+                                TextSpan(
+                                  text: username,
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                                TextSpan(text: welcomeParts[1]),
+                              ],
+                            ),
+                          )
+                        else
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                welcomeText,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                  shadows: [
+                                    Shadow(
+                                      offset: const Offset(0, 1),
+                                      blurRadius: 2,
+                                      color: Colors.black.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (!welcomeText.contains(username))
+                                Text(
+                                  username,
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
+                                    shadows: [
+                                      Shadow(
+                                        offset: const Offset(0, 1),
+                                        blurRadius: 2,
+                                        color: Colors.black.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      username,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        shadows: [
-                          Shadow(
-                            offset: const Offset(0, 1),
-                            blurRadius: 2,
-                            color: Colors.black.withValues(alpha: 0.3),
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            shadows: [
+                              Shadow(
+                                offset: const Offset(0, 1),
+                                blurRadius: 2,
+                                color: Colors.black.withValues(alpha: 0.2),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'What would you like to cook today?',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        shadows: [
-                          Shadow(
-                            offset: const Offset(0, 1),
-                            blurRadius: 2,
-                            color: Colors.black.withValues(alpha: 0.2),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -788,11 +899,15 @@ class _HomeScreenState extends State<HomeScreen>
             : AppBreakpoints.isTablet(context)
             ? 180.0
             : 140.0;
-    return InkWell(
-      onTap:
-          () =>
-              Navigator.pushNamed(context, '/recipeDetail', arguments: recipe),
-      child: Container(
+    return GestureDetector(
+      onLongPressStart: (details) {
+        _showRecipeContextMenu(context, recipe, details.globalPosition);
+      },
+      child: InkWell(
+        onTap:
+            () =>
+                Navigator.pushNamed(context, '/recipeDetail', arguments: recipe),
+        child: Container(
         width: cardWidth,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(
@@ -894,6 +1009,91 @@ class _HomeScreenState extends State<HomeScreen>
             ],
           ),
         ),
+      ),
+    ),
+    );
+  }
+
+  /// Show context menu for recipe actions
+  void _showRecipeContextMenu(
+    BuildContext context,
+    Recipe recipe,
+    Offset position,
+  ) {
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
+
+    showMenu(
+      context: context,
+      position: RelativeRect.fromRect(
+        Rect.fromLTWH(position.dx, position.dy, 0, 0),
+        Offset.zero & overlay.size,
+      ),
+      items: [
+        PopupMenuItem(
+          child: Row(
+            children: [
+              Icon(
+                Icons.visibility_rounded,
+                size: 20,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              const SizedBox(width: 12),
+              const Text('View Details'),
+            ],
+          ),
+          onTap: () {
+            Future.delayed(const Duration(milliseconds: 100), () {
+              Navigator.pushNamed(
+                context,
+                '/recipeDetail',
+                arguments: recipe,
+              );
+            });
+          },
+        ),
+        PopupMenuItem(
+          child: Row(
+            children: [
+              Icon(
+                Icons.share_rounded,
+                size: 20,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              const SizedBox(width: 12),
+              const Text('Share Recipe'),
+            ],
+          ),
+          onTap: () {
+            Future.delayed(const Duration(milliseconds: 100), () {
+              // Share recipe functionality
+              final String shareText = '''
+${recipe.title}
+
+Description:
+${recipe.description}
+
+Cooking Time: ${recipe.cookingTime} minutes
+Servings: ${recipe.servings}
+Difficulty: ${recipe.difficulty}
+
+Ingredients:
+${recipe.ingredients.map((i) => '• $i').join('\n')}
+
+Instructions:
+${recipe.instructions.asMap().entries.map((e) => '${e.key + 1}. ${e.value}').join('\n')}
+
+${recipe.tags.isNotEmpty ? 'Tags: ${recipe.tags.join(', ')}' : ''}
+
+Shared from Recipe App
+''';
+              Share.share(shareText);
+            });
+          },
+        ),
+      ],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
     );
   }

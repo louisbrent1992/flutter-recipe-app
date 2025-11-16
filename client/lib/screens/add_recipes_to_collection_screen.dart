@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/models/recipe.dart';
@@ -31,7 +32,10 @@ class _AddRecipesToCollectionScreenState
   void initState() {
     super.initState();
     _collection = widget.collection;
-    _loadRecipes();
+    // Defer provider access until after the build phase
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _loadRecipes();
+    });
   }
 
   @override
@@ -41,6 +45,8 @@ class _AddRecipesToCollectionScreenState
   }
 
   Future<void> _loadRecipes() async {
+    if (!mounted) return;
+    
     setState(() => _isLoading = true);
 
     try {
@@ -49,6 +55,8 @@ class _AddRecipesToCollectionScreenState
         listen: false,
       );
       await recipeProvider.loadUserRecipes();
+
+      if (!mounted) return;
 
       setState(() {
         // Get all user recipes

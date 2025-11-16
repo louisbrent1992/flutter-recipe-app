@@ -4,6 +4,9 @@ class DynamicUiConfig {
   final List<DynamicBannerConfig> banners;
   final DynamicBackgroundConfig? globalBackground;
   final String? heroImageUrl; // Home screen hero image
+  final String? welcomeMessage; // Customizable welcome message (supports {username} placeholder)
+  final String? heroSubtitle; // Customizable hero subtitle text
+  final Map<String, bool>? sectionVisibility; // Toggle visibility of home screen sections
 
   DynamicUiConfig({
     required this.version,
@@ -11,6 +14,9 @@ class DynamicUiConfig {
     required this.banners,
     this.globalBackground,
     this.heroImageUrl,
+    this.welcomeMessage,
+    this.heroSubtitle,
+    this.sectionVisibility,
   });
 
   factory DynamicUiConfig.fromJson(Map<String, dynamic> json) {
@@ -31,7 +37,27 @@ class DynamicUiConfig {
               )
               : null,
       heroImageUrl: json['heroImageUrl'] as String?,
+      welcomeMessage: json['welcomeMessage'] as String?,
+      heroSubtitle: json['heroSubtitle'] as String?,
+      sectionVisibility: json['sectionVisibility'] != null
+          ? Map<String, bool>.from(
+              json['sectionVisibility'] as Map,
+            )
+          : null,
     );
+  }
+  
+  // Helper method to check if a section should be visible
+  bool isSectionVisible(String sectionKey, {bool defaultVisibility = true}) {
+    return sectionVisibility?[sectionKey] ?? defaultVisibility;
+  }
+  
+  // Helper method to format welcome message with username
+  String formatWelcomeMessage(String username) {
+    if (welcomeMessage == null || welcomeMessage!.isEmpty) {
+      return 'Welcome,';
+    }
+    return welcomeMessage!.replaceAll('{username}', username);
   }
 }
 
