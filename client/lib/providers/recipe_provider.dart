@@ -417,6 +417,36 @@ class RecipeProvider extends ChangeNotifier {
       final response = await RecipeService.createUserRecipe(recipe);
 
       if (context.mounted) {
+        // Handle duplicate error from server (409 status code)
+        if (response.statusCode == 409) {
+          _setError(response.message ?? 'This recipe already exists in your collection');
+          // Try to find the duplicate recipe to show "View Recipe" action
+          final duplicateRecipe = findDuplicateRecipe(recipe);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                response.message ?? 'This recipe already exists in your collection',
+              ),
+              backgroundColor: Colors.orange,
+              action: duplicateRecipe != null
+                  ? SnackBarAction(
+                      label: 'View Recipe',
+                      textColor: Colors.white,
+                      onPressed: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/recipeDetail',
+                          arguments: duplicateRecipe,
+                        );
+                      },
+                    )
+                  : null,
+              duration: const Duration(seconds: 6),
+            ),
+          );
+          return null;
+        }
+
         final collectionService = context.read<CollectionService>();
 
         if (response.success && response.data != null) {

@@ -177,6 +177,48 @@ router.post("/recipes", auth, async (req, res) => {
 			return res.status(400).json({ error: "Title is required" });
 		}
 
+		// Check for duplicates by sourceUrl first (most reliable)
+		if (sourceUrl) {
+			const urlDuplicateQuery = await db.collection("recipes")
+				.where("userId", "==", userId)
+				.where("sourceUrl", "==", sourceUrl)
+				.limit(1)
+				.get();
+			
+			if (!urlDuplicateQuery.empty) {
+				return res.status(409).json({ 
+					error: true,
+					message: "This recipe already exists in your collection",
+					existingRecipeId: urlDuplicateQuery.docs[0].id 
+				});
+			}
+		}
+
+		// Check for duplicates by userId, title, and description
+		const duplicateQuery = await db.collection("recipes")
+			.where("userId", "==", userId)
+			.where("title", "==", title)
+			.limit(10) // Get a few to check descriptions
+			.get();
+
+		if (!duplicateQuery.empty) {
+			// Check if any have matching description
+			const normalizedDescription = (description || "").toLowerCase().trim();
+			for (const doc of duplicateQuery.docs) {
+				const existingRecipe = doc.data();
+				const existingDescription = (existingRecipe.description || "").toLowerCase().trim();
+				
+				// If descriptions match (or both are empty), it's a duplicate
+				if (existingDescription === normalizedDescription) {
+					return res.status(409).json({ 
+						error: true,
+						message: "This recipe already exists in your collection",
+						existingRecipeId: doc.id 
+					});
+				}
+			}
+		}
+
         // Generate searchable fields (only title, ingredients, and tags)
         // Normalize hyphens to spaces in tags for consistent searching
 		const searchableFields = [
