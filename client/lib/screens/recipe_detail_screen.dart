@@ -1467,12 +1467,12 @@ Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
             constraints: BoxConstraints(
               maxWidth: AppDialog.responsiveMaxWidth(context),
             ),
-            child: Padding(
+        child: Padding(
               padding: AppDialog.responsivePadding(context),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
                     leading: Icon(
                       Icons.photo_library_rounded,
                       size: AppSizing.responsiveIconSize(
@@ -1500,9 +1500,9 @@ Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
                               ? 10
                               : 8,
                     ),
-                    onTap: () => Navigator.pop(ctx, 'device'),
-                  ),
-                  ListTile(
+                onTap: () => Navigator.pop(ctx, 'device'),
+              ),
+              ListTile(
                     leading: Icon(
                       Icons.link_rounded,
                       size: AppSizing.responsiveIconSize(
@@ -1530,9 +1530,9 @@ Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
                               ? 10
                               : 8,
                     ),
-                    onTap: () => Navigator.pop(ctx, 'url'),
-                  ),
-                  ListTile(
+                onTap: () => Navigator.pop(ctx, 'url'),
+              ),
+              ListTile(
                     leading: Icon(
                       Icons.auto_awesome_rounded,
                       size: AppSizing.responsiveIconSize(
@@ -1560,9 +1560,9 @@ Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
                               ? 10
                               : 8,
                     ),
-                    onTap: () => Navigator.pop(ctx, 'regen'),
-                  ),
-                ],
+                onTap: () => Navigator.pop(ctx, 'regen'),
+              ),
+            ],
               ),
             ),
           ),

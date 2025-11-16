@@ -228,14 +228,14 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                                             fontWeight: FontWeight.w500,
                                           )
                                           : Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall?.copyWith(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant
-                                                .withValues(alpha: 0.8),
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                        context,
+                                      ).textTheme.bodySmall?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant
+                                            .withValues(alpha: 0.8),
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                     SizedBox(height: AppBreakpoints.isDesktop(context) ? 6 : 4),
                                     Wrap(
@@ -258,7 +258,7 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                                                 padding: EdgeInsets.symmetric(
                                                   horizontal: AppBreakpoints.isDesktop(context) ? 12 : 8,
                                                   vertical: AppBreakpoints.isDesktop(context) ? 6 : 4,
-                                                ),
+                                                    ),
                                                 decoration: BoxDecoration(
                                                   color:
                                                       isSelected
@@ -344,14 +344,14 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                                             fontWeight: FontWeight.w500,
                                           )
                                           : Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall?.copyWith(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant
-                                                .withValues(alpha: 0.8),
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                        context,
+                                      ).textTheme.bodySmall?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant
+                                            .withValues(alpha: 0.8),
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                     SizedBox(height: AppBreakpoints.isDesktop(context) ? 6 : 4),
                                     Wrap(
@@ -374,7 +374,7 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                                                 padding: EdgeInsets.symmetric(
                                                   horizontal: AppBreakpoints.isDesktop(context) ? 12 : 8,
                                                   vertical: AppBreakpoints.isDesktop(context) ? 6 : 4,
-                                                ),
+                                                    ),
                                                 decoration: BoxDecoration(
                                                   color:
                                                       isSelected

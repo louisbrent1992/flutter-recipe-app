@@ -22,6 +22,8 @@ class RecipeCard extends StatefulWidget {
   final bool showEditButton;
   // Favorites removed
   final bool showShareButton;
+  final bool showDeleteButton; // Developer-only delete button
+  final VoidCallback? onDelete; // Callback for delete action
   final Function(Recipe)? onRecipeUpdated;
 
   const RecipeCard({
@@ -36,8 +38,9 @@ class RecipeCard extends StatefulWidget {
     this.showCookingTime = true,
     this.showServings = true,
     this.showEditButton = false,
-
     this.showShareButton = true,
+    this.showDeleteButton = false,
+    this.onDelete,
     this.onRecipeUpdated,
   });
 
@@ -290,7 +293,7 @@ Shared from Recipe App
                 ),
                 SizedBox(width: AppSpacing.xs),
                 Text(
-                  '${widget.recipe.servings} servings',
+                  _formatServings(widget.recipe.servings),
                   style: TextStyle(
                     fontSize: AppTypography.responsiveCaptionSize(context),
                     color: Colors.grey[600],
@@ -398,6 +401,62 @@ Shared from Recipe App
 
     // If we can't parse it, return cleaned version (without qualifiers)
     return cleaned.isEmpty ? cookingTime : cleaned;
+  }
+
+  String _formatServings(String servings) {
+    if (servings.isEmpty) return '';
+
+    // Clean up the servings string - remove words like "approximately", "about", "around", etc.
+    String cleaned = servings.toLowerCase().trim();
+
+    // Remove common qualifiers that cause overflow
+    cleaned = cleaned.replaceAll(
+      RegExp(
+        r'\b(approximately|about|around|roughly|nearly|almost|over|under|up to|at least|at most)\b\s*',
+        caseSensitive: false,
+      ),
+      '',
+    );
+
+    // Remove symbols: parentheses, dashes, commas, etc. and everything after them
+    // This handles cases like "3 sizes (Small, Medium, Large)" -> "3 sizes"
+    cleaned = cleaned.replaceAll(RegExp(r'[\(\)\[\]{}]'), ' '); // Remove brackets/parentheses
+    cleaned = cleaned.split(RegExp(r'[,\-–—]'))[0].trim(); // Take only first part before commas/dashes
+
+    // Extract number and determine if it's "servings" or "sizes"
+    final numberPattern = RegExp(r'(\d+)');
+    final match = numberPattern.firstMatch(cleaned);
+
+    if (match != null) {
+      final number = match.group(1) ?? '';
+      
+      // Check if the text contains "size" or "serving"
+      final hasSize = RegExp(r'\bsize', caseSensitive: false).hasMatch(cleaned);
+      
+      // Determine the unit - prefer "sizes" if found, otherwise default to "servings"
+      String unit;
+      if (hasSize) {
+        unit = int.parse(number) == 1 ? 'size' : 'sizes';
+      } else {
+        unit = int.parse(number) == 1 ? 'serving' : 'servings';
+      }
+      
+      return '$number $unit';
+    }
+
+    // If we can't parse a number, try to return cleaned version
+    // Remove any remaining symbols and extra words
+    cleaned = cleaned.replaceAll(RegExp(r'[^\w\s]'), ''); // Remove all symbols
+    cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ').trim(); // Normalize whitespace
+    
+    // If it's just a number, add "servings"
+    if (RegExp(r'^\d+$').hasMatch(cleaned)) {
+      final num = int.parse(cleaned);
+      return '$num ${num == 1 ? 'serving' : 'servings'}';
+    }
+
+    // Last resort: return cleaned version if it's not empty
+    return cleaned.isNotEmpty ? cleaned : servings;
   }
 
   @override
@@ -609,6 +668,15 @@ Shared from Recipe App
                           icon: Icons.save_rounded,
                           onTap: widget.onSave!,
                           tooltip: 'Save recipe',
+                        ),
+                      if (widget.showDeleteButton && widget.onDelete != null)
+                        SizedBox(width: AppSpacing.xs),
+                      if (widget.showDeleteButton && widget.onDelete != null)
+                        _buildActionButton(
+                          icon: Icons.delete_forever_rounded,
+                          onTap: widget.onDelete!,
+                          tooltip: 'Delete recipe (Dev only)',
+                          iconColor: Colors.red,
                         ),
                     ],
                   ),

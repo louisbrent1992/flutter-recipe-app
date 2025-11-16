@@ -108,7 +108,7 @@ class FirebaseService {
   Future<void> updateUserProfile({
     String? displayName,
     String? email,
-    String? photoURL,
+    String? photoURL, // Can be null to delete
   }) async {
     final updates = <String, dynamic>{
       'updatedAt': FieldValue.serverTimestamp(),
@@ -116,13 +116,24 @@ class FirebaseService {
 
     if (displayName != null) updates['displayName'] = displayName;
     if (email != null) updates['email'] = email;
-    if (photoURL != null) updates['photoURL'] = photoURL;
+    if (photoURL != null) {
+      updates['photoURL'] = photoURL;
+    }
 
-    await Future.wait([
+    final futures = <Future>[
       _firestore.collection('users').doc(currentUser!.uid).update(updates),
-      if (displayName != null) currentUser!.updateDisplayName(displayName),
-      if (email != null) currentUser!.verifyBeforeUpdateEmail(email),
-      if (photoURL != null) currentUser!.updatePhotoURL(photoURL),
-    ]);
+    ];
+
+    if (displayName != null) {
+      futures.add(currentUser!.updateDisplayName(displayName));
+    }
+    if (email != null) {
+      futures.add(currentUser!.verifyBeforeUpdateEmail(email));
+    }
+    if (photoURL != null) {
+      futures.add(currentUser!.updatePhotoURL(photoURL));
+    }
+
+    await Future.wait(futures);
   }
 }

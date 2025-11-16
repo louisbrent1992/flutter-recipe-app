@@ -206,6 +206,27 @@ class RecipeService {
     );
   }
 
+  /// Delete a discover recipe (developer-only)
+  static Future<ApiResponse<Map<String, dynamic>>> deleteDiscoverRecipe(
+    String id,
+  ) async {
+    final response = await _api.authenticatedDelete<Map<String, dynamic>>(
+      'discover/recipes/$id',
+    );
+
+    if (response.success && response.data != null) {
+      return ApiResponse.success(
+        response.data!,
+        message: response.data!['message'] ?? 'Recipe deleted successfully',
+      );
+    }
+
+    return ApiResponse.error(
+      response.message ?? 'Failed to delete recipe',
+      statusCode: response.statusCode,
+    );
+  }
+
   /// Delete a user recipe
   static Future<ApiResponse<bool>> deleteUserRecipe(String id) async {
     final response = await _api.authenticatedDelete('users/recipes/$id');

@@ -462,13 +462,13 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                               ? 700
                               : double.infinity,
                     ),
-                    padding: EdgeInsets.fromLTRB(
-                      AppSpacing.responsive(context),
-                      AppSpacing.responsive(context),
-                      AppSpacing.responsive(context),
-                      AppSpacing.responsive(context),
-                    ),
-                    child: Consumer<RecipeProvider>(
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.responsive(context),
+                    AppSpacing.responsive(context),
+                    AppSpacing.responsive(context),
+                    AppSpacing.responsive(context),
+                  ),
+                  child: Consumer<RecipeProvider>(
                     builder: (context, recipeProvider, _) {
                       if (recipeProvider.error != null) {
                         return ErrorDisplay(

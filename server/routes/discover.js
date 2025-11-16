@@ -84,56 +84,56 @@ router.get("/search", auth, async (req, res) => {
         const startAt = (page - 1) * limit;
 
         // Fetch recipes with simple Firestore pagination
-        let snapshot;
-        try {
-            if (isRandom) {
+			let snapshot;
+			try {
+				if (isRandom) {
                 // For random: fetch a larger sample, shuffle, then paginate
                 // Fetch up to 500 recipes to get a good random sample
                 const randomSampleSize = Math.min(500, totalRecipes);
-                snapshot = await recipesRef
+					snapshot = await recipesRef
                     .limit(randomSampleSize)
-                    .get();
-            } else {
-                // Default: order by creation date (latest first)
-                snapshot = await recipesRef
-                    .orderBy("createdAt", "desc")
+						.get();
+				} else {
+					// Default: order by creation date (latest first)
+					snapshot = await recipesRef
+						.orderBy("createdAt", "desc")
                     .limit(limit)
                     .offset(startAt)
-                    .get();
-            }
-        } catch (orderErr) {
-            // Fallback if some docs have non-timestamp createdAt or field missing
-            console.warn(
-                "Falling back to un-ordered fetch due to createdAt orderBy error:",
-                orderErr?.message || orderErr
-            );
+						.get();
+				}
+			} catch (orderErr) {
+				// Fallback if some docs have non-timestamp createdAt or field missing
+				console.warn(
+					"Falling back to un-ordered fetch due to createdAt orderBy error:",
+					orderErr?.message || orderErr
+				);
             snapshot = await recipesRef
                 .limit(limit)
                 .offset(startAt)
                 .get();
-        }
+			}
 
         // Collect recipes from snapshot
         const recipes = [];
-        snapshot.forEach((doc) => {
-            const data = doc.data();
+			snapshot.forEach((doc) => {
+				const data = doc.data();
             recipes.push({
-                id: doc.id,
-                ...data,
-            });
-        });
+					id: doc.id,
+					...data,
+				});
+			});
 
         // Apply random shuffling if requested (after fetching)
         let paginatedRecipes = recipes;
         if (isRandom && recipes.length > 0) {
-            // Fisher-Yates shuffle algorithm for true randomization
+			// Fisher-Yates shuffle algorithm for true randomization
             const shuffled = [...recipes];
             for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
+				const j = Math.floor(Math.random() * (i + 1));
                 [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
+			}
             // Then apply pagination to shuffled results
-            const pageStart = Math.max(0, (page - 1) * limit);
+        const pageStart = Math.max(0, (page - 1) * limit);
             paginatedRecipes = shuffled.slice(pageStart, pageStart + limit);
         }
 
@@ -142,9 +142,9 @@ router.get("/search", auth, async (req, res) => {
         const hasNextPage = page < totalPages;
         const hasPrevPage = page > 1;
 
-        console.log(
+		console.log(
             `Fetched ${recipes.length} recipes, returning ${paginatedRecipes.length} for page ${page} of ${totalPages} (total: ${totalRecipes})`
-        );
+		);
 
 		res.json({
 			recipes: paginatedRecipes,
@@ -167,10 +167,10 @@ router.get("/search", auth, async (req, res) => {
 	}
 });
 
-// Admin endpoint to remove duplicate recipes
-router.post("/cleanup-duplicates", auth, async (req, res) => {
+// Deduplication function (can be called manually or automatically)
+async function cleanupDuplicates() {
 	try {
-		console.log("Starting duplicate recipe cleanup...");
+		console.log("🧹 Starting duplicate recipe cleanup...");
 
 		const recipesRef = db.collection("recipes");
 		const snapshot = await recipesRef.get();
@@ -221,8 +221,18 @@ router.post("/cleanup-duplicates", auth, async (req, res) => {
 		});
 
 		console.log(
-			`Found ${duplicatesToDelete.length} duplicate recipes to delete`
+			`📊 Found ${duplicatesToDelete.length} duplicate recipes to delete`
 		);
+
+		if (duplicatesToDelete.length === 0) {
+			console.log("✅ No duplicates found. Cleanup complete.");
+			return {
+				message: "Duplicate cleanup completed",
+				duplicatesFound: 0,
+				duplicatesDeleted: 0,
+				uniqueRecipesRemaining: recipeMap.size,
+			};
+		}
 
 		// Delete duplicates in batches of 500 (Firestore limit)
 		let deletedCount = 0;
@@ -239,18 +249,32 @@ router.post("/cleanup-duplicates", auth, async (req, res) => {
 			deletedCount += batchItems.length;
 
 			console.log(
-				`Deleted batch of ${batchItems.length} recipes. Total: ${deletedCount}/${duplicatesToDelete.length}`
+				`🗑️  Deleted batch of ${batchItems.length} recipes. Total: ${deletedCount}/${duplicatesToDelete.length}`
 			);
 		}
 
-		res.json({
+		console.log(
+			`✅ Duplicate cleanup completed: ${deletedCount} duplicates deleted, ${recipeMap.size} unique recipes remaining`
+		);
+
+		return {
 			message: "Duplicate cleanup completed",
 			duplicatesFound: duplicatesToDelete.length,
 			duplicatesDeleted: deletedCount,
 			uniqueRecipesRemaining: recipeMap.size,
-		});
+		};
 	} catch (error) {
-		console.error("Error during duplicate cleanup:", error);
+		console.error("❌ Error during duplicate cleanup:", error);
+		throw error;
+	}
+}
+
+// Admin endpoint to remove duplicate recipes (manual trigger)
+router.post("/cleanup-duplicates", auth, async (req, res) => {
+	try {
+		const result = await cleanupDuplicates();
+		res.json(result);
+	} catch (error) {
 		const errorHandler = require("../utils/errorHandler");
 		errorHandler.serverError(
 			res,
@@ -259,7 +283,75 @@ router.post("/cleanup-duplicates", auth, async (req, res) => {
 	}
 });
 
-module.exports = router;
+// Export both the router and the cleanup function
+const discoverRouter = router;
+discoverRouter.cleanupDuplicates = cleanupDuplicates;
+module.exports = discoverRouter;
+
+// Developer-only endpoint to delete a discover recipe
+// Only available in development/debug mode
+router.delete("/recipes/:id", auth, async (req, res) => {
+	try {
+		// Only allow in development mode
+		if (process.env.NODE_ENV === 'production') {
+			return errorHandler.forbidden(
+				res,
+				"This endpoint is only available in development mode"
+			);
+		}
+
+		const { id } = req.params;
+
+		if (!id || typeof id !== "string" || id.trim().length === 0) {
+			return errorHandler.badRequest(res, "Recipe id is required");
+		}
+
+		const recipeRef = db.collection("recipes").doc(id);
+		const recipeDoc = await recipeRef.get();
+
+		if (!recipeDoc.exists) {
+			return errorHandler.notFound(res, "Recipe not found");
+		}
+
+		const recipeData = recipeDoc.data();
+
+		// Log recipe fields for debugging
+		console.log(`[DEV] Recipe ${id} fields:`, {
+			title: recipeData.title,
+			userId: recipeData.userId || 'NOT SET',
+			isExternal: recipeData.isExternal || false,
+			externalId: recipeData.externalId || 'NOT SET',
+			hasUserId: !!recipeData.userId,
+			hasIsExternal: !!recipeData.isExternal,
+			hasExternalId: !!recipeData.externalId,
+		});
+
+		// In development mode, allow deletion of ANY recipe from discover screen
+		// Developer has full control to delete any recipe, regardless of userId
+		if (recipeData.userId) {
+			console.warn(
+				`[DEV] Deleting recipe with userId: ${recipeData.userId}. This is allowed in development mode.`
+			);
+		}
+
+		// Delete the recipe
+		await recipeRef.delete();
+
+		console.log(`🗑️  [DEV] Deleted discover recipe: ${id} - ${recipeData.title}`);
+
+		res.json({
+			message: "Recipe deleted successfully",
+			recipeId: id,
+			title: recipeData.title,
+		});
+	} catch (error) {
+		console.error("Error deleting discover recipe:", error);
+		errorHandler.serverError(
+			res,
+			"We couldn't delete the recipe right now. Please try again shortly."
+		);
+	}
+});
 
 // Add after existing routes above export
 

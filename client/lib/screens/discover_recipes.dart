@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
@@ -10,6 +11,7 @@ import '../models/recipe.dart';
 import '../components/error_display.dart';
 import '../theme/theme.dart';
 import '../components/floating_bottom_bar.dart';
+import '../services/recipe_service.dart';
 
 class DiscoverRecipesScreen extends StatefulWidget {
   final String? initialQuery;
@@ -136,9 +138,11 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
       limit: _itemsPerPage,
       forceRefresh: forceRefresh,
     );
-    
+
     // If current page is beyond total pages, reset to page 1
-    if (mounted && _currentPage > recipeProvider.totalPages && recipeProvider.totalPages > 0) {
+    if (mounted &&
+        _currentPage > recipeProvider.totalPages &&
+        recipeProvider.totalPages > 0) {
       setState(() {
         _currentPage = 1;
       });
@@ -152,7 +156,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
         forceRefresh: true,
       );
     }
-    
+
     _updateAvailableTagsFromRecipes();
   }
 
@@ -192,6 +196,92 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
     if (recipeProvider.hasNextPage) {
       _goToPage(_currentPage + 1);
+    }
+  }
+
+  Future<void> _handleDeleteDiscoverRecipe(Recipe recipe) async {
+    if (!kDebugMode) {
+      // Safety check - should never happen in production
+      return;
+    }
+
+    if (recipe.id.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cannot delete recipe: No ID found'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Show confirmation dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Discover Recipe'),
+            content: Text(
+              'Are you sure you want to permanently delete "${recipe.title}" from Firebase?\n\nThis action cannot be undone and will remove the recipe from the discover feed for all users.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.onError,
+                ),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final response = await RecipeService.deleteDiscoverRecipe(recipe.id);
+
+      if (mounted) {
+        if (response.success) {
+          // Refresh the recipe list to remove the deleted recipe
+          await _loadRecipes(forceRefresh: true);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Recipe "${recipe.title}" deleted successfully'),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete recipe: ${response.message}'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting recipe: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -294,9 +384,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Discover',
-      ),
+      appBar: const CustomAppBar(title: 'Discover'),
       body: Stack(
         children: [
           Column(
@@ -418,7 +506,9 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                   ),
                                   Padding(
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.responsive(context),
+                                      horizontal: AppSpacing.responsive(
+                                        context,
+                                      ),
                                     ),
                                     child: Text(
                                       'No recipes found$contextLine',
@@ -439,7 +529,9 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                   ),
                                   Padding(
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: AppSpacing.responsive(context),
+                                      horizontal: AppSpacing.responsive(
+                                        context,
+                                      ),
                                     ),
                                     child: Text(
                                       'Try a different tag, change filters, or clear filters to see more.',
@@ -505,9 +597,15 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                       recipe: recipe,
                                       showSaveButton: !isRecipeSaved(recipe),
                                       showRemoveButton: isRecipeSaved(recipe),
+                                      showDeleteButton:
+                                          kDebugMode && recipe.id.isNotEmpty,
                                       onSave: () => _handleRecipeAction(recipe),
                                       onRemove:
                                           () => _handleRecipeAction(recipe),
+                                      onDelete:
+                                          () => _handleDeleteDiscoverRecipe(
+                                            recipe,
+                                          ),
                                     );
                                   },
                                   itemCount: displayRecipes.length,
@@ -541,18 +639,33 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                             MainAxisAlignment.center,
                                         children: [
                                           SizedBox(
-                                            width: AppBreakpoints.isDesktop(context)
-                                                ? 48
-                                                : AppBreakpoints.isTablet(context)
+                                            width:
+                                                AppBreakpoints.isDesktop(
+                                                      context,
+                                                    )
+                                                    ? 48
+                                                    : AppBreakpoints.isTablet(
+                                                      context,
+                                                    )
                                                     ? 44
                                                     : 40,
-                                            height: AppBreakpoints.isDesktop(context)
-                                                ? 48
-                                                : AppBreakpoints.isTablet(context)
+                                            height:
+                                                AppBreakpoints.isDesktop(
+                                                      context,
+                                                    )
+                                                    ? 48
+                                                    : AppBreakpoints.isTablet(
+                                                      context,
+                                                    )
                                                     ? 44
                                                     : 40,
                                             child: CircularProgressIndicator(
-                                              strokeWidth: AppBreakpoints.isDesktop(context) ? 4 : 3,
+                                              strokeWidth:
+                                                  AppBreakpoints.isDesktop(
+                                                        context,
+                                                      )
+                                                      ? 4
+                                                      : 3,
                                               color:
                                                   Theme.of(
                                                     context,
@@ -569,22 +682,38 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                           ),
                                           Padding(
                                             padding: EdgeInsets.symmetric(
-                                              horizontal: AppSpacing.responsive(context),
+                                              horizontal: AppSpacing.responsive(
+                                                context,
+                                              ),
                                             ),
                                             child: Text(
                                               'Fetching delicious recipes for you...',
-                                              style: AppBreakpoints.isDesktop(context)
-                                                  ? Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                                    color: Theme.of(context).colorScheme.onSurface,
-                                                  )
-                                                  : Theme.of(
-                                                    context,
-                                                  ).textTheme.bodyMedium?.copyWith(
-                                                    color:
-                                                        Theme.of(
-                                                          context,
-                                                        ).colorScheme.onSurface,
-                                                  ),
+                                              style:
+                                                  AppBreakpoints.isDesktop(
+                                                        context,
+                                                      )
+                                                      ? Theme.of(context)
+                                                          .textTheme
+                                                          .bodyLarge
+                                                          ?.copyWith(
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .onSurface,
+                                                          )
+                                                      : Theme.of(context)
+                                                          .textTheme
+                                                          .bodyMedium
+                                                          ?.copyWith(
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .onSurface,
+                                                          ),
                                             ),
                                           ),
                                         ],

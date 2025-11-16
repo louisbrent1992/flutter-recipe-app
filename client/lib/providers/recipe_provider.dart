@@ -700,7 +700,7 @@ class RecipeProvider extends ChangeNotifier {
             if (actualResultsCount < limit) {
               _hasNextPage = false;
             } else {
-              _hasNextPage = pagination['hasNextPage'] ?? false;
+          _hasNextPage = pagination['hasNextPage'] ?? false;
             }
           }
           
@@ -735,8 +735,8 @@ class RecipeProvider extends ChangeNotifier {
           
           // If we got fewer results than the limit, there's only 1 page
           if (recipes.length < limit) {
-            _totalPages = 1;
-            _hasNextPage = false;
+          _totalPages = 1;
+          _hasNextPage = false;
           } else {
             // Estimate total pages from results (this is a fallback, server should provide this)
             _totalPages = 1; // Default to 1 if we can't determine

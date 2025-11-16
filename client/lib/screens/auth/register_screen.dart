@@ -281,14 +281,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ? 450
                         : double.infinity,
               ),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Create Account',
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Create Account',
                       style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                         fontSize: AppTypography.responsiveHeadingSize(
                           context,
@@ -297,8 +297,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           desktop: 40,
                         ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
+                    textAlign: TextAlign.center,
+                  ),
                     SizedBox(
                       height: AppBreakpoints.isDesktop(context)
                           ? 40
@@ -519,7 +519,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     },
                     child: const Text('Already have an account? Sign in'),
                   ),
-                  ],
+                ],
                 ),
               ),
             ),

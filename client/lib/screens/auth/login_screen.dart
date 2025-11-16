@@ -346,14 +346,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         ? 450
                         : double.infinity,
               ),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Welcome Back!',
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Welcome Back!',
                       style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                         fontSize: AppTypography.responsiveHeadingSize(
                           context,
@@ -362,8 +362,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           desktop: 40,
                         ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
+                    textAlign: TextAlign.center,
+                  ),
                     SizedBox(
                       height: AppBreakpoints.isDesktop(context)
                           ? 40
@@ -520,7 +520,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: const Text('Don\'t have an account? Sign up'),
                   ),
-                  ],
+                ],
                 ),
               ),
             ),

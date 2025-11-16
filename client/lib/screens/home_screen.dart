@@ -507,9 +507,9 @@ class _HomeScreenState extends State<HomeScreen>
                               color: Theme.of(context).colorScheme.onSurface,
                             )
                             : theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -522,9 +522,9 @@ class _HomeScreenState extends State<HomeScreen>
                               height: 1.3,
                             )
                             : theme.textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              height: 1.3,
-                            ),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.3,
+                        ),
                         maxLines: AppBreakpoints.isDesktop(context) ? 2 : 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -748,9 +748,9 @@ class _HomeScreenState extends State<HomeScreen>
                         fontWeight: FontWeight.w600,
                       )
                       : theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -1057,7 +1057,7 @@ class _HomeScreenState extends State<HomeScreen>
             ? 220.0
             : 180.0;
     final borderRadius = AppBreakpoints.isDesktop(context) ? 24.0 : 20.0;
-    
+
     return SizedBox(
       width: collectionCardWidth,
       child: Card(
@@ -1151,18 +1151,18 @@ class _HomeScreenState extends State<HomeScreen>
                         overflow: TextOverflow.ellipsis,
                         style: AppBreakpoints.isDesktop(context)
                             ? theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black.withValues(alpha: 0.5),
-                                  blurRadius: 2,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
+                          fontWeight: FontWeight.bold,
+                          color:
+                              Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              blurRadius: 2,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                             )
                             : theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
@@ -1203,12 +1203,12 @@ class _HomeScreenState extends State<HomeScreen>
                                   fontWeight: FontWeight.w500,
                                 )
                                 : theme.textTheme.bodySmall?.copyWith(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.surfaceContainerHighest,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ],
                       ),

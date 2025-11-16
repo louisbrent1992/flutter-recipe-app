@@ -210,7 +210,7 @@ const fetchImage = async (query, start = 1) => {
 			console.log("⚠️ Cached image is a placeholder, fetching new one");
 			delete imageCache[cacheKey];
 		} else {
-			console.log("✅ Image found in cache");
+		console.log("✅ Image found in cache");
 			return cachedUrl;
 		}
 	}
@@ -549,24 +549,24 @@ router.post("/generate", async (req, res) => {
 				}
 				
 				return {
-					id: uuidv4(),
+				id: uuidv4(),
 					title: recipeTitle,
-					cuisineType: recipeData.cuisineType || cuisineType,
-					description: recipeData.description || "Enjoy your generated recipe!",
-					ingredients: Array.isArray(recipeData.ingredients)
-						? recipeData.ingredients
-						: [],
-					instructions: Array.isArray(recipeData.instructions)
-						? recipeData.instructions
-						: [],
+				cuisineType: recipeData.cuisineType || cuisineType,
+				description: recipeData.description || "Enjoy your generated recipe!",
+				ingredients: Array.isArray(recipeData.ingredients)
+					? recipeData.ingredients
+					: [],
+				instructions: Array.isArray(recipeData.instructions)
+					? recipeData.instructions
+					: [],
 					imageUrl: imageUrl || null, // Use null instead of placeholder
-					cookingTime: recipeData.cookingTime || "30 minutes",
-					difficulty: recipeData.difficulty || "medium",
-					servings: recipeData.servings || "4",
-					tags: recipeData.tags || [],
-					nutrition: recipeData.nutrition || null,
-					aiGenerated: true,
-					createdAt: new Date().toISOString(),
+				cookingTime: recipeData.cookingTime || "30 minutes",
+				difficulty: recipeData.difficulty || "medium",
+				servings: recipeData.servings || "4",
+				tags: recipeData.tags || [],
+				nutrition: recipeData.nutrition || null,
+				aiGenerated: true,
+				createdAt: new Date().toISOString(),
 				};
 			})
 		);
@@ -1228,8 +1228,8 @@ const cleanupCaches = () => {
 			entryTimestamp = value.timestamp;
 		} else {
 			// Invalid entry, remove it
-			delete imageCache[key];
-			entriesProcessed++;
+					delete imageCache[key];
+					entriesProcessed++;
 			continue;
 		}
 		
@@ -1258,8 +1258,8 @@ const cleanupCaches = () => {
 		const newImageCache = {};
 		sortedEntries.forEach(({ key, value }) => {
 			newImageCache[key] = value;
-		});
-		
+			});
+
 		// Replace the old cache with the new one
 		Object.keys(imageCache).forEach((key) => delete imageCache[key]);
 		Object.entries(newImageCache).forEach(([key, value]) => {

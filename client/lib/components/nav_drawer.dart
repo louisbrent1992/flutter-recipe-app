@@ -9,6 +9,7 @@ import '../providers/user_profile_provider.dart';
 import '../models/recipe.dart';
 import '../models/recipe_collection.dart';
 import '../services/game_center_service.dart';
+import '../utils/image_utils.dart';
 import 'dart:ui';
 
 class NavDrawer extends StatefulWidget {
@@ -521,12 +522,11 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                 builder: (context, profileProvider, _) {
                   final photoURL =
                       profileProvider.profile['photoURL'] as String? ??
-                      user?.photoURL;
-
+                      user?.photoURL ??
+                      ImageUtils.defaultProfileIconUrl;
+                  
                   return ClipOval(
-                    child:
-                        photoURL != null
-                            ? CachedNetworkImage(
+                    child: CachedNetworkImage(
                               imageUrl: photoURL,
                               fit: BoxFit.cover,
                               placeholder:
@@ -535,8 +535,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                               errorWidget:
                                   (context, url, error) =>
                                       _buildAvatarPlaceholder(isDark, isMobile),
-                            )
-                            : _buildAvatarPlaceholder(isDark, isMobile),
+                    ),
                   );
                 },
               ),

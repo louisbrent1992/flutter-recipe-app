@@ -9,11 +9,12 @@ import '../providers/subscription_provider.dart';
 import '../theme/theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../components/credits_badge.dart';
+import '../components/custom_app_bar.dart';
 import '../services/bulk_image_refresh_service.dart';
 import '../models/recipe.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import '../services/image_resolver_cache.dart';
+import '../utils/image_utils.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -32,6 +33,10 @@ class _SettingsScreenState extends State<SettingsScreen>
   final User? user = FirebaseAuth.instance.currentUser;
   late AnimationController _animationController;
   final ScrollController _scrollController = ScrollController();
+
+  // Store original values when entering edit mode
+  String? _originalName;
+  String? _originalEmail;
 
   @override
   void initState() {
@@ -62,8 +67,39 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     if (!mounted) return;
 
-    _nameController.text = profile.profile['displayName'] ?? '';
-    _emailController.text = profile.profile['email'] ?? '';
+    // Only update controllers if not currently editing (to avoid overwriting user input)
+    if (!_isEditing) {
+      _nameController.text = profile.profile['displayName'] ?? '';
+      _emailController.text = profile.profile['email'] ?? '';
+    }
+  }
+
+  /// Formats Firebase auth errors into user-friendly messages
+  String _formatAuthError(dynamic error) {
+    final errorString = error.toString();
+
+    if (errorString.contains('requires-recent-login')) {
+      return 'For security, please sign out and sign back in to update your profile.';
+    } else if (errorString.contains('email-already-in-use')) {
+      return 'This email is already in use by another account.';
+    } else if (errorString.contains('invalid-email')) {
+      return 'Please enter a valid email address.';
+    } else if (errorString.contains('weak-password')) {
+      return 'Password is too weak. Please choose a stronger password.';
+    } else if (errorString.contains('user-not-found')) {
+      return 'User account not found. Please sign in again.';
+    } else if (errorString.contains('wrong-password')) {
+      return 'Incorrect password. Please try again.';
+    } else if (errorString.contains('network-request-failed')) {
+      return 'Network error. Please check your internet connection and try again.';
+    } else if (errorString.contains('too-many-requests')) {
+      return 'Too many requests. Please wait a moment and try again.';
+    } else if (errorString.contains('operation-not-allowed')) {
+      return 'This operation is not allowed. Please contact support.';
+    }
+
+    // Default: return a generic friendly message
+    return 'Unable to update profile. Please try again or contact support if the problem persists.';
   }
 
   Future<void> _updateProfile() async {
@@ -74,7 +110,11 @@ class _SettingsScreenState extends State<SettingsScreen>
         email: _emailController.text,
       );
       if (mounted) {
-        setState(() => _isEditing = false);
+        setState(() {
+          _isEditing = false;
+          _originalName = null;
+          _originalEmail = null;
+        });
         _animationController.reverse();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -91,9 +131,13 @@ class _SettingsScreenState extends State<SettingsScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error updating profile: $e'),
+            content: Text(_formatAuthError(e)),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }
@@ -120,9 +164,95 @@ class _SettingsScreenState extends State<SettingsScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error uploading profile picture: $e'),
+            content: Text(_formatAuthError(e)),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteProfilePicture() async {
+    final profile = context.read<UserProfileProvider>();
+    final photoURL = profile.profile['photoURL'] as String? ?? user?.photoURL;
+
+    // Check if user has a custom photo (not the default)
+    final hasCustomPhoto =
+        photoURL != null &&
+        photoURL != ImageUtils.defaultProfileIconUrl &&
+        photoURL.isNotEmpty;
+
+    if (!hasCustomPhoto) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('No custom profile picture to delete'),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Show confirmation dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Profile Picture'),
+            content: const Text(
+              'Are you sure you want to delete your profile picture? This will restore the default icon.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.onError,
+                ),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await profile.deleteProfilePicture();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Profile picture deleted successfully'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_formatAuthError(e)),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }
@@ -387,12 +517,27 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _toggleEditing() {
-    setState(() => _isEditing = !_isEditing);
-    if (_isEditing) {
-      _animationController.forward();
-    } else {
-      _animationController.reverse();
-    }
+    setState(() {
+      if (_isEditing) {
+        // Canceling - restore original values
+        if (_originalName != null) {
+          _nameController.text = _originalName!;
+        }
+        if (_originalEmail != null) {
+          _emailController.text = _originalEmail!;
+        }
+        _originalName = null;
+        _originalEmail = null;
+        _isEditing = false;
+        _animationController.reverse();
+      } else {
+        // Entering edit mode - save current values
+        _originalName = _nameController.text;
+        _originalEmail = _emailController.text;
+        _isEditing = true;
+        _animationController.forward();
+      }
+    });
   }
 
   String? encodeQueryParameters(Map<String, String> params) {
@@ -410,15 +555,10 @@ class _SettingsScreenState extends State<SettingsScreen>
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
+      appBar: CustomAppBar(
+        title: 'Settings',
         elevation: AppElevation.appBar,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
         actions: [
-          CreditsPill(
-            onTap: () => Navigator.pushNamed(context, '/subscription'),
-          ),
           if (_isEditing) ...[
             IconButton(
               icon: const Icon(Icons.cancel_rounded),
@@ -432,6 +572,226 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ],
         ],
+        floatingButtons: [
+          // Context menu
+          PopupMenuButton<String>(
+            tooltip: 'More',
+            icon: Icon(
+              Icons.more_vert,
+              size: AppSizing.responsiveIconSize(
+                context,
+                mobile: 24,
+                tablet: 28,
+                desktop: 30,
+              ),
+            ),
+            color: Theme.of(context).colorScheme.surface.withValues(
+              alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withValues(
+                  alpha: Theme.of(context).colorScheme.overlayLight,
+                ),
+                width: 1,
+              ),
+            ),
+            onSelected: (value) async {
+              switch (value) {
+                case 'edit_profile':
+                  _toggleEditing();
+                  break;
+                case 'upload_picture':
+                  await _uploadProfilePicture();
+                  break;
+                case 'delete_picture':
+                  await _deleteProfilePicture();
+                  break;
+                case 'refresh':
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+                  await _loadProfile();
+                  if (mounted) {
+                    scaffoldMessenger.showSnackBar(
+                      SnackBar(
+                        content: const Text('Profile refreshed'),
+                        backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    );
+                  }
+                  break;
+                case 'my_recipes':
+                  Navigator.pushNamed(context, '/myRecipes');
+                  break;
+                case 'discover':
+                  Navigator.pushNamed(context, '/discover');
+                  break;
+                case 'logout':
+                  await _signOut();
+                  break;
+              }
+            },
+            itemBuilder: (context) {
+              final profileProvider = context.read<UserProfileProvider>();
+              final photoURL =
+                  profileProvider.profile['photoURL'] as String? ??
+                  user?.photoURL;
+              final hasCustomPhoto =
+                  photoURL != null &&
+                  photoURL != ImageUtils.defaultProfileIconUrl &&
+                  photoURL.isNotEmpty;
+
+              final items = <PopupMenuEntry<String>>[];
+
+              // Edit Profile
+              items.add(
+                PopupMenuItem<String>(
+                  value: 'edit_profile',
+                  child: Row(
+                    children: [
+                      Icon(
+                        _isEditing ? Icons.edit_off : Icons.edit,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(_isEditing ? 'Stop Editing' : 'Edit Profile'),
+                    ],
+                  ),
+                ),
+              );
+
+              // Upload Profile Picture
+              items.add(
+                PopupMenuItem<String>(
+                  value: 'upload_picture',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.camera_alt_rounded,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Upload Picture'),
+                    ],
+                  ),
+                ),
+              );
+
+              // Delete Profile Picture (only if custom photo exists)
+              if (hasCustomPhoto) {
+                items.add(
+                  PopupMenuItem<String>(
+                    value: 'delete_picture',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.delete_rounded,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Delete Picture',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              // Refresh Profile
+              items.add(
+                PopupMenuItem<String>(
+                  value: 'refresh',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.refresh,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Refresh Profile'),
+                    ],
+                  ),
+                ),
+              );
+
+              // Divider
+              items.add(const PopupMenuDivider());
+
+              // Quick Navigation
+              items.add(
+                PopupMenuItem<String>(
+                  value: 'my_recipes',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.restaurant_menu_rounded,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('My Recipes'),
+                    ],
+                  ),
+                ),
+              );
+
+              items.add(
+                PopupMenuItem<String>(
+                  value: 'discover',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.explore,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Discover'),
+                    ],
+                  ),
+                ),
+              );
+
+              // Divider before logout
+              items.add(const PopupMenuDivider());
+
+              // Logout
+              items.add(
+                PopupMenuItem<String>(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.logout_rounded,
+                        size: 18,
+                        color: Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Sign Out',
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+
+              return items;
+            },
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -440,9 +800,10 @@ class _SettingsScreenState extends State<SettingsScreen>
             child: Center(
               child: Container(
                 constraints: BoxConstraints(
-                  maxWidth: AppBreakpoints.isDesktop(context)
-                      ? 800
-                      : AppBreakpoints.isTablet(context)
+                  maxWidth:
+                      AppBreakpoints.isDesktop(context)
+                          ? 800
+                          : AppBreakpoints.isTablet(context)
                           ? 700
                           : double.infinity,
                 ),
@@ -453,536 +814,489 @@ class _SettingsScreenState extends State<SettingsScreen>
                   30,
                 ),
                 child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Profile Header
-                  _buildProfileHeader(colorScheme),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Profile Header
+                    _buildProfileHeader(colorScheme),
 
-                  SizedBox(height: AppSpacing.xxl),
+                    SizedBox(height: AppSpacing.xxl),
 
-                  // Profile Fields
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    padding: EdgeInsets.all(_isEditing ? AppSpacing.md : 0),
-                    decoration: BoxDecoration(
-                      color:
-                          _isEditing
-                              ? colorScheme.primaryContainer.withValues(
-                                alpha: 0.3,
-                              )
-                              : Colors.transparent,
-                      borderRadius: BorderRadius.circular(
-                        AppBreakpoints.isMobile(context) ? 12 : 16,
+                    // Profile Fields
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      padding: EdgeInsets.all(_isEditing ? AppSpacing.md : 0),
+                      decoration: BoxDecoration(
+                        color:
+                            _isEditing
+                                ? colorScheme.primaryContainer.withValues(
+                                  alpha: 0.3,
+                                )
+                                : Colors.transparent,
+                        borderRadius: BorderRadius.circular(
+                          AppBreakpoints.isMobile(context) ? 12 : 16,
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_isEditing)
-                          Padding(
-                            padding: EdgeInsets.only(bottom: AppSpacing.md),
-                            child: Text(
-                              'Edit Profile',
-                              style: TextStyle(
-                                fontSize: AppTypography.responsiveHeadingSize(
-                                  context,
-                                  mobile: 20.0,
-                                  tablet: 24.0,
-                                  desktop: 28.0,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_isEditing)
+                            Padding(
+                              padding: EdgeInsets.only(bottom: AppSpacing.md),
+                              child: Text(
+                                'Edit Profile',
+                                style: TextStyle(
+                                  fontSize: AppTypography.responsiveHeadingSize(
+                                    context,
+                                    mobile: 20.0,
+                                    tablet: 24.0,
+                                    desktop: 28.0,
+                                  ),
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ),
 
-                        _buildAnimatedTextField(
-                          controller: _nameController,
-                          enabled: _isEditing,
-                          label: 'Recipe Name:',
-                          hint: user?.displayName ?? 'Your name',
-                          icon: Icons.person_rounded,
-                        ),
-
-                        SizedBox(height: AppSpacing.md),
-
-                        _buildAnimatedTextField(
-                          controller: _emailController,
-                          enabled: _isEditing,
-                          label: 'Email:',
-                          hint: user?.email ?? 'Your email',
-                          icon: Icons.email_rounded,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: AppSpacing.xxl),
-                  const Divider(height: 1, thickness: 0.1),
-                  SizedBox(height: AppSpacing.md),
-
-                  // Appearance Section
-                  _buildSectionHeader(
-                    title: 'Appearance',
-                    icon: Icons.palette_rounded,
-                    colorScheme: colorScheme,
-                  ),
-
-                  SizedBox(height: AppSpacing.md),
-
-                  Consumer<ThemeProvider>(
-                    builder: (context, themeProvider, _) {
-                      return _buildAnimatedSwitchTile(
-                        title: 'Dark Mode',
-                        subtitle: 'Switch between light and dark themes',
-                        value: themeProvider.isDarkMode,
-                        onChanged: (value) => themeProvider.toggleTheme(),
-                        icon:
-                            themeProvider.isDarkMode
-                                ? Icons.dark_mode_rounded
-                                : Icons.light_mode_rounded,
-                        color:
-                            themeProvider.isDarkMode
-                                ? Theme.of(context).colorScheme.info
-                                : Theme.of(context).colorScheme.warning,
-                      );
-                    },
-                  ),
-
-                  SizedBox(height: AppSpacing.md),
-                  const Divider(height: 1, thickness: 0.1),
-                  SizedBox(height: AppSpacing.md),
-
-                  // Notifications Section
-                  _buildSectionHeader(
-                    title: 'Notifications',
-                    icon: Icons.notifications_rounded,
-                    colorScheme: colorScheme,
-                  ),
-
-                  SizedBox(height: AppSpacing.md),
-
-                  Consumer<NotificationProvider>(
-                    builder: (context, notificationProvider, _) {
-                      return Column(
-                        children: [
-                          _buildAnimatedSwitchTile(
-                            title: 'Daily Recipe Reminder',
-                            subtitle: 'Get a recipe suggestion every day',
-                            value: notificationProvider.dailyRecipeReminder,
-                            onChanged:
-                                (value) => notificationProvider
-                                    .setDailyRecipeReminder(value),
-                            icon: Icons.schedule_rounded,
-                            color: Theme.of(context).colorScheme.info,
-                          ),
-
-                          SizedBox(height: AppSpacing.sm),
-
-                          _buildAnimatedSwitchTile(
-                            title: 'Weekly Digest',
-                            subtitle: 'Receive a weekly summary of new recipes',
-                            value: notificationProvider.weeklyDigest,
-                            onChanged:
-                                (value) =>
-                                    notificationProvider.setWeeklyDigest(value),
-                            icon: Icons.summarize_rounded,
-                            color: Colors.purple,
-                          ),
-
-                          SizedBox(height: AppSpacing.sm),
-
-                          _buildAnimatedSwitchTile(
-                            title: 'New Recipes',
-                            subtitle: 'Get notified about new recipes',
-                            value: notificationProvider.newRecipesNotification,
-                            onChanged:
-                                (value) => notificationProvider
-                                    .setNewRecipesNotification(value),
-                            icon: Icons.restaurant_menu_rounded,
-                            color: theme.colorScheme.onTertiary,
+                          _buildAnimatedTextField(
+                            controller: _nameController,
+                            enabled: _isEditing,
+                            label: 'Name:',
+                            hint: user?.displayName ?? 'Your name',
+                            icon: Icons.person_rounded,
                           ),
 
                           SizedBox(height: AppSpacing.md),
-                          const Divider(height: 1, thickness: 0.1),
-                          SizedBox(height: AppSpacing.md),
 
-                          _buildSectionHeader(
-                            title: 'Category Notifications',
-                            icon: Icons.category_rounded,
-                            colorScheme: colorScheme,
-                          ),
-
-                          SizedBox(height: AppSpacing.sm),
-
-                          _buildAnimatedSwitchTile(
-                            title: 'Daily Inspiration',
-                            subtitle: 'Receive a daily pick at 9:00 AM',
-                            value: notificationProvider.catDailyInspiration,
-                            onChanged:
-                                (v) => notificationProvider
-                                    .setCatDailyInspiration(v),
-                            icon: Icons.lightbulb_rounded,
-                            color: Colors.orange,
-                          ),
-
-                          SizedBox(height: AppSpacing.sm),
-
-                          _buildAnimatedSwitchTile(
-                            title: 'Meal Prep Sunday',
-                            subtitle: 'Weekly reminder Sundays 5:00 PM',
-                            value: notificationProvider.catMealPrep,
-                            onChanged:
-                                (v) => notificationProvider.setCatMealPrep(v),
-                            icon: Icons.calendar_month_rounded,
-                            color: Colors.teal,
-                          ),
-
-                          SizedBox(height: AppSpacing.sm),
-
-                          _buildAnimatedSwitchTile(
-                            title: 'Seasonal Collections',
-                            subtitle: 'Weekly Friday highlights at 12:00 PM',
-                            value: notificationProvider.catSeasonal,
-                            onChanged:
-                                (v) => notificationProvider.setCatSeasonal(v),
-                            icon: Icons.snowing,
-                            color: Colors.redAccent,
-                          ),
-
-                          SizedBox(height: AppSpacing.sm),
-
-                          _buildAnimatedSwitchTile(
-                            title: 'Quick Meals',
-                            subtitle: 'Weekly Tuesdays at 6:00 PM',
-                            value: notificationProvider.catQuickMeals,
-                            onChanged:
-                                (v) => notificationProvider.setCatQuickMeals(v),
-                            icon: Icons.flash_on_rounded,
-                            color: Colors.amber,
-                          ),
-
-                          SizedBox(height: AppSpacing.sm),
-
-                          _buildAnimatedSwitchTile(
-                            title: 'Budget-Friendly',
-                            subtitle: 'Weekly Wednesdays at 6:00 PM',
-                            value: notificationProvider.catBudget,
-                            onChanged:
-                                (v) => notificationProvider.setCatBudget(v),
-                            icon: Icons.attach_money_rounded,
-                            color: Colors.green,
-                          ),
-
-                          SizedBox(height: AppSpacing.sm),
-
-                          _buildAnimatedSwitchTile(
-                            title: 'Keto Spotlight',
-                            subtitle: 'Weekly Mondays at 12:00 PM',
-                            value: notificationProvider.catKeto,
-                            onChanged:
-                                (v) => notificationProvider.setCatKeto(v),
-                            icon: Icons.restaurant_rounded,
-                            color: Colors.blue,
+                          _buildAnimatedTextField(
+                            controller: _emailController,
+                            enabled: _isEditing,
+                            label: 'Email:',
+                            hint: user?.email ?? 'Your email',
+                            icon: Icons.email_rounded,
                           ),
                         ],
-                      );
-                    },
-                  ),
+                      ),
+                    ),
 
-                  SizedBox(height: AppSpacing.xxl),
-                  const Divider(height: 1, thickness: 0.1),
-                  SizedBox(height: AppSpacing.md),
-
-                  // Premium Features Section
-                  _buildSectionHeader(
-                    title: 'Premium Features',
-                    icon: Icons.star_rounded,
-                    colorScheme: colorScheme,
-                  ),
-                  SizedBox(height: AppSpacing.md),
-                  Consumer<SubscriptionProvider>(
-                    builder: (context, subscriptionProvider, _) {
-                      return _buildAnimatedListTile(
-                        title:
-                            subscriptionProvider.isPremium
-                                ? 'Premium Active'
-                                : 'Upgrade to Premium',
-                        subtitle:
-                            subscriptionProvider.isPremium
-                                ? 'Enjoy all premium features'
-                                : 'Remove ads and unlock premium features',
-                        icon:
-                            subscriptionProvider.isPremium
-                                ? Icons.star_rounded
-                                : Icons.star_outline_rounded,
-                        color:
-                            subscriptionProvider.isPremium
-                                ? Theme.of(context).colorScheme.warning
-                                : colorScheme.primary,
-                        onTap:
-                            () => Navigator.pushNamed(context, '/subscription'),
-                      );
-                    },
-                  ),
-
-                  SizedBox(height: AppSpacing.xxl),
-                  const Divider(height: 1, thickness: 0.1),
-                  SizedBox(height: AppSpacing.md),
-
-                  // Links Section
-                  _buildSectionHeader(
-                    title: 'Quick Links',
-                    icon: Icons.restaurant_menu_rounded,
-                    colorScheme: colorScheme,
-                  ),
-
-                  SizedBox(height: AppSpacing.md),
-                  _buildAnimatedListTile(
-                    title: 'My Recipes',
-                    subtitle: 'Explore your recipes',
-                    icon: Icons.restaurant_menu_rounded,
-                    color: Theme.of(context).colorScheme.warning,
-                    onTap: () => Navigator.pushNamed(context, '/myRecipes'),
-                  ),
-                  // Favorites removed
-                  SizedBox(height: AppSpacing.md),
-                  _buildAnimatedListTile(
-                    title: 'Discover Recipes',
-                    subtitle: 'Find new recipe ideas',
-                    icon: Icons.explore,
-                    color: Colors.blue,
-                    onTap: () => Navigator.pushNamed(context, '/discover'),
-                  ),
-
-                  SizedBox(height: AppSpacing.md),
-                  _buildAnimatedListTile(
-                    title: 'Import Recipes',
-                    subtitle: 'Paste a link to import a recipe',
-                    icon: Icons.link_rounded,
-                    color: Theme.of(context).colorScheme.info,
-                    onTap: () => Navigator.pushNamed(context, '/import'),
-                  ),
-
-                  SizedBox(height: AppSpacing.md),
-                  _buildAnimatedListTile(
-                    title: 'Generate Recipes',
-                    subtitle: 'Create recipes from your ingredients',
-                    icon: Icons.auto_awesome_rounded,
-                    color: Theme.of(context).colorScheme.primary,
-                    onTap: () => Navigator.pushNamed(context, '/generate'),
-                  ),
-
-                  // Only show image refresh in production mode
-                  if (!kDebugMode) ...[
+                    SizedBox(height: AppSpacing.xxl),
+                    const Divider(height: 1, thickness: 0.1),
                     SizedBox(height: AppSpacing.md),
-                    _buildImageRefreshTile(colorScheme),
-                  ],
 
-                  // Storage & Cache
-                  SizedBox(height: AppSpacing.xxl),
-                  const Divider(height: 1, thickness: 0.1),
-                  SizedBox(height: AppSpacing.md),
-                  _buildSectionHeader(
-                    title: 'Storage & Cache',
-                    icon: Icons.delete_sweep_rounded,
-                    colorScheme: colorScheme,
-                  ),
-                  SizedBox(height: AppSpacing.md),
-                  _buildAnimatedListTile(
-                    title: 'Clear Image Cache',
-                    subtitle:
-                        'Remove cached image resolutions to force fresh fetch',
-                    icon: Icons.delete_sweep_rounded,
-                    color: Theme.of(context).colorScheme.error,
-                    onTap: () async {
-                      final removed = await ImageResolverCache.clearAll();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Cleared $removed cached images'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
+                    // Appearance Section
+                    _buildSectionHeader(
+                      title: 'Appearance',
+                      icon: Icons.palette_rounded,
+                      colorScheme: colorScheme,
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+
+                    Consumer<ThemeProvider>(
+                      builder: (context, themeProvider, _) {
+                        return _buildAnimatedSwitchTile(
+                          title: 'Dark Mode',
+                          subtitle: 'Switch between light and dark themes',
+                          value: themeProvider.isDarkMode,
+                          onChanged: (value) => themeProvider.toggleTheme(),
+                          icon:
+                              themeProvider.isDarkMode
+                                  ? Icons.dark_mode_rounded
+                                  : Icons.light_mode_rounded,
+                          color:
+                              themeProvider.isDarkMode
+                                  ? Theme.of(context).colorScheme.info
+                                  : Theme.of(context).colorScheme.warning,
                         );
-                      }
-                    },
-                  ),
+                      },
+                    ),
 
-                  SizedBox(height: AppSpacing.xxl),
-                  const Divider(height: 1, thickness: 0.1),
-                  SizedBox(height: AppSpacing.md),
-                  // Contact Section
-                  _buildSectionHeader(
-                    title: 'Contact Us',
-                    icon: Icons.contact_support_rounded,
-                    colorScheme: colorScheme,
-                  ),
-                  SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
 
-                  // Support Inquiries
-                  _buildAnimatedListTile(
-                    title: 'Customer Support',
-                    subtitle: 'Get help with app issues',
-                    icon: Icons.support_agent_rounded,
-                    color: colorScheme.primary,
-                    onTap: () async {
-                      final Uri emailLaunchUri = Uri(
-                        scheme: 'mailto',
-                        path: 'support@recipease.kitchen',
-                        query: encodeQueryParameters({
-                          'subject': 'Customer Support - RecipEase',
-                          'body':
-                              'Hi RecipEase Support Team,\n\nI need help with...\n\nThank you!\n',
-                        }),
-                      );
-                      if (await canLaunchUrl(emailLaunchUri)) {
-                        await launchUrl(emailLaunchUri);
-                      } else {
+                    // Category Notifications Section
+                    _buildSectionHeader(
+                      title: 'Category Notifications',
+                      icon: Icons.notifications_rounded,
+                      colorScheme: colorScheme,
+                    ),
+
+                    SizedBox(height: AppSpacing.sm),
+
+                    Consumer<NotificationProvider>(
+                      builder: (context, notificationProvider, _) {
+                        return Column(
+                          children: [
+                            _buildAnimatedSwitchTile(
+                              title: 'Daily Inspiration',
+                              subtitle: 'Receive a daily pick at 9:00 AM',
+                              value: notificationProvider.catDailyInspiration,
+                              onChanged:
+                                  (v) => notificationProvider
+                                      .setCatDailyInspiration(v),
+                              icon: Icons.lightbulb_rounded,
+                              color: Colors.orange,
+                            ),
+
+                            SizedBox(height: AppSpacing.sm),
+
+                            _buildAnimatedSwitchTile(
+                              title: 'Meal Prep Sunday',
+                              subtitle: 'Weekly reminder Sundays 5:00 PM',
+                              value: notificationProvider.catMealPrep,
+                              onChanged:
+                                  (v) => notificationProvider.setCatMealPrep(v),
+                              icon: Icons.calendar_month_rounded,
+                              color: Colors.teal,
+                            ),
+
+                            SizedBox(height: AppSpacing.sm),
+
+                            _buildAnimatedSwitchTile(
+                              title: 'Seasonal Collections',
+                              subtitle: 'Weekly Friday highlights at 12:00 PM',
+                              value: notificationProvider.catSeasonal,
+                              onChanged:
+                                  (v) => notificationProvider.setCatSeasonal(v),
+                              icon: Icons.snowing,
+                              color: Colors.redAccent,
+                            ),
+
+                            SizedBox(height: AppSpacing.sm),
+
+                            _buildAnimatedSwitchTile(
+                              title: 'Quick Meals',
+                              subtitle: 'Weekly Tuesdays at 6:00 PM',
+                              value: notificationProvider.catQuickMeals,
+                              onChanged:
+                                  (v) =>
+                                      notificationProvider.setCatQuickMeals(v),
+                              icon: Icons.flash_on_rounded,
+                              color: Colors.amber,
+                            ),
+
+                            SizedBox(height: AppSpacing.sm),
+
+                            _buildAnimatedSwitchTile(
+                              title: 'Budget-Friendly',
+                              subtitle: 'Weekly Wednesdays at 6:00 PM',
+                              value: notificationProvider.catBudget,
+                              onChanged:
+                                  (v) => notificationProvider.setCatBudget(v),
+                              icon: Icons.attach_money_rounded,
+                              color: Colors.green,
+                            ),
+
+                            SizedBox(height: AppSpacing.sm),
+
+                            _buildAnimatedSwitchTile(
+                              title: 'Keto Spotlight',
+                              subtitle: 'Weekly Mondays at 12:00 PM',
+                              value: notificationProvider.catKeto,
+                              onChanged:
+                                  (v) => notificationProvider.setCatKeto(v),
+                              icon: Icons.restaurant_rounded,
+                              color: Colors.blue,
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+
+                    SizedBox(height: AppSpacing.xxl),
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
+
+                    // Premium Features Section
+                    _buildSectionHeader(
+                      title: 'Premium Features',
+                      icon: Icons.star_rounded,
+                      colorScheme: colorScheme,
+                    ),
+                    SizedBox(height: AppSpacing.md),
+                    Consumer<SubscriptionProvider>(
+                      builder: (context, subscriptionProvider, _) {
+                        return _buildAnimatedListTile(
+                          title:
+                              subscriptionProvider.isPremium
+                                  ? 'Premium Active'
+                                  : 'Upgrade to Premium',
+                          subtitle:
+                              subscriptionProvider.isPremium
+                                  ? 'Enjoy all premium features'
+                                  : 'Remove ads and unlock premium features',
+                          icon:
+                              subscriptionProvider.isPremium
+                                  ? Icons.star_rounded
+                                  : Icons.star_outline_rounded,
+                          color:
+                              subscriptionProvider.isPremium
+                                  ? Theme.of(context).colorScheme.warning
+                                  : colorScheme.primary,
+                          onTap:
+                              () =>
+                                  Navigator.pushNamed(context, '/subscription'),
+                        );
+                      },
+                    ),
+
+                    SizedBox(height: AppSpacing.xxl),
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
+
+                    // Links Section
+                    _buildSectionHeader(
+                      title: 'Quick Links',
+                      icon: Icons.restaurant_menu_rounded,
+                      colorScheme: colorScheme,
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+                    _buildAnimatedListTile(
+                      title: 'My Recipes',
+                      subtitle: 'Explore your recipes',
+                      icon: Icons.restaurant_menu_rounded,
+                      color: Theme.of(context).colorScheme.warning,
+                      onTap: () => Navigator.pushNamed(context, '/myRecipes'),
+                    ),
+                    // Favorites removed
+                    SizedBox(height: AppSpacing.md),
+                    _buildAnimatedListTile(
+                      title: 'Discover Recipes',
+                      subtitle: 'Find new recipe ideas',
+                      icon: Icons.explore,
+                      color: Colors.blue,
+                      onTap: () => Navigator.pushNamed(context, '/discover'),
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+                    _buildAnimatedListTile(
+                      title: 'Import Recipes',
+                      subtitle: 'Paste a link to import a recipe',
+                      icon: Icons.link_rounded,
+                      color: Theme.of(context).colorScheme.info,
+                      onTap: () => Navigator.pushNamed(context, '/import'),
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+                    _buildAnimatedListTile(
+                      title: 'Generate Recipes',
+                      subtitle: 'Create recipes from your ingredients',
+                      icon: Icons.auto_awesome_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                      onTap: () => Navigator.pushNamed(context, '/generate'),
+                    ),
+
+                    // Only show image refresh in production mode
+                    if (!kDebugMode) ...[
+                      SizedBox(height: AppSpacing.md),
+                      _buildImageRefreshTile(colorScheme),
+                    ],
+
+                    // Storage & Cache
+                    SizedBox(height: AppSpacing.xxl),
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
+                    _buildSectionHeader(
+                      title: 'Storage & Cache',
+                      icon: Icons.delete_sweep_rounded,
+                      colorScheme: colorScheme,
+                    ),
+                    SizedBox(height: AppSpacing.md),
+                    _buildAnimatedListTile(
+                      title: 'Clear Image Cache',
+                      subtitle:
+                          'Remove cached image resolutions to force fresh fetch',
+                      icon: Icons.delete_sweep_rounded,
+                      color: Theme.of(context).colorScheme.error,
+                      onTap: () async {
+                        final removed = await ImageResolverCache.clearAll();
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Could not launch email client'),
+                            SnackBar(
+                              content: Text('Cleared $removed cached images'),
                               behavior: SnackBarBehavior.floating,
                             ),
                           );
                         }
-                      }
-                    },
-                  ),
+                      },
+                    ),
 
-                  SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.xxl),
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
+                    // Contact Section
+                    _buildSectionHeader(
+                      title: 'Contact Us',
+                      icon: Icons.contact_support_rounded,
+                      colorScheme: colorScheme,
+                    ),
+                    SizedBox(height: AppSpacing.md),
 
-                  // General Inquiries
-                  _buildAnimatedListTile(
-                    title: 'General Inquiries',
-                    subtitle: 'Questions about RecipEase',
-                    icon: Icons.help_outline_rounded,
-                    color: Colors.blue,
-                    onTap: () async {
-                      final Uri emailLaunchUri = Uri(
-                        scheme: 'mailto',
-                        path: 'hello@recipease.kitchen',
-                        query: encodeQueryParameters({
-                          'subject': 'General Inquiry - RecipEase',
-                          'body':
-                              'Hello RecipEase Team,\n\nI would like to know...\n\nThank you!\n',
-                        }),
-                      );
-                      if (await canLaunchUrl(emailLaunchUri)) {
-                        await launchUrl(emailLaunchUri);
-                      } else {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Could not launch email client'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
+                    // Support Inquiries
+                    _buildAnimatedListTile(
+                      title: 'Customer Support',
+                      subtitle: 'Get help with app issues',
+                      icon: Icons.support_agent_rounded,
+                      color: colorScheme.primary,
+                      onTap: () async {
+                        final Uri emailLaunchUri = Uri(
+                          scheme: 'mailto',
+                          path: 'support@recipease.kitchen',
+                          query: encodeQueryParameters({
+                            'subject': 'Customer Support - RecipEase',
+                            'body':
+                                'Hi RecipEase Support Team,\n\nI need help with...\n\nThank you!\n',
+                          }),
+                        );
+                        if (await canLaunchUrl(emailLaunchUri)) {
+                          await launchUrl(emailLaunchUri);
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Could not launch email client'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
                         }
-                      }
-                    },
-                  ),
+                      },
+                    ),
 
-                  SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
 
-                  // Billing Support
-                  _buildAnimatedListTile(
-                    title: 'Billing Support',
-                    subtitle: 'Payments and invoices',
-                    icon: Icons.payment_rounded,
-                    color: Theme.of(context).colorScheme.success,
-                    onTap: () async {
-                      final Uri emailLaunchUri = Uri(
-                        scheme: 'mailto',
-                        path: 'billing@adventhubsolutions.com',
-                        query: encodeQueryParameters({
-                          'subject': 'Billing Inquiry - RecipEase',
-                          'body':
-                              'Hello Billing Team,\n\nI have a question about...\n\nThank you!\n',
-                        }),
-                      );
-                      if (await canLaunchUrl(emailLaunchUri)) {
-                        await launchUrl(emailLaunchUri);
-                      } else {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Could not launch email client'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
+                    // General Inquiries
+                    _buildAnimatedListTile(
+                      title: 'General Inquiries',
+                      subtitle: 'Questions about RecipEase',
+                      icon: Icons.help_outline_rounded,
+                      color: Colors.blue,
+                      onTap: () async {
+                        final Uri emailLaunchUri = Uri(
+                          scheme: 'mailto',
+                          path: 'hello@recipease.kitchen',
+                          query: encodeQueryParameters({
+                            'subject': 'General Inquiry - RecipEase',
+                            'body':
+                                'Hello RecipEase Team,\n\nI would like to know...\n\nThank you!\n',
+                          }),
+                        );
+                        if (await canLaunchUrl(emailLaunchUri)) {
+                          await launchUrl(emailLaunchUri);
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Could not launch email client'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
                         }
-                      }
-                    },
-                  ),
+                      },
+                    ),
 
-                  SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
 
-                  // Business Inquiries
-                  _buildAnimatedListTile(
-                    title: 'Business Inquiries',
-                    subtitle: 'Partnerships and collaborations',
-                    icon: Icons.business_rounded,
-                    color: Colors.purple,
-                    onTap: () async {
-                      final Uri emailLaunchUri = Uri(
-                        scheme: 'mailto',
-                        path: 'partnerships@adventhubsolutions.com',
-                        query: encodeQueryParameters({
-                          'subject': 'Business Inquiry - RecipEase',
-                          'body':
-                              'Hello Business Team,\n\nI am interested in...\n\nThank you!\n',
-                        }),
-                      );
-                      if (await canLaunchUrl(emailLaunchUri)) {
-                        await launchUrl(emailLaunchUri);
-                      } else {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Could not launch email client'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
+                    // Billing Support
+                    _buildAnimatedListTile(
+                      title: 'Billing Support',
+                      subtitle: 'Payments and invoices',
+                      icon: Icons.payment_rounded,
+                      color: Theme.of(context).colorScheme.success,
+                      onTap: () async {
+                        final Uri emailLaunchUri = Uri(
+                          scheme: 'mailto',
+                          path: 'billing@adventhubsolutions.com',
+                          query: encodeQueryParameters({
+                            'subject': 'Billing Inquiry - RecipEase',
+                            'body':
+                                'Hello Billing Team,\n\nI have a question about...\n\nThank you!\n',
+                          }),
+                        );
+                        if (await canLaunchUrl(emailLaunchUri)) {
+                          await launchUrl(emailLaunchUri);
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Could not launch email client'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
                         }
-                      }
-                    },
-                  ),
-                  SizedBox(height: AppSpacing.xxl),
+                      },
+                    ),
 
-                  const Divider(height: 1, thickness: 0.1),
-                  SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
 
-                  // Links Section
-                  _buildSectionHeader(
-                    title: 'Account Management',
-                    icon: Icons.person_rounded,
-                    colorScheme: colorScheme,
-                  ),
+                    // Business Inquiries
+                    _buildAnimatedListTile(
+                      title: 'Business Inquiries',
+                      subtitle: 'Partnerships and collaborations',
+                      icon: Icons.business_rounded,
+                      color: Colors.purple,
+                      onTap: () async {
+                        final Uri emailLaunchUri = Uri(
+                          scheme: 'mailto',
+                          path: 'partnerships@adventhubsolutions.com',
+                          query: encodeQueryParameters({
+                            'subject': 'Business Inquiry - RecipEase',
+                            'body':
+                                'Hello Business Team,\n\nI am interested in...\n\nThank you!\n',
+                          }),
+                        );
+                        if (await canLaunchUrl(emailLaunchUri)) {
+                          await launchUrl(emailLaunchUri);
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Could not launch email client'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                    SizedBox(height: AppSpacing.xxl),
 
-                  SizedBox(height: AppSpacing.md),
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
 
-                  _buildAnimatedListTile(
-                    title: 'Sign Out',
-                    icon: Icons.logout_rounded,
-                    color: Colors.grey.shade600,
-                    onTap: _signOut,
-                  ),
+                    // Links Section
+                    _buildSectionHeader(
+                      title: 'Account Management',
+                      icon: Icons.person_rounded,
+                      colorScheme: colorScheme,
+                    ),
 
-                  SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
 
-                  _buildAnimatedListTile(
-                    title: 'Delete Account',
-                    subtitle: 'Permanently delete your account and all data',
-                    icon: Icons.delete_forever_rounded,
-                    color: Colors.red,
-                    onTap: _showDeleteAccountDialog,
-                  ),
+                    _buildAnimatedListTile(
+                      title: 'Sign Out',
+                      icon: Icons.logout_rounded,
+                      color: Colors.grey.shade600,
+                      onTap: _signOut,
+                    ),
 
-                  SizedBox(height: AppSpacing.xxl),
-                ],
-              ),
+                    SizedBox(height: AppSpacing.md),
+
+                    _buildAnimatedListTile(
+                      title: 'Delete Account',
+                      subtitle: 'Permanently delete your account and all data',
+                      icon: Icons.delete_forever_rounded,
+                      color: Colors.red,
+                      onTap: _showDeleteAccountDialog,
+                    ),
+
+                    SizedBox(height: AppSpacing.xxl),
+                  ],
+                ),
               ),
             ),
           ),
@@ -995,7 +1309,9 @@ class _SettingsScreenState extends State<SettingsScreen>
     return Consumer<UserProfileProvider>(
       builder: (context, profileProvider, _) {
         final photoURL =
-            profileProvider.profile['photoURL'] as String? ?? user?.photoURL;
+            profileProvider.profile['photoURL'] as String? ??
+            user?.photoURL ??
+            ImageUtils.defaultProfileIconUrl;
 
         return Center(
           child: Column(
@@ -1017,18 +1333,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       child: CircleAvatar(
                         radius: 60,
                         backgroundColor: Colors.grey[200],
-                        backgroundImage:
-                            photoURL != null
-                                ? CachedNetworkImageProvider(photoURL)
-                                : null,
-                        child:
-                            photoURL == null
-                                ? Icon(
-                                  Icons.person_rounded,
-                                  size: 60,
-                                  color: Colors.grey[400],
-                                )
-                                : null,
+                        backgroundImage: CachedNetworkImageProvider(photoURL),
                       ),
                     ),
                   ),
@@ -1049,6 +1354,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         ),
                       ),
                     ),
+                  // Camera button (upload)
                   Positioned(
                     bottom: 0,
                     right: 0,
@@ -1066,7 +1372,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                           decoration: BoxDecoration(
                             color: Theme.of(
                               context,
-                            ).colorScheme.error.withValues(
+                            ).colorScheme.primary.withValues(
                               alpha:
                                   Theme.of(context).colorScheme.overlayMedium,
                             ),

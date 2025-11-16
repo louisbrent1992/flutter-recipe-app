@@ -119,8 +119,9 @@ app.use((req, res) => {
 // Global error handler
 app.use(errorHandler.globalHandler);
 
-// Schedule a daily job to fetch recipes from Spoonacular
-cron.schedule("59 23 * * *", async () => {
+// Schedule a weekly job to fetch recipes from Spoonacular
+// Runs every Sunday at 11:59 PM
+cron.schedule("59 23 * * 0", async () => {
 	console.log("Running scheduled recipe fetch job...");
 	try {
 		const db = admin.firestore();
@@ -297,6 +298,18 @@ cron.schedule("59 23 * * *", async () => {
 		);
 	} catch (error) {
 		console.error("Error in scheduled recipe fetch job:", error);
+	}
+});
+
+// Schedule automatic duplicate recipe cleanup
+// Runs weekly on Monday at 2:00 AM (when traffic is typically lower)
+cron.schedule("0 2 * * 1", async () => {
+	console.log("🔄 Running scheduled duplicate recipe cleanup...");
+	try {
+		const { cleanupDuplicates } = require("./routes/discover");
+		await cleanupDuplicates();
+	} catch (error) {
+		console.error("❌ Error in scheduled duplicate cleanup job:", error);
 	}
 });
 

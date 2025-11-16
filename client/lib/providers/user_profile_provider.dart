@@ -60,6 +60,17 @@ class UserProfileProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // Refresh authentication token before making sensitive changes
+      // This prevents requires-recent-login errors
+      try {
+        await user.reload();
+        // Force refresh the ID token to ensure it's current
+        await user.getIdToken(true);
+      } catch (e) {
+        // If reload fails, log but continue - the update might still work
+        debugPrint('Note: Could not refresh auth token (continuing anyway): $e');
+      }
+
       // Check if user document exists
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
 
@@ -168,6 +179,48 @@ class UserProfileProvider with ChangeNotifier {
           throw Exception('Failed to upload profile picture: ${e.message}');
         }
       }
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Delete profile picture (set photoURL to null)
+  Future<void> deleteProfilePicture() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      // Update Firestore to remove photoURL
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        await _firestore.collection('users').doc(user.uid).update({
+          'photoURL': FieldValue.delete(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      // Update Firebase Auth profile - try to delete photoURL
+      // Note: Firebase Auth's updatePhotoURL may not accept null, so we'll try it
+      // If it fails, that's okay - Firestore is the source of truth for the app
+      try {
+        // Try to set to null (may not work in all Firebase Auth versions)
+        await user.updatePhotoURL(null);
+      } catch (e) {
+        // If updatePhotoURL doesn't accept null, that's fine
+        // The app uses Firestore as source of truth, so deletion in Firestore is sufficient
+        debugPrint('Note: Could not delete photoURL from Firebase Auth (this is okay): $e');
+      }
+
+      await loadProfile(); // Reload profile after deletion
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('Error deleting profile picture: $e');
       rethrow;
     } finally {
       _isLoading = false;
