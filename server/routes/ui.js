@@ -8,6 +8,8 @@ router.get("/ui/config", (req, res) => {
   const config = {
     version: 1,
     fetchedAt: now.toISOString(),
+    // Home screen hero image - can be updated without app release
+    heroImageUrl: "https://res.cloudinary.com/client-images/image/upload/v1763258640/Recipe%20App/Gemini_Generated_Image_1isjyd1isjyd1isj_jv1rvc.png",
     globalBackground: {
       // Choose either imageUrl or colors (for gradient/solid)
       imageUrl: null,

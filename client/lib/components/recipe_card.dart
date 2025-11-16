@@ -85,26 +85,29 @@ class _RecipeCardState extends State<RecipeCard> {
           widget.onRecipeUpdated!(updated);
         }
 
-        // Update user recipe if applicable
-        try {
-          final profile = context.read<RecipeProvider>();
-          if (widget.showRemoveButton) {
-            final userRecipe = profile.userRecipes.firstWhere(
-              (r) =>
-                  r.id == widget.recipe.id ||
-                  (r.title.toLowerCase() == widget.recipe.title.toLowerCase() &&
-                      r.description.toLowerCase() ==
-                          widget.recipe.description.toLowerCase()),
-              orElse: () => Recipe(),
-            );
-            if (userRecipe.id.isNotEmpty) {
-              await profile.updateUserRecipe(
-                userRecipe.copyWith(imageUrl: newImageUrl),
+        if (mounted) {
+          // Update user recipe if applicable
+          try {
+            final profile = context.read<RecipeProvider>();
+            if (widget.showRemoveButton) {
+              final userRecipe = profile.userRecipes.firstWhere(
+                (r) =>
+                    r.id == widget.recipe.id ||
+                    (r.title.toLowerCase() ==
+                            widget.recipe.title.toLowerCase() &&
+                        r.description.toLowerCase() ==
+                            widget.recipe.description.toLowerCase()),
+                orElse: () => Recipe(),
               );
+              if (userRecipe.id.isNotEmpty) {
+                await profile.updateUserRecipe(
+                  userRecipe.copyWith(imageUrl: newImageUrl),
+                );
+              }
             }
+          } catch (_) {
+            // Silently handle errors
           }
-        } catch (_) {
-          // Silently handle errors
         }
 
         // Update discover recipe if applicable

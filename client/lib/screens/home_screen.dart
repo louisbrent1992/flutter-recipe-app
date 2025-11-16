@@ -38,7 +38,8 @@ class _HomeScreenState extends State<HomeScreen>
   final String username =
       FirebaseAuth.instance.currentUser?.displayName ?? 'User';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final String _heroImageUrl =
+  // Fallback hero image URL (used if dynamic UI doesn't provide one)
+  static const String _defaultHeroImageUrl =
       'https://res.cloudinary.com/client-images/image/upload/v1763258691/Recipe%20App/Gemini_Generated_Image_fu4kt1fu4kt1fu4k_pphj0l.png';
   bool _isBooting = true;
   StreamSubscription<void>? _recipesChangedSubscription;
@@ -295,66 +296,88 @@ class _HomeScreenState extends State<HomeScreen>
                 builder: (context, constraints) {
                   final devicePixelRatio =
                       MediaQuery.of(context).devicePixelRatio;
-                  return Image.network(
-                    _heroImageUrl,
-                    fit: BoxFit.fitWidth,
-                    cacheWidth:
-                        (constraints.maxWidth * devicePixelRatio).round(),
-                    cacheHeight:
-                        (constraints.maxHeight * devicePixelRatio).round(),
-                    filterQuality: FilterQuality.high,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.bottomLeft,
-                            end: Alignment.topRight,
-                            colors: [
-                              Theme.of(context).colorScheme.primary.withValues(
-                                alpha:
-                                    Theme.of(context).colorScheme.alphaMedium,
-                              ),
-                              Theme.of(context).colorScheme.primary.withValues(
-                                alpha: Theme.of(context).colorScheme.alphaHigh,
-                              ),
-                              Theme.of(context).colorScheme.primary,
-                            ],
-                          ),
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                size: 48,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Failed to load image',
-                                style: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Please check the image file',
-                                style: TextStyle(
-                                  color: Theme.of(
+
+                  return Consumer<DynamicUiProvider>(
+                    builder: (context, dynamicUi, _) {
+                      // Get hero image from dynamic UI config, fallback to default
+                      final heroImageUrl =
+                          dynamicUi.config?.heroImageUrl ??
+                          _defaultHeroImageUrl;
+
+                      return Image.network(
+                        heroImageUrl,
+                        fit: BoxFit.fitWidth,
+                        cacheWidth:
+                            (constraints.maxWidth * devicePixelRatio).round(),
+                        cacheHeight:
+                            (constraints.maxHeight * devicePixelRatio).round(),
+                        filterQuality: FilterQuality.high,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomLeft,
+                                end: Alignment.topRight,
+                                colors: [
+                                  Theme.of(
                                     context,
-                                  ).colorScheme.onPrimary.withValues(
+                                  ).colorScheme.primary.withValues(
+                                    alpha:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.alphaMedium,
+                                  ),
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withValues(
                                     alpha:
                                         Theme.of(context).colorScheme.alphaHigh,
                                   ),
-                                  fontSize: 12,
-                                ),
+                                  Theme.of(context).colorScheme.primary,
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
+                            ),
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
+                                    size: 48,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Failed to load image',
+                                    style: TextStyle(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimary,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Please check the image file',
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimary.withValues(
+                                        alpha:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.alphaHigh,
+                                      ),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
                   );

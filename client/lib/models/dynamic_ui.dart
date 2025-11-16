@@ -3,12 +3,14 @@ class DynamicUiConfig {
   final DateTime fetchedAt;
   final List<DynamicBannerConfig> banners;
   final DynamicBackgroundConfig? globalBackground;
+  final String? heroImageUrl; // Home screen hero image
 
   DynamicUiConfig({
     required this.version,
     required this.fetchedAt,
     required this.banners,
     this.globalBackground,
+    this.heroImageUrl,
   });
 
   factory DynamicUiConfig.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class DynamicUiConfig {
                 json['globalBackground'] as Map<String, dynamic>,
               )
               : null,
+      heroImageUrl: json['heroImageUrl'] as String?,
     );
   }
 }

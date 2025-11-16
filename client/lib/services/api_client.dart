@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logger/logger.dart';
@@ -19,6 +20,7 @@ class ApiClient {
   final String port = '8080';
 
   /// Base URL for API requests
+  /// Uses development server in debug mode, production server otherwise
   String get baseUrl {
     final String productionUrl =
         'https://recipease-app-server-826154873845.us-west2.run.app/api';
@@ -27,9 +29,7 @@ class ApiClient {
             ? 'http://10.0.2.2:$port/api'
             : 'http://localhost:$port/api';
 
-    return const bool.fromEnvironment('dart.vm.product')
-        ? developmentUrl
-        : productionUrl;
+    return kDebugMode ? developmentUrl : productionUrl;
   }
 
   /// Get headers with Firebase authentication token
