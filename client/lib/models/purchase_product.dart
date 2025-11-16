@@ -219,6 +219,7 @@ class ProductConfigurations {
       productType: ProductType.recipeImports25,
       purchaseType: PurchaseType.consumable,
       creditAmount: 25,
+      isBestValue: true,
       icon: Icons.share,
     ),
     PurchaseProduct(
@@ -288,7 +289,6 @@ class ProductConfigurations {
       purchaseType: PurchaseType.subscription,
       monthlyCredits: 50, // 25 + 25
       includesAdFree: true,
-      isBestValue: true,
       icon: Icons.workspace_premium,
     ),
     PurchaseProduct(
@@ -326,6 +326,7 @@ class ProductConfigurations {
       purchaseType: PurchaseType.subscription,
       includesAdFree: true,
       unlimitedUsage: true,
+      isBestValue: true,
       icon: Icons.all_inclusive,
     ),
   ];

@@ -261,9 +261,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
 
               // Main content
               Positioned.fill(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  controller: _scrollController,
+                child: Center(
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight:
@@ -271,10 +269,22 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                           MediaQuery.of(context).padding.top -
                           kToolbarHeight -
                           MediaQuery.of(context).padding.bottom,
-                      maxWidth: AppSizing.responsiveMaxWidth(context),
+                      maxWidth: () {
+                        // Narrower width for large screens
+                        if (AppBreakpoints.isDesktop(context)) {
+                          return 600.0; // Narrow width for desktop
+                        }
+                        if (AppBreakpoints.isTablet(context)) {
+                          return 600.0; // Same for tablet
+                        }
+                        return double.infinity; // Full width for mobile
+                      }(),
                     ),
-                    child: Padding(
-                      padding: AppSpacing.allResponsive(context),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      controller: _scrollController,
+                      child: Padding(
+                        padding: AppSpacing.allResponsive(context),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -1012,6 +1022,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                   ),
                 ),
               ),
+            ),
             ],
           );
         },

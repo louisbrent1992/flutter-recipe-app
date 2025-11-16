@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'credits_badge.dart';
+import '../theme/theme.dart';
 
 
 /// A customizable app bar component that supports multiple styles and configurations.
@@ -48,15 +49,30 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       title:
           useLogo
-              ? Image.asset('assets/icons/logo.png', height: logoHeight)
+              ? Image.asset(
+                  'assets/icons/logo.png',
+                  height: logoHeight != null
+                      ? logoHeight
+                      : AppSizing.responsiveIconSize(
+                          context,
+                          mobile: 60.0,
+                          tablet: 72.0,
+                          desktop: 80.0,
+                        ),
+                )
               : Text(
-                title,
-                style: TextStyle(
-                  fontSize: 18.0, // Reduced from default ~20-22
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  title,
+                  style: TextStyle(
+                    fontSize: AppTypography.responsiveFontSize(
+                      context,
+                      mobile: 18.0,
+                      tablet: 22.0,
+                      desktop: 24.0,
+                    ),
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
-              ),
       centerTitle: centerTitle,
       automaticallyImplyLeading: automaticallyImplyLeading,
 
@@ -79,6 +95,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ],
       iconTheme: IconThemeData(
         color: foregroundColor ?? theme.colorScheme.onSurface,
+        size: AppSizing.responsiveIconSize(
+          context,
+          mobile: 24.0, // Default AppBar icon size
+          tablet: 32.0, // Significantly larger for iPad
+          desktop: 36.0, // Larger for desktop
+        ),
       ),
       // Add support for system UI overlay
       systemOverlayStyle:

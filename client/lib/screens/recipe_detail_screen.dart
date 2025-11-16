@@ -1137,139 +1137,327 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
                         _buildSourceLink(),
                         SizedBox(height: AppSpacing.xl),
-                        Text(
-                          'Ingredients',
-                          style: TextStyle(
-                            fontSize: AppTypography.responsiveHeadingSize(
-                              context,
-                              mobile: 18.0,
-                              tablet: 20.0,
-                              desktop: 22.0,
-                            ),
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.sm),
-                        ...recipe.ingredients.map(
-                          (ingredient) => Padding(
-                            padding: EdgeInsets.symmetric(
-                              vertical: AppSpacing.xs,
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.circle,
-                                  size: AppSizing.responsiveIconSize(
-                                    context,
-                                    mobile: 6,
-                                    tablet: 8,
-                                    desktop: 8,
-                                  ),
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                SizedBox(width: AppSpacing.sm),
-                                Expanded(
-                                  child: Text(
-                                    ingredient,
-                                    style: TextStyle(
-                                      fontSize:
-                                          AppTypography.responsiveFontSize(
-                                            context,
-                                          ),
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.xl),
-                        Text(
-                          'Instructions',
-                          style: TextStyle(
-                            fontSize: AppTypography.responsiveHeadingSize(
-                              context,
-                              mobile: 18.0,
-                              tablet: 20.0,
-                              desktop: 22.0,
-                            ),
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.sm),
-                        ...recipe.instructions.asMap().entries.map(
-                          (entry) => Padding(
-                            padding: EdgeInsets.symmetric(
-                              vertical: AppSpacing.sm,
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: AppSizing.responsiveIconSize(
-                                    context,
-                                    mobile: 24,
-                                    tablet: 28,
-                                    desktop: 32,
-                                  ),
-                                  height: AppSizing.responsiveIconSize(
-                                    context,
-                                    mobile: 24,
-                                    tablet: 28,
-                                    desktop: 32,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      '${entry.key + 1}',
-                                      style: TextStyle(
-                                        color:
-                                            Theme.of(
+                        // Two-column layout for larger screens
+                        AppBreakpoints.isTablet(context) ||
+                                AppBreakpoints.isDesktop(context)
+                            ? Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Left column: Ingredients
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Ingredients',
+                                          style: TextStyle(
+                                            fontSize: AppTypography
+                                                .responsiveHeadingSize(
                                               context,
-                                            ).colorScheme.onPrimary,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize:
-                                            AppTypography.responsiveFontSize(
-                                              context,
-                                              mobile: 12.0,
-                                              tablet: 14.0,
-                                              desktop: 16.0,
+                                              mobile: 18.0,
+                                              tablet: 20.0,
+                                              desktop: 22.0,
                                             ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: AppSpacing.md),
-                                Expanded(
-                                  child: Text(
-                                    entry.value,
-                                    style: TextStyle(
-                                      fontSize:
-                                          AppTypography.responsiveFontSize(
-                                            context,
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context)
+                                                .colorScheme.onSurface,
                                           ),
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onSurface,
-                                      height: 1.4,
+                                        ),
+                                        SizedBox(height: AppSpacing.sm),
+                                        ...recipe.ingredients.map(
+                                          (ingredient) => Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: AppSpacing.xs,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.circle,
+                                                  size: AppSizing
+                                                      .responsiveIconSize(
+                                                    context,
+                                                    mobile: 6,
+                                                    tablet: 8,
+                                                    desktop: 8,
+                                                  ),
+                                                  color: Theme.of(context)
+                                                      .colorScheme.primary,
+                                                ),
+                                                SizedBox(
+                                                    width: AppSpacing.sm),
+                                                Expanded(
+                                                  child: Text(
+                                                    ingredient,
+                                                    style: TextStyle(
+                                                      fontSize:
+                                                          AppTypography
+                                                              .responsiveFontSize(
+                                                        context,
+                                                      ),
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                                  SizedBox(width: AppSpacing.xl),
+                                  // Right column: Instructions
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Instructions',
+                                          style: TextStyle(
+                                            fontSize: AppTypography
+                                                .responsiveHeadingSize(
+                                              context,
+                                              mobile: 18.0,
+                                              tablet: 20.0,
+                                              desktop: 22.0,
+                                            ),
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context)
+                                                .colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        SizedBox(height: AppSpacing.sm),
+                                        ...recipe.instructions.asMap().entries
+                                            .map(
+                                          (entry) => Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical: AppSpacing.sm,
+                                            ),
+                                            child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Container(
+                                                  width: AppSizing
+                                                      .responsiveIconSize(
+                                                    context,
+                                                    mobile: 24,
+                                                    tablet: 28,
+                                                    desktop: 32,
+                                                  ),
+                                                  height: AppSizing
+                                                      .responsiveIconSize(
+                                                    context,
+                                                    mobile: 24,
+                                                    tablet: 28,
+                                                    desktop: 32,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Theme.of(context)
+                                                        .colorScheme.primary,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      '${entry.key + 1}',
+                                                      style: TextStyle(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onPrimary,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: AppTypography
+                                                            .responsiveFontSize(
+                                                          context,
+                                                          mobile: 12.0,
+                                                          tablet: 14.0,
+                                                          desktop: 16.0,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                    width: AppSpacing.md),
+                                                Expanded(
+                                                  child: Text(
+                                                    entry.value,
+                                                    style: TextStyle(
+                                                      fontSize: AppTypography
+                                                          .responsiveFontSize(
+                                                        context,
+                                                      ),
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface,
+                                                      height: 1.5,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : // Single column layout for mobile
+                                Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Ingredients',
+                                        style: TextStyle(
+                                          fontSize: AppTypography
+                                              .responsiveHeadingSize(
+                                            context,
+                                            mobile: 18.0,
+                                            tablet: 20.0,
+                                            desktop: 22.0,
+                                          ),
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context)
+                                              .colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      SizedBox(height: AppSpacing.sm),
+                                      ...recipe.ingredients.map(
+                                        (ingredient) => Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            vertical: AppSpacing.xs,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.circle,
+                                                size: AppSizing
+                                                    .responsiveIconSize(
+                                                  context,
+                                                  mobile: 6,
+                                                  tablet: 8,
+                                                  desktop: 8,
+                                                ),
+                                                color: Theme.of(context)
+                                                    .colorScheme.primary,
+                                              ),
+                                              SizedBox(width: AppSpacing.sm),
+                                              Expanded(
+                                                child: Text(
+                                                  ingredient,
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        AppTypography
+                                                            .responsiveFontSize(
+                                                      context,
+                                                    ),
+                                                    color: Theme.of(context)
+                                                        .colorScheme.onSurface,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(height: AppSpacing.xl),
+                                      Text(
+                                        'Instructions',
+                                        style: TextStyle(
+                                          fontSize: AppTypography
+                                              .responsiveHeadingSize(
+                                            context,
+                                            mobile: 18.0,
+                                            tablet: 20.0,
+                                            desktop: 22.0,
+                                          ),
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context)
+                                              .colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      SizedBox(height: AppSpacing.sm),
+                                      ...recipe.instructions.asMap().entries
+                                          .map(
+                                            (entry) => Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                vertical: AppSpacing.sm,
+                                              ),
+                                              child: Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Container(
+                                                    width: AppSizing
+                                                        .responsiveIconSize(
+                                                      context,
+                                                      mobile: 24,
+                                                      tablet: 28,
+                                                      desktop: 32,
+                                                    ),
+                                                    height: AppSizing
+                                                        .responsiveIconSize(
+                                                      context,
+                                                      mobile: 24,
+                                                      tablet: 28,
+                                                      desktop: 32,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: Theme.of(context)
+                                                          .colorScheme.primary,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: Center(
+                                                      child: Text(
+                                                        '${entry.key + 1}',
+                                                        style: TextStyle(
+                                                          color: Theme.of(
+                                                            context,
+                                                          ).colorScheme
+                                                              .onPrimary,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: AppTypography
+                                                              .responsiveFontSize(
+                                                            context,
+                                                            mobile: 12.0,
+                                                            tablet: 14.0,
+                                                            desktop: 16.0,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                      width: AppSpacing.md),
+                                                  Expanded(
+                                                    child: Text(
+                                                      entry.value,
+                                                      style: TextStyle(
+                                                        fontSize: AppTypography
+                                                            .responsiveFontSize(
+                                                          context,
+                                                        ),
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurface,
+                                                        height: 1.4,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          )
+                                              .toList(),
+                                    ],
+                                  ),
                         if (recipe.nutrition != null) ...[
                           SizedBox(height: AppSpacing.xl),
                           Text(
@@ -1361,7 +1549,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             ],
                           ),
                         ],
-
                         if (recipe.tags.isNotEmpty) ...[
                           SizedBox(height: AppSpacing.xl),
                           Text(
@@ -1381,43 +1568,40 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           Wrap(
                             spacing: AppSpacing.sm,
                             runSpacing: AppSpacing.sm,
-                            children:
-                                recipe.tags
-                                    .map(
-                                      (tag) => InkWell(
-                                        onTap: () {
-                                          Navigator.pushNamed(
+                            children: recipe.tags
+                                .map(
+                                  (tag) => InkWell(
+                                    onTap: () {
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/discover',
+                                        arguments: {'tag': tag},
+                                      );
+                                    },
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Chip(
+                                      label: Text(
+                                        tag,
+                                        style: TextStyle(
+                                          fontSize:
+                                              AppTypography.responsiveFontSize(
                                             context,
-                                            '/discover',
-                                            arguments: {'tag': tag},
-                                          );
-                                        },
-                                        borderRadius: BorderRadius.circular(16),
-                                        child: Chip(
-                                          label: Text(
-                                            tag,
-                                            style: TextStyle(
-                                              fontSize:
-                                                  AppTypography.responsiveFontSize(
-                                                    context,
-                                                    mobile: 12.0,
-                                                    tablet: 14.0,
-                                                    desktop: 16.0,
-                                                  ),
-                                            ),
-                                          ),
-                                          backgroundColor:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.surface,
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: AppSpacing.sm,
-                                            vertical: AppSpacing.xs,
+                                            mobile: 12.0,
+                                            tablet: 14.0,
+                                            desktop: 16.0,
                                           ),
                                         ),
                                       ),
-                                    )
-                                    .toList(),
+                                      backgroundColor:
+                                          Theme.of(context).colorScheme.surface,
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: AppSpacing.sm,
+                                        vertical: AppSpacing.xs,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                           ),
                         ],
                       ],

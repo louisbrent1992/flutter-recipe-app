@@ -171,7 +171,7 @@ class CreditsPill extends StatelessWidget {
                   if (provider.unlimitedUsage) ...[
                     Icon(
                       Icons.all_inclusive,
-                      size: isDesktop ? 20 : isTablet ? 18 : 16,
+                      size: isDesktop ? 24 : isTablet ? 22 : 18,
                       color: Colors.purple,
                     ),
                     SizedBox(width: isDesktop ? 8 : isTablet ? 7 : 6),
@@ -187,7 +187,7 @@ class CreditsPill extends StatelessWidget {
                   ] else if (provider.trialActive) ...[
                     Icon(
                       Icons.rocket_launch,
-                      size: isDesktop ? 18 : isTablet ? 16 : 14,
+                      size: isDesktop ? 22 : isTablet ? 20 : 16,
                       color: Colors.blue,
                     ),
                     SizedBox(width: isDesktop ? 6 : isTablet ? 5 : 4),
@@ -203,7 +203,7 @@ class CreditsPill extends StatelessWidget {
                   ] else if (provider.isPremium) ...[
                     Icon(
                       Icons.star,
-                      size: isDesktop ? 18 : isTablet ? 16 : 14,
+                      size: isDesktop ? 22 : isTablet ? 20 : 16,
                       color: Colors.amber,
                     ),
                     SizedBox(width: isDesktop ? 6 : isTablet ? 5 : 4),
@@ -244,19 +244,19 @@ class CreditsPill extends StatelessWidget {
                   if (!provider.unlimitedUsage) ...[
                     Icon(
                       Icons.share,
-                      size: isDesktop ? 18 : isTablet ? 16 : 14,
+                      size: isDesktop ? 22 : isTablet ? 20 : 16,
                     ),
                     SizedBox(width: isDesktop ? 6 : isTablet ? 5 : 4),
                     Text(
                       '$imports',
                       style: theme.textTheme.labelMedium?.copyWith(
-                        fontSize: isDesktop ? 15 : isTablet ? 14 : 13,
+                        fontSize: isDesktop ? 16 : isTablet ? 15 : 13,
                       ),
                     ),
                     SizedBox(width: isDesktop ? 10 : isTablet ? 9 : 8),
                     Icon(
                       Icons.auto_awesome_rounded,
-                      size: isDesktop ? 18 : isTablet ? 16 : 14,
+                      size: isDesktop ? 22 : isTablet ? 20 : 16,
                     ),
                     SizedBox(width: isDesktop ? 6 : isTablet ? 5 : 4),
                     Text(

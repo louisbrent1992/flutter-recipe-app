@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 
 import 'package:recipease/models/recipe_collection.dart';
+import 'package:recipease/models/recipe.dart';
 import 'package:recipease/services/collection_service.dart';
 import '../theme/theme.dart';
 
@@ -277,6 +278,104 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
           .withSaturation((hsl.saturation * 1.2).clamp(0.0, 1.0))
           .toColor();
     }
+  }
+
+  /// Builds a background with recipe images in a grid/collage style
+  Widget _buildRecipeImagesBackground(
+    List<Recipe> recipes,
+    Color fallbackColor,
+  ) {
+    final imagesToShow = recipes.take(4).toList(); // Show up to 4 images
+
+    if (imagesToShow.length == 1) {
+      // Single image fills the entire background
+      return Image.network(
+        imagesToShow[0].imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildGradientBackground(fallbackColor),
+      );
+    } else if (imagesToShow.length == 2) {
+      // Two images side by side
+      return Row(
+        children:
+            imagesToShow
+                .map(
+                  (recipe) => Expanded(
+                    child: Image.network(
+                      recipe.imageUrl,
+                      fit: BoxFit.cover,
+                      height: double.infinity,
+                      errorBuilder:
+                          (_, __, ___) => Container(
+                            color: fallbackColor.withValues(alpha: 0.3),
+                          ),
+                    ),
+                  ),
+                )
+                .toList(),
+      );
+    } else if (imagesToShow.length >= 3) {
+      // Grid layout for 3+ images
+      return Column(
+        children: [
+          // Top row - single large image
+          Expanded(
+            flex: 2,
+            child: Image.network(
+              imagesToShow[0].imageUrl,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              errorBuilder:
+                  (_, __, ___) =>
+                      Container(color: fallbackColor.withValues(alpha: 0.3)),
+            ),
+          ),
+          // Bottom row - smaller images
+          Expanded(
+            flex: 1,
+            child: Row(
+              children:
+                  imagesToShow
+                      .skip(1)
+                      .take(2)
+                      .map(
+                        (recipe) => Expanded(
+                          child: Image.network(
+                            recipe.imageUrl,
+                            fit: BoxFit.cover,
+                            height: double.infinity,
+                            errorBuilder:
+                                (_, __, ___) => Container(
+                                  color: fallbackColor.withValues(alpha: 0.3),
+                                ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return _buildGradientBackground(fallbackColor);
+  }
+
+  /// Builds a gradient background when no images are available
+  Widget _buildGradientBackground(Color color) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withValues(alpha: 0.3),
+            color.withValues(alpha: 0.7),
+            color,
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -591,7 +690,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: AppSizing.responsiveGridCount(context),
-          childAspectRatio: AppSizing.responsiveAspectRatio(context),
+          childAspectRatio: 0.85, // Aspect ratio that matches the collection card design
           crossAxisSpacing: AppSpacing.responsive(context),
           mainAxisSpacing: AppSpacing.responsive(context),
         ),
@@ -612,199 +711,237 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     required RecipeCollection collection,
     required ColorScheme colorScheme,
   }) {
-    final cardBorderRadius = AppBreakpoints.isDesktop(context)
-        ? 20.0
-        : AppBreakpoints.isTablet(context)
-            ? 18.0
-            : 16.0;
+    final theme = Theme.of(context);
+    final hasRecipes = collection.recipes.isNotEmpty;
+    final recipesWithImages =
+        collection.recipes.where((r) => r.imageUrl.isNotEmpty).toList();
 
-    return Card(
-      elevation: AppElevation.responsive(context),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(cardBorderRadius),
-      ),
-      color:
-          colorScheme.brightness == Brightness.dark
-              ? colorScheme.surface.withValues(alpha: 0.1)
-              : colorScheme.surface,
+    final borderRadius = AppBreakpoints.isDesktop(context) ? 24.0 : 20.0;
 
-      child: InkWell(
-        onTap: () {
-          // Navigate to collection detail screen
-          Navigator.pushNamed(
-            context,
-            '/collectionDetail',
-            arguments: collection,
-          ).then((_) => _loadCollections()); // Refresh after returning
-        },
-        borderRadius: BorderRadius.circular(cardBorderRadius),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final cardWidth = constraints.maxWidth;
-
-            // Use theme-based responsive sizing
-            final iconContainerSize = cardWidth * 0.35;
-            final iconSize = AppSizing.responsiveIconSize(
-              context,
-              mobile: iconContainerSize * 0.4,
-              tablet: iconContainerSize * 0.45,
-              desktop: iconContainerSize * 0.5,
-            );
-            final containerPadding = iconContainerSize * 0.15;
-            final borderRadius = iconContainerSize * 0.2;
-
-            // Use theme typography
-            final titleFontSize = AppTypography.responsiveFontSize(
-              context,
-              mobile: 14.0,
-              tablet: 16.0,
-              desktop: 18.0,
-            );
-            final countFontSize = AppTypography.responsiveCaptionSize(context);
-            final countIconSize = AppSizing.responsiveIconSize(
-              context,
-              mobile: 12.0,
-              tablet: 14.0,
-              desktop: 16.0,
-            );
-
-            // Use theme spacing
-            final verticalSpacing =
-                AppSpacing.responsive(
+    return Stack(
+      children: [
+          Card(
+            elevation: AppBreakpoints.isDesktop(context) ? 6 : 4,
+            shadowColor: collection.color.withValues(alpha: 0.3),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(borderRadius),
+            ),
+            child: InkWell(
+              onTap: () {
+                // Navigate to collection detail screen
+                Navigator.pushNamed(
                   context,
-                  mobile: AppSpacing.xs,
-                  tablet: AppSpacing.sm,
-                  desktop: AppSpacing.md,
-                ) *
-                0.5;
-            final deleteButtonSize = AppSizing.responsiveIconSize(
-              context,
-              mobile: 16.0,
-              tablet: 18.0,
-              desktop: 20.0,
-            );
+                  '/collectionDetail',
+                  arguments: collection,
+                ).then((_) => _loadCollections()); // Refresh after returning
+              },
+              borderRadius: BorderRadius.circular(borderRadius),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(borderRadius),
+                child: Stack(
+                  children: [
+                    // Background with recipe images or gradient
+                    Positioned.fill(
+                      child:
+                          hasRecipes && recipesWithImages.isNotEmpty
+                              ? _buildRecipeImagesBackground(
+                                recipesWithImages,
+                                collection.color,
+                              )
+                              : _buildGradientBackground(collection.color),
+                    ),
 
-            return Stack(
-              children: [
-                // Main content
-                Padding(
-                  padding: AppSizing.responsiveCardPadding(context),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Flexible space for icon
-                      Expanded(
-                        flex: 3,
-                        child: Center(
-                          child: Container(
-                            width: iconContainerSize,
-                            height: iconContainerSize,
-                            padding: EdgeInsets.all(containerPadding),
-                            decoration: BoxDecoration(
-                              color: collection.color.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(borderRadius),
-                              border: Border.all(
-                                color: collection.color.withValues(alpha: 0.3),
-                                width:
-                                    AppBreakpoints.isMobile(context)
-                                        ? 1.5
-                                        : 2.0,
-                              ),
-                            ),
-                            child: FittedBox(
-                              child: Icon(
-                                collection.icon,
-                                color: _getIconColor(collection.color),
-                                size: iconSize,
-                              ),
-                            ),
+                    // Gradient overlay for text readability
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.7),
+                            ],
+                            stops: const [0.4, 1.0],
                           ),
                         ),
                       ),
+                    ),
 
-                      SizedBox(height: verticalSpacing),
+                    // Collection icon (top-right corner)
+                    Positioned(
+                      top: AppBreakpoints.isDesktop(context) ? 16 : 12,
+                      right: AppBreakpoints.isDesktop(context) ? 16 : 12,
+                      child: Container(
+                        padding: EdgeInsets.all(
+                          AppBreakpoints.isDesktop(context) ? 12 : 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface.withValues(
+                            alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            AppBreakpoints.isDesktop(context) ? 16 : 12,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                              offset: Offset(
+                                0,
+                                AppBreakpoints.isDesktop(context) ? 3 : 2,
+                              ),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          collection.icon,
+                          size: AppBreakpoints.isDesktop(context) ? 28 : 20,
+                          color: _getIconColor(collection.color),
+                        ),
+                      ),
+                    ),
 
-                      // Collection name - flexible space
-                      Expanded(
-                        flex: 2,
-                        child: Center(
-                          child: Text(
+                    // Collection info (bottom)
+                    Positioned(
+                      left: AppBreakpoints.isDesktop(context) ? 20 : 16,
+                      right: AppBreakpoints.isDesktop(context) ? 20 : 16,
+                      bottom: AppBreakpoints.isDesktop(context) ? 20 : 16,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Collection name
+                          Text(
                             collection.name,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.headlineSmall?.copyWith(
-                              fontSize: titleFontSize,
-                              fontWeight: FontWeight.w600,
-                              height: 1.2,
-                            ),
-                            maxLines: AppBreakpoints.isMobile(context) ? 1 : 2,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
+                            style:
+                                AppBreakpoints.isDesktop(context)
+                                    ? theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.surfaceContainerHighest,
+                                      shadows: [
+                                        Shadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                          blurRadius: 2,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                    )
+                                    : theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.surfaceContainerHighest,
+                                      shadows: [
+                                        Shadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                          blurRadius: 2,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
                           ),
-                        ),
-                      ),
-
-                      SizedBox(height: verticalSpacing),
-
-                      // Recipe count
-                      Flexible(
-                        flex: 1,
-                        child: FittedBox(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
+                          SizedBox(
+                            height: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                          ),
+                          // Recipe count with icon
+                          Row(
                             children: [
                               Icon(
-                                Icons.book,
-                                size: countIconSize,
-                                color: Colors.grey.shade600,
+                                Icons.restaurant_menu_rounded,
+                                size: AppBreakpoints.isDesktop(context) ? 18 : 14,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainerHighest,
                               ),
-                              SizedBox(width: AppSpacing.xs),
+                              SizedBox(
+                                width: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                              ),
                               Text(
                                 '${collection.recipes.length} ${collection.recipes.length == 1 ? 'recipe' : 'recipes'}',
-                                style: TextStyle(
-                                  fontSize: countFontSize,
-                                  color: Colors.grey.shade600,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style:
+                                    AppBreakpoints.isDesktop(context)
+                                        ? theme.textTheme.bodyMedium?.copyWith(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.surfaceContainerHighest,
+                                          fontWeight: FontWeight.w500,
+                                        )
+                                        : theme.textTheme.bodySmall?.copyWith(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.surfaceContainerHighest,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                               ),
                             ],
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-
-                // Delete button positioned absolutely in top right corner
-                if (!_isDefaultCollection(collection))
-                  Positioned(
-                    top: AppBreakpoints.isDesktop(context)
-                        ? 12
-                        : AppBreakpoints.isTablet(context)
-                            ? 10
-                            : 8,
-                    right: AppBreakpoints.isDesktop(context)
-                        ? 12
-                        : AppBreakpoints.isTablet(context)
-                            ? 10
-                            : 8,
-                    child: IconButton(
-                      icon: Icon(Icons.delete_outline, size: deleteButtonSize),
-                      onPressed:
-                          () => _deleteCategory(collection.id, collection.name),
-                      tooltip: 'Delete category',
-                      color: Colors.grey.shade600,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      visualDensity: VisualDensity.compact,
                     ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Delete button positioned absolutely in top left corner (outside card)
+          if (!_isDefaultCollection(collection))
+            Positioned(
+              top: AppBreakpoints.isDesktop(context)
+                  ? 8
+                  : AppBreakpoints.isTablet(context)
+                      ? 6
+                      : 4,
+              left: AppBreakpoints.isDesktop(context)
+                  ? 8
+                  : AppBreakpoints.isTablet(context)
+                      ? 6
+                      : 4,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface.withValues(
+                    alpha: Theme.of(context).colorScheme.alphaVeryHigh,
                   ),
-              ],
-            );
-          },
-        ),
-      ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.delete_outline,
+                    size: AppBreakpoints.isDesktop(context) ? 20 : 18,
+                  ),
+                  onPressed: () => _deleteCategory(collection.id, collection.name),
+                  tooltip: 'Delete collection',
+                  color: Colors.red.shade600,
+                  padding: EdgeInsets.all(
+                    AppBreakpoints.isDesktop(context) ? 8 : 6,
+                  ),
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ),
+      ],
     );
   }
 }

@@ -505,8 +505,8 @@ The unlimited plan is intended for personal cooking and recipe management. Fair 
 All RecipEase premium subscriptions belong to a single subscription group. Users can have only one active subscription at a time within this group.
 
 #### Subscription Hierarchy (from lowest to highest tier):
-1. **Premium - Monthly** ($6.99/month) - 50 flexible credits/month + ad-free
-2. **Premium - Yearly** ($44.99/year) - 50 flexible credits/month + ad-free [SAVE 46% - BEST VALUE for credits]
+1. **Premium - Monthly** ($6.99/month) - 25 import + 25 generation credits/month (50 total) + ad-free
+2. **Premium - Yearly** ($44.99/year) - 25 import + 25 generation credits/month (50 total) + ad-free [SAVE 46% - BEST VALUE for credits]
 3. **Premium - Unlimited** ($19.99/month) - Unlimited + ad-free
 4. **Premium - Unlimited (Yearly)** ($79.99/year) - Unlimited + ad-free [SAVE 67% - BEST VALUE for unlimited]
 
@@ -733,13 +733,13 @@ All product IDs remain the same for Android. Configure in Google Play Console:
    - Product ID: `recipease_ad_free_imports_25`
    - Price: $7.99
    - Type: Non-consumable
-   - Credits: 25 (flexible - imports OR generations)
+   - Credits: 25 import credits (separate type)
 
 3. **Ad-Free + Power Bundle**
    - Product ID: `recipease_ad_free_generations_30`
    - Price: $9.99
    - Type: Non-consumable
-   - Credits: 50 (flexible - imports OR generations)
+   - Credits: 25 import + 25 generation credits (50 total, separate types)
 
 4. **Ultimate Bundle**
    - Product ID: `recipease_ultimate_bundle_v2`
@@ -756,7 +756,7 @@ All product IDs remain the same for Android. Configure in Google Play Console:
    - Base Plan ID: `monthly-standard`
    - Billing Period: 1 month
    - Price: $6.99/month
-   - Credits: 50/month (flexible - imports OR generations)
+   - Credits: 25 import + 25 generation credits/month (50 total, separate types)
    - Free Trial: 7 days
    - Grace Period: 3 days
    - Auto-renewing: Yes
@@ -766,7 +766,7 @@ All product IDs remain the same for Android. Configure in Google Play Console:
    - Base Plan ID: `yearly-standard`
    - Billing Period: 1 year
    - Price: $39.99/year
-   - Credits: 50/month (flexible - imports OR generations)
+   - Credits: 25 import + 25 generation credits/month (50 total, separate types)
    - Free Trial: 7 days
    - Grace Period: 3 days
    - Auto-renewing: Yes

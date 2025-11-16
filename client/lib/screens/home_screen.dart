@@ -148,19 +148,35 @@ class _HomeScreenState extends State<HomeScreen>
                   decoration: BoxDecoration(
                     color: Theme.of(context).scaffoldBackgroundColor,
                   ),
-                  child: Scrollbar(
-                    controller: _scrollController,
-                    child: ListView(
-                      controller: _scrollController,
-                      padding: EdgeInsets.only(
-                        left: AppSpacing.responsive(context),
-                        right: AppSpacing.responsive(context),
-                        top: AppSpacing.responsive(context),
-                        bottom:
-                            AppSpacing.responsive(context) +
-                            80, // Extra space for floating bar
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: () {
+                          final width = MediaQuery.of(context).size.width;
+                          // iPad 13 inch is ~1024px, so handle tablets and small desktops similarly
+                          if (AppBreakpoints.isTablet(context) || 
+                              (AppBreakpoints.isDesktop(context) && width < 1400)) {
+                            return 1000.0; // Natural max width for iPad and small desktops
+                          }
+                          if (AppBreakpoints.isDesktop(context)) {
+                            return 1200.0; // Larger desktop max width
+                          }
+                          return double.infinity; // Mobile: full width
+                        }(),
                       ),
-                      children: [
+                      child: Scrollbar(
+                        controller: _scrollController,
+                        child: ListView(
+                          controller: _scrollController,
+                          padding: EdgeInsets.only(
+                            left: AppSpacing.responsive(context),
+                            right: AppSpacing.responsive(context),
+                            top: AppSpacing.responsive(context),
+                            bottom:
+                                AppSpacing.responsive(context) +
+                                80, // Extra space for floating bar
+                          ),
+                          children: [
                         // Dynamic UI banners (home_top)
                         Consumer<DynamicUiProvider>(
                           builder: (context, dyn, _) {
@@ -316,6 +332,8 @@ class _HomeScreenState extends State<HomeScreen>
                           },
                         ),
                       ],
+                    ),
+                  ),
                     ),
                   ),
                 );

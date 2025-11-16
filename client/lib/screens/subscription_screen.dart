@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:provider/provider.dart';
 import '../components/custom_app_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -344,42 +345,42 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       child: Center(
         child: Container(
           constraints: BoxConstraints(
-            maxWidth: AppBreakpoints.isDesktop(context)
-                ? 800
-                : AppBreakpoints.isTablet(context)
+            maxWidth:
+                AppBreakpoints.isDesktop(context)
+                    ? 800
+                    : AppBreakpoints.isTablet(context)
                     ? 700
                     : double.infinity,
           ),
           padding: EdgeInsets.all(AppSpacing.responsive(context)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Dynamic UI banners (shop_top)
-          Consumer<DynamicUiProvider>(
-            builder: (context, dyn, _) {
-              final banners = dyn.bannersForPlacement('shop_top');
-              if (banners.isEmpty) return const SizedBox.shrink();
-              return Column(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Dynamic UI banners (shop_top)
+              Consumer<DynamicUiProvider>(
+                builder: (context, dyn, _) {
+                  final banners = dyn.bannersForPlacement('shop_top');
+                  if (banners.isEmpty) return const SizedBox.shrink();
+                  return Column(
                     children:
                         banners.map((b) => DynamicBanner(banner: b)).toList(),
-              );
-            },
-          ),
-          // Free Trial Highlight Banner
-          _buildFreeTrialBanner(context),
+                  );
+                },
+              ),
+              // Free Trial Highlight Banner
+              _buildFreeTrialBanner(context),
               SizedBox(
-                height: AppBreakpoints.isDesktop(context)
-                    ? 32
-                    : AppBreakpoints.isTablet(context)
+                height:
+                    AppBreakpoints.isDesktop(context)
+                        ? 32
+                        : AppBreakpoints.isTablet(context)
                         ? 28
                         : 24,
               ),
 
-          Text(
-            'Subscribe for the best value',
-            style: Theme.of(
-              context,
-                ).textTheme.headlineSmall?.copyWith(
+              Text(
+                'Subscribe for the best value',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   fontSize: AppTypography.responsiveHeadingSize(
                     context,
@@ -388,54 +389,56 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                     desktop: 28,
                   ),
                 ),
-          ),
+              ),
               SizedBox(
-                height: AppBreakpoints.isDesktop(context)
-                    ? 12
-                    : AppBreakpoints.isTablet(context)
+                height:
+                    AppBreakpoints.isDesktop(context)
+                        ? 12
+                        : AppBreakpoints.isTablet(context)
                         ? 10
                         : 8,
               ),
-          Text(
-            'Get ad-free experience and monthly credits',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              Text(
+                'Get ad-free experience and monthly credits',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: AppTypography.responsiveFontSize(
                     context,
                     mobile: 14,
                     tablet: 16,
                     desktop: 18,
                   ),
-            ),
-          ),
+                ),
+              ),
               SizedBox(
-                height: AppBreakpoints.isDesktop(context)
-                    ? 32
-                    : AppBreakpoints.isTablet(context)
+                height:
+                    AppBreakpoints.isDesktop(context)
+                        ? 32
+                        : AppBreakpoints.isTablet(context)
                         ? 28
                         : 24,
               ),
-          ...subscriptions.map(
-            (product) => _buildProductCard(
-              context,
-              product: product,
-              onTap: () => _purchaseProduct(context, provider, product),
-            ),
-          ),
-          const SizedBox(height: 16),
+              ...subscriptions.map(
+                (product) => _buildProductCard(
+                  context,
+                  product: product,
+                  onTap: () => _purchaseProduct(context, provider, product),
+                ),
+              ),
+              const SizedBox(height: 16),
 
-          // Trial Terms
-          _buildTrialTerms(context),
+              // Trial Terms
+              _buildTrialTerms(context),
 
-          SizedBox(height: AppSpacing.responsive(context)),
-          Center(
-            child: TextButton(
-              onPressed: provider.restorePurchases,
-              child: const Text('Restore Purchases'),
-            ),
-          ),
-          const SizedBox(height: 80), // Extra padding for bottom bar
-        ],
+              SizedBox(height: AppSpacing.responsive(context)),
+              Center(
+                child: TextButton(
+                  onPressed: provider.restorePurchases,
+                  child: const Text('Restore Purchases'),
+                ),
+              ),
+              const SizedBox(height: 80), // Extra padding for bottom bar
+            ],
           ),
         ),
       ),
@@ -453,21 +456,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       child: Center(
         child: Container(
           constraints: BoxConstraints(
-            maxWidth: AppBreakpoints.isDesktop(context)
-                ? 800
-                : AppBreakpoints.isTablet(context)
+            maxWidth:
+                AppBreakpoints.isDesktop(context)
+                    ? 800
+                    : AppBreakpoints.isTablet(context)
                     ? 700
                     : double.infinity,
           ),
           padding: EdgeInsets.all(AppSpacing.responsive(context)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'One-time purchases',
-            style: Theme.of(
-              context,
-                ).textTheme.headlineSmall?.copyWith(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'One-time purchases',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   fontSize: AppTypography.responsiveHeadingSize(
                     context,
@@ -476,42 +478,44 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                     desktop: 28,
                   ),
                 ),
-          ),
+              ),
               SizedBox(
-                height: AppBreakpoints.isDesktop(context)
-                    ? 12
-                    : AppBreakpoints.isTablet(context)
+                height:
+                    AppBreakpoints.isDesktop(context)
+                        ? 12
+                        : AppBreakpoints.isTablet(context)
                         ? 10
                         : 8,
               ),
-          Text(
-            'Remove ads forever or get ad-free + credits bundles',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              Text(
+                'Remove ads forever or get ad-free + credits bundles',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: AppTypography.responsiveFontSize(
                     context,
                     mobile: 14,
                     tablet: 16,
                     desktop: 18,
                   ),
-            ),
-          ),
+                ),
+              ),
               SizedBox(
-                height: AppBreakpoints.isDesktop(context)
-                    ? 32
-                    : AppBreakpoints.isTablet(context)
+                height:
+                    AppBreakpoints.isDesktop(context)
+                        ? 32
+                        : AppBreakpoints.isTablet(context)
                         ? 28
                         : 24,
               ),
-          ...bundles.map(
-            (product) => _buildProductCard(
-              context,
-              product: product,
-              onTap: () => _purchaseProduct(context, provider, product),
-            ),
-          ),
-          const SizedBox(height: 80), // Extra padding for bottom bar
-        ],
+              ...bundles.map(
+                (product) => _buildProductCard(
+                  context,
+                  product: product,
+                  onTap: () => _purchaseProduct(context, provider, product),
+                ),
+              ),
+              const SizedBox(height: 80), // Extra padding for bottom bar
+            ],
           ),
         ),
       ),
@@ -529,21 +533,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       child: Center(
         child: Container(
           constraints: BoxConstraints(
-            maxWidth: AppBreakpoints.isDesktop(context)
-                ? 800
-                : AppBreakpoints.isTablet(context)
+            maxWidth:
+                AppBreakpoints.isDesktop(context)
+                    ? 800
+                    : AppBreakpoints.isTablet(context)
                     ? 700
                     : double.infinity,
           ),
           padding: EdgeInsets.all(AppSpacing.responsive(context)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Buy Credits',
-            style: Theme.of(
-              context,
-                ).textTheme.headlineSmall?.copyWith(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Buy Credits',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   fontSize: AppTypography.responsiveHeadingSize(
                     context,
@@ -552,42 +555,44 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                     desktop: 28,
                   ),
                 ),
-          ),
+              ),
               SizedBox(
-                height: AppBreakpoints.isDesktop(context)
-                    ? 12
-                    : AppBreakpoints.isTablet(context)
+                height:
+                    AppBreakpoints.isDesktop(context)
+                        ? 12
+                        : AppBreakpoints.isTablet(context)
                         ? 10
                         : 8,
               ),
-          Text(
-            'Purchase credits for imports and recipe generation',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              Text(
+                'Purchase credits for imports and recipe generation',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: AppTypography.responsiveFontSize(
                     context,
                     mobile: 14,
                     tablet: 16,
                     desktop: 18,
                   ),
-            ),
-          ),
+                ),
+              ),
               SizedBox(
-                height: AppBreakpoints.isDesktop(context)
-                    ? 32
-                    : AppBreakpoints.isTablet(context)
+                height:
+                    AppBreakpoints.isDesktop(context)
+                        ? 32
+                        : AppBreakpoints.isTablet(context)
                         ? 28
                         : 24,
               ),
-          ...credits.map(
-            (product) => _buildProductCard(
-              context,
-              product: product,
-              onTap: () => _purchaseProduct(context, provider, product),
-            ),
-          ),
-          const SizedBox(height: 80), // Extra padding for bottom bar
-        ],
+              ...credits.map(
+                (product) => _buildProductCard(
+                  context,
+                  product: product,
+                  onTap: () => _purchaseProduct(context, provider, product),
+                ),
+              ),
+              const SizedBox(height: 80), // Extra padding for bottom bar
+            ],
           ),
         ),
       ),
@@ -629,12 +634,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 maxWidth: AppDialog.responsiveMaxWidth(context),
               ),
               child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (isSubscription && trialEligible) ...[
-                  Row(
-                    children: [
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (isSubscription && trialEligible) ...[
+                    Row(
+                      children: [
                         Icon(
                           Icons.celebration,
                           color: Colors.green,
@@ -646,105 +651,114 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                           ),
                         ),
                         SizedBox(
-                          width: AppBreakpoints.isDesktop(context)
-                              ? 12
-                              : AppBreakpoints.isTablet(context)
+                          width:
+                              AppBreakpoints.isDesktop(context)
+                                  ? 12
+                                  : AppBreakpoints.isTablet(context)
                                   ? 10
                                   : 8,
                         ),
-                      Expanded(
-                        child: Text(
-                          '7 Days FREE!',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                              fontSize: AppDialog.responsiveContentSize(context),
+                        Expanded(
+                          child: Text(
+                            '7 Days FREE!',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                              fontSize: AppDialog.responsiveContentSize(
+                                context,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                     SizedBox(
-                      height: AppBreakpoints.isDesktop(context)
-                          ? 16
-                          : AppBreakpoints.isTablet(context)
+                      height:
+                          AppBreakpoints.isDesktop(context)
+                              ? 16
+                              : AppBreakpoints.isTablet(context)
                               ? 14
                               : 12,
                     ),
-                  Text(
-                    'Start your free trial today. No payment required for 7 days.',
+                    Text(
+                      'Start your free trial today. No payment required for 7 days.',
                       style: TextStyle(
                         fontSize: AppDialog.responsiveContentSize(context),
                       ),
-                  ),
+                    ),
                     SizedBox(
-                      height: AppBreakpoints.isDesktop(context)
-                          ? 10
-                          : AppBreakpoints.isTablet(context)
+                      height:
+                          AppBreakpoints.isDesktop(context)
+                              ? 10
+                              : AppBreakpoints.isTablet(context)
                               ? 9
                               : 8,
                     ),
-                  Text(
-                    'After trial: ${product.price}',
-                    style: TextStyle(
+                    Text(
+                      'After trial: ${product.price}',
+                      style: TextStyle(
                         fontSize: AppDialog.responsiveContentSize(context),
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
                     SizedBox(
-                      height: AppBreakpoints.isDesktop(context)
-                          ? 16
-                          : AppBreakpoints.isTablet(context)
+                      height:
+                          AppBreakpoints.isDesktop(context)
+                              ? 16
+                              : AppBreakpoints.isTablet(context)
                               ? 14
                               : 12,
                     ),
-                  Container(
+                    Container(
                       padding: EdgeInsets.all(
                         AppBreakpoints.isDesktop(context)
                             ? 16
                             : AppBreakpoints.isTablet(context)
-                                ? 14
-                                : 12,
+                            ? 14
+                            : 12,
                       ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(
                           AppBreakpoints.isDesktop(context)
                               ? 12
                               : AppBreakpoints.isTablet(context)
-                                  ? 10
-                                  : 8,
+                              ? 10
+                              : 8,
                         ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Trial includes:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                              fontSize: AppDialog.responsiveContentSize(context) *
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Trial includes:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize:
+                                  AppDialog.responsiveContentSize(context) *
                                   0.875,
+                            ),
                           ),
-                        ),
                           SizedBox(
-                            height: AppBreakpoints.isDesktop(context)
-                                ? 6
-                                : AppBreakpoints.isTablet(context)
+                            height:
+                                AppBreakpoints.isDesktop(context)
+                                    ? 6
+                                    : AppBreakpoints.isTablet(context)
                                     ? 5
                                     : 4,
                           ),
-                        Text(
-                          '• Full access to all premium features\n• No ads\n• All monthly credits\n• Cancel anytime',
+                          Text(
+                            '• Full access to all premium features\n• No ads\n• All monthly credits\n• Cancel anytime',
                             style: TextStyle(
-                              fontSize: AppDialog.responsiveContentSize(context) *
+                              fontSize:
+                                  AppDialog.responsiveContentSize(context) *
                                   0.875,
                             ),
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ] else if (isSubscription && !trialEligible) ...[
+                  ] else if (isSubscription && !trialEligible) ...[
                     Text(
                       'Subscribe to ${product.title}?',
                       style: TextStyle(
@@ -752,20 +766,22 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       ),
                     ),
                     SizedBox(
-                      height: AppBreakpoints.isDesktop(context)
-                          ? 10
-                          : AppBreakpoints.isTablet(context)
+                      height:
+                          AppBreakpoints.isDesktop(context)
+                              ? 10
+                              : AppBreakpoints.isTablet(context)
                               ? 9
                               : 8,
                     ),
-                  Text(
-                    'Trial already used on this account.',
-                    style: TextStyle(
-                        fontSize: AppDialog.responsiveContentSize(context) * 0.875,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    Text(
+                      'Trial already used on this account.',
+                      style: TextStyle(
+                        fontSize:
+                            AppDialog.responsiveContentSize(context) * 0.875,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ] else ...[
+                  ] else ...[
                     Text(
                       'Purchase ${product.title} for ${product.price}?',
                       style: TextStyle(
@@ -773,22 +789,24 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       ),
                     ),
                     SizedBox(
-                      height: AppBreakpoints.isDesktop(context)
-                          ? 10
-                          : AppBreakpoints.isTablet(context)
+                      height:
+                          AppBreakpoints.isDesktop(context)
+                              ? 10
+                              : AppBreakpoints.isTablet(context)
                               ? 9
                               : 8,
                     ),
-                  Text(
-                    'This is a one-time purchase.',
-                    style: TextStyle(
-                        fontSize: AppDialog.responsiveContentSize(context) * 0.875,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    Text(
+                      'This is a one-time purchase.',
+                      style: TextStyle(
+                        fontSize:
+                            AppDialog.responsiveContentSize(context) * 0.875,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
-            ),
+              ),
             ),
             actionsPadding: AppDialog.responsivePadding(context),
             actions: [
@@ -867,17 +885,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         product.productType == ProductType.unlimitedPremiumYearly ||
         product.unlimitedUsage;
 
-    final cardBorderRadius = AppBreakpoints.isDesktop(context)
-        ? 16.0
-        : AppBreakpoints.isTablet(context)
+    final cardBorderRadius =
+        AppBreakpoints.isDesktop(context)
+            ? 16.0
+            : AppBreakpoints.isTablet(context)
             ? 14.0
             : 12.0;
 
     return Card(
       margin: EdgeInsets.only(
-        bottom: AppBreakpoints.isDesktop(context)
-            ? 16
-            : AppBreakpoints.isTablet(context)
+        bottom:
+            AppBreakpoints.isDesktop(context)
+                ? 16
+                : AppBreakpoints.isTablet(context)
                 ? 14
                 : 12,
       ),
@@ -898,8 +918,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               AppBreakpoints.isDesktop(context)
                   ? 20
                   : AppBreakpoints.isTablet(context)
-                      ? 18
-                      : 16,
+                  ? 18
+                  : 16,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -912,8 +932,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                         AppBreakpoints.isDesktop(context)
                             ? 12
                             : AppBreakpoints.isTablet(context)
-                                ? 10
-                                : 8,
+                            ? 10
+                            : 8,
                       ),
                       decoration: BoxDecoration(
                         color: colorScheme.primaryContainer,
@@ -921,8 +941,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                           AppBreakpoints.isDesktop(context)
                               ? 12
                               : AppBreakpoints.isTablet(context)
-                                  ? 10
-                                  : 8,
+                              ? 10
+                              : 8,
                         ),
                       ),
                       child: Icon(
@@ -937,9 +957,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       ),
                     ),
                     SizedBox(
-                      width: AppBreakpoints.isDesktop(context)
-                          ? 16
-                          : AppBreakpoints.isTablet(context)
+                      width:
+                          AppBreakpoints.isDesktop(context)
+                              ? 16
+                              : AppBreakpoints.isTablet(context)
                               ? 14
                               : 12,
                     ),
@@ -1077,10 +1098,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       const Icon(Icons.autorenew, size: 16),
                       const SizedBox(width: 4),
                       Text('${product.monthlyCredits} Credits/month'),
+                      const SizedBox(width: 12),
+                    ],
+                    if (product.unlimitedUsage) ...[
+                      const Icon(Icons.all_inclusive, size: 16),
+                      const SizedBox(width: 4),
+                      const Text('Unlimited'),
+                      const SizedBox(width: 12),
                     ],
                   ],
                 ),
-                const SizedBox(height: 12),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1112,7 +1140,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                             ProductType.unlimitedPremiumYearly) ...[
                           const SizedBox(height: 2),
                           Text(
-                            'Equivalent to \$9.99/month',
+                            'Equivalent to \$6.67/month',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                               fontStyle: FontStyle.italic,
@@ -1244,7 +1272,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             '• Auto-renewable subscriptions\n'
             '• Cancel anytime in Account Settings\n'
             '• No charge if cancelled during trial period\n'
-            '• Payment charged to Apple ID at confirmation\n'
+            '${Platform.isIOS ? '• Payment charged to Apple ID at confirmation\n' : '• Payment charged to Google Play account at confirmation\n'}'
             '• Subscription auto-renews unless cancelled 24 hours before end of period\n'
             '• Unlimited plans subject to fair-use policy for personal use',
             style: theme.textTheme.bodySmall?.copyWith(
@@ -1265,7 +1293,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               _buildTextLink(
                 context,
                 'Terms of Use',
-                'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+                Platform.isIOS
+                    ? 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/'
+                    : 'https://play.google.com/about/play-terms/index.html',
               ),
               _buildTextLink(
                 context,
@@ -1346,11 +1376,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               product.productType != ProductType.unlimitedPremiumYearly) ...[
             Row(
               children: [
-                Icon(
-                  Icons.celebration,
-                  size: 14,
-                  color: Colors.green,
-                ),
+                Icon(Icons.celebration, size: 14, color: Colors.green),
                 const SizedBox(width: 6),
                 Text(
                   '7-day free trial, then $pricePerUnit',
@@ -1389,10 +1415,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 color: theme.colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 6),
-              Text(
-                'Duration: $duration',
-                style: theme.textTheme.bodySmall,
-              ),
+              Text('Duration: $duration', style: theme.textTheme.bodySmall),
             ],
           ),
           const SizedBox(height: 6),
