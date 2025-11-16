@@ -172,6 +172,47 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     _loadRecipes(); // Reload recipes with reset filters
   }
 
+  // Refresh search results
+  Future<void> _refreshResults() async {
+    await _loadRecipes(forceRefresh: true);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Search results refreshed'),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  // Randomize search results
+  Future<void> _randomizeResults() async {
+    final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
+    setState(() {
+      _currentPage = 1;
+    });
+    await recipeProvider.searchExternalRecipes(
+      query: _searchQuery.isEmpty ? null : _searchQuery,
+      difficulty: _selectedDifficulty == 'All' ? null : _selectedDifficulty,
+      tag: _selectedTag == 'All' ? null : _selectedTag,
+      page: 1,
+      limit: _itemsPerPage,
+      random: true,
+      forceRefresh: true,
+    );
+    _updateAvailableTagsFromRecipes();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Showing random recipes'),
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   // Handle page navigation
   void _goToPage(int page) {
     setState(() {
@@ -384,7 +425,58 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Discover'),
+      appBar: CustomAppBar(
+        title: 'Discover',
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            tooltip: 'More options',
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            itemBuilder: (context) => [
+              PopupMenuItem<String>(
+                value: 'refresh',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.refresh_rounded,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text('Refresh Results'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'randomize',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.shuffle_rounded,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text('Randomize Results'),
+                  ],
+                ),
+              ),
+            ],
+            onSelected: (value) {
+              switch (value) {
+                case 'refresh':
+                  _refreshResults();
+                  break;
+                case 'randomize':
+                  _randomizeResults();
+                  break;
+              }
+            },
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           Column(
