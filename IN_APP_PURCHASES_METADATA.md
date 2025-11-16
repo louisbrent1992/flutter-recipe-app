@@ -34,7 +34,8 @@ This welcome bonus lets users experience the full value of RecipEase before maki
 **Product ID:** `recipease_imports_15`  
 **Type:** Consumable  
 **Reference Name:** Quick Import Pack  
-**Price:** $2.49 USD
+**Price:** $2.49 USD  
+**Purchase Option ID (Android):** `recipease-imports-15`
 
 #### Display Information
 - **Display Name:** Quick Import Pack
@@ -61,13 +62,17 @@ This welcome bonus lets users experience the full value of RecipEase before maki
 - Importing from social media platforms requires sharing the link to RecipEase
 - All imported recipes can be edited and organized into collections
 
+#### Tags/Keywords
+recipeimport, quickpack, starterpack, recipecredits, socialmediarecipes, instagramrecipes, tiktokrecipes, youtuberecipes, recipecollection, cookingapp, recipeorganizer, entrylevel, affordable, budgetfriendly
+
 ---
 
 ### 2. 25 Recipe Imports
 **Product ID:** `recipease_imports_25`  
 **Type:** Consumable  
 **Reference Name:** 25 Recipe Imports  
-**Price:** $3.99 USD
+**Price:** $3.99 USD  
+**Purchase Option ID (Android):** `recipease-imports-25`
 
 #### Display Information
 - **Display Name:** 25 Recipe Imports
@@ -94,13 +99,17 @@ This welcome bonus lets users experience the full value of RecipEase before maki
 - Can be purchased multiple times to accumulate credits
 - Want more? Try Premium Monthly for 25 imports + 25 generations + ad-free at $6.99/month!
 
+#### Tags/Keywords
+recipeimport, credits25, bestvalue, recipecollection, socialmediarecipes, instagramrecipes, tiktokrecipes, youtuberecipes, allrecipes, recipewebsite, cookingapp, recipeorganizer, midtier, popularchoice
+
 ---
 
 ### 3. 25 Recipe Generations
 **Product ID:** `recipease_generations_25`  
 **Type:** Consumable  
 **Reference Name:** 25 Recipe Generations  
-**Price:** $3.99 USD
+**Price:** $3.99 USD  
+**Purchase Option ID (Android):** `recipease-generations-25`
 
 #### Display Information
 - **Display Name:** 25 Recipe Generations
@@ -129,16 +138,20 @@ This welcome bonus lets users experience the full value of RecipEase before maki
 - Each generation creates a complete recipe with ingredients, instructions, and cook times
 - Want more? Try Premium Monthly for 25 imports + 25 generations + ad-free at $6.99/month!
 
+#### Tags/Keywords
+recipegeneration, airecipe, smartrecipe, customrecipe, recipecreator, ingredientbased, dietaryrestrictions, vegetarian, vegan, glutenfree, cookingapp, recipegenerator, creativecooking, mealplanning
+
 ---
 
 ## Non-Consumable Bundles
 
-### 4. Ad-Free (add later)
+### 4. Ad-Free
 **Product ID:** `recipease_ad_free_v2`  
 **Type:** Non-Consumable  
 **Reference Name:** Ad-Free  
 **Price:** $4.99 USD  
-**Family Shareable:** Yes
+**Family Shareable:** Yes  
+**Purchase Option ID (Android):** `recipease-ad-free-v2`
 
 #### Display Information
 - **Display Name:** Ad-Free
@@ -163,6 +176,9 @@ This welcome bonus lets users experience the full value of RecipEase before maki
 - Family sharing enabled - family members get ad-free experience
 - No recurring charges
 
+#### Tags/Keywords
+adfree, removeads, noads, premium, onetimepurchase, lifetime, familysharing, distractionfree, cleanexperience, permanent, cookingapp, recipeapp, adremoval
+
 ---
 
 ### 5. Ad-Free + Import Starter
@@ -170,7 +186,8 @@ This welcome bonus lets users experience the full value of RecipEase before maki
 **Type:** Non-Consumable  
 **Reference Name:** Ad-Free + Import Starter  
 **Price:** $7.99 USD  
-**Family Shareable:** Yes
+**Family Shareable:** Yes  
+**Purchase Option ID (Android):** `recipease-ad-free-imports-25`
 
 #### Display Information
 - **Display Name:** Ad-Free + Import Starter
@@ -196,6 +213,9 @@ This welcome bonus lets users experience the full value of RecipEase before maki
 - Better value than purchasing separately
 - Import credits never expire once granted
 
+#### Tags/Keywords
+bundle, starterbundle, adfree, recipeimport, credits25, bestvalue, starterpack, getstarted, cookingapp, recipecollection, familysharing, onetimepurchase, lifetimeaccess
+
 ---
 
 ### 6. Ad-Free + Recipe Pack
@@ -203,7 +223,8 @@ This welcome bonus lets users experience the full value of RecipEase before maki
 **Type:** Non-Consumable  
 **Reference Name:** Ad-Free + Recipe Pack  
 **Price:** $7.99 USD  
-**Family Shareable:** Yes
+**Family Shareable:** Yes  
+**Purchase Option ID (Android):** `recipease-ad-free-generations-25`
 
 #### Display Information
 - **Display Name:** Ad-Free + Recipe Pack
@@ -231,14 +252,18 @@ This welcome bonus lets users experience the full value of RecipEase before maki
 - Great value for creative cooks
 - Generation credits never expire
 
+#### Tags/Keywords
+bundle, recipepack, adfree, recipegeneration, airecipe, customrecipe, creativecooking, smartrecipe, cookingapp, recipecreator, familysharing, onetimepurchase, lifetimeaccess
+
 ---
 
-### 7. Ultimate Bundle (add later)
+### 7. Ultimate Bundle
 **Product ID:** `recipease_ultimate_bundle_v2`  
 **Type:** Non-Consumable  
 **Reference Name:** Ultimate Bundle  
 **Price:** $11.99 USD  
 **Family Shareable:** Yes  
+**Purchase Option ID (Android):** `recipease-ultimate-bundle-v2`  
 **Badge:** BEST VALUE - SAVE 27%
 
 #### Display Information
@@ -268,6 +293,9 @@ This welcome bonus lets users experience the full value of RecipEase before maki
 - Marked as "BEST VALUE" in the UI
 - Perfect for serious home cooks who want both import and generation capabilities
 
+#### Tags/Keywords
+ultimatebundle, bestvalue, completepackage, adfree, recipeimport, recipegeneration, credits50, comprehensive, everythingincluded, cookingapp, recipeapp, familysharing, onetimepurchase, lifetimeaccess, seriouscooks, homecooking
+
 ---
 
 ## Subscriptions
@@ -281,7 +309,9 @@ All subscriptions are part of the **"Premium Subscriptions"** group.
 **Price:** $6.99 USD/month  
 **Subscription Group:** premium  
 **Duration:** 1 Month (P1M)  
-**Free Trial:** 7 Days (UNLIMITED ACCESS)
+**Free Trial:** 7 Days (UNLIMITED ACCESS)  
+**Base Plan ID (Android):** `monthly-standard`  
+**Purchase Option ID (Android):** `monthly-standard`
 
 #### Display Information
 - **Display Name:** Premium - Monthly
@@ -327,6 +357,9 @@ All subscriptions are part of the **"Premium Subscriptions"** group.
 - Users can cancel anytime during trial with no charge
 - Much better value than buying credit packs individually
 
+#### Tags/Keywords
+premiumsubscription, monthlysubscription, bestvalue, freetrial, unlimitedtrial, adfree, recipeimport, recipegeneration, credits50monthly, cookingapp, recipeapp, subscription, recurring, mostpopular, recommended, startersubscription
+
 ---
 
 ### 9. Premium - Yearly
@@ -336,7 +369,9 @@ All subscriptions are part of the **"Premium Subscriptions"** group.
 **Price:** $44.99 USD/year  
 **Subscription Group:** premium  
 **Duration:** 1 Year (P1Y)  
-**Free Trial:** 7 Days (UNLIMITED ACCESS)
+**Free Trial:** 7 Days (UNLIMITED ACCESS)  
+**Base Plan ID (Android):** `yearly-standard`  
+**Purchase Option ID (Android):** `yearly-standard`  
 **Badge:** BEST VALUE - SAVE 46%
 
 #### Display Information
@@ -386,6 +421,9 @@ All subscriptions are part of the **"Premium Subscriptions"** group.
 - Trial available to users who have never subscribed
 - Users billed yearly but get monthly credit allocations
 
+#### Tags/Keywords
+premiumsubscription, yearlysubscription, annualsubscription, bestvalue, save46, freetrial, unlimitedtrial, adfree, recipeimport, recipegeneration, credits50monthly, cookingapp, recipeapp, subscription, committedusers, annualplan, yearlyplan, mostsavings
+
 ---
 
 ### 10. Premium - Unlimited (Monthly)
@@ -395,7 +433,9 @@ All subscriptions are part of the **"Premium Subscriptions"** group.
 **Price:** $19.99 USD/month  
 **Subscription Group:** premium  
 **Duration:** 1 Month (P1M)  
-**Free Trial:** None
+**Free Trial:** None  
+**Base Plan ID (Android):** `unlimited-monthly`  
+**Purchase Option ID (Android):** `unlimited-monthly`
 
 #### Display Information
 - **Display Name:** Premium - Unlimited
@@ -442,6 +482,9 @@ The unlimited plan is intended for personal cooking and recipe management. Fair 
 - Most expensive option but offers true unlimited access
 - Recommended for users who exceed 50+ credits per month regularly
 
+#### Tags/Keywords
+unlimitedsubscription, premiumunlimited, unlimitedaccess, nolimits, powerusers, heavyusers, professional, foodblogger, unlimitedrecipes, unlimitedimports, unlimitedgenerations, adfree, cookingapp, recipeapp, subscription, monthlyunlimited, fairuse
+
 ---
 
 ### 11. Premium - Unlimited (Yearly)
@@ -452,6 +495,8 @@ The unlimited plan is intended for personal cooking and recipe management. Fair 
 **Subscription Group:** premium  
 **Duration:** 1 Year (P1Y)  
 **Free Trial:** None  
+**Base Plan ID (Android):** `unlimited-yearly`  
+**Purchase Option ID (Android):** `unlimited-yearly`  
 **Badge:** BEST VALUE - SAVE 67%
 
 #### Display Information
@@ -492,6 +537,9 @@ The unlimited plan is intended for personal cooking and recipe management. Fair 
 - Best option for professional cooks, food bloggers, or heavy users
 - No trial period (premium unlimited tier)
 - Fair-use policy applies
+
+#### Tags/Keywords
+unlimitedsubscription, premiumunlimited, yearlyunlimited, annualunlimited, unlimitedaccess, nolimits, save67, bestvalueunlimited, powerusers, professional, foodblogger, heavyusers, unlimitedrecipes, unlimitedimports, unlimitedgenerations, adfree, cookingapp, recipeapp, subscription, yearlyplan, annualplan, fairuse, mostsavingsunlimited
 
 ---
 
@@ -706,18 +754,21 @@ All product IDs remain the same for Android. Configure in Google Play Console:
 
 1. **Quick Import Pack**
    - Product ID: `recipease_imports_15`
+   - Purchase Option ID: `recipease-imports-15`
    - Price: $2.49
    - Type: Consumable
    - Credits: 15 recipe imports
 
 2. **25 Recipe Imports**
    - Product ID: `recipease_imports_25`
+   - Purchase Option ID: `recipease-imports-25`
    - Price: $3.99
    - Type: Consumable
    - Credits: 25 recipe imports
 
 3. **25 Recipe Generations**
    - Product ID: `recipease_generations_25`
+   - Purchase Option ID: `recipease-generations-25`
    - Price: $3.99
    - Type: Consumable
    - Credits: 25 recipe generations
@@ -726,23 +777,27 @@ All product IDs remain the same for Android. Configure in Google Play Console:
 
 1. **Ad-Free**
    - Product ID: `recipease_ad_free_v2`
+   - Purchase Option ID: `recipease-ad-free-v2`
    - Price: $4.99
    - Type: Non-consumable (Managed product)
 
 2. **Ad-Free + Starter Bundle**
    - Product ID: `recipease_ad_free_imports_25`
+   - Purchase Option ID: `recipease-ad-free-imports-25`
    - Price: $7.99
    - Type: Non-consumable
    - Credits: 25 import credits (separate type)
 
 3. **Ad-Free + Power Bundle**
    - Product ID: `recipease_ad_free_generations_30`
+   - Purchase Option ID: `recipease-ad-free-generations-30`
    - Price: $9.99
    - Type: Non-consumable
    - Credits: 25 import + 25 generation credits (50 total, separate types)
 
 4. **Ultimate Bundle**
    - Product ID: `recipease_ultimate_bundle_v2`
+   - Purchase Option ID: `recipease-ultimate-bundle-v2`
    - Price: $11.99
    - Type: Non-consumable
    - Credits: 50 (25 imports + 25 generations)
@@ -754,6 +809,7 @@ All product IDs remain the same for Android. Configure in Google Play Console:
 1. **Premium - Monthly**
    - Product ID: `recipease_premium_monthly`
    - Base Plan ID: `monthly-standard`
+   - Purchase Option ID: `monthly-standard`
    - Billing Period: 1 month
    - Price: $6.99/month
    - Credits: 25 import + 25 generation credits/month (50 total, separate types)
@@ -764,6 +820,7 @@ All product IDs remain the same for Android. Configure in Google Play Console:
 2. **Premium - Yearly**
    - Product ID: `recipease_premium_yearly`
    - Base Plan ID: `yearly-standard`
+   - Purchase Option ID: `yearly-standard`
    - Billing Period: 1 year
    - Price: $39.99/year
    - Credits: 25 import + 25 generation credits/month (50 total, separate types)
@@ -774,6 +831,7 @@ All product IDs remain the same for Android. Configure in Google Play Console:
 3. **Premium - Unlimited**
    - Product ID: `recipease_premium_unlimited`
    - Base Plan ID: `unlimited-monthly`
+   - Purchase Option ID: `unlimited-monthly`
    - Billing Period: 1 month
    - Price: $19.99/month
    - Grace Period: 3 days
@@ -782,6 +840,7 @@ All product IDs remain the same for Android. Configure in Google Play Console:
 4. **Premium - Unlimited (Yearly)**
    - Product ID: `recipease_premium_unlimited_yearly`
    - Base Plan ID: `unlimited-yearly`
+   - Purchase Option ID: `unlimited-yearly`
    - Billing Period: 1 year
    - Price: $79.99/year
    - Grace Period: 3 days
