@@ -8,6 +8,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const errorHandler = require("./utils/errorHandler");
+const { cleanRecipeDescription } = require("./utils/recipeUtils");
 const cron = require("node-cron");
 const axios = require("axios");
 const admin = require("firebase-admin");
@@ -217,7 +218,7 @@ cron.schedule("59 23 * * 0", async () => {
 				return {
 					id: recipe.id.toString(),
 					title: recipe.title || "",
-					description: recipe.summary || "",
+					description: cleanRecipeDescription(recipe.summary || ""),
 					ingredients: (recipe.extendedIngredients || []).map((ing) => ({
 						name: ing.name || "",
 						amount: ing.amount || 0,

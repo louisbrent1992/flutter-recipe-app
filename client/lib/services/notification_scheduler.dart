@@ -333,7 +333,7 @@ class NotificationScheduler {
           route = '/discover';
           args = {
             'tag':
-                'meal prep, mealprep, batch cooking, prep ahead, prep for the week, make ahead, meal planning, weekly prep, batch recipes, freezer friendly',
+                'meal prep, batch cooking, prep ahead, make ahead, meal planning, weekly prep, batch recipes, freezer friendly',
           };
           break;
         case AppNotificationCategory.seasonal:
@@ -342,7 +342,7 @@ class NotificationScheduler {
           route = '/discover';
           args = {
             'tag':
-                'holliday, holiday, holidays, fall, autumn, thanksgiving, turkey, christmas, winter, pumpkin',
+                'fall, autumn, thanksgiving, turkey, seasonal, christmas, pumpkin, holliday, holiday',
           };
           break;
         case AppNotificationCategory.quickMeals:
