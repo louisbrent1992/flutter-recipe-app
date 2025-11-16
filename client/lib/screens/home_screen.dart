@@ -357,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen>
 
                       return Image.network(
                         heroImageUrl,
-                        fit: BoxFit.fitWidth,
+                        fit: BoxFit.cover,
                         cacheWidth:
                             (constraints.maxWidth * devicePixelRatio).round(),
                         cacheHeight:
@@ -905,112 +905,115 @@ class _HomeScreenState extends State<HomeScreen>
       },
       child: InkWell(
         onTap:
-            () =>
-                Navigator.pushNamed(context, '/recipeDetail', arguments: recipe),
-        child: Container(
-        width: cardWidth,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(
-            AppBreakpoints.isDesktop(context) ? 16 : 12,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: AppBreakpoints.isDesktop(context) ? 6 : 4,
-              offset: Offset(0, AppBreakpoints.isDesktop(context) ? 3 : 2),
+            () => Navigator.pushNamed(
+              context,
+              '/recipeDetail',
+              arguments: recipe,
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(
-            AppBreakpoints.isDesktop(context) ? 16 : 12,
-          ),
-          child: Stack(
-            children: [
-              // Image
-              Positioned.fill(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final devicePixelRatio =
-                        MediaQuery.of(context).devicePixelRatio;
-                    return Image.network(
-                      recipe.imageUrl,
-                      fit: BoxFit.cover,
-                      cacheWidth:
-                          (constraints.maxWidth * devicePixelRatio).round(),
-                      cacheHeight:
-                          (constraints.maxHeight * devicePixelRatio).round(),
-                      filterQuality: FilterQuality.high,
-                      errorBuilder:
-                          (_, __, ___) => Container(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.secondary.withValues(
-                              alpha:
-                                  Theme.of(context).colorScheme.overlayMedium,
-                            ),
-                            child: Icon(
-                              Icons.restaurant,
-                              size: AppSizing.responsiveIconSize(
-                                context,
-                                mobile: 40,
-                                tablet: 48,
-                                desktop: 56,
-                              ),
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                    );
-                  },
-                ),
-              ),
-              // Gradient overlay bottom
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: AppBreakpoints.isDesktop(context) ? 80 : 60,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.54),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // Title
-              Positioned(
-                left: AppBreakpoints.isDesktop(context) ? 12 : 8,
-                right: AppBreakpoints.isDesktop(context) ? 12 : 8,
-                bottom: AppBreakpoints.isDesktop(context) ? 12 : 8,
-                child: Text(
-                  recipe.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style:
-                      AppBreakpoints.isDesktop(context)
-                          ? theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          )
-                          : theme.textTheme.labelSmall?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                ),
+        child: Container(
+          width: cardWidth,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              AppBreakpoints.isDesktop(context) ? 16 : 12,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                offset: Offset(0, AppBreakpoints.isDesktop(context) ? 3 : 2),
               ),
             ],
           ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(
+              AppBreakpoints.isDesktop(context) ? 16 : 12,
+            ),
+            child: Stack(
+              children: [
+                // Image
+                Positioned.fill(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final devicePixelRatio =
+                          MediaQuery.of(context).devicePixelRatio;
+                      return Image.network(
+                        recipe.imageUrl,
+                        fit: BoxFit.cover,
+                        cacheWidth:
+                            (constraints.maxWidth * devicePixelRatio).round(),
+                        cacheHeight:
+                            (constraints.maxHeight * devicePixelRatio).round(),
+                        filterQuality: FilterQuality.high,
+                        errorBuilder:
+                            (_, __, ___) => Container(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.secondary.withValues(
+                                alpha:
+                                    Theme.of(context).colorScheme.overlayMedium,
+                              ),
+                              child: Icon(
+                                Icons.restaurant,
+                                size: AppSizing.responsiveIconSize(
+                                  context,
+                                  mobile: 40,
+                                  tablet: 48,
+                                  desktop: 56,
+                                ),
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                      );
+                    },
+                  ),
+                ),
+                // Gradient overlay bottom
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: AppBreakpoints.isDesktop(context) ? 80 : 60,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.54),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Title
+                Positioned(
+                  left: AppBreakpoints.isDesktop(context) ? 12 : 8,
+                  right: AppBreakpoints.isDesktop(context) ? 12 : 8,
+                  bottom: AppBreakpoints.isDesktop(context) ? 12 : 8,
+                  child: Text(
+                    recipe.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        AppBreakpoints.isDesktop(context)
+                            ? theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            )
+                            : theme.textTheme.labelSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-    ),
     );
   }
 
@@ -1044,11 +1047,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           onTap: () {
             Future.delayed(const Duration(milliseconds: 100), () {
-              Navigator.pushNamed(
-                context,
-                '/recipeDetail',
-                arguments: recipe,
-              );
+              Navigator.pushNamed(context, '/recipeDetail', arguments: recipe);
             });
           },
         ),
@@ -1092,9 +1091,7 @@ Shared from Recipe App
           },
         ),
       ],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
 
@@ -1401,7 +1398,7 @@ Shared from Recipe App
   Color _getIconColor(Color collectionColor) {
     // Calculate brightness of the collection color
     final brightness = collectionColor.computeLuminance();
-    
+
     // If the color is light (brightness > 0.5), use a darker, more saturated version
     // If the color is dark (brightness <= 0.5), use a lighter version
     if (brightness > 0.5) {
