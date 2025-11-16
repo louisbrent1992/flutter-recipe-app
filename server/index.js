@@ -196,10 +196,12 @@ cron.schedule("59 23 * * 0", async () => {
 						},
 						[]
 					),
-					// Split dish types into words
+					// Split dish types into words (normalize hyphens to spaces)
 					...(recipe.dishTypes || []).reduce((acc, tag) => {
 						if (tag) {
-							acc.push(...tag.toLowerCase().split(/\s+/));
+							// Normalize hyphens to spaces, then split
+							const normalized = tag.toLowerCase().replace(/-/g, ' ');
+							acc.push(...normalized.split(/\s+/));
 						}
 						return acc;
 					}, []),

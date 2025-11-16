@@ -97,12 +97,12 @@ class NotificationScheduler {
       case AppNotificationCategory.dailyInspiration:
         await _scheduleDaily(
           id: id,
-          hour: 9,
+          hour: 14,
           minute: 0,
-          title: 'Today’s Picks 🍽️',
-          body: 'Handpicked recipes we think you’ll love.',
-          route: '/discover',
-          args: {'tag': '', 'random': 'true'},
+          title: "Today's Picks 🍽️",
+          body: "Handpicked recipes we think you'll love.",
+          route: '/randomRecipe',
+          args: {},
         );
         break;
       case AppNotificationCategory.mealPrep:
@@ -297,5 +297,88 @@ class NotificationScheduler {
       default:
         return DateTime.saturday;
     }
+  }
+
+  // Test method to immediately trigger a notification (for debugging)
+  // Returns the route and args so caller can navigate directly if needed
+  static Future<Map<String, dynamic>?> triggerTestNotification(
+    AppNotificationCategory category,
+  ) async {
+    final id = _categoryToId[category]!;
+    final key = _enumKey(category);
+    final cfg = _configByKey?[key];
+
+    String title;
+    String body;
+    String route;
+    Map<String, String> args;
+
+    if (cfg != null) {
+      title = cfg.title;
+      body = cfg.body;
+      route = cfg.route;
+      args = cfg.args;
+    } else {
+      // Use fallback defaults
+      switch (category) {
+        case AppNotificationCategory.dailyInspiration:
+          title = "Today's Picks 🍽️";
+          body = "Handpicked recipes we think you'll love.";
+          route = '/randomRecipe';
+          args = {};
+          break;
+        case AppNotificationCategory.mealPrep:
+          title = 'Meal Prep Sunday 🍱';
+          body = 'Plan your week with batch-friendly recipes.';
+          route = '/discover';
+          args = {
+            'tag':
+                'meal prep, mealprep, batch cooking, prep ahead, prep for the week, make ahead, meal planning, weekly prep, batch recipes, freezer friendly',
+          };
+          break;
+        case AppNotificationCategory.seasonal:
+          title = 'Holliday Favorites 🎄';
+          body = 'New festive recipes just dropped.';
+          route = '/discover';
+          args = {
+            'tag':
+                'holliday, holiday, holidays, fall, autumn, thanksgiving, turkey, christmas, winter, pumpkin',
+          };
+          break;
+        case AppNotificationCategory.quickMeals:
+          title = '20-Minute Dinners ⏱️';
+          body = 'Fast, tasty, and minimal cleanup.';
+          route = '/discover';
+          args = {
+            'tag':
+                'easy, quick, fast, 20 minutes, 15 minutes, 30 minutes, minimal, simple, speedy, fast dinner',
+          };
+          break;
+        case AppNotificationCategory.budget:
+          title = 'Save on Groceries 💸';
+          body = 'Delicious meals under \$10.';
+          route = '/discover';
+          args = {
+            'tag':
+                'budget, budget friendly, under \$10, under \$5, frugal, cheap, affordable, inexpensive, economical, cost effective',
+          };
+          break;
+        case AppNotificationCategory.keto:
+          title = 'Keto Spotlight 🥑';
+          body = 'Popular low-carb recipes this week.';
+          route = '/discover';
+          args = {
+            'tag':
+                'keto, low-carb, ketogenic, keto-friendly, keto-diet, keto-recipes, low carb, lowcarb, no carb, zero carb',
+          };
+          break;
+      }
+    }
+
+    final payload = jsonEncode({'route': route, 'args': args});
+    await _plugin?.show(id, title, body, _details(), payload: payload);
+
+    // Return route info for direct navigation
+    return {'route': route, 'args': args};
   }
 }

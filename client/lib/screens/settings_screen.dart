@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/providers/auth_provider.dart';
 import '../providers/user_profile_provider.dart';
@@ -15,6 +16,8 @@ import '../models/recipe.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import '../services/image_resolver_cache.dart';
 import '../utils/image_utils.dart';
+import '../services/notification_scheduler.dart';
+import '../main.dart' show navigatorKey;
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -286,6 +289,65 @@ class _SettingsScreenState extends State<SettingsScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _triggerTestNotification(
+    AppNotificationCategory category,
+  ) async {
+    try {
+      // Trigger notification and get route info
+      final routeInfo = await NotificationScheduler.triggerTestNotification(
+        category,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Test notification triggered!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        // Also navigate directly since notification tap might not work in foreground
+        if (routeInfo != null) {
+          final route = routeInfo['route'] as String?;
+          final args = routeInfo['args'] as Map<String, String>?;
+
+          if (route != null && route.isNotEmpty) {
+            // Wait a moment for the notification to show, then navigate
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (navigatorKey.currentState != null) {
+                navigatorKey.currentState!.pushNamed(
+                  route,
+                  arguments: args,
+                );
+              } else {
+                // If navigator not ready, try again after a frame
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (navigatorKey.currentState != null) {
+                    navigatorKey.currentState!.pushNamed(
+                      route,
+                      arguments: args,
+                    );
+                  }
+                });
+              }
+            });
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error triggering notification: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -1331,6 +1393,91 @@ class _SettingsScreenState extends State<SettingsScreen>
                       color: Colors.red,
                       onTap: _showDeleteAccountDialog,
                     ),
+
+                    // Debug Section (only in debug mode)
+                    if (kDebugMode) ...[
+                      SizedBox(height: AppSpacing.xxl),
+                      const Divider(height: 1, thickness: 0.1),
+                      SizedBox(height: AppSpacing.md),
+
+                      _buildSectionHeader(
+                        title: 'Debug Tools',
+                        icon: Icons.bug_report_rounded,
+                        colorScheme: colorScheme,
+                      ),
+
+                      SizedBox(height: AppSpacing.md),
+
+                      _buildAnimatedListTile(
+                        title: 'Test Daily Inspiration',
+                        subtitle: 'Trigger the daily inspiration notification',
+                        icon: Icons.notifications_active_rounded,
+                        color: colorScheme.primary,
+                        onTap: () => _triggerTestNotification(
+                          AppNotificationCategory.dailyInspiration,
+                        ),
+                      ),
+
+                      SizedBox(height: AppSpacing.sm),
+
+                      _buildAnimatedListTile(
+                        title: 'Test Meal Prep',
+                        subtitle: 'Trigger the meal prep notification',
+                        icon: Icons.lunch_dining_rounded,
+                        color: colorScheme.primary,
+                        onTap: () => _triggerTestNotification(
+                          AppNotificationCategory.mealPrep,
+                        ),
+                      ),
+
+                      SizedBox(height: AppSpacing.sm),
+
+                      _buildAnimatedListTile(
+                        title: 'Test Seasonal',
+                        subtitle: 'Trigger the seasonal notification',
+                        icon: Icons.celebration_rounded,
+                        color: colorScheme.primary,
+                        onTap: () => _triggerTestNotification(
+                          AppNotificationCategory.seasonal,
+                        ),
+                      ),
+
+                      SizedBox(height: AppSpacing.sm),
+
+                      _buildAnimatedListTile(
+                        title: 'Test Quick Meals',
+                        subtitle: 'Trigger the quick meals notification',
+                        icon: Icons.timer_rounded,
+                        color: colorScheme.primary,
+                        onTap: () => _triggerTestNotification(
+                          AppNotificationCategory.quickMeals,
+                        ),
+                      ),
+
+                      SizedBox(height: AppSpacing.sm),
+
+                      _buildAnimatedListTile(
+                        title: 'Test Budget',
+                        subtitle: 'Trigger the budget notification',
+                        icon: Icons.savings_rounded,
+                        color: colorScheme.primary,
+                        onTap: () => _triggerTestNotification(
+                          AppNotificationCategory.budget,
+                        ),
+                      ),
+
+                      SizedBox(height: AppSpacing.sm),
+
+                      _buildAnimatedListTile(
+                        title: 'Test Keto',
+                        subtitle: 'Trigger the keto notification',
+                        icon: Icons.local_dining_rounded,
+                        color: colorScheme.primary,
+                        onTap: () => _triggerTestNotification(
+                          AppNotificationCategory.keto,
+                        ),
+                      ),
+                    ],
 
                     SizedBox(height: AppSpacing.xxl),
                   ],

@@ -178,10 +178,11 @@ router.post("/recipes", auth, async (req, res) => {
 		}
 
         // Generate searchable fields (only title, ingredients, and tags)
+        // Normalize hyphens to spaces in tags for consistent searching
 		const searchableFields = [
 			title.toLowerCase(),
 			...ingredients.map((i) => i.toLowerCase()),
-			...tags.map((t) => t.toLowerCase()),
+			...tags.map((t) => t.toLowerCase().replace(/-/g, ' ')),
 		].filter((field) => field.length > 0);
 
 		const newRecipe = {
@@ -362,12 +363,13 @@ router.put("/recipes/:id", auth, async (req, res) => {
 		}
 
         // Generate searchable fields from the updated data (only title, ingredients, tags)
+        // Normalize hyphens to spaces in tags for consistent searching
 		const searchableFields = [
             (req.body.title || recipeData.title).toLowerCase(),
 			...(req.body.ingredients || recipeData.ingredients).map((i) =>
 				i.toLowerCase()
 			),
-			...(req.body.tags || recipeData.tags).map((t) => t.toLowerCase()),
+			...(req.body.tags || recipeData.tags).map((t) => t.toLowerCase().replace(/-/g, ' ')),
 		].filter((field) => field.length > 0);
 
 		const updates = {

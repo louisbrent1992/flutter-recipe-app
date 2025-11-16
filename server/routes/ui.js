@@ -111,56 +111,56 @@ router.get("/ui/notifications", (req, res) => {
       {
         key: "dailyInspiration",
         enabledDefault: true,
-        schedule: { type: "daily", hour: 9, minute: 0 },
-        title: "Today’s Picks 🍽️",
-        body: "Handpicked recipes we think you’ll love.",
-        route: "/discover",
-        args: { tag: "", random: "true" },
+        schedule: { type: "daily", hour: 14, minute: 0 }, // 2:00 PM - Afternoon inspiration for any meal
+        title: "Today's Picks 🍽️",
+        body: "Handpicked recipes we think you'll love.",
+        route: "/randomRecipe",
+        args: {},
       },
       {
         key: "mealPrep",
         enabledDefault: true,
-        schedule: { type: "weekly", weekday: 0, hour: 17, minute: 0 }, // Sunday
+        schedule: { type: "weekly", weekday: 0, hour: 9, minute: 0 }, // Sunday 9:00 AM - Morning meal prep planning
         title: "Meal Prep Sunday 🍱",
         body: "Plan your week with batch-friendly recipes.",
         route: "/discover",
-        args: { tag: "meal prep, batch cooking, prep ahead, prep for the week" },
+        args: { tag: "meal prep, mealprep, batch cooking, prep ahead" },
       },
       {
         key: "seasonal",
         enabledDefault: true,
-        schedule: { type: "weekly", weekday: 5, hour: 12, minute: 0 }, // Friday
+        schedule: { type: "weekly", weekday: 5, hour: 17, minute: 0 }, // Friday 5:00 PM - Weekend cooking inspiration
         title: "Holliday Favorites 🎄",
         body: "New festive recipes just dropped.",
         route: "/discover",
-        args: { tag: "holliday, fall, thanksgiving, turkey, christmas, winter, pumpkin, cranberry, cinnamon" },
+        args: { tag: "holliday, holiday, holidays, fall, autumn, thanksgiving, turkey, christmas, winter, pumpkin" },
       },
       {
         key: "quickMeals",
         enabledDefault: true,
-        schedule: { type: "weekly", weekday: 2, hour: 18, minute: 0 }, // Tuesday
+        schedule: { type: "weekly", weekday: 2, hour: 17, minute: 0 }, // Tuesday 5:00 PM - Right before dinner time
         title: "20-Minute Dinners ⏱️",
         body: "Fast, tasty, and minimal cleanup.",
         route: "/discover",
-        args: { tag: "easy, 20 minutes, quick, minimal cleanup" },
+        args: { tag: "easy, quick, fast, 20 minutes, 15 minutes, 30 minutes, minimal cleanup, simple, speedy, fast dinner" },
       },
       {
         key: "budget",
         enabledDefault: true,
-        schedule: { type: "weekly", weekday: 3, hour: 18, minute: 0 }, // Wednesday
+        schedule: { type: "weekly", weekday: 3, hour: 17, minute: 0 }, // Wednesday 5:00 PM - Mid-week budget check
         title: "Save on Groceries 💸",
         body: "Delicious meals under $10.",
         route: "/discover",
-        args: { tag: "budget, under $10, frugal, cheap, affordable" },
+        args: { tag: "budget, budget friendly, under $10, under $5, frugal, cheap, affordable, inexpensive, economical, cost effective" },
       },
       {
         key: "keto",
         enabledDefault: false,
-        schedule: { type: "weekly", weekday: 1, hour: 12, minute: 0 }, // Monday
+        schedule: { type: "weekly", weekday: 1, hour: 9, minute: 0 }, // Monday 9:00 AM - Start week with healthy choices
         title: "Keto Spotlight 🥑",
         body: "Popular low-carb recipes this week.",
         route: "/discover",
-        args: { tag: "keto" },
+        args: { tag: "keto, low-carb, ketogenic, keto-friendly, keto-diet, keto-recipes, low carb, lowcarb, no carb, zero carb" },
       },
     ],
   };

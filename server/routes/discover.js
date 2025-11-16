@@ -24,31 +24,75 @@ router.get("/search", auth, async (req, res) => {
 
         // Aggregate tokens from query and tag, treating comma-separated chunks as phrases.
         // For each phrase, prefer the full phrase token, then (if room) include individual word tokens.
+        // Also generate both hyphen and space variations for matching.
         const gatherTokens = (input) => {
             if (!input || typeof input !== 'string') return [];
             return input
                 .toLowerCase()
                 .split(',') // split on commas only; keep spaces inside phrase
-                .map((s) => s.trim().replace(/\s+/g, ' ')) // normalize inner spaces
+                .map((s) => s.trim()
+                    .replace(/\s+/g, ' ')) // normalize inner spaces
                 .filter((s) => s.length > 0);
+        };
+
+        // Generate both hyphen and space variations of a phrase
+        const generateVariations = (phrase) => {
+            const variations = new Set([phrase]);
+            // Add space version (replace hyphens with spaces)
+            const spaceVersion = phrase.replace(/-/g, ' ');
+            if (spaceVersion !== phrase) variations.add(spaceVersion);
+            // Add hyphen version (replace spaces with hyphens)
+            const hyphenVersion = phrase.replace(/\s+/g, '-');
+            if (hyphenVersion !== phrase) variations.add(hyphenVersion);
+            return Array.from(variations);
         };
 
         let phraseTokens = [];
         phraseTokens = phraseTokens.concat(gatherTokens(query));
         phraseTokens = phraseTokens.concat(gatherTokens(tag));
 
-        // De-duplicate phrases
-        phraseTokens = Array.from(new Set(phraseTokens));
+        // Build final tokens list prioritizing each tag phrase, then its hyphen/space variations
+        let tokens = [];
+        const addedTokens = new Set();
 
-        // Build final tokens list with phrases first, then individual words from those phrases
-        let tokens = [...phraseTokens];
-        // Add individual words if space permits (Firestore limit 10)
+        // Step 1: Add each phrase exactly once (de-duplicated)
         for (const phrase of phraseTokens) {
             if (tokens.length >= 10) break;
-            const words = phrase.split(/\s+/).filter((w) => w.length > 0);
-            for (const w of words) {
+            if (!addedTokens.has(phrase)) {
+                tokens.push(phrase);
+                addedTokens.add(phrase);
+            }
+        }
+
+        // Step 2: Add hyphen/space variations for phrases that contain hyphen/space
+        for (const phrase of phraseTokens) {
+            if (tokens.length >= 10) break;
+            const hyphenVersion = phrase.replace(/\s+/g, "-");
+            if (hyphenVersion !== phrase && !addedTokens.has(hyphenVersion) && tokens.length < 10) {
+                tokens.push(hyphenVersion);
+                addedTokens.add(hyphenVersion);
+            }
+            if (tokens.length >= 10) break;
+            const spaceVersion = phrase.replace(/-/g, " ");
+            if (spaceVersion !== phrase && !addedTokens.has(spaceVersion) && tokens.length < 10) {
+                tokens.push(spaceVersion);
+                addedTokens.add(spaceVersion);
+            }
+            if (tokens.length >= 10) break;
+        }
+
+        // Step 3: Optionally add individual words if we still have room
+        if (tokens.length < 10) {
+            for (const phrase of phraseTokens) {
                 if (tokens.length >= 10) break;
-                if (!tokens.includes(w)) tokens.push(w);
+                const words = phrase.split(/[\s-]+/).filter((w) => w.length > 0);
+                for (const word of words) {
+                    if (tokens.length >= 10) break;
+                    if (word.length > 2 && !addedTokens.has(word)) {
+                        tokens.push(word);
+                        addedTokens.add(word);
+                    }
+                }
             }
         }
         if (tokens.length > 10) {
@@ -56,6 +100,12 @@ router.get("/search", auth, async (req, res) => {
                 `array-contains-any supports up to 10 values; capped to 10 (had ${tokens.length})`
             );
             tokens = tokens.slice(0, 10);
+        }
+
+        // Debug logging
+        if (tag) {
+            console.log(`Search tags: ${tag}`);
+            console.log(`Generated search tokens (${tokens.length}):`, tokens);
         }
 
         if (tokens.length > 0) {

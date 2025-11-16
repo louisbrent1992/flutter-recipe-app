@@ -18,6 +18,7 @@ import 'package:recipease/screens/recipe_collections_screen.dart';
 import 'package:recipease/screens/collection_detail_screen.dart';
 import 'package:recipease/screens/subscription_screen.dart';
 import 'package:recipease/screens/add_recipes_to_collection_screen.dart';
+import 'package:recipease/screens/random_recipe_screen.dart';
 import 'package:recipease/screens/splash_screen.dart';
 import 'package:recipease/theme/theme.dart';
 import 'package:recipease/providers/auth_provider.dart';
@@ -255,18 +256,11 @@ class _MyAppState extends State<MyApp> {
         const InitializationSettings(android: androidInit, iOS: iosInit),
         onDidReceiveNotificationResponse: (resp) {
           final payload = resp.payload;
+          if (kDebugMode) {
+            debugPrint('📱 Notification tapped - payload: $payload');
+          }
           if (payload != null && payload.isNotEmpty) {
-            try {
-              final obj = jsonDecode(payload) as Map<String, dynamic>;
-              final route = obj['route'] as String?;
-              final args = (obj['args'] as Map?)?.cast<String, String>();
-              if (route != null && route.isNotEmpty) {
-                navigatorKey.currentState?.pushNamed(route, arguments: args);
-              }
-            } catch (_) {
-              // Backward-compat: treat payload as a simple route string
-              navigatorKey.currentState?.pushNamed(payload);
-            }
+            _handleNotificationNavigation(payload);
           }
         },
       );
@@ -358,6 +352,95 @@ class _MyAppState extends State<MyApp> {
       });
     } catch (e) {
       debugPrint('Push notification init error: $e');
+    }
+  }
+
+  // Handle notification navigation with proper error handling
+  void _handleNotificationNavigation(String payload) {
+    try {
+      final obj = jsonDecode(payload) as Map<String, dynamic>;
+      final route = obj['route'] as String?;
+      final args = obj['args'] as Map<String, dynamic>?;
+
+      if (kDebugMode) {
+        debugPrint('📱 Navigating to route: $route with args: $args');
+      }
+
+      if (route == null || route.isEmpty) {
+        if (kDebugMode) {
+          debugPrint('⚠️ Invalid route in notification payload');
+        }
+        return;
+      }
+
+      // Wait for navigator to be ready
+      _waitForNavigatorAndNavigateToRoute(route, args);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Error parsing notification payload: $e');
+        debugPrint('📱 Attempting backward-compat navigation with payload as route');
+      }
+      // Backward-compat: treat payload as a simple route string
+      _waitForNavigatorAndNavigateToRoute(payload, null);
+    }
+  }
+
+  // Wait for navigator to be ready and then navigate
+  void _waitForNavigatorAndNavigateToRoute(
+    String route,
+    Map<String, dynamic>? args,
+  ) {
+    // Check if navigator is ready
+    if (navigatorKey.currentState != null) {
+      _performNavigation(route, args);
+      return;
+    }
+
+    // If not ready, wait for the next frame and try again
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (navigatorKey.currentState != null) {
+        _performNavigation(route, args);
+      } else {
+        // If still not ready after a frame, wait a bit longer
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (navigatorKey.currentState != null) {
+            _performNavigation(route, args);
+          } else {
+            if (kDebugMode) {
+              debugPrint(
+                '⚠️ Failed to navigate to $route - navigator not ready',
+              );
+            }
+          }
+        });
+      }
+    });
+  }
+
+  // Perform the actual navigation
+  void _performNavigation(String route, Map<String, dynamic>? args) {
+    try {
+      if (kDebugMode) {
+        debugPrint('✅ Navigating to: $route');
+      }
+
+      // For routes that expect Map<String, String>, convert args
+      Map<String, String>? stringArgs;
+      if (args != null && args.isNotEmpty) {
+        stringArgs = args.map((key, value) => MapEntry(
+              key,
+              value?.toString() ?? '',
+            ));
+      }
+
+      navigatorKey.currentState?.pushNamed(
+        route,
+        arguments: stringArgs ?? args,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Navigation error: $e');
+      }
     }
   }
 
@@ -686,6 +769,10 @@ class _MyAppState extends State<MyApp> {
               '/generatedRecipes':
                   (context) => const PersistentBannerLayout(
                     child: GeneratedRecipesScreen(),
+                  ),
+              '/randomRecipe':
+                  (context) => const PersistentBannerLayout(
+                    child: RandomRecipeScreen(),
                   ),
               '/subscription':
                   (context) =>

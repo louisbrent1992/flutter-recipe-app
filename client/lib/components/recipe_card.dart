@@ -153,8 +153,8 @@ class _RecipeCardState extends State<RecipeCard> {
       final renderBox = context.findRenderObject() as RenderBox?;
       final origin =
           renderBox != null
-              ? renderBox.localToGlobal(Offset.zero) & renderBox.size
-              : const Rect.fromLTWH(0, 0, 1, 1);
+          ? renderBox.localToGlobal(Offset.zero) & renderBox.size
+          : const Rect.fromLTWH(0, 0, 1, 1);
 
       final String shareText = '''
 ${widget.recipe.title}
@@ -328,7 +328,7 @@ Shared from Recipe App
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(top: AppBreakpoints.isDesktop(context) ? 6 : 4),
-      child: Wrap(
+        child: Wrap(
         spacing: AppSpacing.responsive(
           context,
           mobile: 16,
@@ -336,85 +336,85 @@ Shared from Recipe App
           desktop: 12,
         ),
         runSpacing: AppBreakpoints.isDesktop(context) ? 4 : 4,
-        children: [
-          if (widget.showCookingTime)
-            Row(
+          children: [
+            if (widget.showCookingTime)
+              Row(
               mainAxisSize: MainAxisSize.max,
-              children: [
-                Icon(
-                  Icons.timer_rounded,
-                  size: AppSizing.responsiveIconSize(
-                    context,
-                    mobile: 12,
-                    tablet: 14,
-                    desktop: 16,
-                  ),
-                  color: Colors.grey[600],
-                ),
-                SizedBox(width: AppSpacing.xs),
-                Text(
-                  _formatCookingTime(widget.recipe.cookingTime),
-                  style: TextStyle(
-                    fontSize: AppTypography.responsiveCaptionSize(context),
+                children: [
+                  Icon(
+                    Icons.timer_rounded,
+                    size: AppSizing.responsiveIconSize(
+                      context,
+                      mobile: 12,
+                      tablet: 14,
+                      desktop: 16,
+                    ),
                     color: Colors.grey[600],
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          if (widget.showServings)
-            Row(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Icon(
-                  Icons.people,
-                  size: AppSizing.responsiveIconSize(
-                    context,
-                    mobile: 12,
-                    tablet: 14,
-                    desktop: 16,
+                  SizedBox(width: AppSpacing.xs),
+                Text(
+                      _formatCookingTime(widget.recipe.cookingTime),
+                      style: TextStyle(
+                        fontSize: AppTypography.responsiveCaptionSize(context),
+                        color: Colors.grey[600],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                   ),
-                  color: Colors.grey[600],
-                ),
-                SizedBox(width: AppSpacing.xs),
+                ],
+              ),
+            if (widget.showServings)
+              Row(
+              mainAxisSize: MainAxisSize.max,
+                children: [
+                  Icon(
+                    Icons.people,
+                    size: AppSizing.responsiveIconSize(
+                      context,
+                      mobile: 12,
+                      tablet: 14,
+                      desktop: 16,
+                    ),
+                    color: Colors.grey[600],
+                  ),
+                  SizedBox(width: AppSpacing.xs),
                 Text(
                   _formatServings(widget.recipe.servings),
-                  style: TextStyle(
-                    fontSize: AppTypography.responsiveCaptionSize(context),
-                    color: Colors.grey[600],
+                      style: TextStyle(
+                        fontSize: AppTypography.responsiveCaptionSize(context),
+                        color: Colors.grey[600],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                ],
+              ),
+            Row(
+            mainAxisSize: MainAxisSize.max,
+              children: [
+                Icon(
+                  Icons.restaurant_menu_rounded,
+                  size: AppSizing.responsiveIconSize(
+                    context,
+                    mobile: 12,
+                    tablet: 14,
+                    desktop: 16,
+                  ),
+                  color: Colors.grey[600],
+                ),
+                SizedBox(width: AppSpacing.xs),
+              Text(
+                    widget.recipe.difficulty,
+                    style: TextStyle(
+                      fontSize: AppTypography.responsiveCaptionSize(context),
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-          Row(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              Icon(
-                Icons.restaurant_menu_rounded,
-                size: AppSizing.responsiveIconSize(
-                  context,
-                  mobile: 12,
-                  tablet: 14,
-                  desktop: 16,
-                ),
-                color: Colors.grey[600],
-              ),
-              SizedBox(width: AppSpacing.xs),
-              Text(
-                widget.recipe.difficulty,
-                style: TextStyle(
-                  fontSize: AppTypography.responsiveCaptionSize(context),
-                  color: Colors.grey[600],
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ],
+          ],
       ),
     );
   }
@@ -1062,22 +1062,22 @@ Shared from Recipe App
         _showRecipeContextMenu(details.globalPosition);
       },
       child: Card(
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            AppBreakpoints.isMobile(context) ? 12 : 16,
-          ),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(
+          AppBreakpoints.isMobile(context) ? 12 : 16,
         ),
-        elevation: AppElevation.responsive(context),
-        child: InkWell(
-          onTap: () {
-            Navigator.pushNamed(
-              context,
-              '/recipeDetail',
-              arguments: widget.recipe,
-            );
-          },
-          child: Column(
+      ),
+      elevation: AppElevation.responsive(context),
+      child: InkWell(
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            '/recipeDetail',
+            arguments: widget.recipe,
+          );
+        },
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Recipe image
@@ -1351,8 +1351,8 @@ Shared from Recipe App
             ),
           ],
         ),
+        ),
       ),
-    ),
     );
   }
 }

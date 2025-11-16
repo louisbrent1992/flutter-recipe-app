@@ -278,7 +278,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       body: Center(
-        child: SingleChildScrollView(
+          child: SingleChildScrollView(
           padding: EdgeInsets.all(
             AppBreakpoints.isDesktop(context)
                 ? 32.0
