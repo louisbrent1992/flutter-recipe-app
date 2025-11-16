@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'credits_badge.dart';
 import '../theme/theme.dart';
 
-
 /// A customizable app bar component that supports multiple styles and configurations.
 /// This component is designed to be reused across the application for consistent UI.
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -50,29 +49,29 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       title:
           useLogo
               ? Image.asset(
-                  'assets/icons/logo.png',
-                  height: logoHeight != null
-                      ? logoHeight
-                      : AppSizing.responsiveIconSize(
-                          context,
-                          mobile: 60.0,
-                          tablet: 72.0,
-                          desktop: 80.0,
-                        ),
-                )
-              : Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: AppTypography.responsiveFontSize(
+                'assets/icons/logo.png',
+                height:
+                    logoHeight ??
+                    AppSizing.responsiveIconSize(
                       context,
-                      mobile: 18.0,
-                      tablet: 22.0,
-                      desktop: 24.0,
+                      mobile: 60.0,
+                      tablet: 72.0,
+                      desktop: 80.0,
                     ),
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
+              )
+              : Text(
+                title,
+                style: TextStyle(
+                  fontSize: AppTypography.responsiveFontSize(
+                    context,
+                    mobile: 18.0,
+                    tablet: 22.0,
+                    desktop: 24.0,
                   ),
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
+              ),
       centerTitle: centerTitle,
       automaticallyImplyLeading: automaticallyImplyLeading,
 
