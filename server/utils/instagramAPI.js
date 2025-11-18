@@ -11,10 +11,21 @@ const axios = require("axios");
  * @returns {string|null} - The shortcode or null if not found
  */
 function extractInstagramShortcode(url) {
-	const match = url.match(
-		/(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel)\/([A-Za-z0-9_-]+)/i
-	);
-	return match ? match[1] : null;
+	// Try multiple patterns to extract shortcode from any Instagram URL format
+	const patterns = [
+		/\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/i,  // /p/, /reel/, /reels/, /tv/
+		/instagram\.com\/([A-Za-z0-9_-]{11})/i,       // Direct shortcode after domain
+		/shortcode[=:]([A-Za-z0-9_-]+)/i,             // ?shortcode=xxx
+	];
+	
+	for (const pattern of patterns) {
+		const match = url.match(pattern);
+		if (match && match[1]) {
+			return match[1];
+		}
+	}
+	
+	return null;
 }
 
 /**
@@ -80,13 +91,51 @@ async function getMediaInfoByShortcode(shortcode) {
  * @returns {Promise<Object>} - Post caption and basic info
  */
 async function getInstagramMediaFromUrl(url) {
-	const shortcode = extractInstagramShortcode(url);
+	try {
+		console.log("Processing Instagram URL:", url);
+		let shortcode = extractInstagramShortcode(url);
 
-	if (!shortcode) {
-		throw new Error("Invalid Instagram URL. Could not extract shortcode.");
+		// If no shortcode found, try fetching the page and parsing HTML
+		if (!shortcode) {
+			try {
+				console.log("Could not extract shortcode from URL, trying HTML fetch...");
+				const response = await axios.get(url, {
+					maxRedirects: 5,
+					timeout: 10000,
+					headers: {
+						"User-Agent":
+							"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+						Accept:
+							"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+					},
+					validateStatus: () => true,
+				});
+
+				if (typeof response.data === "string") {
+					// Try to find shortcode in HTML
+					const shortcodeMatch = response.data.match(/"shortcode":"([A-Za-z0-9_-]+)"/i);
+					if (shortcodeMatch && shortcodeMatch[1]) {
+						shortcode = shortcodeMatch[1];
+						console.log("Found shortcode from HTML:", shortcode);
+					}
+				}
+			} catch (fetchError) {
+				console.log("Could not fetch page HTML:", fetchError.message);
+			}
+		}
+
+		if (!shortcode) {
+			throw new Error(
+				"Could not extract shortcode from Instagram URL. Please ensure the URL is a valid Instagram post link."
+			);
+		}
+
+		console.log("Extracted shortcode:", shortcode);
+		return await getMediaInfoByShortcode(shortcode);
+	} catch (error) {
+		console.error("Error processing Instagram URL:", url, error);
+		throw new Error(`Failed to process Instagram URL: ${error.message}`);
 	}
-
-	return getMediaInfoByShortcode(shortcode);
 }
 
 module.exports = {

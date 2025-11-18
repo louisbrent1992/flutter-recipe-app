@@ -11,11 +11,24 @@ const axios = require("axios");
  * @returns {string|null} - The video ID or null if not found
  */
 function extractTikTokVideoId(url) {
-	// Extract only from canonical URLs: /@user/video/<numericId>
-	const match = url.match(
-		/(?:https?:\/\/)?(?:[\w-]+\.)?tiktok\.com\/@[^/]+\/video\/(\d+)(?:[/?].*)?$/i
-	);
-	return match ? match[1] : null;
+	// Try to extract video ID from any TikTok URL format
+	// Match any numeric ID that looks like a video ID (18-19 digits)
+	const patterns = [
+		/\/video\/(\d{18,19})/i,           // /video/123456789012345678
+		/\/v\/(\d{18,19})/i,               // /v/123456789012345678
+		/video_id[=:](\d{18,19})/i,        // video_id=123456789012345678
+		/item_id[=:](\d{18,19})/i,         // item_id=123456789012345678
+		/tiktok\.com\/(\d{18,19})/i,       // tiktok.com/123456789012345678
+	];
+	
+	for (const pattern of patterns) {
+		const match = url.match(pattern);
+		if (match && match[1]) {
+			return match[1];
+		}
+	}
+	
+	return null;
 }
 
 /**
@@ -25,11 +38,32 @@ function extractTikTokVideoId(url) {
  */
 function extractFromHtml(html) {
 	if (typeof html !== "string" || !html) return {};
-	const ogUrlMatch = html.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i);
-	const inlineIdMatch = html.match(/\bvideoId\b\s*[:=]\s*"(\d+)"/i);
 	const result = {};
-	if (ogUrlMatch && ogUrlMatch[1]) result.url = ogUrlMatch[1];
-	if (inlineIdMatch && inlineIdMatch[1]) result.videoId = inlineIdMatch[1];
+	
+	// Try to find canonical URL from meta tags
+	const ogUrlMatch = html.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i);
+	if (ogUrlMatch && ogUrlMatch[1]) {
+		result.url = ogUrlMatch[1];
+	}
+	
+	// Try multiple patterns to find video ID in HTML
+	const idPatterns = [
+		/\bvideoId\b\s*[:=]\s*["'](\d{18,19})["']/i,
+		/\bitem_id\b\s*[:=]\s*["'](\d{18,19})["']/i,
+		/\bid\b\s*[:=]\s*["'](\d{18,19})["']/i,
+		/"videoId":"(\d{18,19})"/i,
+		/"itemId":"(\d{18,19})"/i,
+		/"aweme_id":"(\d{18,19})"/i,
+	];
+	
+	for (const pattern of idPatterns) {
+		const match = html.match(pattern);
+		if (match && match[1]) {
+			result.videoId = match[1];
+			break;
+		}
+	}
+	
 	return result;
 }
 
@@ -126,20 +160,23 @@ async function getTikTokVideoFromUrl(url) {
 		console.log("Processing TikTok URL:", url);
 		let workingUrl = (url || "").trim();
 
-		const isShort = /tiktok\.com\/t\//i.test(workingUrl) ||
-			/(?:^|\.)vm\.tiktok\.com\//i.test(workingUrl) ||
-			/(?:^|\.)vt\.tiktok\.com\//i.test(workingUrl);
-
+		// Always try to resolve the URL first to get canonical form
 		let resolvedHtml;
-		if (isShort) {
+		try {
 			const { finalUrl, html } = await resolveTikTokUrl(workingUrl);
-			workingUrl = finalUrl;
-			resolvedHtml = html;
-			console.log("Resolved TikTok URL to:", workingUrl);
+			if (finalUrl && finalUrl !== workingUrl) {
+				workingUrl = finalUrl;
+				resolvedHtml = html;
+				console.log("Resolved TikTok URL to:", workingUrl);
+			}
+		} catch (resolveError) {
+			console.log("Could not resolve URL, continuing with original:", resolveError.message);
 		}
 
+		// Try to extract video ID from the URL
 		let videoId = extractTikTokVideoId(workingUrl);
 
+		// If no video ID found, try fetching the page and parsing HTML
 		if (!videoId) {
 			try {
 				const resp = await axios.get(workingUrl, {
@@ -155,20 +192,23 @@ async function getTikTokVideoFromUrl(url) {
 				});
 				const html = typeof resp.data === "string" ? resp.data : resolvedHtml;
 				const { url: canonicalUrl, videoId: inlineId } = extractFromHtml(html || "");
-				if (!videoId && canonicalUrl) {
+				
+				if (canonicalUrl) {
+					console.log("Found canonical URL from HTML:", canonicalUrl);
 					videoId = extractTikTokVideoId(canonicalUrl);
 				}
 				if (!videoId && inlineId) {
+					console.log("Found inline video ID from HTML:", inlineId);
 					videoId = inlineId;
 				}
-			} catch (_) {
-				// continue to error below
+			} catch (fetchError) {
+				console.log("Could not fetch page HTML:", fetchError.message);
 			}
 		}
 
 		if (!videoId) {
 			throw new Error(
-				"Invalid or unsupported TikTok URL. Could not resolve video ID from the provided link."
+				"Could not extract video ID from TikTok URL. Please ensure the URL is a valid TikTok video link."
 			);
 		}
 

@@ -1172,11 +1172,10 @@ router.post("/import", async (req, res) => {
 		}
 		logPerformance("Cache lookup (MISS)", cacheStartTime);
 
-		const isInstagram =
-			url.includes("instagram.com/p/") || url.includes("instagram.com/reel/");
-		// Detect TikTok URLs (case-insensitive, handles www, short links, etc.)
-		const isTikTok = /tiktok\.com/i.test(url) || /vm\.tiktok\.com/i.test(url) || /vt\.tiktok\.com/i.test(url);
-		const isYouTube = url.includes("youtube.com/") || url.includes("youtu.be/");
+		// Detect social media platforms - if URL contains platform name, process it
+		const isInstagram = /instagram/i.test(url);
+		const isTikTok = /tiktok/i.test(url);
+		const isYouTube = /youtube|youtu\.be/i.test(url);
 		let socialData = null;
 		let pageContent = "";
 
