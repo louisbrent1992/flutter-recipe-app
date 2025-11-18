@@ -1033,7 +1033,8 @@ Shared from Recipe App
               });
             },
           ),
-        if (widget.showRefreshButton || widget.recipe.id.isNotEmpty)
+        // Only show Refresh Image in debug mode
+        if (kDebugMode && (widget.showRefreshButton || widget.recipe.id.isNotEmpty))
           PopupMenuItem(
             child: Row(
               children: [

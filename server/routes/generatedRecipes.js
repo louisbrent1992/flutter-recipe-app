@@ -656,13 +656,30 @@ const processSocialMedia = async (url, type, getDataFn) => {
 	if (!socialData) {
 		try {
 			console.log(`Processing ${type} URL:`, url);
+			
+			// Check for API key if needed
+			if (type === 'tiktok' && !process.env.RAPID_API_KEY) {
+				throw new Error('TikTok import is temporarily unavailable. API configuration is missing.');
+			}
+			
 			socialData = await getDataFn(url);
 			handleCache(recipeCache, cacheKey, socialData);
 			logPerformance(`${type.toUpperCase()} API call`, startTime);
 		} catch (error) {
 			console.error(`Error processing ${type} URL:`, error);
 			logPerformance(`${type.toUpperCase()} API call FAILED`, startTime);
-			throw new Error(`Failed to process ${type} URL`);
+			
+			// Provide more specific error messages
+			const errorMessage = error.message || `Failed to process ${type} URL`;
+			if (errorMessage.includes('API configuration')) {
+				throw new Error(errorMessage);
+			} else if (errorMessage.includes('rate limit') || errorMessage.includes('quota')) {
+				throw new Error(`${type} import temporarily unavailable due to high demand. Please try again in a few minutes.`);
+			} else if (errorMessage.includes('Invalid') || errorMessage.includes('unsupported')) {
+				throw new Error(`Invalid ${type} URL format. Please check the link and try again.`);
+			} else {
+				throw new Error(`Unable to process ${type} content at this time. Please try another link or try again later.`);
+			}
 		}
 	} else {
 		console.log(`✅ ${type} data found in cache`);
@@ -1243,9 +1260,21 @@ router.post("/import", async (req, res) => {
 		console.log(`✗ ========== IMPORT FAILED ==========\n`);
 		
 		const errorHandler = require("../utils/errorHandler");
+		
+		// Use specific error message if available, otherwise use generic message
+		const userMessage = error.message && 
+			(error.message.includes('TikTok') || 
+			 error.message.includes('Instagram') ||
+			 error.message.includes('YouTube') ||
+			 error.message.includes('temporarily unavailable') ||
+			 error.message.includes('Invalid') ||
+			 error.message.includes('API configuration'))
+			? error.message
+			: "We couldn't import that link right now. Please try another link or try again shortly.";
+		
 		errorHandler.serverError(
 			res,
-			"We couldn't import that link right now. Please try another link or try again shortly.",
+			userMessage,
 			error.message
 		);
 	}
