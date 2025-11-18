@@ -638,77 +638,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (isSubscription && trialEligible) ...[
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.celebration,
-                          color: Colors.green,
-                          size: AppSizing.responsiveIconSize(
-                            context,
-                            mobile: 20,
-                            tablet: 24,
-                            desktop: 28,
-                          ),
-                        ),
-                        SizedBox(
-                          width:
-                              AppBreakpoints.isDesktop(context)
-                                  ? 12
-                                  : AppBreakpoints.isTablet(context)
-                                  ? 10
-                                  : 8,
-                        ),
-                        Expanded(
-                          child: Text(
-                            '7 Days FREE!',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                              fontSize: AppDialog.responsiveContentSize(
-                                context,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(
-                      height:
-                          AppBreakpoints.isDesktop(context)
-                              ? 16
-                              : AppBreakpoints.isTablet(context)
-                              ? 14
-                              : 12,
-                    ),
-                    Text(
-                      'Start your free trial today. No payment required for 7 days.',
-                      style: TextStyle(
-                        fontSize: AppDialog.responsiveContentSize(context),
-                      ),
-                    ),
-                    SizedBox(
-                      height:
-                          AppBreakpoints.isDesktop(context)
-                              ? 10
-                              : AppBreakpoints.isTablet(context)
-                              ? 9
-                              : 8,
-                    ),
-                    Text(
-                      'After trial: ${product.price}',
-                      style: TextStyle(
-                        fontSize: AppDialog.responsiveContentSize(context),
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    SizedBox(
-                      height:
-                          AppBreakpoints.isDesktop(context)
-                              ? 16
-                              : AppBreakpoints.isTablet(context)
-                              ? 14
-                              : 12,
-                    ),
+                    // Show subscription price prominently (Apple requirement)
                     Container(
                       padding: EdgeInsets.all(
                         AppBreakpoints.isDesktop(context)
@@ -731,7 +661,121 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Trial includes:',
+                            'Subscription Price',
+                            style: TextStyle(
+                              fontSize: AppDialog.responsiveContentSize(context) * 0.875,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                          SizedBox(
+                            height:
+                                AppBreakpoints.isDesktop(context)
+                                    ? 8
+                                    : AppBreakpoints.isTablet(context)
+                                    ? 7
+                                    : 6,
+                          ),
+                          Text(
+                            product.price,
+                            style: TextStyle(
+                              fontSize: AppDialog.responsiveTitleSize(context),
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(
+                      height:
+                          AppBreakpoints.isDesktop(context)
+                              ? 16
+                              : AppBreakpoints.isTablet(context)
+                              ? 14
+                              : 12,
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.celebration,
+                          color: Colors.green,
+                          size: AppSizing.responsiveIconSize(
+                            context,
+                            mobile: 18,
+                            tablet: 20,
+                            desktop: 22,
+                          ),
+                        ),
+                        SizedBox(
+                          width:
+                              AppBreakpoints.isDesktop(context)
+                                  ? 8
+                                  : AppBreakpoints.isTablet(context)
+                                  ? 7
+                                  : 6,
+                        ),
+                        Expanded(
+                          child: Text(
+                            '7-day free trial included',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green,
+                              fontSize: AppDialog.responsiveContentSize(context) * 0.875,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height:
+                          AppBreakpoints.isDesktop(context)
+                              ? 12
+                              : AppBreakpoints.isTablet(context)
+                              ? 10
+                              : 8,
+                    ),
+                    Text(
+                      'Start your free trial today. The subscription will begin at ${product.price} after the 7-day trial ends.',
+                      style: TextStyle(
+                        fontSize: AppDialog.responsiveContentSize(context) * 0.875,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    SizedBox(
+                      height:
+                          AppBreakpoints.isDesktop(context)
+                              ? 16
+                              : AppBreakpoints.isTablet(context)
+                              ? 14
+                              : 12,
+                    ),
+                    Container(
+                      padding: EdgeInsets.all(
+                        AppBreakpoints.isDesktop(context)
+                            ? 16
+                            : AppBreakpoints.isTablet(context)
+                            ? 14
+                            : 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(
+                          AppBreakpoints.isDesktop(context)
+                              ? 12
+                              : AppBreakpoints.isTablet(context)
+                              ? 10
+                              : 8,
+                        ),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'What you get:',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize:
@@ -748,7 +792,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                                     : 4,
                           ),
                           Text(
-                            '• Full access to all premium features\n• No ads\n• All monthly credits\n• Cancel anytime',
+                            '• Full access to all premium features\n• Ad-free experience\n• All monthly credits\n• Cancel anytime during trial (no charge)',
                             style: TextStyle(
                               fontSize:
                                   AppDialog.responsiveContentSize(context) *
@@ -850,7 +894,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           SnackBar(
             content: Text(
               isSubscription
-                  ? 'Free trial started! Enjoy 7 days of premium.'
+                  ? (trialEligible
+                      ? 'Subscription started! 7-day trial begins now.'
+                      : 'Subscription successful!')
                   : 'Purchase successful!',
             ),
             backgroundColor: Colors.green,
@@ -1115,27 +1161,25 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (isSubscription && trialEligible && !isUnlimited)
-                          Text(
-                            'Then ${product.price}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
+                        // Always show the actual price prominently (Apple requirement)
                         Text(
-                          isSubscription
-                              ? (trialEligible && !isUnlimited
-                                  ? 'FREE for 7 days'
-                                  : product.price)
-                              : product.price,
+                          product.price,
                           style: theme.textTheme.headlineSmall?.copyWith(
-                            color:
-                                isSubscription && trialEligible && !isUnlimited
-                                    ? Colors.green
-                                    : colorScheme.primary,
+                            color: colorScheme.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                        // Show trial info as secondary text
+                        if (isSubscription && trialEligible && !isUnlimited) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '7-day free trial included',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.green,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                         if (product.productType ==
                             ProductType.unlimitedPremiumYearly) ...[
                           const SizedBox(height: 2),
@@ -1183,14 +1227,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.green.shade400, Colors.green.shade600],
+          colors: [Colors.blue.shade400, Colors.blue.shade600],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.green.withValues(alpha: 0.3),
+            color: Colors.blue.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -1204,7 +1248,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.celebration, color: Colors.white, size: 32),
+            child: const Icon(Icons.star, color: Colors.white, size: 32),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -1212,7 +1256,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Try Premium FREE',
+                  'Premium Subscriptions',
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -1220,9 +1264,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '7 days on us • No payment required • Cancel anytime',
+                  'Starting at \$6.99/month • 7-day free trial available',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.white.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -1371,6 +1416,28 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Always show price first and prominently (Apple requirement)
+          Row(
+            children: [
+              Icon(
+                Icons.payments_outlined,
+                size: 14,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Price: $pricePerUnit',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // Show trial information as secondary detail
           if (trialEligible &&
               product.productType != ProductType.unlimitedPremium &&
               product.productType != ProductType.unlimitedPremiumYearly) ...[
@@ -1378,29 +1445,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               children: [
                 Icon(Icons.celebration, size: 14, color: Colors.green),
                 const SizedBox(width: 6),
-                Text(
-                  '7-day free trial, then $pricePerUnit',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.green,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-          ] else ...[
-            Row(
-              children: [
-                Icon(
-                  Icons.calendar_today,
-                  size: 14,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Price: $pricePerUnit',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Text(
+                    '7-day free trial included',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green,
+                    ),
                   ),
                 ),
               ],
@@ -1415,7 +1466,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 color: theme.colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 6),
-              Text('Duration: $duration', style: theme.textTheme.bodySmall),
+              Text('Billed every $duration', style: theme.textTheme.bodySmall),
             ],
           ),
           const SizedBox(height: 6),
@@ -1429,7 +1480,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Auto-renewable subscription',
+                  'Auto-renews until cancelled',
                   style: theme.textTheme.bodySmall,
                 ),
               ),
