@@ -113,8 +113,8 @@ class _RecipeCardState extends State<RecipeCard> {
           }
         }
 
-        // Update discover recipe if applicable (with deduplication)
-        if (widget.recipe.id.isNotEmpty && !_isUpdatingDiscoverImage) {
+        // Update discover recipe if applicable (debug mode only, with deduplication)
+        if (kDebugMode && widget.recipe.id.isNotEmpty && !_isUpdatingDiscoverImage) {
           _isUpdatingDiscoverImage = true;
           try {
             await RecipeService.updateDiscoverRecipeImage(
@@ -1140,7 +1140,8 @@ Shared from Recipe App
                             }
                           }
                         } catch (_) {}
-                        if (widget.recipe.id.isNotEmpty) {
+                        // Only update discover recipes in debug mode
+                        if (kDebugMode && widget.recipe.id.isNotEmpty) {
                           try {
                             await RecipeService.updateDiscoverRecipeImage(
                               recipeId: widget.recipe.id,
@@ -1185,8 +1186,8 @@ Shared from Recipe App
                           // Swallow errors here to avoid surfacing a global error overlay
                         }
 
-                        // 2) Update the discover record only if the URL has changed
-                        if (widget.recipe.id.isNotEmpty && url != widget.recipe.imageUrl) {
+                        // 2) Update the discover record only in debug mode and if URL has changed
+                        if (kDebugMode && widget.recipe.id.isNotEmpty && url != widget.recipe.imageUrl) {
                           try {
                             await RecipeService.updateDiscoverRecipeImage(
                               recipeId: widget.recipe.id,
