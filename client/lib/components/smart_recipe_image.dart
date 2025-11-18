@@ -134,7 +134,8 @@ class _SmartRecipeImageState extends State<SmartRecipeImage>
         if (widget.cacheKey != null) {
           unawaited(ImageResolverCache.set(widget.cacheKey!, resolved));
         }
-        widget.onRefreshed?.call(resolved);
+        // Don't call onRefreshed during automatic fallback - only on explicit user refresh
+        // This prevents multiple simultaneous Firestore updates when switching screens
       }
     }
   }

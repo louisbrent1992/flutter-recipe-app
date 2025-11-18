@@ -183,6 +183,36 @@ const isPlaceholderUrl = (url) => {
 	return url.includes('placeholder.com') || url.includes('via.placeholder.com');
 };
 
+// Helper function to validate that an image URL is accessible
+const validateImageUrl = async (url, timeout = 5000) => {
+	if (!url || typeof url !== 'string') return false;
+	
+	try {
+		// Use HEAD request to check if image is accessible without downloading it
+		const response = await axios.head(url, {
+			timeout: timeout,
+			maxRedirects: 3,
+			validateStatus: (status) => status >= 200 && status < 400,
+		});
+		
+		// Check if the response is actually an image
+		const contentType = response.headers['content-type'];
+		if (contentType && contentType.startsWith('image/')) {
+			return true;
+		}
+		
+		console.log(`⚠️ URL is not an image (content-type: ${contentType}):`, url);
+		return false;
+	} catch (error) {
+		if (error.code === 'ECONNABORTED') {
+			console.log(`⚠️ Image validation timeout for URL:`, url);
+		} else {
+			console.log(`⚠️ Image validation failed for URL:`, url, error.message);
+		}
+		return false;
+	}
+};
+
 // Function to fetch an image from Google with caching
 const fetchImage = async (query, start = 1) => {
 	// Handle undefined or null query
@@ -548,6 +578,18 @@ router.post("/generate", async (req, res) => {
 					imageUrl = await fetchImage(imageQuery);
 				}
 				
+				// Validate that the image URL is accessible before sending to client
+				if (imageUrl) {
+					console.log(`🖼️  Validating image for "${recipeTitle}"...`);
+					const isValid = await validateImageUrl(imageUrl);
+					if (!isValid) {
+						console.log(`⚠️ Image validation failed, setting to null`);
+						imageUrl = null;
+					} else {
+						console.log(`✅ Image validated successfully`);
+					}
+				}
+				
 				return {
 				id: uuidv4(),
 					title: recipeTitle,
@@ -743,19 +785,34 @@ const processRecipeData = async (
 		}
 		
 		const imageStartTime = Date.now();
-		let imageUrl = socialData?.imageUrl ||
-			socialData?.coverUrl ||
-			socialData?.thumbnailUrl ||
-			(await fetchImage(cachedRecipe.title || "recipe"));
+		// Skip temporary social media URLs for Instagram/TikTok (they expire quickly)
+		// YouTube thumbnails are stable, so we can use them
+		let imageUrl;
+		if (isYouTube && socialData?.thumbnailUrl) {
+			imageUrl = socialData.thumbnailUrl;
+		} else {
+			// For Instagram, TikTok, or if no stable URL exists, use Google Image Search
+			imageUrl = await fetchImage(cachedRecipe.title || "recipe");
+		}
 		
 		// Filter out placeholder URLs
 		if (isPlaceholderUrl(imageUrl)) {
 			imageUrl = null;
 		}
 		
-		if (!socialData?.imageUrl && !socialData?.coverUrl && !socialData?.thumbnailUrl) {
-			logPerformance("Image fetch (from cache hit)", imageStartTime);
+		// Validate image URL before returning (cached recipe)
+		if (imageUrl) {
+			console.log(`🖼️  Validating image for "${cachedRecipe.title}"...`);
+			const isValid = await validateImageUrl(imageUrl);
+			if (!isValid) {
+				console.log(`⚠️ Image validation failed, setting to null`);
+				imageUrl = null;
+			} else {
+				console.log(`✅ Image validated successfully`);
+			}
 		}
+		
+		logPerformance("Image fetch (from cache hit)", imageStartTime);
 
 		return {
 			...cachedRecipe,
@@ -991,19 +1048,34 @@ const processRecipeData = async (
 
 	// Fetch image
 	const imageStartTime = Date.now();
-	let imageUrl = socialData?.imageUrl ||
-		socialData?.coverUrl ||
-		socialData?.thumbnailUrl ||
-		(await fetchImage(parsedRecipe.title || "recipe"));
+	// Skip temporary social media URLs for Instagram/TikTok (they expire quickly)
+	// YouTube thumbnails are stable, so we can use them
+	let imageUrl;
+	if (isYouTube && socialData?.thumbnailUrl) {
+		imageUrl = socialData.thumbnailUrl;
+	} else {
+		// For Instagram, TikTok, or if no stable URL exists, use Google Image Search
+		imageUrl = await fetchImage(parsedRecipe.title || "recipe");
+	}
 	
 	// Filter out placeholder URLs
 	if (isPlaceholderUrl(imageUrl)) {
 		imageUrl = null;
 	}
 	
-	if (!socialData?.imageUrl && !socialData?.coverUrl && !socialData?.thumbnailUrl) {
-		logPerformance("Image fetch (after AI parsing)", imageStartTime);
+	// Validate image URL before returning (new recipe)
+	if (imageUrl) {
+		console.log(`🖼️  Validating image for "${parsedRecipe.title}"...`);
+		const isValid = await validateImageUrl(imageUrl);
+		if (!isValid) {
+			console.log(`⚠️ Image validation failed, setting to null`);
+			imageUrl = null;
+		} else {
+			console.log(`✅ Image validated successfully`);
+		}
 	}
+	
+	logPerformance("Image fetch (after AI parsing)", imageStartTime);
 
 	return {
 		id: uuidv4(),

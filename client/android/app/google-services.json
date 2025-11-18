@@ -23,6 +23,14 @@
           }
         },
         {
+          "client_id": "826154873845-6qrfldtq51ggvgglft1p9afrlbnjuclk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.recipease.kitchen",
+            "certificate_hash": "e7accad7ff3e10c24225b8bb140d6db122004df6"
+          }
+        },
+        {
           "client_id": "826154873845-iop4r6fuqfjgiou4qnnajl70k63eptot.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

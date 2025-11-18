@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
@@ -11,7 +10,6 @@ import '../models/recipe.dart';
 import '../components/error_display.dart';
 import '../theme/theme.dart';
 import '../components/floating_bottom_bar.dart';
-import '../services/recipe_service.dart';
 
 class DiscoverRecipesScreen extends StatefulWidget {
   final String? initialQuery;
@@ -240,92 +238,6 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     }
   }
 
-  Future<void> _handleDeleteDiscoverRecipe(Recipe recipe) async {
-    if (!kDebugMode) {
-      // Safety check - should never happen in production
-      return;
-    }
-
-    if (recipe.id.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cannot delete recipe: No ID found'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-      return;
-    }
-
-    // Show confirmation dialog
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Delete Discover Recipe'),
-            content: Text(
-              'Are you sure you want to permanently delete "${recipe.title}" from Firebase?\n\nThis action cannot be undone and will remove the recipe from the discover feed for all users.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  foregroundColor: Theme.of(context).colorScheme.onError,
-                ),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-    );
-
-    if (confirm != true) return;
-
-    try {
-      final response = await RecipeService.deleteDiscoverRecipe(recipe.id);
-
-      if (mounted) {
-        if (response.success) {
-          // Refresh the recipe list to remove the deleted recipe
-          await _loadRecipes(forceRefresh: true);
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Recipe "${recipe.title}" deleted successfully'),
-                backgroundColor: Colors.green,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to delete recipe: ${response.message}'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error deleting recipe: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
-  }
-
   Future<void> _handleRecipeAction(Recipe recipe) async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
 
@@ -434,36 +346,37 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            itemBuilder: (context) => [
-              PopupMenuItem<String>(
-                value: 'refresh',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.refresh_rounded,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onSurface,
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem<String>(
+                    value: 'refresh',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.refresh_rounded,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('Refresh Results'),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    const Text('Refresh Results'),
-                  ],
-                ),
-              ),
-              PopupMenuItem<String>(
-                value: 'randomize',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.shuffle_rounded,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'randomize',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.shuffle_rounded,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('Randomize Results'),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    const Text('Randomize Results'),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                ],
             onSelected: (value) {
               switch (value) {
                 case 'refresh':
@@ -534,9 +447,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                     final allRecipes = recipeProvider.generatedRecipes;
 
                     // Server now handles deduplication, so we can use recipes directly
-                    final displayRecipes = allRecipes;
-
-                    // Keep all recipes but track which ones are already saved
+                    // Track which recipes are already saved by the current user
                     final userRecipeIds =
                         recipeProvider.userRecipes.map((r) => r.id).toSet();
                     final userRecipeKeys =
@@ -554,6 +465,12 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                       return userRecipeIds.contains(recipe.id) ||
                           userRecipeKeys.contains(recipeKey);
                     }
+
+                    // Filter out recipes the user has already saved (client-side filtering)
+                    final displayRecipes =
+                        allRecipes.where((recipe) {
+                          return !isRecipeSaved(recipe);
+                        }).toList();
 
                     // Friendly empty state: show when not loading and no results
                     if (!recipeProvider.isLoading && displayRecipes.isEmpty) {
@@ -687,17 +604,13 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                     return RecipeCard(
                                       key: ValueKey('discover-card-$identity'),
                                       recipe: recipe,
-                                      showSaveButton: !isRecipeSaved(recipe),
-                                      showRemoveButton: isRecipeSaved(recipe),
-                                      showDeleteButton:
-                                          kDebugMode && recipe.id.isNotEmpty,
+                                      showSaveButton:
+                                          true, // All displayed recipes are unsaved
+                                      showRemoveButton:
+                                          false, // Saved recipes are filtered out
+                                      showRefreshButton: false,
+                                      showDeleteButton: false,
                                       onSave: () => _handleRecipeAction(recipe),
-                                      onRemove:
-                                          () => _handleRecipeAction(recipe),
-                                      onDelete:
-                                          () => _handleDeleteDiscoverRecipe(
-                                            recipe,
-                                          ),
                                     );
                                   },
                                   itemCount: displayRecipes.length,

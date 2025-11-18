@@ -86,44 +86,45 @@ class FloatingBottomBar extends StatelessWidget {
       right: 0,
       child: Material(
         color: Colors.transparent,
-      child: Container(
-        height: shouldShowPagination
-            ? (AppBreakpoints.isDesktop(context)
-                ? 84
-                : AppBreakpoints.isTablet(context)
-                    ? 78
-                    : 72)
-            : (AppBreakpoints.isDesktop(context)
-                ? 52
-                : AppBreakpoints.isTablet(context)
-                    ? 48
-                    : 40),
-        margin: EdgeInsets.all(
-          AppSpacing.responsive(context, mobile: 16, tablet: 20, desktop: 24),
-        ),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withValues(
-            alpha: Theme.of(context).colorScheme.surfaceHeavy,
+        child: Container(
+          height:
+              shouldShowPagination
+                  ? (AppBreakpoints.isDesktop(context)
+                      ? 84
+                      : AppBreakpoints.isTablet(context)
+                      ? 78
+                      : 72)
+                  : (AppBreakpoints.isDesktop(context)
+                      ? 52
+                      : AppBreakpoints.isTablet(context)
+                      ? 48
+                      : 40),
+          margin: EdgeInsets.all(
+            AppSpacing.responsive(context, mobile: 16, tablet: 20, desktop: 24),
           ),
-          borderRadius: BorderRadius.circular(
-            shouldShowPagination
-                ? (AppBreakpoints.isDesktop(context) ? 20 : 16)
-                : (AppBreakpoints.isDesktop(context) ? 26 : 20),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.onSurface.withValues(
-                alpha: Theme.of(context).colorScheme.shadowLight,
-              ),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface.withValues(
+              alpha: Theme.of(context).colorScheme.surfaceHeavy,
             ),
-          ],
-        ),
-        child:
-            shouldShowPagination
-                ? _buildWithPagination(context)
-                : _buildNavOnly(context),
+            borderRadius: BorderRadius.circular(
+              shouldShowPagination
+                  ? (AppBreakpoints.isDesktop(context) ? 20 : 16)
+                  : (AppBreakpoints.isDesktop(context) ? 26 : 20),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).colorScheme.onSurface.withValues(
+                  alpha: Theme.of(context).colorScheme.shadowLight,
+                ),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child:
+              shouldShowPagination
+                  ? _buildWithPagination(context)
+                  : _buildNavOnly(context),
         ),
       ),
     );
@@ -207,9 +208,10 @@ class FloatingBottomBar extends StatelessWidget {
       children: [
         // Navigation row
         SizedBox(
-          height: AppBreakpoints.isDesktop(context)
-              ? 52
-              : AppBreakpoints.isTablet(context)
+          height:
+              AppBreakpoints.isDesktop(context)
+                  ? 52
+                  : AppBreakpoints.isTablet(context)
                   ? 48
                   : 40,
           child: Row(
@@ -376,42 +378,44 @@ class FloatingBottomBar extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: AppBreakpoints.isDesktop(context)
-              ? 20
-              : AppBreakpoints.isTablet(context)
-                  ? 18
-                  : 16,
-          vertical: AppBreakpoints.isDesktop(context)
-              ? 10
-              : AppBreakpoints.isTablet(context)
-                  ? 9
-                  : 8,
-        ),
-        decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? theme.colorScheme.primary.withValues(
-                    alpha: theme.colorScheme.overlayMedium,
-                  )
-                  : Colors.transparent,
-          borderRadius: BorderRadius.circular(borderRadius),
-        ),
-        child: Icon(
-          icon,
-          size: AppSizing.responsiveIconSize(
-            context,
-            mobile: 18,
-            tablet: 22,
-            desktop: 24,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal:
+                AppBreakpoints.isDesktop(context)
+                    ? 20
+                    : AppBreakpoints.isTablet(context)
+                    ? 18
+                    : 16,
+            vertical:
+                AppBreakpoints.isDesktop(context)
+                    ? 10
+                    : AppBreakpoints.isTablet(context)
+                    ? 9
+                    : 8,
           ),
-          color:
-              isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          decoration: BoxDecoration(
+            color:
+                isSelected
+                    ? theme.colorScheme.primary.withValues(
+                      alpha: theme.colorScheme.overlayMedium,
+                    )
+                    : Colors.transparent,
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
+          child: Icon(
+            icon,
+            size: AppSizing.responsiveIconSize(
+              context,
+              mobile: 18,
+              tablet: 22,
+              desktop: 24,
+            ),
+            color:
+                isSelected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ),

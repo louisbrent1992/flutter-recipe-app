@@ -57,6 +57,7 @@ class RecipeCard extends StatefulWidget {
 class _RecipeCardState extends State<RecipeCard> {
   bool _isShareLoading = false;
   bool _isRefreshingImage = false;
+  bool _isUpdatingDiscoverImage = false;  // Prevent duplicate requests
 
   @override
   void initState() {
@@ -112,8 +113,9 @@ class _RecipeCardState extends State<RecipeCard> {
           }
         }
 
-        // Update discover recipe if applicable
-        if (widget.recipe.id.isNotEmpty) {
+        // Update discover recipe if applicable (with deduplication)
+        if (widget.recipe.id.isNotEmpty && !_isUpdatingDiscoverImage) {
+          _isUpdatingDiscoverImage = true;
           try {
             await RecipeService.updateDiscoverRecipeImage(
               recipeId: widget.recipe.id,
@@ -121,6 +123,10 @@ class _RecipeCardState extends State<RecipeCard> {
             );
           } catch (_) {
             // Silently handle errors
+          } finally {
+            if (mounted) {
+              _isUpdatingDiscoverImage = false;
+            }
           }
         }
       }
@@ -1027,7 +1033,7 @@ Shared from Recipe App
               });
             },
           ),
-        if (widget.showRefreshButton)
+        if (widget.showRefreshButton || widget.recipe.id.isNotEmpty)
           PopupMenuItem(
             child: Row(
               children: [
@@ -1178,8 +1184,8 @@ Shared from Recipe App
                           // Swallow errors here to avoid surfacing a global error overlay
                         }
 
-                        // 2) Always update the discover record so future fetches use the new URL
-                        if (widget.recipe.id.isNotEmpty) {
+                        // 2) Update the discover record only if the URL has changed
+                        if (widget.recipe.id.isNotEmpty && url != widget.recipe.imageUrl) {
                           try {
                             await RecipeService.updateDiscoverRecipeImage(
                               recipeId: widget.recipe.id,

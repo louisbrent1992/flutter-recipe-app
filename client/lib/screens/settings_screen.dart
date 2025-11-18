@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/providers/auth_provider.dart';
 import '../providers/user_profile_provider.dart';
@@ -322,10 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             // Wait a moment for the notification to show, then navigate
             Future.delayed(const Duration(milliseconds: 500), () {
               if (navigatorKey.currentState != null) {
-                navigatorKey.currentState!.pushNamed(
-                  route,
-                  arguments: args,
-                );
+                navigatorKey.currentState!.pushNamed(route, arguments: args);
               } else {
                 // If navigator not ready, try again after a frame
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1413,9 +1409,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                         subtitle: 'Trigger the daily inspiration notification',
                         icon: Icons.notifications_active_rounded,
                         color: colorScheme.primary,
-                        onTap: () => _triggerTestNotification(
-                          AppNotificationCategory.dailyInspiration,
-                        ),
+                        onTap:
+                            () => _triggerTestNotification(
+                              AppNotificationCategory.dailyInspiration,
+                            ),
                       ),
 
                       SizedBox(height: AppSpacing.sm),
@@ -1425,9 +1422,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                         subtitle: 'Trigger the meal prep notification',
                         icon: Icons.lunch_dining_rounded,
                         color: colorScheme.primary,
-                        onTap: () => _triggerTestNotification(
-                          AppNotificationCategory.mealPrep,
-                        ),
+                        onTap:
+                            () => _triggerTestNotification(
+                              AppNotificationCategory.mealPrep,
+                            ),
                       ),
 
                       SizedBox(height: AppSpacing.sm),
@@ -1437,9 +1435,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                         subtitle: 'Trigger the seasonal notification',
                         icon: Icons.celebration_rounded,
                         color: colorScheme.primary,
-                        onTap: () => _triggerTestNotification(
-                          AppNotificationCategory.seasonal,
-                        ),
+                        onTap:
+                            () => _triggerTestNotification(
+                              AppNotificationCategory.seasonal,
+                            ),
                       ),
 
                       SizedBox(height: AppSpacing.sm),
@@ -1449,9 +1448,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                         subtitle: 'Trigger the quick meals notification',
                         icon: Icons.timer_rounded,
                         color: colorScheme.primary,
-                        onTap: () => _triggerTestNotification(
-                          AppNotificationCategory.quickMeals,
-                        ),
+                        onTap:
+                            () => _triggerTestNotification(
+                              AppNotificationCategory.quickMeals,
+                            ),
                       ),
 
                       SizedBox(height: AppSpacing.sm),
@@ -1461,9 +1461,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                         subtitle: 'Trigger the budget notification',
                         icon: Icons.savings_rounded,
                         color: colorScheme.primary,
-                        onTap: () => _triggerTestNotification(
-                          AppNotificationCategory.budget,
-                        ),
+                        onTap:
+                            () => _triggerTestNotification(
+                              AppNotificationCategory.budget,
+                            ),
                       ),
 
                       SizedBox(height: AppSpacing.sm),
@@ -1473,9 +1474,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                         subtitle: 'Trigger the keto notification',
                         icon: Icons.local_dining_rounded,
                         color: colorScheme.primary,
-                        onTap: () => _triggerTestNotification(
-                          AppNotificationCategory.keto,
-                        ),
+                        onTap:
+                            () => _triggerTestNotification(
+                              AppNotificationCategory.keto,
+                            ),
                       ),
                     ],
 

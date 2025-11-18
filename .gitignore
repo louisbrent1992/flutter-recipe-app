@@ -1,3 +1,7 @@
 # Start Generation Here
 .vscode/
 # End Generation Here
+
+# Ignore all markdown files in root except README.md
+/*.md
+!README.md
