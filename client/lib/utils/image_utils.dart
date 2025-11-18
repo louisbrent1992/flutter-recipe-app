@@ -25,19 +25,9 @@ class ImageUtils {
   }
 
   /// Get a fallback image URL when the original image fails to load
-  static String getFallbackImageUrl(String? originalUrl) {
-    if (originalUrl == null || originalUrl.isEmpty) {
-      return 'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Recipe+Image';
-    }
-
-    // If the original URL is already a placeholder, return it
-    if (originalUrl.contains('placeholder.com') ||
-        originalUrl.contains('via.placeholder.com')) {
-      return originalUrl;
-    }
-
-    // Return a placeholder image
-    return 'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Recipe+Image';
+  static String? getFallbackImageUrl(String? originalUrl) {
+    // Return null instead of placeholder - let the UI handle empty images
+    return null;
   }
 
   /// Check if an image URL is valid
@@ -57,23 +47,24 @@ class ImageUtils {
   static String getDefaultRecipeImage(String cuisineType) {
     final cuisine = cuisineType.toLowerCase();
 
+    // Use high-quality Unsplash images for different cuisine types
     switch (cuisine) {
       case 'italian':
-        return 'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Italian+Recipe';
+        return 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&q=80';
       case 'chinese':
-        return 'https://via.placeholder.com/400x300/4ECDC4/FFFFFF?text=Chinese+Recipe';
+        return 'https://images.unsplash.com/photo-1585032226651-759b368d7246?w=800&q=80';
       case 'mexican':
-        return 'https://via.placeholder.com/400x300/45B7D1/FFFFFF?text=Mexican+Recipe';
+        return 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&q=80';
       case 'indian':
-        return 'https://via.placeholder.com/400x300/96CEB4/FFFFFF?text=Indian+Recipe';
+        return 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&q=80';
       case 'japanese':
-        return 'https://via.placeholder.com/400x300/FFEAA7/000000?text=Japanese+Recipe';
+        return 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800&q=80';
       case 'french':
-        return 'https://via.placeholder.com/400x300/DDA0DD/FFFFFF?text=French+Recipe';
+        return 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=800&q=80';
       case 'mediterranean':
-        return 'https://via.placeholder.com/400x300/98D8C8/FFFFFF?text=Mediterranean+Recipe';
+        return 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&q=80';
       default:
-        return 'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Recipe+Image';
+        return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80';
     }
   }
 

@@ -187,7 +187,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     final cs = theme.colorScheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.blue.shade400, Colors.blue.shade600],
@@ -198,7 +198,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
@@ -206,17 +206,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             child: const Icon(
               Icons.rocket_launch,
               color: Colors.white,
-              size: 20,
+              size: 16,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Trial ends in $countdown',
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
@@ -231,12 +231,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           ElevatedButton(
             onPressed: () => _tabController.animateTo(0),
             style: ElevatedButton.styleFrom(
               backgroundColor: cs.onPrimary,
               foregroundColor: cs.primary,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
             child: const Text('Subscribe'),
           ),

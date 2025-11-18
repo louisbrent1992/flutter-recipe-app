@@ -11,6 +11,7 @@ import '../utils/image_utils.dart';
 import 'smart_recipe_image.dart';
 import '../services/google_image_service.dart';
 import '../services/collection_service.dart';
+import '../services/debug_settings.dart';
 import '../models/recipe_collection.dart';
 
 class RecipeCard extends StatefulWidget {
@@ -58,6 +59,7 @@ class _RecipeCardState extends State<RecipeCard> {
   bool _isShareLoading = false;
   bool _isRefreshingImage = false;
   bool _isUpdatingDiscoverImage = false;  // Prevent duplicate requests
+  final _debugSettings = DebugSettings();
 
   @override
   void initState() {
@@ -113,8 +115,8 @@ class _RecipeCardState extends State<RecipeCard> {
           }
         }
 
-        // Update discover recipe if applicable (debug mode only, with deduplication)
-        if (kDebugMode && widget.recipe.id.isNotEmpty && !_isUpdatingDiscoverImage) {
+        // Update discover recipe if applicable (debug features enabled only, with deduplication)
+        if (_debugSettings.shouldShowDebugFeature() && widget.recipe.id.isNotEmpty && !_isUpdatingDiscoverImage) {
           _isUpdatingDiscoverImage = true;
           try {
             await RecipeService.updateDiscoverRecipeImage(
@@ -1033,8 +1035,8 @@ Shared from Recipe App
               });
             },
           ),
-        // Only show Refresh Image in debug mode
-        if (kDebugMode && (widget.showRefreshButton || widget.recipe.id.isNotEmpty))
+        // Only show Refresh Image when debug features are enabled
+        if (_debugSettings.shouldShowDebugFeature() && (widget.showRefreshButton || widget.recipe.id.isNotEmpty))
           PopupMenuItem(
             child: Row(
               children: [
@@ -1140,8 +1142,8 @@ Shared from Recipe App
                             }
                           }
                         } catch (_) {}
-                        // Only update discover recipes in debug mode
-                        if (kDebugMode && widget.recipe.id.isNotEmpty) {
+                        // Only update discover recipes when debug features are enabled
+                        if (_debugSettings.shouldShowDebugFeature() && widget.recipe.id.isNotEmpty) {
                           try {
                             await RecipeService.updateDiscoverRecipeImage(
                               recipeId: widget.recipe.id,
@@ -1186,8 +1188,8 @@ Shared from Recipe App
                           // Swallow errors here to avoid surfacing a global error overlay
                         }
 
-                        // 2) Update the discover record only in debug mode and if URL has changed
-                        if (kDebugMode && widget.recipe.id.isNotEmpty && url != widget.recipe.imageUrl) {
+                        // 2) Update the discover record only when debug features enabled and if URL has changed
+                        if (_debugSettings.shouldShowDebugFeature() && widget.recipe.id.isNotEmpty && url != widget.recipe.imageUrl) {
                           try {
                             await RecipeService.updateDiscoverRecipeImage(
                               recipeId: widget.recipe.id,

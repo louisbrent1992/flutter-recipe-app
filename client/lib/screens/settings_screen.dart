@@ -16,6 +16,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import '../services/image_resolver_cache.dart';
 import '../utils/image_utils.dart';
 import '../services/notification_scheduler.dart';
+import '../services/debug_settings.dart';
 import '../main.dart' show navigatorKey;
 
 class SettingsScreen extends StatefulWidget {
@@ -35,6 +36,10 @@ class _SettingsScreenState extends State<SettingsScreen>
   final User? user = FirebaseAuth.instance.currentUser;
   late AnimationController _animationController;
   final ScrollController _scrollController = ScrollController();
+  
+  // Debug settings
+  bool _debugFeaturesEnabled = false;
+  final _debugSettings = DebugSettings();
 
   // Store original values when entering edit mode
   String? _originalName;
@@ -82,7 +87,18 @@ class _SettingsScreenState extends State<SettingsScreen>
     // Schedule the profile loading for the next frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadProfile();
+      _loadDebugSettings();
     });
+  }
+  
+  Future<void> _loadDebugSettings() async {
+    if (!kDebugMode) return;
+    await _debugSettings.init();
+    if (mounted) {
+      setState(() {
+        _debugFeaturesEnabled = _debugSettings.isDebugEnabled;
+      });
+    }
   }
 
   @override
@@ -1184,40 +1200,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                       onTap: () => Navigator.pushNamed(context, '/discover'),
                     ),
 
-                    // Only show image refresh in production mode
-                    if (!kDebugMode) ...[
-                      SizedBox(height: AppSpacing.md),
-                      _buildImageRefreshTile(colorScheme),
-                    ],
-
-                    // Storage & Cache
-                    SizedBox(height: AppSpacing.xxl),
-                    const Divider(height: 1, thickness: 0.1),
-                    SizedBox(height: AppSpacing.md),
-                    _buildSectionHeader(
-                      title: 'Storage & Cache',
-                      icon: Icons.delete_sweep_rounded,
-                      colorScheme: colorScheme,
-                    ),
-                    SizedBox(height: AppSpacing.md),
-                    _buildAnimatedListTile(
-                      title: 'Clear Image Cache',
-                      subtitle:
-                          'Remove cached image resolutions to force fresh fetch',
-                      icon: Icons.delete_sweep_rounded,
-                      color: Theme.of(context).colorScheme.error,
-                      onTap: () async {
-                        final removed = await ImageResolverCache.clearAll();
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Cleared $removed cached images'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      },
-                    ),
 
                     SizedBox(height: AppSpacing.xxl),
                     const Divider(height: 1, thickness: 0.1),
@@ -1395,90 +1377,164 @@ class _SettingsScreenState extends State<SettingsScreen>
                       SizedBox(height: AppSpacing.xxl),
                       const Divider(height: 1, thickness: 0.1),
                       SizedBox(height: AppSpacing.md),
-
-                      _buildSectionHeader(
-                        title: 'Debug Tools',
-                        icon: Icons.bug_report_rounded,
-                        colorScheme: colorScheme,
+                      
+                      // Debug Features Toggle
+                      _buildAnimatedSwitchTile(
+                        title: 'Enable Debug Features',
+                        subtitle: 'Show debug-only features like Refresh Image',
+                        value: _debugFeaturesEnabled,
+                        onChanged: (value) async {
+                          await _debugSettings.setDebugEnabled(value);
+                          if (mounted) {
+                            setState(() {
+                              _debugFeaturesEnabled = value;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  value
+                                      ? 'Debug features enabled'
+                                      : 'Debug features disabled',
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                        icon: Icons.developer_mode_rounded,
+                        color: Colors.deepPurple,
                       ),
+                      
+                      // Show Developer Tools section only when debug features enabled
+                      if (_debugFeaturesEnabled) ...[
+                        SizedBox(height: AppSpacing.md),
+                        const Divider(height: 1, thickness: 0.1),
+                        SizedBox(height: AppSpacing.md),
 
-                      SizedBox(height: AppSpacing.md),
+                        _buildSectionHeader(
+                          title: 'Developer Tools',
+                          icon: Icons.code_rounded,
+                          colorScheme: colorScheme,
+                        ),
 
-                      _buildAnimatedListTile(
-                        title: 'Test Daily Inspiration',
-                        subtitle: 'Trigger the daily inspiration notification',
-                        icon: Icons.notifications_active_rounded,
-                        color: colorScheme.primary,
-                        onTap:
-                            () => _triggerTestNotification(
-                              AppNotificationCategory.dailyInspiration,
-                            ),
-                      ),
+                        SizedBox(height: AppSpacing.md),
 
-                      SizedBox(height: AppSpacing.sm),
+                        // Bulk Image Refresh
+                        _buildImageRefreshTile(colorScheme),
 
-                      _buildAnimatedListTile(
-                        title: 'Test Meal Prep',
-                        subtitle: 'Trigger the meal prep notification',
-                        icon: Icons.lunch_dining_rounded,
-                        color: colorScheme.primary,
-                        onTap:
-                            () => _triggerTestNotification(
-                              AppNotificationCategory.mealPrep,
-                            ),
-                      ),
+                        SizedBox(height: AppSpacing.sm),
 
-                      SizedBox(height: AppSpacing.sm),
+                        // Clear Image Cache
+                        _buildAnimatedListTile(
+                          title: 'Clear Image Cache',
+                          subtitle: 'Remove cached image resolutions to force fresh fetch',
+                          icon: Icons.delete_sweep_rounded,
+                          color: colorScheme.error,
+                          onTap: () async {
+                            final removed = await ImageResolverCache.clearAll();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Cleared $removed cached images'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          },
+                        ),
 
-                      _buildAnimatedListTile(
-                        title: 'Test Seasonal',
-                        subtitle: 'Trigger the seasonal notification',
-                        icon: Icons.celebration_rounded,
-                        color: colorScheme.primary,
-                        onTap:
-                            () => _triggerTestNotification(
-                              AppNotificationCategory.seasonal,
-                            ),
-                      ),
+                        SizedBox(height: AppSpacing.md),
+                        const Divider(height: 1, thickness: 0.1),
+                        SizedBox(height: AppSpacing.sm),
 
-                      SizedBox(height: AppSpacing.sm),
+                        // Notification Tests Section Header
+                        Text(
+                          'Test Notifications',
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
 
-                      _buildAnimatedListTile(
-                        title: 'Test Quick Meals',
-                        subtitle: 'Trigger the quick meals notification',
-                        icon: Icons.timer_rounded,
-                        color: colorScheme.primary,
-                        onTap:
-                            () => _triggerTestNotification(
-                              AppNotificationCategory.quickMeals,
-                            ),
-                      ),
+                        SizedBox(height: AppSpacing.sm),
 
-                      SizedBox(height: AppSpacing.sm),
+                        _buildAnimatedListTile(
+                          title: 'Test Daily Inspiration',
+                          subtitle: 'Trigger the daily inspiration notification',
+                          icon: Icons.notifications_active_rounded,
+                          color: colorScheme.primary,
+                          onTap:
+                              () => _triggerTestNotification(
+                                AppNotificationCategory.dailyInspiration,
+                              ),
+                        ),
 
-                      _buildAnimatedListTile(
-                        title: 'Test Budget',
-                        subtitle: 'Trigger the budget notification',
-                        icon: Icons.savings_rounded,
-                        color: colorScheme.primary,
-                        onTap:
-                            () => _triggerTestNotification(
-                              AppNotificationCategory.budget,
-                            ),
-                      ),
+                        SizedBox(height: AppSpacing.sm),
 
-                      SizedBox(height: AppSpacing.sm),
+                        _buildAnimatedListTile(
+                          title: 'Test Meal Prep',
+                          subtitle: 'Trigger the meal prep notification',
+                          icon: Icons.lunch_dining_rounded,
+                          color: colorScheme.primary,
+                          onTap:
+                              () => _triggerTestNotification(
+                                AppNotificationCategory.mealPrep,
+                              ),
+                        ),
 
-                      _buildAnimatedListTile(
-                        title: 'Test Keto',
-                        subtitle: 'Trigger the keto notification',
-                        icon: Icons.local_dining_rounded,
-                        color: colorScheme.primary,
-                        onTap:
-                            () => _triggerTestNotification(
-                              AppNotificationCategory.keto,
-                            ),
-                      ),
+                        SizedBox(height: AppSpacing.sm),
+
+                        _buildAnimatedListTile(
+                          title: 'Test Seasonal',
+                          subtitle: 'Trigger the seasonal notification',
+                          icon: Icons.celebration_rounded,
+                          color: colorScheme.primary,
+                          onTap:
+                              () => _triggerTestNotification(
+                                AppNotificationCategory.seasonal,
+                              ),
+                        ),
+
+                        SizedBox(height: AppSpacing.sm),
+
+                        _buildAnimatedListTile(
+                          title: 'Test Quick Meals',
+                          subtitle: 'Trigger the quick meals notification',
+                          icon: Icons.timer_rounded,
+                          color: colorScheme.primary,
+                          onTap:
+                              () => _triggerTestNotification(
+                                AppNotificationCategory.quickMeals,
+                              ),
+                        ),
+
+                        SizedBox(height: AppSpacing.sm),
+
+                        _buildAnimatedListTile(
+                          title: 'Test Budget',
+                          subtitle: 'Trigger the budget notification',
+                          icon: Icons.savings_rounded,
+                          color: colorScheme.primary,
+                          onTap:
+                              () => _triggerTestNotification(
+                                AppNotificationCategory.budget,
+                              ),
+                        ),
+
+                        SizedBox(height: AppSpacing.sm),
+
+                        _buildAnimatedListTile(
+                          title: 'Test Keto',
+                          subtitle: 'Trigger the keto notification',
+                          icon: Icons.local_dining_rounded,
+                          color: colorScheme.primary,
+                          onTap:
+                              () => _triggerTestNotification(
+                                AppNotificationCategory.keto,
+                              ),
+                        ),
+                      ],
                     ],
 
                     SizedBox(height: AppSpacing.xxl),

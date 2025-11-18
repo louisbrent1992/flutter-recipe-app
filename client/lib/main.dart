@@ -47,6 +47,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'dart:convert';
 import 'package:recipease/services/notification_scheduler.dart';
 import 'package:recipease/services/game_center_service.dart';
+import 'package:recipease/services/debug_settings.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -140,6 +141,9 @@ void main() async {
 
   await Hive.initFlutter();
   await Hive.openBox('preferences');
+
+  // Initialize Debug Settings (only in debug mode)
+  await DebugSettings().init();
 
   // Initialize Game Center (iOS only, fails silently on other platforms)
   try {

@@ -48,6 +48,27 @@ A comprehensive overview of all features available in the RecipEase Kitchen App.
 - **Daily Recipe Inspiration**: Receive handpicked recipes daily
 - **Refresh & Randomize**: Refresh search results or randomize for new discoveries
 
+### Community Screen (Planned)
+- **User-Generated Content Feed**: Browse recipes imported/created by other users
+- **Creator Attribution**: 
+  - Display username/avatar of recipe creator
+  - Link to creator's profile or other recipes
+- **Social Engagement**: 
+  - See what the community is cooking
+  - Discover trending imports from TikTok, Instagram, YouTube
+  - Popular user-generated recipes
+- **Community Filters**: 
+  - Sort by recent, trending, most saved
+  - Filter by import source (TikTok, Instagram, YouTube, etc.)
+  - Filter by cuisine type or dietary tags
+- **Engagement Metrics**: 
+  - Number of saves
+  - Creation date
+  - Optional: Comments and ratings
+- **Privacy Controls**: 
+  - Users can choose to share their imports publicly or keep private
+  - Opt-in community participation
+
 ---
 
 ## 📚 Recipe Management & Organization
@@ -255,6 +276,7 @@ A comprehensive overview of all features available in the RecipEase Kitchen App.
   - My Recipes
   - Generate
   - Settings
+  - Community (Planned)
 - **Deep Linking**: Navigate directly to recipes, collections, or discovery screens
 - **Context Menus**: 
   - Long-press context menus on recipe cards
@@ -373,12 +395,13 @@ A comprehensive overview of all features available in the RecipEase Kitchen App.
 
 1. **AI-Powered Generation**: Create unique recipes tailored to your preferences
 2. **Social Media Integration**: Seamlessly import recipes from popular platforms
-3. **Smart Collections**: Intelligent organization with automatic categorization
-4. **Flexible Pricing**: Free tier, one-time purchases, and subscription options
-5. **Dynamic UI**: Server-controlled updates without app releases
-6. **Comprehensive Discovery**: Advanced search and filtering capabilities
-7. **Cross-Platform**: Full feature parity across iOS and Android
-8. **User-Friendly**: Intuitive interface with responsive design
+3. **Community Feed** (Planned): Discover what other users are cooking and importing
+4. **Smart Collections**: Intelligent organization with automatic categorization
+5. **Flexible Pricing**: Free tier, one-time purchases, and subscription options
+6. **Dynamic UI**: Server-controlled updates without app releases
+7. **Comprehensive Discovery**: Advanced search and filtering capabilities
+8. **Cross-Platform**: Full feature parity across iOS and Android
+9. **User-Friendly**: Intuitive interface with responsive design
 
 ---
 
