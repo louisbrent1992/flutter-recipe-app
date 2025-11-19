@@ -143,7 +143,6 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
         await LoadingDialogHelper.show(
           context,
           message: 'Importing Recipe',
-          icon: Icons.cloud_download_rounded,
         );
       }
       

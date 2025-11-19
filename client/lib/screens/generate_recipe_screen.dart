@@ -120,7 +120,6 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
         await LoadingDialogHelper.show(
           context,
           message: 'Generating Recipes',
-          icon: Icons.auto_awesome_rounded,
         );
       }
 
