@@ -20,7 +20,7 @@ class ApiClient {
   final String port = '8080';
 
   /// Base URL for API requests
-  /// Uses development server in debug mode on desktop/web, production server on mobile devices
+  /// Uses development server in debug mode, production server in release mode
   String get baseUrl {
     final String productionUrl =
         'https://recipease-app-server-826154873845.us-west2.run.app/api';
@@ -29,12 +29,8 @@ class ApiClient {
             ? 'http://10.0.2.2:$port/api'
             : 'http://localhost:$port/api';
 
-    // On mobile devices (Android/iOS), always use production URL
-    // On desktop/web, use development URL in debug mode
-    if (Platform.isAndroid || Platform.isIOS) {
-      return productionUrl;
-    }
-
+    // In debug mode, use local development server
+    // In release mode, use production server
     return kDebugMode ? developmentUrl : productionUrl;
   }
 
