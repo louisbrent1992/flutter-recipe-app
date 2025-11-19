@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import 'package:recipease/providers/recipe_provider.dart';
@@ -9,6 +8,8 @@ import 'package:recipease/components/checkbox_list.dart';
 import 'package:recipease/theme/theme.dart';
 import '../components/error_display.dart';
 import '../utils/snackbar_helper.dart';
+import '../utils/loading_dialog_helper.dart';
+import '../utils/error_utils.dart';
 
 class GenerateRecipeScreen extends StatefulWidget {
   const GenerateRecipeScreen({super.key});
@@ -114,37 +115,12 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
     }
 
     try {
-      // Show enhanced loading overlay
+      // Show loading dialog
       if (context.mounted) {
-        showGeneralDialog(
-          context: context,
-          barrierLabel: 'Generating Recipes',
-          barrierColor: Colors.black.withValues(alpha: 0.25),
-          barrierDismissible: false,
-          transitionDuration: const Duration(milliseconds: 220),
-          pageBuilder: (context, animation, secondaryAnimation) {
-            return const SizedBox.shrink();
-          },
-          transitionBuilder: (context, animation, secondaryAnimation, child) {
-            final curved = CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-              reverseCurve: Curves.easeInCubic,
-            );
-            return BackdropFilter(
-              filter: ImageFilter.blur(
-                sigmaX: 8.0 * curved.value,
-                sigmaY: 8.0 * curved.value,
-              ),
-              child: Opacity(
-                opacity: animation.value,
-                child: Transform.scale(
-                  scale: 0.98 + 0.02 * curved.value,
-                  child: Center(child: _GeneratingRecipesDialog()),
-                ),
-              ),
-            );
-          },
+        await LoadingDialogHelper.show(
+          context,
+          message: 'Generating Recipes',
+          icon: Icons.auto_awesome_rounded,
         );
       }
 
@@ -156,7 +132,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
 
       // Close loading dialog
       if (context.mounted) {
-        Navigator.pop(context);
+        LoadingDialogHelper.dismiss(context);
       }
 
       if (context.mounted && recipeProvider.generatedRecipes.isNotEmpty) {
@@ -199,18 +175,12 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
           builder:
               (context) => ErrorDisplay(
                 message:
-                    e.toString().contains('Connection error')
+                    ErrorUtils.isNetworkError(e.toString())
                         ? 'Unable to connect to server. Please check your internet connection.'
                         : 'Error generating recipes: ${e.toString()}',
-                isNetworkError:
-                    e.toString().toLowerCase().contains('connection') ||
-                    e.toString().toLowerCase().contains('network'),
-                isAuthError:
-                    e.toString().toLowerCase().contains('auth') ||
-                    e.toString().toLowerCase().contains('login'),
-                isFormatError:
-                    e.toString().toLowerCase().contains('format') ||
-                    e.toString().toLowerCase().contains('parse'),
+                isNetworkError: ErrorUtils.isNetworkError(e.toString()),
+                isAuthError: ErrorUtils.isAuthError(e.toString()),
+                isFormatError: ErrorUtils.isFormatError(e.toString()),
                 onRetry: () {
                   Navigator.pop(context);
                   _loadRecipes(context);
@@ -1079,205 +1049,4 @@ class _BackgroundPatternPainter extends CustomPainter {
   @override
   bool shouldRepaint(_BackgroundPatternPainter oldDelegate) =>
       color != oldDelegate.color;
-}
-
-class _GeneratingRecipesDialog extends StatefulWidget {
-  const _GeneratingRecipesDialog();
-
-  @override
-  State<_GeneratingRecipesDialog> createState() =>
-      _GeneratingRecipesDialogState();
-}
-
-class _GeneratingRecipesDialogState extends State<_GeneratingRecipesDialog>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _pulse;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat(reverse: true);
-    _pulse = Tween<double>(
-      begin: 0.96,
-      end: 1.04,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    return Material(
-      type: MaterialType.transparency,
-      child: ScaleTransition(
-        scale: _pulse,
-        child: Container(
-          margin: EdgeInsets.symmetric(
-            horizontal:
-                AppBreakpoints.isDesktop(context)
-                    ? 32
-                    : AppBreakpoints.isTablet(context)
-                    ? 28
-                    : 24,
-          ),
-          padding: EdgeInsets.symmetric(
-            horizontal:
-                AppBreakpoints.isDesktop(context)
-                    ? 28
-                    : AppBreakpoints.isTablet(context)
-                    ? 24
-                    : 20,
-            vertical:
-                AppBreakpoints.isDesktop(context)
-                    ? 28
-                    : AppBreakpoints.isTablet(context)
-                    ? 24
-                    : 20,
-          ),
-          constraints: BoxConstraints(
-            maxWidth:
-                AppBreakpoints.isDesktop(context)
-                    ? 440
-                    : AppBreakpoints.isTablet(context)
-                    ? 400
-                    : 360,
-          ),
-          decoration: BoxDecoration(
-            color:
-                theme.brightness == Brightness.dark
-                    ? cs.surfaceContainerHigh.withValues(alpha: 0.9)
-                    : cs.surface.withValues(alpha: 0.95),
-            borderRadius: BorderRadius.circular(
-              AppBreakpoints.isDesktop(context)
-                  ? 24
-                  : AppBreakpoints.isTablet(context)
-                  ? 22
-                  : 20,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius:
-                    AppBreakpoints.isDesktop(context)
-                        ? 32
-                        : AppBreakpoints.isTablet(context)
-                        ? 28
-                        : 24,
-                offset: Offset(
-                  0,
-                  AppBreakpoints.isDesktop(context)
-                      ? 16
-                      : AppBreakpoints.isTablet(context)
-                      ? 14
-                      : 12,
-                ),
-              ),
-            ],
-            border: Border.all(
-              color: cs.primary.withValues(alpha: 0.12),
-              width: 1.2,
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: cs.primary.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _AnimatedDotsTitle(title: 'Generating Recipes'),
-              const SizedBox(height: 10),
-              Text(
-                'Whisking ideas, simmering flavors, and plating suggestions...',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: cs.onSurface.withValues(alpha: 0.7),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: LinearProgressIndicator(
-                  minHeight: 6,
-                  backgroundColor: cs.primary.withValues(alpha: 0.12),
-                  valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AnimatedDotsTitle extends StatefulWidget {
-  final String title;
-  const _AnimatedDotsTitle({required this.title});
-
-  @override
-  State<_AnimatedDotsTitle> createState() => _AnimatedDotsTitleState();
-}
-
-class _AnimatedDotsTitleState extends State<_AnimatedDotsTitle>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final t = (_controller.value * 3).floor();
-        final dots = ''.padRight((t % 3) + 1, '.');
-        return Text(
-          '${widget.title}$dots',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: cs.onSurface,
-          ),
-        );
-      },
-    );
-  }
 }

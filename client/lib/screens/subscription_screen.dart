@@ -11,6 +11,7 @@ import '../models/purchase_product.dart';
 import '../components/error_display.dart';
 import '../theme/theme.dart';
 import '../utils/snackbar_helper.dart';
+import '../utils/error_utils.dart';
 // import '../components/floating_bottom_bar.dart';
 
 class SubscriptionScreen extends StatefulWidget {
@@ -77,27 +78,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               if (subscriptionProvider.error != null) {
                 return ErrorDisplay(
                   message: subscriptionProvider.error!,
-                  isNetworkError:
-                      subscriptionProvider.error!.toLowerCase().contains(
-                        'network',
-                      ) ||
-                      subscriptionProvider.error!.toLowerCase().contains(
-                        'connection',
-                      ),
-                  isAuthError:
-                      subscriptionProvider.error!.toLowerCase().contains(
-                        'auth',
-                      ) ||
-                      subscriptionProvider.error!.toLowerCase().contains(
-                        'login',
-                      ),
-                  isFormatError:
-                      subscriptionProvider.error!.toLowerCase().contains(
-                        'format',
-                      ) ||
-                      subscriptionProvider.error!.toLowerCase().contains(
-                        'parse',
-                      ),
+                  isNetworkError: ErrorUtils.isNetworkError(
+                    subscriptionProvider.error!,
+                  ),
+                  isAuthError: ErrorUtils.isAuthError(
+                    subscriptionProvider.error!,
+                  ),
+                  isFormatError: ErrorUtils.isFormatError(
+                    subscriptionProvider.error!,
+                  ),
                   onRetry: () {
                     subscriptionProvider.reinitialize();
                   },
