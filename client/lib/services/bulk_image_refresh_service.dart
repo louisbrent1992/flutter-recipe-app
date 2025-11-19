@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import '../models/recipe.dart';
 import '../services/google_image_service.dart';
 import '../services/recipe_service.dart';
+import '../utils/image_validation_utils.dart';
 
 /// Progress callback that provides current progress, total count, and current recipe title
 typedef ProgressCallback =
@@ -13,33 +13,6 @@ typedef CompletionCallback = void Function(int totalFixed, int totalChecked);
 
 /// Service for bulk refreshing broken images in user's recipe collection
 class BulkImageRefreshService {
-  static const _imageUAHeaders = {
-    'User-Agent':
-        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 Safari/604.1',
-    'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-  };
-
-  /// Checks if an image URL is broken (returns 400, 403, or 404)
-  static Future<bool> _isImageBroken(String imageUrl) async {
-    try {
-      final uri = Uri.parse(imageUrl);
-      final response = await http
-          .head(uri, headers: _imageUAHeaders)
-          .timeout(
-            const Duration(seconds: 8),
-            onTimeout: () => http.Response('', 408),
-          );
-
-      // Consider 400, 403, 404 as broken images
-      return response.statusCode == 400 ||
-          response.statusCode == 403 ||
-          response.statusCode == 404;
-    } catch (e) {
-      // Network errors also indicate broken images
-      return true;
-    }
-  }
-
   /// Attempts to find a replacement image using Google Image Search
   static Future<String?> _findReplacementImage(String recipeTitle) async {
     try {
@@ -84,7 +57,10 @@ class BulkImageRefreshService {
 
       try {
         // Check if the current image is broken
-        final isBroken = await _isImageBroken(recipe.imageUrl);
+        final isBroken = await ImageValidationUtils.isImageBroken(
+          recipe.imageUrl,
+          timeout: const Duration(seconds: 8),
+        );
 
         if (isBroken) {
           if (kDebugMode) {

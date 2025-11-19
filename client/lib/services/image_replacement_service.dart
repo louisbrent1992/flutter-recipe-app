@@ -3,13 +3,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:http/http.dart' as http;
 import '../models/recipe.dart';
 import '../services/google_image_service.dart';
 import '../services/image_resolver_cache.dart';
+import '../utils/image_validation_utils.dart';
 
 class ImageReplacementService {
-  static const Duration _requestTimeout = Duration(seconds: 10);
 
   /// Pick an image from device and upload to Firebase Storage.
   static Future<String?> pickFromDeviceAndUpload(Recipe recipe) async {
@@ -50,21 +49,7 @@ class ImageReplacementService {
   /// Validate that a URL is an image and reachable.
   /// Blocks placeholder host, allows TikTok if it serves an actual image with image/* content-type.
   static Future<bool> validateImageUrl(String url) async {
-    try {
-      if (!url.startsWith('https://')) return false;
-      final uri = Uri.parse(url);
-      final host = uri.host.toLowerCase();
-      // Reject generic placeholders; allow others including TikTok if HEAD validates
-      if (host.contains('placeholder')) return false;
-      final head = await http
-          .head(uri)
-          .timeout(_requestTimeout, onTimeout: () => http.Response('', 408));
-      if (head.statusCode != 200) return false;
-      final ct = head.headers['content-type'] ?? '';
-      return ct.startsWith('image/');
-    } catch (e) {
-      return false;
-    }
+    return await ImageValidationUtils.validateImageUrl(url);
   }
 
   /// Try server-backed search for an image from recipe title.

@@ -8,6 +8,7 @@ import 'package:recipease/services/credits_service.dart';
 import 'package:recipease/components/checkbox_list.dart';
 import 'package:recipease/theme/theme.dart';
 import '../components/error_display.dart';
+import '../utils/snackbar_helper.dart';
 
 class GenerateRecipeScreen extends StatefulWidget {
   const GenerateRecipeScreen({super.key});
@@ -171,14 +172,9 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
 
         // Show success message
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Recipes generated successfully!',
-                
-              ),
-              backgroundColor: Colors.green,
-            ),
+          SnackBarHelper.showSuccess(
+            context,
+            'Recipes generated successfully!',
           );
 
           // Navigate to generated recipes screen
@@ -186,11 +182,9 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
         }
       } else if (context.mounted) {
         // Show error message if no recipes were generated
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No recipes were generated. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
+        SnackBarHelper.showError(
+          context,
+          'No recipes were generated. Please try again.',
         );
       }
     } catch (e) {
@@ -285,451 +279,189 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                       controller: _scrollController,
                       child: Padding(
                         padding: AppSpacing.allResponsive(context),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Main content section
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              SizedBox(height: size.height * 0.08),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Main content section
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                SizedBox(height: size.height * 0.08),
 
-                              // Decorative Icon
-                              FadeTransition(
-                                opacity: _fadeInAnimation,
-                                child: Container(
-                                  width: AppSizing.responsiveIconSize(
-                                    context,
-                                    mobile: 70,
-                                    tablet: 80,
-                                    desktop: 90,
-                                  ),
-                                  height: AppSizing.responsiveIconSize(
-                                    context,
-                                    mobile: 70,
-                                    tablet: 80,
-                                    desktop: 90,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.deepPurple.withAlpha(
-                                      77,
-                                    ), // 0.3 alpha
-                                    borderRadius: BorderRadius.circular(
-                                      AppBreakpoints.isMobile(context)
-                                          ? 16
-                                          : 20,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    Icons.auto_awesome_rounded,
-                                    size: AppSizing.responsiveIconSize(
+                                // Decorative Icon
+                                FadeTransition(
+                                  opacity: _fadeInAnimation,
+                                  child: Container(
+                                    width: AppSizing.responsiveIconSize(
                                       context,
-                                      mobile: 35,
-                                      tablet: 40,
-                                      desktop: 45,
+                                      mobile: 70,
+                                      tablet: 80,
+                                      desktop: 90,
                                     ),
-                                    color: Colors.deepPurple,
+                                    height: AppSizing.responsiveIconSize(
+                                      context,
+                                      mobile: 70,
+                                      tablet: 80,
+                                      desktop: 90,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.deepPurple.withAlpha(
+                                        77,
+                                      ), // 0.3 alpha
+                                      borderRadius: BorderRadius.circular(
+                                        AppBreakpoints.isMobile(context)
+                                            ? 16
+                                            : 20,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      Icons.auto_awesome_rounded,
+                                      size: AppSizing.responsiveIconSize(
+                                        context,
+                                        mobile: 35,
+                                        tablet: 40,
+                                        desktop: 45,
+                                      ),
+                                      color: Colors.deepPurple,
+                                    ),
                                   ),
                                 ),
-                              ),
 
-                              SizedBox(height: AppSpacing.lg),
+                                SizedBox(height: AppSpacing.lg),
 
-                              // Title animation
-                              FadeTransition(
-                                opacity: _fadeInAnimation,
-                                child: Text(
-                                  'Recipe Generator',
-                                  style: TextStyle(
-                                    fontSize:
-                                        AppTypography.responsiveHeadingSize(
-                                          context,
-                                          mobile: 26.0,
-                                          tablet: 32.0,
-                                          desktop: 36.0,
-                                        ),
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: -0.5,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-
-                              SizedBox(height: AppSpacing.md),
-
-                              // Subtitle animation with slight delay
-                              AnimatedBuilder(
-                                animation: _animationController,
-                                builder: (context, child) {
-                                  final progress =
-                                      (_animationController.value - 0.3) / 0.7;
-                                  final opacity = progress.clamp(0.0, 1.0);
-                                  final translateY = 30 * (1 - opacity);
-                                  return Opacity(
-                                    opacity: opacity,
-                                    child: Transform.translate(
-                                      offset: Offset(0, translateY),
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  padding: AppSpacing.horizontalResponsive(
-                                    context,
-                                  ),
+                                // Title animation
+                                FadeTransition(
+                                  opacity: _fadeInAnimation,
                                   child: Text(
-                                    'Enter your ingredients, dietary preferences, and cooking time to generate personalized recipes.',
+                                    'Recipe Generator',
                                     style: TextStyle(
                                       fontSize:
-                                          AppTypography.responsiveFontSize(
+                                          AppTypography.responsiveHeadingSize(
                                             context,
+                                            mobile: 26.0,
+                                            tablet: 32.0,
+                                            desktop: 36.0,
                                           ),
-                                      color: colorScheme.onSurface.withAlpha(
-                                        179,
-                                      ), // 0.7 alpha
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ),
-
-                              SizedBox(height: AppSpacing.xxl),
-
-                              // Ingredients Input field with animation
-                              AnimatedBuilder(
-                                animation: _animationController,
-                                builder: (context, child) {
-                                  final progress =
-                                      (_animationController.value - 0.4) / 0.6;
-                                  final opacity = progress.clamp(0.0, 1.0);
-                                  final translateY = 40 * (1 - opacity);
-                                  return Opacity(
-                                    opacity: opacity,
-                                    child: Transform.translate(
-                                      offset: Offset(0, translateY),
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(
-                                      AppBreakpoints.isMobile(context)
-                                          ? 12
-                                          : 16,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withAlpha(
-                                          20,
-                                        ), // 0.08 alpha
-                                        blurRadius:
-                                            AppBreakpoints.isMobile(context)
-                                                ? 15
-                                                : 20,
-                                        offset: const Offset(0, 5),
-                                      ),
-                                    ],
-                                  ),
-                                  child: TextField(
-                                    controller: _ingredientController,
-                                    decoration: InputDecoration(
-                                      hintText: 'gluten-free, chicken, eggs',
-                                      labelText: 'Enter ingredients',
-                                      hintStyle: TextStyle(
-                                        color: colorScheme.onSurface,
-                                        fontSize:
-                                            AppTypography.responsiveFontSize(
-                                              context,
-                                            ),
-                                      ),
-                                      labelStyle: TextStyle(
-                                        color: colorScheme.onSurface,
-                                        fontSize:
-                                            AppTypography.responsiveFontSize(
-                                              context,
-                                            ),
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          AppBreakpoints.isMobile(context)
-                                              ? 12
-                                              : 16,
-                                        ),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      filled: true,
-                                      fillColor:
-                                          theme.brightness == Brightness.dark
-                                              ? colorScheme
-                                                  .surfaceContainerHighest
-                                                  .withAlpha(
-                                                    64,
-                                                  ) // Using surfaceContainerHighest as fallback
-                                              : Theme.of(
-                                                context,
-                                              ).colorScheme.surface.withValues(
-                                                alpha:
-                                                    Theme.of(
-                                                      context,
-                                                    ).colorScheme.alphaVeryHigh,
-                                              ),
-                                      prefixIcon: Icon(
-                                        Icons.restaurant_rounded,
-                                        color: colorScheme.primary,
-                                        size: AppSizing.responsiveIconSize(
-                                          context,
-                                          mobile: 20,
-                                          tablet: 22,
-                                          desktop: 24,
-                                        ),
-                                      ),
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          Icons.add_circle_rounded,
-                                          size: AppSizing.responsiveIconSize(
-                                            context,
-                                            mobile: 20,
-                                            tablet: 22,
-                                            desktop: 24,
-                                          ),
-                                          color: colorScheme.primary,
-                                        ),
-                                        onPressed: _addIngredient,
-                                      ),
-                                      contentPadding: EdgeInsets.symmetric(
-                                        vertical: AppSpacing.lg,
-                                        horizontal: AppSpacing.md,
-                                      ),
-                                      floatingLabelBehavior:
-                                          FloatingLabelBehavior.never,
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          AppBreakpoints.isMobile(context)
-                                              ? 12
-                                              : 16,
-                                        ),
-                                        borderSide: BorderSide(
-                                          color: colorScheme.outline.withAlpha(
-                                            26,
-                                          ), // 0.1 alpha
-                                          width: 1.0,
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          AppBreakpoints.isMobile(context)
-                                              ? 12
-                                              : 16,
-                                        ),
-                                        borderSide: BorderSide(
-                                          color: colorScheme.primary.withAlpha(
-                                            128,
-                                          ), // 0.5 alpha
-                                          width: 2.0,
-                                        ),
-                                      ),
-                                    ),
-                                    onSubmitted: (value) => _addIngredient(),
-                                    onChanged: (value) => setState(() {}),
-                                    style: TextStyle(
-                                      fontSize:
-                                          AppTypography.responsiveFontSize(
-                                            context,
-                                          ),
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: -0.5,
                                       color: colorScheme.onSurface,
                                     ),
                                   ),
                                 ),
-                              ),
 
-                              // Ingredients chips
-                              if (_ingredients.isNotEmpty) ...[
                                 SizedBox(height: AppSpacing.md),
+
+                                // Subtitle animation with slight delay
                                 AnimatedBuilder(
                                   animation: _animationController,
                                   builder: (context, child) {
                                     final progress =
-                                        (_animationController.value - 0.5) /
-                                        0.5;
+                                        (_animationController.value - 0.3) /
+                                        0.7;
                                     final opacity = progress.clamp(0.0, 1.0);
+                                    final translateY = 30 * (1 - opacity);
                                     return Opacity(
                                       opacity: opacity,
-                                      child: child,
+                                      child: Transform.translate(
+                                        offset: Offset(0, translateY),
+                                        child: child,
+                                      ),
                                     );
                                   },
-                                  child: Wrap(
-                                    spacing: 8.0,
-                                    runSpacing: 8.0,
-                                    children:
-                                        _ingredients
-                                            .map(
-                                              (ingredient) => Chip(
-                                                label: Text(
-                                                  ingredient,
-                                                  style: TextStyle(
-                                                    fontSize:
-                                                        AppTypography.responsiveFontSize(
-                                                          context,
-                                                          mobile: 12.0,
-                                                          tablet: 14.0,
-                                                          desktop: 16.0,
-                                                        ),
-                                                  ),
-                                                ),
-                                                backgroundColor: colorScheme
-                                                    .primary
-                                                    .withAlpha(26), // 0.1 alpha
-                                                deleteIcon: Icon(
-                                                  Icons.close,
-                                                  size:
-                                                      AppSizing.responsiveIconSize(
-                                                        context,
-                                                        mobile: 16,
-                                                        tablet: 18,
-                                                        desktop: 20,
-                                                      ),
-                                                ),
-                                                onDeleted: () {
-                                                  setState(() {
-                                                    _ingredients.remove(
-                                                      ingredient,
-                                                    );
-                                                  });
-                                                },
-                                              ),
-                                            )
-                                            .toList(),
+                                  child: Container(
+                                    padding: AppSpacing.horizontalResponsive(
+                                      context,
+                                    ),
+                                    child: Text(
+                                      'Enter your ingredients, dietary preferences, and cooking time to generate personalized recipes.',
+                                      style: TextStyle(
+                                        fontSize:
+                                            AppTypography.responsiveFontSize(
+                                              context,
+                                            ),
+                                        color: colorScheme.onSurface.withAlpha(
+                                          179,
+                                        ), // 0.7 alpha
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
                                   ),
                                 ),
-                              ],
 
-                              SizedBox(height: AppSpacing.lg),
+                                SizedBox(height: AppSpacing.xxl),
 
-                              // Dietary Preferences with animation
-                              AnimatedBuilder(
-                                animation: _animationController,
-                                builder: (context, child) {
-                                  final progress =
-                                      (_animationController.value - 0.6) / 0.4;
-                                  final opacity = progress.clamp(0.0, 1.0);
-                                  final translateY = 20 * (1 - opacity);
-                                  return Opacity(
-                                    opacity: opacity,
-                                    child: Transform.translate(
-                                      offset: Offset(0, translateY),
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Dietary Preferences:',
-                                      style: TextStyle(
-                                        fontSize:
-                                            AppTypography.responsiveHeadingSize(
-                                              context,
-                                              mobile: 18.0,
-                                              tablet: 20.0,
-                                              desktop: 22.0,
-                                            ),
-                                        fontWeight: FontWeight.bold,
-                                        color: colorScheme.onSurface,
+                                // Ingredients Input field with animation
+                                AnimatedBuilder(
+                                  animation: _animationController,
+                                  builder: (context, child) {
+                                    final progress =
+                                        (_animationController.value - 0.4) /
+                                        0.6;
+                                    final opacity = progress.clamp(0.0, 1.0);
+                                    final translateY = 40 * (1 - opacity);
+                                    return Opacity(
+                                      opacity: opacity,
+                                      child: Transform.translate(
+                                        offset: Offset(0, translateY),
+                                        child: child,
                                       ),
-                                    ),
-                                    SizedBox(height: AppSpacing.sm),
-                                    Container(
-                                      width: double.infinity,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                          AppBreakpoints.isMobile(context)
-                                              ? 12
-                                              : 16,
+                                    );
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(
+                                        AppBreakpoints.isMobile(context)
+                                            ? 12
+                                            : 16,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withAlpha(
+                                            20,
+                                          ), // 0.08 alpha
+                                          blurRadius:
+                                              AppBreakpoints.isMobile(context)
+                                                  ? 15
+                                                  : 20,
+                                          offset: const Offset(0, 5),
                                         ),
-                                        color:
-                                            theme.brightness == Brightness.dark
-                                                ? colorScheme
-                                                    .surfaceContainerHighest
-                                                    .withAlpha(64)
-                                                : Theme.of(
-                                                  context,
-                                                ).colorScheme.surface,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withAlpha(20),
-                                            blurRadius:
-                                                AppBreakpoints.isMobile(context)
-                                                    ? 15
-                                                    : 20,
-                                            offset: const Offset(0, 5),
+                                      ],
+                                    ),
+                                    child: TextField(
+                                      controller: _ingredientController,
+                                      decoration: InputDecoration(
+                                        hintText: 'gluten-free, chicken, eggs',
+                                        labelText: 'Enter ingredients',
+                                        hintStyle: TextStyle(
+                                          color: colorScheme.onSurface,
+                                          fontSize:
+                                              AppTypography.responsiveFontSize(
+                                                context,
+                                              ),
+                                        ),
+                                        labelStyle: TextStyle(
+                                          color: colorScheme.onSurface,
+                                          fontSize:
+                                              AppTypography.responsiveFontSize(
+                                                context,
+                                              ),
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            AppBreakpoints.isMobile(context)
+                                                ? 12
+                                                : 16,
                                           ),
-                                        ],
-                                      ),
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: AppSpacing.md,
-                                        vertical: AppSpacing.sm,
-                                      ),
-                                      child: DietaryPreferenceCheckboxList(
-                                        label: 'Select Preferences',
-                                        selectedPreferences:
-                                            _dietaryRestrictions,
-                                        onChanged: _handleDietaryPreferences,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              SizedBox(height: AppSpacing.lg),
-
-                              // Cuisine Type with animation
-                              AnimatedBuilder(
-                                animation: _animationController,
-                                builder: (context, child) {
-                                  final progress =
-                                      (_animationController.value - 0.7) / 0.3;
-                                  final opacity = progress.clamp(0.0, 1.0);
-                                  final translateY = 20 * (1 - opacity);
-                                  return Opacity(
-                                    opacity: opacity,
-                                    child: Transform.translate(
-                                      offset: Offset(0, translateY),
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Cuisine Type:',
-                                      style: TextStyle(
-                                        fontSize:
-                                            AppTypography.responsiveHeadingSize(
-                                              context,
-                                              mobile: 18.0,
-                                              tablet: 20.0,
-                                              desktop: 22.0,
-                                            ),
-                                        fontWeight: FontWeight.bold,
-                                        color: colorScheme.onSurface,
-                                      ),
-                                    ),
-                                    SizedBox(height: AppSpacing.sm),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                          AppBreakpoints.isMobile(context)
-                                              ? 12
-                                              : 16,
+                                          borderSide: BorderSide.none,
                                         ),
-                                        color:
+                                        filled: true,
+                                        fillColor:
                                             theme.brightness == Brightness.dark
                                                 ? colorScheme
                                                     .surfaceContainerHighest
-                                                    .withAlpha(64)
+                                                    .withAlpha(
+                                                      64,
+                                                    ) // Using surfaceContainerHighest as fallback
                                                 : Theme.of(context)
                                                     .colorScheme
                                                     .surface
@@ -739,111 +471,161 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                                               .colorScheme
                                                               .alphaVeryHigh,
                                                     ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withAlpha(20),
-                                            blurRadius:
-                                                AppBreakpoints.isMobile(context)
-                                                    ? 15
-                                                    : 20,
-                                            offset: const Offset(0, 5),
+                                        prefixIcon: Icon(
+                                          Icons.restaurant_rounded,
+                                          color: colorScheme.primary,
+                                          size: AppSizing.responsiveIconSize(
+                                            context,
+                                            mobile: 20,
+                                            tablet: 22,
+                                            desktop: 24,
                                           ),
-                                        ],
-                                      ),
-                                      child: DropdownButton<String>(
-                                        value: _cuisineType,
-                                        style: TextStyle(
-                                          fontSize:
-                                              AppTypography.responsiveFontSize(
-                                                context,
-                                              ),
-                                          color: colorScheme.onSurface,
                                         ),
-                                        onChanged: (String? newValue) {
-                                          setState(() {
-                                            _cuisineType = newValue!;
-                                          });
-                                        },
-                                        items:
-                                            <String>[
-                                              'Random',
-                                              'American',
-                                              'Italian',
-                                              'Chinese',
-                                              'Mexican',
-                                              'Indian',
-                                              'Japanese',
-                                              'French',
-                                              'Spanish',
-                                              'Thai',
-                                              'Greek',
-                                              'Turkish',
-                                              'Vietnamese',
-                                              'Korean',
-                                              'German',
-                                              'Polish',
-                                              'Portuguese',
-                                              'Russian',
-                                              'Brazilian',
-                                              'Dutch',
-                                              'Belgian',
-                                              'Swedish',
-                                              'Norwegian',
-                                              'Danish',
-                                            ].map<DropdownMenuItem<String>>((
-                                              String value,
-                                            ) {
-                                              return DropdownMenuItem<String>(
-                                                value: value,
-                                                child: Text(
-                                                  value,
-                                                  style: TextStyle(
-                                                    fontSize:
-                                                        AppTypography.responsiveFontSize(
-                                                          context,
-                                                        ),
-                                                    color:
-                                                        colorScheme.onSurface,
-                                                  ),
-                                                ),
-                                              );
-                                            }).toList(),
-                                        isExpanded: true,
-                                        padding: EdgeInsets.symmetric(
+                                        suffixIcon: IconButton(
+                                          icon: Icon(
+                                            Icons.add_circle_rounded,
+                                            size: AppSizing.responsiveIconSize(
+                                              context,
+                                              mobile: 20,
+                                              tablet: 22,
+                                              desktop: 24,
+                                            ),
+                                            color: colorScheme.primary,
+                                          ),
+                                          onPressed: _addIngredient,
+                                        ),
+                                        contentPadding: EdgeInsets.symmetric(
+                                          vertical: AppSpacing.lg,
                                           horizontal: AppSpacing.md,
-                                          vertical: AppSpacing.sm,
                                         ),
-                                        underline: Container(),
+                                        floatingLabelBehavior:
+                                            FloatingLabelBehavior.never,
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            AppBreakpoints.isMobile(context)
+                                                ? 12
+                                                : 16,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: colorScheme.outline
+                                                .withAlpha(26), // 0.1 alpha
+                                            width: 1.0,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            AppBreakpoints.isMobile(context)
+                                                ? 12
+                                                : 16,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: colorScheme.primary
+                                                .withAlpha(128), // 0.5 alpha
+                                            width: 2.0,
+                                          ),
+                                        ),
+                                      ),
+                                      onSubmitted: (value) => _addIngredient(),
+                                      onChanged: (value) => setState(() {}),
+                                      style: TextStyle(
+                                        fontSize:
+                                            AppTypography.responsiveFontSize(
+                                              context,
+                                            ),
+                                        color: colorScheme.onSurface,
                                       ),
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
 
-                              SizedBox(height: AppSpacing.lg),
-
-                              // Cooking Time with animation
-                              AnimatedBuilder(
-                                animation: _animationController,
-                                builder: (context, child) {
-                                  final progress =
-                                      (_animationController.value - 0.8) / 0.2;
-                                  final opacity = progress.clamp(0.0, 1.0);
-                                  final translateY = 20 * (1 - opacity);
-                                  return Opacity(
-                                    opacity: opacity,
-                                    child: Transform.translate(
-                                      offset: Offset(0, translateY),
-                                      child: child,
+                                // Ingredients chips
+                                if (_ingredients.isNotEmpty) ...[
+                                  SizedBox(height: AppSpacing.md),
+                                  AnimatedBuilder(
+                                    animation: _animationController,
+                                    builder: (context, child) {
+                                      final progress =
+                                          (_animationController.value - 0.5) /
+                                          0.5;
+                                      final opacity = progress.clamp(0.0, 1.0);
+                                      return Opacity(
+                                        opacity: opacity,
+                                        child: child,
+                                      );
+                                    },
+                                    child: Wrap(
+                                      spacing: 8.0,
+                                      runSpacing: 8.0,
+                                      children:
+                                          _ingredients
+                                              .map(
+                                                (ingredient) => Chip(
+                                                  label: Text(
+                                                    ingredient,
+                                                    style: TextStyle(
+                                                      fontSize:
+                                                          AppTypography.responsiveFontSize(
+                                                            context,
+                                                            mobile: 12.0,
+                                                            tablet: 14.0,
+                                                            desktop: 16.0,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  backgroundColor: colorScheme
+                                                      .primary
+                                                      .withAlpha(
+                                                        26,
+                                                      ), // 0.1 alpha
+                                                  deleteIcon: Icon(
+                                                    Icons.close,
+                                                    size:
+                                                        AppSizing.responsiveIconSize(
+                                                          context,
+                                                          mobile: 16,
+                                                          tablet: 18,
+                                                          desktop: 20,
+                                                        ),
+                                                  ),
+                                                  onDeleted: () {
+                                                    setState(() {
+                                                      _ingredients.remove(
+                                                        ingredient,
+                                                      );
+                                                    });
+                                                  },
+                                                ),
+                                              )
+                                              .toList(),
                                     ),
-                                  );
-                                },
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text.rich(
-                                      TextSpan(
-                                        text: 'Cooking Time: ',
+                                  ),
+                                ],
+
+                                SizedBox(height: AppSpacing.lg),
+
+                                // Dietary Preferences with animation
+                                AnimatedBuilder(
+                                  animation: _animationController,
+                                  builder: (context, child) {
+                                    final progress =
+                                        (_animationController.value - 0.6) /
+                                        0.4;
+                                    final opacity = progress.clamp(0.0, 1.0);
+                                    final translateY = 20 * (1 - opacity);
+                                    return Opacity(
+                                      opacity: opacity,
+                                      child: Transform.translate(
+                                        offset: Offset(0, translateY),
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Dietary Preferences:',
                                         style: TextStyle(
                                           fontSize:
                                               AppTypography.responsiveHeadingSize(
@@ -855,174 +637,401 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                           fontWeight: FontWeight.bold,
                                           color: colorScheme.onSurface,
                                         ),
-                                        children: [
-                                          TextSpan(
-                                            text:
-                                                '${_cookingTime.round()} minutes',
-                                            style: TextStyle(
-                                              color: colorScheme.primary,
-                                            ),
+                                      ),
+                                      SizedBox(height: AppSpacing.sm),
+                                      Container(
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            AppBreakpoints.isMobile(context)
+                                                ? 12
+                                                : 16,
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                    SizedBox(height: AppSpacing.sm),
-                                    Slider.adaptive(
-                                      value: _cookingTime,
-                                      min: 0,
-                                      max: 120,
-                                      divisions: 12,
-                                      activeColor: colorScheme.primary,
-                                      inactiveColor: colorScheme.primary
-                                          .withAlpha(51), // 0.2 alpha
-                                      onChanged: (double value) {
-                                        setState(() {
-                                          _cookingTime = value;
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              SizedBox(height: AppSpacing.xxl),
-
-                              // Generate button with animation
-                              AnimatedBuilder(
-                                animation: _animationController,
-                                builder: (context, child) {
-                                  final progress =
-                                      (_animationController.value - 0.9) / 0.1;
-                                  final opacity = progress.clamp(0.0, 1.0);
-                                  final translateY = 30 * (1 - opacity);
-                                  return Opacity(
-                                    opacity: opacity,
-                                    child: Transform.translate(
-                                      offset: Offset(0, translateY),
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: SizedBox(
-                                  width:
-                                      AppBreakpoints.isMobile(context)
-                                          ? 200
-                                          : 240,
-                                  height:
-                                      AppBreakpoints.isMobile(context)
-                                          ? 50
-                                          : 56,
-                                  child: ElevatedButton.icon(
-                                    onPressed:
-                                        recipeProvider.isLoading
-                                            ? null
-                                            : () => _loadRecipes(context),
-                                    icon: Icon(
-                                      Icons.auto_awesome_rounded,
-                                      size: AppSizing.responsiveIconSize(
-                                        context,
-                                        mobile: 20,
-                                        tablet: 22,
-                                        desktop: 24,
-                                      ),
-                                      color: colorScheme.surface,
-                                    ),
-                                    label: Text(
-                                      'Generate Recipes',
-                                      style: TextStyle(
-                                        fontSize:
-                                            AppTypography.responsiveFontSize(
-                                              context,
-                                              mobile: 15.0,
-                                              tablet: 17.0,
-                                              desktop: 18.0,
+                                          color:
+                                              theme.brightness ==
+                                                      Brightness.dark
+                                                  ? colorScheme
+                                                      .surfaceContainerHighest
+                                                      .withAlpha(64)
+                                                  : Theme.of(
+                                                    context,
+                                                  ).colorScheme.surface,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withAlpha(20),
+                                              blurRadius:
+                                                  AppBreakpoints.isMobile(
+                                                        context,
+                                                      )
+                                                      ? 15
+                                                      : 20,
+                                              offset: const Offset(0, 5),
                                             ),
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.5,
-                                        color: colorScheme.surface,
-                                      ),
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      foregroundColor: Theme.of(
-                                        context,
-                                      ).colorScheme.surface.withValues(
-                                        alpha:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.alphaVeryHigh,
-                                      ),
-                                      backgroundColor: Colors.deepPurple,
-                                      elevation: AppElevation.responsive(
-                                        context,
-                                      ),
-                                      shadowColor: Colors.deepPurple.withAlpha(
-                                        102,
-                                      ), // 0.4 alpha
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          AppBreakpoints.isMobile(context)
-                                              ? 25
-                                              : 28,
+                                          ],
+                                        ),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: AppSpacing.md,
+                                          vertical: AppSpacing.sm,
+                                        ),
+                                        child: DietaryPreferenceCheckboxList(
+                                          label: 'Select Preferences',
+                                          selectedPreferences:
+                                              _dietaryRestrictions,
+                                          onChanged: _handleDietaryPreferences,
                                         ),
                                       ),
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: AppSpacing.md,
-                                        horizontal: AppSpacing.lg,
+                                    ],
+                                  ),
+                                ),
+
+                                SizedBox(height: AppSpacing.lg),
+
+                                // Cuisine Type with animation
+                                AnimatedBuilder(
+                                  animation: _animationController,
+                                  builder: (context, child) {
+                                    final progress =
+                                        (_animationController.value - 0.7) /
+                                        0.3;
+                                    final opacity = progress.clamp(0.0, 1.0);
+                                    final translateY = 20 * (1 - opacity);
+                                    return Opacity(
+                                      opacity: opacity,
+                                      child: Transform.translate(
+                                        offset: Offset(0, translateY),
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Cuisine Type:',
+                                        style: TextStyle(
+                                          fontSize:
+                                              AppTypography.responsiveHeadingSize(
+                                                context,
+                                                mobile: 18.0,
+                                                tablet: 20.0,
+                                                desktop: 22.0,
+                                              ),
+                                          fontWeight: FontWeight.bold,
+                                          color: colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      SizedBox(height: AppSpacing.sm),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            AppBreakpoints.isMobile(context)
+                                                ? 12
+                                                : 16,
+                                          ),
+                                          color:
+                                              theme.brightness ==
+                                                      Brightness.dark
+                                                  ? colorScheme
+                                                      .surfaceContainerHighest
+                                                      .withAlpha(64)
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .surface
+                                                      .withValues(
+                                                        alpha:
+                                                            Theme.of(context)
+                                                                .colorScheme
+                                                                .alphaVeryHigh,
+                                                      ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withAlpha(20),
+                                              blurRadius:
+                                                  AppBreakpoints.isMobile(
+                                                        context,
+                                                      )
+                                                      ? 15
+                                                      : 20,
+                                              offset: const Offset(0, 5),
+                                            ),
+                                          ],
+                                        ),
+                                        child: DropdownButton<String>(
+                                          value: _cuisineType,
+                                          style: TextStyle(
+                                            fontSize:
+                                                AppTypography.responsiveFontSize(
+                                                  context,
+                                                ),
+                                            color: colorScheme.onSurface,
+                                          ),
+                                          onChanged: (String? newValue) {
+                                            setState(() {
+                                              _cuisineType = newValue!;
+                                            });
+                                          },
+                                          items:
+                                              <String>[
+                                                'Random',
+                                                'American',
+                                                'Italian',
+                                                'Chinese',
+                                                'Mexican',
+                                                'Indian',
+                                                'Japanese',
+                                                'French',
+                                                'Spanish',
+                                                'Thai',
+                                                'Greek',
+                                                'Turkish',
+                                                'Vietnamese',
+                                                'Korean',
+                                                'German',
+                                                'Polish',
+                                                'Portuguese',
+                                                'Russian',
+                                                'Brazilian',
+                                                'Dutch',
+                                                'Belgian',
+                                                'Swedish',
+                                                'Norwegian',
+                                                'Danish',
+                                              ].map<DropdownMenuItem<String>>((
+                                                String value,
+                                              ) {
+                                                return DropdownMenuItem<String>(
+                                                  value: value,
+                                                  child: Text(
+                                                    value,
+                                                    style: TextStyle(
+                                                      fontSize:
+                                                          AppTypography.responsiveFontSize(
+                                                            context,
+                                                          ),
+                                                      color:
+                                                          colorScheme.onSurface,
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                          isExpanded: true,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: AppSpacing.md,
+                                            vertical: AppSpacing.sm,
+                                          ),
+                                          underline: Container(),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                SizedBox(height: AppSpacing.lg),
+
+                                // Cooking Time with animation
+                                AnimatedBuilder(
+                                  animation: _animationController,
+                                  builder: (context, child) {
+                                    final progress =
+                                        (_animationController.value - 0.8) /
+                                        0.2;
+                                    final opacity = progress.clamp(0.0, 1.0);
+                                    final translateY = 20 * (1 - opacity);
+                                    return Opacity(
+                                      opacity: opacity,
+                                      child: Transform.translate(
+                                        offset: Offset(0, translateY),
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text.rich(
+                                        TextSpan(
+                                          text: 'Cooking Time: ',
+                                          style: TextStyle(
+                                            fontSize:
+                                                AppTypography.responsiveHeadingSize(
+                                                  context,
+                                                  mobile: 18.0,
+                                                  tablet: 20.0,
+                                                  desktop: 22.0,
+                                                ),
+                                            fontWeight: FontWeight.bold,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text:
+                                                  '${_cookingTime.round()} minutes',
+                                              style: TextStyle(
+                                                color: colorScheme.primary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(height: AppSpacing.sm),
+                                      Slider.adaptive(
+                                        value: _cookingTime,
+                                        min: 0,
+                                        max: 120,
+                                        divisions: 12,
+                                        activeColor: colorScheme.primary,
+                                        inactiveColor: colorScheme.primary
+                                            .withAlpha(51), // 0.2 alpha
+                                        onChanged: (double value) {
+                                          setState(() {
+                                            _cookingTime = value;
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                SizedBox(height: AppSpacing.xxl),
+
+                                // Generate button with animation
+                                AnimatedBuilder(
+                                  animation: _animationController,
+                                  builder: (context, child) {
+                                    final progress =
+                                        (_animationController.value - 0.9) /
+                                        0.1;
+                                    final opacity = progress.clamp(0.0, 1.0);
+                                    final translateY = 30 * (1 - opacity);
+                                    return Opacity(
+                                      opacity: opacity,
+                                      child: Transform.translate(
+                                        offset: Offset(0, translateY),
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: SizedBox(
+                                    width:
+                                        AppBreakpoints.isMobile(context)
+                                            ? 200
+                                            : 240,
+                                    height:
+                                        AppBreakpoints.isMobile(context)
+                                            ? 50
+                                            : 56,
+                                    child: ElevatedButton.icon(
+                                      onPressed:
+                                          recipeProvider.isLoading
+                                              ? null
+                                              : () => _loadRecipes(context),
+                                      icon: Icon(
+                                        Icons.auto_awesome_rounded,
+                                        size: AppSizing.responsiveIconSize(
+                                          context,
+                                          mobile: 20,
+                                          tablet: 22,
+                                          desktop: 24,
+                                        ),
+                                        color: colorScheme.surface,
+                                      ),
+                                      label: Text(
+                                        'Generate Recipes',
+                                        style: TextStyle(
+                                          fontSize:
+                                              AppTypography.responsiveFontSize(
+                                                context,
+                                                mobile: 15.0,
+                                                tablet: 17.0,
+                                                desktop: 18.0,
+                                              ),
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                          color: colorScheme.surface,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        foregroundColor: Theme.of(
+                                          context,
+                                        ).colorScheme.surface.withValues(
+                                          alpha:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.alphaVeryHigh,
+                                        ),
+                                        backgroundColor: Colors.deepPurple,
+                                        elevation: AppElevation.responsive(
+                                          context,
+                                        ),
+                                        shadowColor: Colors.deepPurple
+                                            .withAlpha(102), // 0.4 alpha
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            AppBreakpoints.isMobile(context)
+                                                ? 25
+                                                : 28,
+                                          ),
+                                        ),
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: AppSpacing.md,
+                                          horizontal: AppSpacing.lg,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
 
-                              SizedBox(height: AppSpacing.xxl),
-                            ],
-                          ),
-
-                          // Bottom section - pushed to bottom of screen
-                          Padding(
-                            padding: EdgeInsets.only(bottom: AppSpacing.md),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Icons.help_outline,
-                                  size: AppSizing.responsiveIconSize(
-                                    context,
-                                    mobile: 14,
-                                    tablet: 16,
-                                    desktop: 18,
-                                  ),
-                                  color: colorScheme.onSurface.withAlpha(
-                                    102,
-                                  ), // 0.4 alpha
-                                ),
-                                SizedBox(width: AppSpacing.sm),
-                                Expanded(
-                                  child: Text(
-                                    'Recipes are generated based on your preferences and available ingredients',
-                                    style: TextStyle(
-                                      fontSize:
-                                          AppTypography.responsiveCaptionSize(
-                                            context,
-                                          ),
-                                      color: colorScheme.onSurface.withAlpha(
-                                        128,
-                                      ), // 0.5 alpha
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                    textAlign: TextAlign.left,
-                                  ),
-                                ),
+                                SizedBox(height: AppSpacing.xxl),
                               ],
                             ),
-                          ),
-                        ],
+
+                            // Bottom section - pushed to bottom of screen
+                            Padding(
+                              padding: EdgeInsets.only(bottom: AppSpacing.md),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.help_outline,
+                                    size: AppSizing.responsiveIconSize(
+                                      context,
+                                      mobile: 14,
+                                      tablet: 16,
+                                      desktop: 18,
+                                    ),
+                                    color: colorScheme.onSurface.withAlpha(
+                                      102,
+                                    ), // 0.4 alpha
+                                  ),
+                                  SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: Text(
+                                      'Recipes are generated based on your preferences and available ingredients',
+                                      style: TextStyle(
+                                        fontSize:
+                                            AppTypography.responsiveCaptionSize(
+                                              context,
+                                            ),
+                                        color: colorScheme.onSurface.withAlpha(
+                                          128,
+                                        ), // 0.5 alpha
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                      textAlign: TextAlign.left,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
             ],
           );
         },
@@ -1114,28 +1123,32 @@ class _GeneratingRecipesDialogState extends State<_GeneratingRecipesDialog>
         scale: _pulse,
         child: Container(
           margin: EdgeInsets.symmetric(
-            horizontal: AppBreakpoints.isDesktop(context)
-                ? 32
-                : AppBreakpoints.isTablet(context)
+            horizontal:
+                AppBreakpoints.isDesktop(context)
+                    ? 32
+                    : AppBreakpoints.isTablet(context)
                     ? 28
                     : 24,
           ),
           padding: EdgeInsets.symmetric(
-            horizontal: AppBreakpoints.isDesktop(context)
-                ? 28
-                : AppBreakpoints.isTablet(context)
+            horizontal:
+                AppBreakpoints.isDesktop(context)
+                    ? 28
+                    : AppBreakpoints.isTablet(context)
                     ? 24
                     : 20,
-            vertical: AppBreakpoints.isDesktop(context)
-                ? 28
-                : AppBreakpoints.isTablet(context)
+            vertical:
+                AppBreakpoints.isDesktop(context)
+                    ? 28
+                    : AppBreakpoints.isTablet(context)
                     ? 24
                     : 20,
           ),
           constraints: BoxConstraints(
-            maxWidth: AppBreakpoints.isDesktop(context)
-                ? 440
-                : AppBreakpoints.isTablet(context)
+            maxWidth:
+                AppBreakpoints.isDesktop(context)
+                    ? 440
+                    : AppBreakpoints.isTablet(context)
                     ? 400
                     : 360,
           ),
@@ -1148,15 +1161,16 @@ class _GeneratingRecipesDialogState extends State<_GeneratingRecipesDialog>
               AppBreakpoints.isDesktop(context)
                   ? 24
                   : AppBreakpoints.isTablet(context)
-                      ? 22
-                      : 20,
+                  ? 22
+                  : 20,
             ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: AppBreakpoints.isDesktop(context)
-                    ? 32
-                    : AppBreakpoints.isTablet(context)
+                blurRadius:
+                    AppBreakpoints.isDesktop(context)
+                        ? 32
+                        : AppBreakpoints.isTablet(context)
                         ? 28
                         : 24,
                 offset: Offset(
@@ -1164,8 +1178,8 @@ class _GeneratingRecipesDialogState extends State<_GeneratingRecipesDialog>
                   AppBreakpoints.isDesktop(context)
                       ? 16
                       : AppBreakpoints.isTablet(context)
-                          ? 14
-                          : 12,
+                      ? 14
+                      : 12,
                 ),
               ),
             ],

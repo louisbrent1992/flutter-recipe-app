@@ -10,6 +10,7 @@ import '../providers/subscription_provider.dart';
 import '../models/purchase_product.dart';
 import '../components/error_display.dart';
 import '../theme/theme.dart';
+import '../utils/snackbar_helper.dart';
 // import '../components/floating_bottom_bar.dart';
 
 class SubscriptionScreen extends StatefulWidget {
@@ -891,24 +892,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       await provider.purchase(product);
 
       if (context.mounted && provider.error == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isSubscription
-                  ? (trialEligible
-                      ? 'Subscription started! 7-day trial begins now.'
-                      : 'Subscription successful!')
-                  : 'Purchase successful!',
-            ),
-            backgroundColor: Colors.green,
-          ),
+        SnackBarHelper.showSuccess(
+          context,
+          isSubscription
+              ? (trialEligible
+                  ? 'Subscription started! 7-day trial begins now.'
+                  : 'Subscription successful!')
+              : 'Purchase successful!',
         );
       } else if (context.mounted && provider.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Purchase failed: ${provider.error}'),
-            backgroundColor: Colors.red,
-          ),
+        SnackBarHelper.showError(
+          context,
+          'Purchase failed: ${provider.error}',
         );
       }
     }

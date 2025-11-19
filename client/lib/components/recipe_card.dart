@@ -1223,52 +1223,12 @@ Shared from Recipe App
                     ),
                   ),
                 ),
-                // Action buttons overlay (refresh removed)
+                // Action buttons overlay (edit & refresh only in context menu)
                 Positioned(
                   top: 8,
                   right: 6,
                   child: Row(
                     children: [
-                      if (widget.showEditButton)
-                        _buildActionButton(
-                          icon: Icons.edit_note_rounded,
-                          onTap: () async {
-                            final result = await Navigator.pushNamed(
-                              context,
-                              '/recipeEdit',
-                              arguments: widget.recipe.copyWith(toEdit: true),
-                            );
-                            if (result != null && result is Recipe) {
-                              // Notify parent widget about the updated recipe
-                              if (widget.onRecipeUpdated != null) {
-                                widget.onRecipeUpdated!(result);
-                              }
-                            }
-                          },
-                          tooltip: 'Edit recipe',
-                        ),
-                      if (widget.showEditButton &&
-                          (widget.showRemoveButton ||
-                              widget.showSaveButton ||
-                              widget.showShareButton))
-                        SizedBox(width: AppSpacing.xs),
-
-                      if (widget.showRefreshButton)
-                        _buildActionButton(
-                          icon: Icons.refresh_rounded,
-                          onTap: _refreshRecipeImage,
-                          tooltip: 'Refresh recipe image',
-                          isLoading: _isRefreshingImage,
-                        ),
-                      if (widget.showRefreshButton &&
-                          kDebugMode &&
-                          (widget.showRemoveButton ||
-                              widget.showSaveButton ||
-                              widget.showShareButton ||
-                              widget.showEditButton))
-                        SizedBox(width: AppSpacing.xs),
-                      if (widget.showShareButton && !widget.showRefreshButton)
-                        SizedBox(width: AppSpacing.xs),
                       if (widget.showShareButton)
                         _buildActionButton(
                           icon: Icons.share_rounded,

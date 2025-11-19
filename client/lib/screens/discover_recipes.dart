@@ -10,6 +10,7 @@ import '../models/recipe.dart';
 import '../components/error_display.dart';
 import '../theme/theme.dart';
 import '../components/floating_bottom_bar.dart';
+import '../utils/snackbar_helper.dart';
 
 class DiscoverRecipesScreen extends StatefulWidget {
   final String? initialQuery;
@@ -174,12 +175,9 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
   Future<void> _refreshResults() async {
     await _loadRecipes(forceRefresh: true);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Search results refreshed'),
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
+      SnackBarHelper.showInfo(
+        context,
+        'Search results refreshed',
       );
     }
   }
@@ -288,19 +286,16 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
       );
       if (savedRecipe != null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Recipe saved to your collection!'),
-              duration: const Duration(seconds: 4),
-              action: SnackBarAction(
-                label: 'Go to My Recipes',
-                onPressed: () {
-                  if (mounted) {
-                    Navigator.pushNamed(context, '/myRecipes');
-                  }
-                },
-              ),
-              backgroundColor: Colors.green,
+          SnackBarHelper.showSuccess(
+            context,
+            'Recipe saved to your collection!',
+            action: SnackBarAction(
+              label: 'Go to My Recipes',
+              onPressed: () {
+                if (mounted) {
+                  Navigator.pushNamed(context, '/myRecipes');
+                }
+              },
             ),
           );
         }
@@ -312,12 +307,11 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                 recipeProvider.error!.message ?? 'Failed to save recipe';
             final isDuplicate = errorMessage.contains('already exists');
 
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(errorMessage),
-                backgroundColor: isDuplicate ? Colors.orange : Colors.red,
-              ),
-            );
+            if (isDuplicate) {
+              SnackBarHelper.showWarning(context, errorMessage);
+            } else {
+              SnackBarHelper.showError(context, errorMessage);
+            }
             recipeProvider.clearError();
           }
         }
