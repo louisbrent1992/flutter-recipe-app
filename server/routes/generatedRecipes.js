@@ -802,13 +802,18 @@ const processRecipeData = async (
 		}
 		
 		const imageStartTime = Date.now();
-		// Skip temporary social media URLs for Instagram/TikTok (they expire quickly)
-		// YouTube thumbnails are stable, so we can use them
+		// Use social media image URLs when available (Instagram and YouTube URLs are stable)
+		// Only TikTok URLs expire, so we use Google Image Search for those
 		let imageUrl;
 		if (isYouTube && socialData?.thumbnailUrl) {
 			imageUrl = socialData.thumbnailUrl;
+		} else if (isInstagram && socialData?.imageUrl) {
+			imageUrl = socialData.imageUrl;
+		} else if (isTikTok) {
+			// TikTok URLs expire quickly, so use Google Image Search
+			imageUrl = await fetchImage(cachedRecipe.title || "recipe");
 		} else {
-			// For Instagram, TikTok, or if no stable URL exists, use Google Image Search
+			// For other sources or if no stable URL exists, use Google Image Search
 			imageUrl = await fetchImage(cachedRecipe.title || "recipe");
 		}
 		
@@ -1065,13 +1070,18 @@ const processRecipeData = async (
 
 	// Fetch image
 	const imageStartTime = Date.now();
-	// Skip temporary social media URLs for Instagram/TikTok (they expire quickly)
-	// YouTube thumbnails are stable, so we can use them
+	// Use social media image URLs when available (Instagram and YouTube URLs are stable)
+	// Only TikTok URLs expire, so we use Google Image Search for those
 	let imageUrl;
 	if (isYouTube && socialData?.thumbnailUrl) {
 		imageUrl = socialData.thumbnailUrl;
+	} else if (isInstagram && socialData?.imageUrl) {
+		imageUrl = socialData.imageUrl;
+	} else if (isTikTok) {
+		// TikTok URLs expire quickly, so use Google Image Search
+		imageUrl = await fetchImage(parsedRecipe.title || "recipe");
 	} else {
-		// For Instagram, TikTok, or if no stable URL exists, use Google Image Search
+		// For other sources or if no stable URL exists, use Google Image Search
 		imageUrl = await fetchImage(parsedRecipe.title || "recipe");
 	}
 	
