@@ -135,6 +135,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
       tag: _selectedTag == 'All' ? null : _selectedTag,
       page: _currentPage,
       limit: _itemsPerPage,
+      random: true, // Always load recipes in random order
       forceRefresh: forceRefresh,
     );
 
@@ -152,6 +153,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
         tag: _selectedTag == 'All' ? null : _selectedTag,
         page: 1,
         limit: _itemsPerPage,
+        random: true, // Always load recipes in random order
         forceRefresh: true,
       );
     }
@@ -175,10 +177,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
   Future<void> _refreshResults() async {
     await _loadRecipes(forceRefresh: true);
     if (mounted) {
-      SnackBarHelper.showInfo(
-        context,
-        'Search results refreshed',
-      );
+      SnackBarHelper.showInfo(context, 'Search results refreshed');
     }
   }
 

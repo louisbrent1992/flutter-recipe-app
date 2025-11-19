@@ -144,11 +144,8 @@ class _DynamicBannerState extends State<DynamicBanner>
                 },
               ),
 
-              // Foreground content with subtle border
+              // Foreground content
               Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: fg.withValues(alpha: 0.15)),
-                ),
                 child:
                     hasImage
                         ? const SizedBox.shrink()
