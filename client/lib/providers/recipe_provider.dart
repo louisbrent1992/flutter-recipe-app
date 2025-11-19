@@ -89,16 +89,19 @@ class RecipeProvider extends ChangeNotifier {
     String? cuisineType,
     bool random = false,
   }) async {
+    debugPrint('🟡 [Provider] generateRecipes called');
     _setLoading(true);
     clearError();
 
     try {
+      debugPrint('🟡 [Provider] Calling RecipeService.generateRecipes');
       final response = await RecipeService.generateRecipes(
         ingredients: ingredients,
         dietaryRestrictions: dietaryRestrictions,
         cuisineType: cuisineType,
         random: random,
       );
+      debugPrint('🟡 [Provider] RecipeService.generateRecipes returned: success=${response.success}');
 
       if (response.success && response.data != null) {
         _generatedRecipes = response.data ?? [];
@@ -122,11 +125,14 @@ class RecipeProvider extends ChangeNotifier {
   // Import recipe from social media URL
   // Returns a Map with 'recipe' and 'fromCache' keys
   Future<Map<String, dynamic>?> importRecipeFromUrl(String url, BuildContext context) async {
+    debugPrint('🟡 [Provider] importRecipeFromUrl called with: $url');
     _setLoading(true);
     clearError();
 
     try {
+      debugPrint('🟡 [Provider] Calling RecipeService.importRecipeFromUrl');
       final response = await RecipeService.importRecipeFromUrl(url);
+      debugPrint('🟡 [Provider] RecipeService.importRecipeFromUrl returned: success=${response.success}');
 
       if (response.success && response.data != null) {
         final recipe = response.data!;

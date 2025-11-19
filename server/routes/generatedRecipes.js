@@ -283,10 +283,16 @@ router.post("/generate", async (req, res) => {
 		const response = await client.chat.completions.create({
 			model: "gpt-5-nano",
 			messages: [
-				{
-					role: "developer",
-					content: "You are a professional chef and recipe creator. Generate creative, delicious, and practical recipes with accurate nutritional information."
-				},
+			{
+				role: "developer",
+				content: `You are a professional chef and recipe creator. Generate creative, delicious, and practical recipes with accurate nutritional information.
+
+IMPORTANT: ALL recipe fields must be filled with realistic values. NEVER use "unknown":
+- cookingTime: Provide realistic estimates (e.g., "15 minutes", "45 minutes", "2 hours")
+- servings: Specify clear serving sizes (e.g., "2", "4", "6-8")
+- difficulty: Assign "easy", "medium", or "hard" based on technique complexity
+- nutrition: Provide accurate estimates per serving based on ingredients`
+			},
 				{
 					role: "user",
 					content: `Generate three recipes with these requirements:
@@ -328,25 +334,25 @@ router.post("/generate", async (req, res) => {
 											},
 											description: "List of ingredients needed"
 										},
-										instructions: {
-											type: "array",
-											items: {
-												type: "string"
-											},
-											description: "Step-by-step cooking instructions"
+									instructions: {
+										type: "array",
+										items: {
+											type: "string"
 										},
-										cookingTime: {
-											type: "string",
-											description: "Total cooking time (e.g., '30 minutes')"
-										},
-										difficulty: {
-											type: "string",
-											description: "Difficulty level: easy, medium, or hard"
-										},
-										servings: {
-											type: "string",
-											description: "Number of servings"
-										},
+										description: "Step-by-step cooking instructions"
+									},
+									cookingTime: {
+										type: "string",
+										description: "Total cooking time. NEVER use 'unknown'. Provide realistic estimates (e.g., '30 minutes', '1 hour')"
+									},
+									difficulty: {
+										type: "string",
+										description: "Difficulty level: MUST be 'easy', 'medium', or 'hard' based on technique complexity"
+									},
+									servings: {
+										type: "string",
+										description: "Number of servings. NEVER use 'unknown'. Specify clear serving sizes (e.g., '2', '4', '6-8')"
+									},
 										tags: {
 											type: "array",
 											items: {
@@ -449,27 +455,35 @@ router.post("/generate", async (req, res) => {
 					}
 				}
 				
-				return {
-				id: uuidv4(),
-					title: recipeTitle,
-				cuisineType: recipeData.cuisineType || cuisineType,
-				description: recipeData.description || "Enjoy your generated recipe!",
-				ingredients: Array.isArray(recipeData.ingredients)
-					? recipeData.ingredients
-					: [],
-				instructions: Array.isArray(recipeData.instructions)
-					? recipeData.instructions
-					: [],
-					imageUrl: imageUrl || null, // Use null instead of placeholder
-				cookingTime: recipeData.cookingTime || "30 minutes",
-				difficulty: recipeData.difficulty || "medium",
-				servings: recipeData.servings || "4",
-				tags: recipeData.tags || [],
-				nutrition: recipeData.nutrition || null,
-				aiGenerated: true,
-				isDiscoverable: true, // AI-generated recipes are discoverable in community
-				createdAt: new Date().toISOString(),
-				};
+			// Clean up any "unknown" values that might slip through
+			const cleanValue = (value, defaultValue) => {
+				if (!value || value.toLowerCase() === 'unknown' || value.trim() === '') {
+					return defaultValue;
+				}
+				return value;
+			};
+
+			return {
+			id: uuidv4(),
+				title: recipeTitle,
+			cuisineType: recipeData.cuisineType || cuisineType,
+			description: recipeData.description || "Enjoy your generated recipe!",
+			ingredients: Array.isArray(recipeData.ingredients)
+				? recipeData.ingredients
+				: [],
+			instructions: Array.isArray(recipeData.instructions)
+				? recipeData.instructions
+				: [],
+				imageUrl: imageUrl || null, // Use null instead of placeholder
+			cookingTime: cleanValue(recipeData.cookingTime, "30 minutes"),
+			difficulty: cleanValue(recipeData.difficulty, "medium"),
+			servings: cleanValue(recipeData.servings, "4"),
+			tags: recipeData.tags || [],
+			nutrition: recipeData.nutrition || null,
+			aiGenerated: true,
+			isDiscoverable: true, // AI-generated recipes are discoverable in community
+			createdAt: new Date().toISOString(),
+			};
 			})
 		);
 
@@ -726,13 +740,27 @@ const processRecipeData = async (
 	const response = await client.chat.completions.create({
 		model: "gpt-5-nano",
 		messages: [
-			{
-				role: "developer",
-				content:
-					isInstagram || isTikTok || isYouTube
-						? "You are an expert recipe analyzer. Extract the recipe from this social media post."
-						: "You are an expert recipe analyzer. Extract the recipe from this text.",
-			},
+		{
+			role: "developer",
+			content:
+				isInstagram || isTikTok || isYouTube
+					? `You are an expert recipe analyzer. Extract the recipe from this social media post.
+
+IMPORTANT: For ANY missing information, you MUST provide reasonable estimates based on the recipe type and ingredients. NEVER use "unknown" or leave fields empty:
+- cookingTime: Estimate based on recipe complexity (e.g., "15 minutes", "1 hour", "2 hours")
+- servings: Estimate based on ingredient quantities (e.g., "2", "4", "6-8")
+- difficulty: Analyze the steps and assign "easy", "medium", or "hard"
+- nutrition: Provide reasonable estimates per serving based on ingredients
+
+If the recipe mentions "follow the video" or "watch the video" but lacks written instructions, create detailed step-by-step instructions based on common cooking techniques for that type of dish.`
+					: `You are an expert recipe analyzer. Extract the recipe from this text.
+
+IMPORTANT: For ANY missing information, you MUST provide reasonable estimates based on the recipe type and ingredients. NEVER use "unknown" or leave fields empty:
+- cookingTime: Estimate based on recipe complexity (e.g., "15 minutes", "1 hour", "2 hours")
+- servings: Estimate based on ingredient quantities (e.g., "2", "4", "6-8")
+- difficulty: Analyze the steps and assign "easy", "medium", or "hard"
+- nutrition: Provide reasonable estimates per serving based on ingredients`,
+		},
 			{
 				role: "user",
 				content: processedContent,
@@ -769,25 +797,25 @@ const processRecipeData = async (
 							type: "string",
 							description: "A brief description of the recipe"
 						},
-						tags: {
-							type: "array",
-							items: {
-								type: "string"
-							},
-							description: "Recipe tags for categorization"
+					tags: {
+						type: "array",
+						items: {
+							type: "string"
 						},
-						cookingTime: {
-							type: "string",
-							description: "Total cooking time (e.g., '30 minutes')"
-						},
-						difficulty: {
-							type: "string",
-							description: "Difficulty level: easy, medium, or hard"
-						},
-						servings: {
-							type: "string",
-							description: "Number of servings"
-						},
+						description: "Recipe tags for categorization"
+					},
+					cookingTime: {
+						type: "string",
+						description: "Total cooking time. NEVER use 'unknown'. Estimate if not explicitly stated (e.g., '30 minutes', '1 hour')"
+					},
+					difficulty: {
+						type: "string",
+						description: "Difficulty level: MUST be one of 'easy', 'medium', or 'hard'. Analyze the recipe to determine appropriate level."
+					},
+					servings: {
+						type: "string",
+						description: "Number of servings. NEVER use 'unknown'. Estimate based on ingredient quantities (e.g., '2', '4', '6-8')"
+					},
 						nutrition: {
 							type: "object",
 							properties: {
@@ -963,6 +991,14 @@ const processRecipeData = async (
 	
 	logPerformance("Image fetch (after AI parsing)", imageStartTime);
 
+	// Clean up any "unknown" values that might slip through
+	const cleanValue = (value, defaultValue) => {
+		if (!value || value.toLowerCase() === 'unknown' || value.trim() === '') {
+			return defaultValue;
+		}
+		return value;
+	};
+
 	return {
 		id: uuidv4(),
 		title: parsedRecipe.title || "Imported Recipe",
@@ -970,9 +1006,9 @@ const processRecipeData = async (
 		instructions: finalInstructions,
 		description: parsedRecipe.description || "Imported recipe",
 		imageUrl: imageUrl || null,
-		cookingTime: parsedRecipe.cookingTime || "30 minutes",
-		difficulty: parsedRecipe.difficulty || "medium",
-		servings: parsedRecipe.servings || "4",
+		cookingTime: cleanValue(parsedRecipe.cookingTime, "30 minutes"),
+		difficulty: cleanValue(parsedRecipe.difficulty, "medium"),
+		servings: cleanValue(parsedRecipe.servings, "4"),
 		source: isInstagram
 			? `Instagram: @${socialData?.username}`
 			: isTikTok

@@ -3,24 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:recipease/theme/theme.dart';
 
 /// Centralized loading dialog utilities
-/// 
+///
 /// Provides consistent animated loading dialogs across the app
 class LoadingDialogHelper {
   /// Show an animated loading dialog with blur effect
-  /// 
+  ///
   /// [context] - BuildContext to show the dialog
   /// [message] - Loading message to display
   /// [subtitle] - Optional subtitle message (defaults based on context)
-  /// 
-  /// Returns a Future that completes when the dialog is shown.
-  /// Call `Navigator.pop(context)` to dismiss the dialog.
-  static Future<void> show(
+  ///
+  /// Shows the dialog without waiting for it to be dismissed.
+  /// Call `dismiss(context)` to close the dialog.
+  static void show(
     BuildContext context, {
     required String message,
     String? subtitle,
     IconData? icon,
   }) {
-    return showGeneralDialog(
+    showGeneralDialog(
       context: context,
       barrierLabel: message,
       barrierColor: Colors.black.withValues(alpha: 0.25),
@@ -45,10 +45,7 @@ class LoadingDialogHelper {
             child: Transform.scale(
               scale: 0.98 + 0.02 * curved.value,
               child: Center(
-                child: _LoadingDialog(
-                  message: message,
-                  subtitle: subtitle,
-                ),
+                child: _LoadingDialog(message: message, subtitle: subtitle),
               ),
             ),
           ),
@@ -65,14 +62,14 @@ class LoadingDialogHelper {
   }
 
   /// Show loading dialog and execute an async operation
-  /// 
+  ///
   /// Automatically dismisses the dialog when the operation completes.
-  /// 
+  ///
   /// [context] - BuildContext to show the dialog
   /// [message] - Loading message to display
   /// [operation] - Async function to execute
   /// [subtitle] - Optional subtitle message
-  /// 
+  ///
   /// Returns the result of the operation or null if an error occurs.
   static Future<T?> showWhile<T>(
     BuildContext context, {
@@ -82,7 +79,7 @@ class LoadingDialogHelper {
   }) async {
     try {
       if (context.mounted) {
-        await show(context, message: message, subtitle: subtitle);
+        show(context, message: message, subtitle: subtitle);
       }
 
       final result = await operation();
@@ -106,10 +103,7 @@ class _LoadingDialog extends StatefulWidget {
   final String message;
   final String? subtitle;
 
-  const _LoadingDialog({
-    required this.message,
-    this.subtitle,
-  });
+  const _LoadingDialog({required this.message, this.subtitle});
 
   @override
   State<_LoadingDialog> createState() => _LoadingDialogState();
@@ -143,55 +137,61 @@ class _LoadingDialogState extends State<_LoadingDialog>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    
+
     return Material(
       type: MaterialType.transparency,
       child: ScaleTransition(
         scale: _pulse,
         child: Container(
           margin: EdgeInsets.symmetric(
-            horizontal: AppBreakpoints.isDesktop(context)
-                ? 32
-                : AppBreakpoints.isTablet(context)
+            horizontal:
+                AppBreakpoints.isDesktop(context)
+                    ? 32
+                    : AppBreakpoints.isTablet(context)
                     ? 28
                     : 24,
           ),
           padding: EdgeInsets.symmetric(
-            horizontal: AppBreakpoints.isDesktop(context)
-                ? 28
-                : AppBreakpoints.isTablet(context)
+            horizontal:
+                AppBreakpoints.isDesktop(context)
+                    ? 28
+                    : AppBreakpoints.isTablet(context)
                     ? 24
                     : 20,
-            vertical: AppBreakpoints.isDesktop(context)
-                ? 28
-                : AppBreakpoints.isTablet(context)
+            vertical:
+                AppBreakpoints.isDesktop(context)
+                    ? 28
+                    : AppBreakpoints.isTablet(context)
                     ? 24
                     : 20,
           ),
           constraints: BoxConstraints(
-            maxWidth: AppBreakpoints.isDesktop(context)
-                ? 440
-                : AppBreakpoints.isTablet(context)
+            maxWidth:
+                AppBreakpoints.isDesktop(context)
+                    ? 440
+                    : AppBreakpoints.isTablet(context)
                     ? 400
                     : 360,
           ),
           decoration: BoxDecoration(
-            color: theme.brightness == Brightness.dark
-                ? cs.surfaceContainerHigh.withValues(alpha: 0.9)
-                : cs.surface.withValues(alpha: 0.95),
+            color:
+                theme.brightness == Brightness.dark
+                    ? cs.surfaceContainerHigh.withValues(alpha: 0.9)
+                    : cs.surface.withValues(alpha: 0.95),
             borderRadius: BorderRadius.circular(
               AppBreakpoints.isDesktop(context)
                   ? 24
                   : AppBreakpoints.isTablet(context)
-                      ? 22
-                      : 20,
+                  ? 22
+                  : 20,
             ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: AppBreakpoints.isDesktop(context)
-                    ? 32
-                    : AppBreakpoints.isTablet(context)
+                blurRadius:
+                    AppBreakpoints.isDesktop(context)
+                        ? 32
+                        : AppBreakpoints.isTablet(context)
                         ? 28
                         : 24,
                 offset: Offset(
@@ -199,8 +199,8 @@ class _LoadingDialogState extends State<_LoadingDialog>
                   AppBreakpoints.isDesktop(context)
                       ? 16
                       : AppBreakpoints.isTablet(context)
-                          ? 14
-                          : 12,
+                      ? 14
+                      : 12,
                 ),
               ),
             ],
@@ -230,12 +230,12 @@ class _LoadingDialogState extends State<_LoadingDialog>
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Animated title with dots
               _AnimatedDotsTitle(title: widget.message),
-              
+
               const SizedBox(height: 10),
-              
+
               // Subtitle
               Text(
                 widget.subtitle ?? _getDefaultSubtitle(widget.message),
@@ -244,9 +244,9 @@ class _LoadingDialogState extends State<_LoadingDialog>
                   color: cs.onSurface.withValues(alpha: 0.7),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Linear progress indicator
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
@@ -276,7 +276,7 @@ class _LoadingDialogState extends State<_LoadingDialog>
 /// Animated title that shows dots appearing one by one
 class _AnimatedDotsTitle extends StatefulWidget {
   final String title;
-  
+
   const _AnimatedDotsTitle({required this.title});
 
   @override
@@ -306,7 +306,7 @@ class _AnimatedDotsTitleState extends State<_AnimatedDotsTitle>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
@@ -323,4 +323,3 @@ class _AnimatedDotsTitleState extends State<_AnimatedDotsTitle>
     );
   }
 }
-

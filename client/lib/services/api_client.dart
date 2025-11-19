@@ -29,9 +29,7 @@ class ApiClient {
             ? 'http://10.0.2.2:$port/api'
             : 'http://localhost:$port/api';
 
-    // In debug mode, use local development server
-    // In release mode, use production server
-    return kDebugMode ? developmentUrl : productionUrl;
+    return productionUrl;
   }
 
   /// Get headers with Firebase authentication token
@@ -149,9 +147,13 @@ class ApiClient {
     T Function(Map<String, dynamic>)? fromJson,
   }) async {
     try {
+      debugPrint('🔴 [ApiClient] publicPost to: $baseUrl/$endpoint');
+      debugPrint('🔴 [ApiClient] Body: $body');
       final response = await _post(endpoint, _standardHeaders, body);
+      debugPrint('🔴 [ApiClient] Response status: ${response.statusCode}');
       return _handleResponse<T>(response, fromJson: fromJson);
     } catch (e) {
+      debugPrint('🔴 [ApiClient] Error in publicPost: $e');
       return _handleError<T>(e, 'POST $endpoint');
     }
   }

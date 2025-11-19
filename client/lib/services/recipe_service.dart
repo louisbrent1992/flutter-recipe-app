@@ -28,6 +28,7 @@ class RecipeService {
     String? cuisineType,
     bool random = false,
   }) async {
+    debugPrint('🟠 [RecipeService] generateRecipes called');
     final Map<String, dynamic> payload = {
       if (ingredients != null && ingredients.isNotEmpty)
         'ingredients': ingredients,
@@ -37,11 +38,16 @@ class RecipeService {
         'cuisineType': cuisineType,
       'random': random,
     };
+    
+    debugPrint('🟠 [RecipeService] Payload: $payload');
+    debugPrint('🟠 [RecipeService] Calling API: ai/recipes/generate');
 
     final response = await _api.publicPost<List<dynamic>>(
       'ai/recipes/generate',
       body: payload,
     );
+    
+    debugPrint('🟠 [RecipeService] API response received: success=${response.success}');
 
     if (response.success && response.data != null) {
       final data = response.data;
@@ -66,10 +72,15 @@ class RecipeService {
 
   /// Import recipe from social media URL
   static Future<ApiResponse<Recipe>> importRecipeFromUrl(String url) async {
+    debugPrint('🟠 [RecipeService] importRecipeFromUrl called with: $url');
+    debugPrint('🟠 [RecipeService] Calling API: ai/recipes/import');
+    
     final response = await _api.publicPost<Map<String, dynamic>>(
       'ai/recipes/import',
       body: {'url': url},
     );
+    
+    debugPrint('🟠 [RecipeService] API response received: success=${response.success}');
 
     if (response.success && response.data != null) {
       final fromCache = response.data!['fromCache'] as bool? ?? false;
