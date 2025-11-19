@@ -321,19 +321,32 @@ class _MyAppState extends State<MyApp> {
 
       // App opened from notification (background)
       FirebaseMessaging.onMessageOpenedApp.listen((message) {
-        final route = message.data['route'] as String?;
-        if (route != null && route.isNotEmpty) {
-          navigatorKey.currentState?.pushNamed(route);
-        }
+        debugPrint('📱 App opened from background notification');
+        debugPrint('📱 Message data: ${message.data}');
+        
+        // Use the same navigation logic as local notifications
+        final payload = jsonEncode({
+          'route': message.data['route'] ?? '/home',
+          'args': message.data['args'] ?? {},
+        });
+        _handleNotificationNavigation(payload);
       });
 
       // App launched from terminated via notification
       final initialMsg = await messaging.getInitialMessage();
-      final initialRoute = initialMsg?.data['route'] as String?;
-      if (initialRoute != null && initialRoute.isNotEmpty) {
+      if (initialMsg != null) {
+        debugPrint('📱 App launched from terminated state via notification');
+        debugPrint('📱 Initial message data: ${initialMsg.data}');
+        
+        // Use the same navigation logic as local notifications
+        final payload = jsonEncode({
+          'route': initialMsg.data['route'] ?? '/home',
+          'args': initialMsg.data['args'] ?? {},
+        });
+        
         // Delay navigation until navigator is ready
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          navigatorKey.currentState?.pushNamed(initialRoute);
+          _handleNotificationNavigation(payload);
         });
       }
 
@@ -410,11 +423,10 @@ class _MyAppState extends State<MyApp> {
           if (navigatorKey.currentState != null) {
             _performNavigation(route, args);
           } else {
-            if (kDebugMode) {
-              debugPrint(
-                '⚠️ Failed to navigate to $route - navigator not ready',
-              );
-            }
+            // Log even in production for crash reporting
+            debugPrint(
+              '⚠️ Failed to navigate to $route - navigator not ready',
+            );
           }
         });
       }
@@ -424,9 +436,7 @@ class _MyAppState extends State<MyApp> {
   // Perform the actual navigation
   void _performNavigation(String route, Map<String, dynamic>? args) {
     try {
-      if (kDebugMode) {
-        debugPrint('✅ Navigating to: $route');
-      }
+      debugPrint('✅ Navigating to: $route with args: $args');
 
       // For routes that expect Map<String, String>, convert args
       Map<String, String>? stringArgs;
@@ -441,10 +451,12 @@ class _MyAppState extends State<MyApp> {
         route,
         arguments: stringArgs ?? args,
       );
+      
+      debugPrint('✅ Navigation completed to: $route');
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ Navigation error: $e');
-      }
+      // Log even in production for crash reporting
+      debugPrint('❌ Navigation error to $route: $e');
+      debugPrint('❌ Args were: $args');
     }
   }
 
