@@ -29,7 +29,7 @@ class ApiClient {
             ? 'http://10.0.2.2:$port/api'
             : 'http://localhost:$port/api';
 
-    return productionUrl;
+    return kDebugMode ? developmentUrl : productionUrl;
   }
 
   /// Get headers with Firebase authentication token
