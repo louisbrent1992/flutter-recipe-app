@@ -19,8 +19,8 @@ router.get("/search", auth, async (req, res) => {
 		const limit = isNaN(limitParam) ? 10 : Math.min(limitParam, 100);
 		const isRandom = random === 'true';
 
-        // Build Firestore query
-        let recipesRef = db.collection("recipes");
+        // Build Firestore query - only Spoonacular recipes (isExternal === true)
+        let recipesRef = db.collection("recipes").where("isExternal", "==", true);
 
         // Aggregate tokens from query and tag, treating comma-separated chunks as phrases.
         // For each phrase, prefer the full phrase token, then (if room) include individual word tokens.

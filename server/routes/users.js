@@ -3,11 +3,7 @@ const router = express.Router();
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const auth = require("../middleware/auth");
 const axios = require("axios");
-
-// Google Custom Search configuration (same as in generatedRecipes)
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
-const GOOGLE_CX = process.env.GOOGLE_CX;
-const GOOGLE_SEARCH_URL = "https://www.googleapis.com/customsearch/v1";
+const { searchImage } = require("../utils/imageService");
 
 // Get Firestore database instance
 const db = getFirestore();
@@ -227,6 +223,11 @@ router.post("/recipes", auth, async (req, res) => {
 			...tags.map((t) => t.toLowerCase().replace(/-/g, ' ')),
 		].filter((field) => field.length > 0);
 
+		// Determine if recipe should be discoverable
+		// Discoverable if: AI-generated OR imported from social media (has sourcePlatform)
+		// Not discoverable if: manually created by user
+		const isDiscoverable = aiGenerated || !!sourcePlatform;
+
 		const newRecipe = {
 			userId,
 			title,
@@ -247,6 +248,7 @@ router.post("/recipes", auth, async (req, res) => {
 			tiktok,
 			youtube,
 			aiGenerated,
+			isDiscoverable,
 			toEdit,
 			nutrition,
 			createdAt: new Date().toISOString(),
@@ -274,13 +276,6 @@ router.post("/recipes", auth, async (req, res) => {
 // Refresh a recipe's image by querying Google Custom Search and persisting the new URL
 router.post("/recipes/:id/refresh-image", auth, async (req, res) => {
 	try {
-		if (!GOOGLE_API_KEY || !GOOGLE_CX) {
-			return res.status(500).json({
-				error: "Google Custom Search is not configured",
-				message: "Missing GOOGLE_API_KEY or GOOGLE_CX",
-			});
-		}
-
 		const userId = req.user.uid;
 		const recipeId = req.params.id;
 
@@ -297,31 +292,7 @@ router.post("/recipes/:id/refresh-image", auth, async (req, res) => {
 		}
 
 		const query = (recipeData.title || "recipe").trim().toLowerCase();
-		let newImageUrl = null;
-		const started = Date.now();
-		try {
-			const resp = await axios.get(GOOGLE_SEARCH_URL, {
-				params: {
-					key: GOOGLE_API_KEY,
-					cx: GOOGLE_CX,
-					q: `${query}`,
-					searchType: "image",
-					num: 3,
-					safe: "active",
-					start: 1,
-				},
-			});
-			// Pick first valid link
-			const items = (resp.data && resp.data.items) || [];
-			for (const item of items) {
-				if (item && item.link) {
-					newImageUrl = item.link;
-					break;
-				}
-			}
-		} catch (err) {
-			console.error("Error fetching replacement image from Google:", err?.response?.status || err?.message || err);
-		}
+		const newImageUrl = await searchImage(query, 1, false); // Don't use cache for refresh
 
 		if (!newImageUrl) {
 			return res.status(200).json({

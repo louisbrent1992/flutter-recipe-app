@@ -444,33 +444,9 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
               Expanded(
                 child: Consumer<RecipeProvider>(
                   builder: (context, recipeProvider, _) {
-                    final allRecipes = recipeProvider.generatedRecipes;
-
-                    // Server now handles deduplication, so we can use recipes directly
-                    // Track which recipes are already saved by the current user
-                    final userRecipeIds =
-                        recipeProvider.userRecipes.map((r) => r.id).toSet();
-                    final userRecipeKeys =
-                        recipeProvider.userRecipes
-                            .map(
-                              (r) =>
-                                  '${r.title.toLowerCase()}|${r.description.toLowerCase()}',
-                            )
-                            .toSet();
-
-                    // Helper function to check if a recipe is already saved
-                    bool isRecipeSaved(Recipe recipe) {
-                      final recipeKey =
-                          '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
-                      return userRecipeIds.contains(recipe.id) ||
-                          userRecipeKeys.contains(recipeKey);
-                    }
-
-                    // Filter out recipes the user has already saved (client-side filtering)
-                    final displayRecipes =
-                        allRecipes.where((recipe) {
-                          return !isRecipeSaved(recipe);
-                        }).toList();
+                    // Server now handles filtering (excludes current user's recipes)
+                    // and deduplication, so we can use recipes directly
+                    final displayRecipes = recipeProvider.generatedRecipes;
 
                     // Friendly empty state: show when not loading and no results
                     if (!recipeProvider.isLoading && displayRecipes.isEmpty) {

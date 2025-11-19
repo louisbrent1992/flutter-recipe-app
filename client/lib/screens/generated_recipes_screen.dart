@@ -140,6 +140,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
                         recipe: recipe,
                         showSaveButton: !(_savedRecipes[recipe.id] ?? false),
                         showRemoveButton: _savedRecipes[recipe.id] ?? false,
+                        showRefreshButton: false, // Hide refresh button for generated recipes
                         onSave: () => _handleRecipeAction(recipe),
                         onRemove: () => _handleRecipeAction(recipe),
                       ),

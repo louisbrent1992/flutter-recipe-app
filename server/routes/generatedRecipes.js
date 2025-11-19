@@ -70,6 +70,13 @@ const recipeData = require("../data/recipeData");
 const { getInstagramMediaFromUrl } = require("../utils/instagramAPI");
 const { getTikTokVideoFromUrl } = require("../utils/tiktokAPI");
 const { getYouTubeVideoFromUrl } = require("../utils/youtubeAPI");
+const { 
+	searchImage, 
+	validateImageUrl, 
+	isPlaceholderUrl,
+	clearCache: clearImageCache,
+	getCacheStats: getImageCacheStats
+} = require("../utils/imageService");
 
 // Initialize OpenAI client with configuration
 // Generous timeout and retry settings to handle large recipe data
@@ -139,16 +146,8 @@ const client = new OpenAI({
  * }
  */
 
-// In-memory recipes database (for AI-generated recipes that haven't been saved yet)
-let tempRecipes = [];
-
-// Replace BING constants with GOOGLE
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY; // Add this to your .env file
-const GOOGLE_CX = process.env.GOOGLE_CX; // Add Custom Search Engine ID
-const GOOGLE_SEARCH_URL = "https://www.googleapis.com/customsearch/v1";
-
-// Image cache
-const imageCache = {};
+// Cache management
+// Image caching is now handled by imageService
 
 let previousIngredients = [];
 
@@ -178,147 +177,7 @@ const logPerformance = (label, startTime) => {
 };
 
 // Helper function to check if a URL is a placeholder
-const isPlaceholderUrl = (url) => {
-	if (!url || typeof url !== 'string') return false;
-	return url.includes('placeholder.com') || url.includes('via.placeholder.com');
-};
-
-// Helper function to validate that an image URL is accessible
-const validateImageUrl = async (url, timeout = 5000) => {
-	if (!url || typeof url !== 'string') return false;
-	
-	try {
-		// Use HEAD request to check if image is accessible without downloading it
-		const response = await axios.head(url, {
-			timeout: timeout,
-			maxRedirects: 3,
-			validateStatus: (status) => status >= 200 && status < 400,
-		});
-		
-		// Check if the response is actually an image
-		const contentType = response.headers['content-type'];
-		if (contentType && contentType.startsWith('image/')) {
-			return true;
-		}
-		
-		console.log(`⚠️ URL is not an image (content-type: ${contentType}):`, url);
-		return false;
-	} catch (error) {
-		if (error.code === 'ECONNABORTED') {
-			console.log(`⚠️ Image validation timeout for URL:`, url);
-		} else {
-			console.log(`⚠️ Image validation failed for URL:`, url, error.message);
-		}
-		return false;
-	}
-};
-
-// Function to fetch an image from Google with caching
-const fetchImage = async (query, start = 1) => {
-	// Handle undefined or null query
-	if (!query) {
-		console.log("No query provided for image search");
-		return null;
-	}
-
-	// Normalize the query by trimming and converting to lowercase
-	const normalizedQuery = query.trim().toLowerCase();
-	const cacheKey = `${normalizedQuery}_${start}`;
-
-	// Check if the image is already cached
-	if (imageCache[cacheKey]) {
-		const cached = imageCache[cacheKey];
-		// Handle both old format (string) and new format (object with url and timestamp)
-		const cachedUrl = typeof cached === 'string' ? cached : cached.url;
-		const cachedTimestamp = typeof cached === 'string' ? Date.now() : cached.timestamp;
-		
-		// Check if cache entry is expired
-		if (Date.now() - cachedTimestamp > CACHE_DURATIONS.IMAGES) {
-			console.log("⚠️ Cached image expired, fetching new one");
-			delete imageCache[cacheKey];
-		} else if (isPlaceholderUrl(cachedUrl)) {
-			console.log("⚠️ Cached image is a placeholder, fetching new one");
-			delete imageCache[cacheKey];
-		} else {
-		console.log("✅ Image found in cache");
-			return cachedUrl;
-		}
-	}
-
-	const startTime = Date.now();
-	try {
-		// Check if Google API credentials are configured
-		if (!GOOGLE_API_KEY || !GOOGLE_CX) {
-			console.error("Google Custom Search API not configured");
-			return null;
-		}
-
-		const response = await axios.get(GOOGLE_SEARCH_URL, {
-			params: {
-				key: GOOGLE_API_KEY,
-				cx: GOOGLE_CX,
-				q: `${normalizedQuery}`,
-				searchType: "image",
-				num: 3, // Get more results to have options
-				safe: "active",
-				start: start,
-			},
-			timeout: 10000, // 10 second timeout
-		});
-
-		logPerformance(`Google Image Search for "${normalizedQuery}"`, startTime);
-
-		// Check if images exist in response
-		if (!response.data.items || response.data.items.length === 0) {
-			console.log("No images found for query:", normalizedQuery);
-			return null;
-		}
-
-		// Try to find the best image from the results (excluding placeholders)
-		for (const item of response.data.items) {
-			const imageUrl = item.link;
-			if (imageUrl && !isPlaceholderUrl(imageUrl)) {
-				// Store with timestamp for proper cache management
-				imageCache[cacheKey] = {
-					url: imageUrl,
-					timestamp: Date.now()
-				};
-				return imageUrl;
-			}
-		}
-
-		// If all results were placeholders, try next page
-		if (start === 1) {
-			console.log("All results were placeholders, trying next page");
-			return await fetchImage(query, 4);
-		}
-
-		return null;
-	} catch (error) {
-		// Handle specific error cases
-		if (error.response) {
-			const status = error.response.status;
-			const statusText = error.response.statusText;
-			
-			if (status === 429) {
-				console.error("⚠️ Google API rate limit exceeded. Please try again later.");
-			} else if (status === 403) {
-				console.error("⚠️ Google API access forbidden. Check API key and quota.");
-			} else if (status === 400) {
-				console.error("⚠️ Google API bad request:", error.response.data?.error?.message || statusText);
-			} else {
-				console.error(`⚠️ Google API error (${status}):`, statusText);
-			}
-		} else if (error.code === 'ECONNABORTED') {
-			console.error("⚠️ Google API request timeout");
-		} else {
-			console.error("Error fetching image from Google:", error.message || error);
-		}
-		
-		logPerformance(`Google Image Search FAILED for "${normalizedQuery}"`, startTime);
-		return null;
-	}
-};
+// Image functions are now imported from imageService
 
 // Function to get a random ingredient
 const getRandomIngredient = async () => {
@@ -575,7 +434,7 @@ router.post("/generate", async (req, res) => {
 				
 				// If no valid image from AI, fetch from Google
 				if (!imageUrl) {
-					imageUrl = await fetchImage(imageQuery);
+					imageUrl = await searchImage(imageQuery);
 				}
 				
 				// Validate that the image URL is accessible before sending to client
@@ -608,12 +467,12 @@ router.post("/generate", async (req, res) => {
 				tags: recipeData.tags || [],
 				nutrition: recipeData.nutrition || null,
 				aiGenerated: true,
+				isDiscoverable: true, // AI-generated recipes are discoverable in community
 				createdAt: new Date().toISOString(),
 				};
 			})
 		);
 
-		tempRecipes.push(...generatedRecipes);
 		res.json(generatedRecipes);
 	} catch (error) {
 		console.error("Error generating recipes:", error);
@@ -811,10 +670,10 @@ const processRecipeData = async (
 			imageUrl = socialData.imageUrl;
 		} else if (isTikTok) {
 			// TikTok URLs expire quickly, so use Google Image Search
-			imageUrl = await fetchImage(cachedRecipe.title || "recipe");
+			imageUrl = await searchImage(cachedRecipe.title || "recipe");
 		} else {
 			// For other sources or if no stable URL exists, use Google Image Search
-			imageUrl = await fetchImage(cachedRecipe.title || "recipe");
+			imageUrl = await searchImage(cachedRecipe.title || "recipe");
 		}
 		
 		// Filter out placeholder URLs
@@ -1079,10 +938,10 @@ const processRecipeData = async (
 		imageUrl = socialData.imageUrl;
 	} else if (isTikTok) {
 		// TikTok URLs expire quickly, so use Google Image Search
-		imageUrl = await fetchImage(parsedRecipe.title || "recipe");
+		imageUrl = await searchImage(parsedRecipe.title || "recipe");
 	} else {
 		// For other sources or if no stable URL exists, use Google Image Search
-		imageUrl = await fetchImage(parsedRecipe.title || "recipe");
+		imageUrl = await searchImage(parsedRecipe.title || "recipe");
 	}
 	
 	// Filter out placeholder URLs
@@ -1128,6 +987,7 @@ const processRecipeData = async (
 			socialData?.channelTitle,
 		tags: parsedRecipe.tags || [],
 		nutrition: parsedRecipe.nutrition || null,
+		isDiscoverable: true, // Imported recipes are discoverable in community
 		createdAt: new Date().toISOString(),
 		...(isInstagram && {
 			instagram: {
@@ -1255,7 +1115,6 @@ router.post("/import", async (req, res) => {
 		console.log("💾 Step 3: Caching and saving...");
 		const saveStartTime = Date.now();
 		handleCache(recipeCache, url, importedRecipe);
-		tempRecipes.push(importedRecipe);
 		logPerformance("Caching and Saving (Step 3)", saveStartTime);
 
 		logPerformance("🎉 TOTAL IMPORT TIME", totalStartTime);
@@ -1292,7 +1151,7 @@ router.post("/import", async (req, res) => {
 // Optional: Add cache management endpoints
 router.post("/cache/clear", (req, res) => {
 	recipeCache.clear();
-	Object.keys(imageCache).forEach((key) => delete imageCache[key]);
+	clearImageCache(); // Clear image cache from imageService
 	aiResponseCache.clear();
 	res.json({ message: "Cache cleared successfully" });
 });
@@ -1321,63 +1180,7 @@ const cleanupCaches = () => {
 		}
 	}
 
-	// Clean up image cache
-	entriesProcessed = 0;
-	const initialImageCacheSize = Object.keys(imageCache).length;
-	
-	// Always clean up expired entries, regardless of cache size
-	for (const [key, value] of Object.entries(imageCache)) {
-		if (entriesProcessed >= MAX_ENTRIES_PER_CLEANUP) break;
-		
-		// Handle both old format (string) and new format (object with timestamp)
-		let entryTimestamp;
-		if (typeof value === 'string') {
-			// Old format: treat as expired to migrate to new format
-			entryTimestamp = 0;
-		} else if (value && typeof value === 'object' && value.timestamp) {
-			entryTimestamp = value.timestamp;
-		} else {
-			// Invalid entry, remove it
-					delete imageCache[key];
-					entriesProcessed++;
-			continue;
-		}
-		
-		// Remove expired entries
-		if (now - entryTimestamp > CACHE_DURATIONS.IMAGES) {
-			delete imageCache[key];
-			entriesProcessed++;
-		}
-	}
-	
-	// If cache is still too large after cleanup, trim to most recent entries
-	const currentCacheSize = Object.keys(imageCache).length;
-	if (currentCacheSize > MAX_CACHE_SIZE) {
-		const sortedEntries = Object.entries(imageCache)
-			.map(([key, value]) => {
-				// Handle both formats for sorting
-				const timestamp = typeof value === 'string' 
-					? 0  // Old format entries go to the end
-					: (value?.timestamp || 0);
-				return { key, value, timestamp };
-			})
-			.sort((a, b) => b.timestamp - a.timestamp) // Sort by most recent
-			.slice(0, MAX_CACHE_SIZE); // Keep most recent entries
-		
-		// Rebuild cache with only the most recent entries
-		const newImageCache = {};
-		sortedEntries.forEach(({ key, value }) => {
-			newImageCache[key] = value;
-			});
-
-		// Replace the old cache with the new one
-		Object.keys(imageCache).forEach((key) => delete imageCache[key]);
-		Object.entries(newImageCache).forEach(([key, value]) => {
-			imageCache[key] = value;
-		});
-		
-		console.log(`🧹 Trimmed image cache from ${currentCacheSize} to ${Object.keys(newImageCache).length} entries`);
-	}
+	// Image cache cleanup is now handled by imageService
 };
 
 // Run cleanup more frequently but process fewer items each time
@@ -1398,11 +1201,7 @@ router.get("/cache/status", (req, res) => {
 			maxSize: MAX_CACHE_SIZE,
 			hitRate: calculateHitRate(recipeCache),
 		},
-		imageCache: {
-			size: Object.keys(imageCache).length,
-			maxSize: MAX_CACHE_SIZE,
-			hitRate: calculateHitRate(imageCache),
-		},
+		imageCache: getImageCacheStats(), // Get stats from imageService
 		memoryUsage: {
 			heapTotal: Math.round(used.heapTotal / 1024 / 1024) + "MB",
 			heapUsed: Math.round(used.heapUsed / 1024 / 1024) + "MB",
@@ -1427,42 +1226,6 @@ const calculateHitRate = (cache) => {
 	return total > 0 ? ((cache.hits / total) * 100).toFixed(2) + "%" : "0%";
 };
 
-// Helper function to get paginated recipes
-const getPaginatedRecipes = (recipes, page = 1, limit = 10) => {
-	const startIndex = (page - 1) * limit;
-	const endIndex = startIndex + limit;
-	const paginatedRecipes = recipes.slice(startIndex, endIndex);
-
-	return {
-		recipes: paginatedRecipes,
-		pagination: {
-			total: recipes.length,
-			page,
-			limit,
-			totalPages: Math.ceil(recipes.length / limit),
-			hasNextPage: endIndex < recipes.length,
-			hasPrevPage: page > 1,
-		},
-	};
-};
-
-// GET /ai/recipes - Get all generated recipes with pagination
-router.get("/", (req, res) => {
-	try {
-		const page = parseInt(req.query.page) || 1;
-		const limit = parseInt(req.query.limit) || 10;
-
-		const result = getPaginatedRecipes(tempRecipes, page, limit);
-		res.json(result);
-	} catch (error) {
-		console.error("Error getting generated recipes:", error);
-		const errorHandler = require("../utils/errorHandler");
-		errorHandler.serverError(
-			res,
-			"We couldn't load generated recipes. Please try again in a moment."
-		);
-	}
-});
 
 // POST /ai/recipes/chat - Conversational recipe advice using standard chat completion
 router.post("/chat", async (req, res) => {
@@ -1620,7 +1383,7 @@ router.get("/search-image", async (req, res) => {
 		}
 
 		const startParam = start ? parseInt(start) : 1;
-		const imageUrl = await fetchImage(query, startParam);
+		const imageUrl = await searchImage(query, startParam);
 
 		if (imageUrl) {
 			res.json({
