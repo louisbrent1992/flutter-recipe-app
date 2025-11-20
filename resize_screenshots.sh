@@ -20,7 +20,11 @@ else
     echo "8. 2752 × 2064 (iPad Landscape)"
     echo "9. 2048 × 2732 (iPad Portrait)"
     echo "10. 2732 × 2048 (iPad Landscape)"
-    read -p "Enter choice (1-10): " choice
+    echo "11. 1024 × 600 (Android 7\" Landscape)"
+    echo "12. 600 × 1024 (Android 7\" Portrait)"
+    echo "13. 1920 × 1200 (Android 10\" Landscape)"
+    echo "14. 1200 × 1920 (Android 10\" Portrait)"
+    read -p "Enter choice (1-14): " choice
 fi
 
 case $choice in
@@ -73,6 +77,26 @@ case $choice in
         WIDTH=2732
         HEIGHT=2048
         echo "Resizing to 2732 × 2048 (iPad Landscape)..."
+        ;;
+    11)
+        WIDTH=1024
+        HEIGHT=600
+        echo "Resizing to 1024 × 600 (Android 7\" Landscape)..."
+        ;;
+    12)
+        WIDTH=600
+        HEIGHT=1024
+        echo "Resizing to 600 × 1024 (Android 7\" Portrait)..."
+        ;;
+    13)
+        WIDTH=1920
+        HEIGHT=1200
+        echo "Resizing to 1920 × 1200 (Android 10\" Landscape)..."
+        ;;
+    14)
+        WIDTH=1200
+        HEIGHT=1920
+        echo "Resizing to 1200 × 1920 (Android 10\" Portrait)..."
         ;;
     *)
         echo "Invalid choice. Exiting."
