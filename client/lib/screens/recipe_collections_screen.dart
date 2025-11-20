@@ -260,7 +260,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
   Color _getIconColor(Color collectionColor) {
     // Calculate brightness of the collection color
     final brightness = collectionColor.computeLuminance();
-    
+
     // If the color is light (brightness > 0.5), use a darker, more saturated version
     // If the color is dark (brightness <= 0.5), use a lighter version
     if (brightness > 0.5) {
@@ -422,36 +422,37 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                     break;
                 }
               },
-              itemBuilder: (context) => [
-                PopupMenuItem<String>(
-                  value: 'add_collection',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.add_rounded,
-                        size: 18,
-                        color: Theme.of(context).colorScheme.primary,
+              itemBuilder:
+                  (context) => [
+                    PopupMenuItem<String>(
+                      value: 'add_collection',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.add_rounded,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Add Collection'),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      const Text('Add Collection'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'refresh',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.refresh,
-                        size: 18,
-                        color: Theme.of(context).colorScheme.primary,
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'refresh',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.refresh,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Refresh'),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      const Text('Refresh'),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+                  ],
             ),
           ],
         ),
@@ -486,9 +487,10 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                           _buildHeader(colorScheme),
 
                           SizedBox(
-                            height: AppBreakpoints.isDesktop(context)
-                                ? 32
-                                : AppBreakpoints.isTablet(context)
+                            height:
+                                AppBreakpoints.isDesktop(context)
+                                    ? 32
+                                    : AppBreakpoints.isTablet(context)
                                     ? 28
                                     : 24,
                           ),
@@ -529,16 +531,16 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
               AppBreakpoints.isDesktop(context)
                   ? 24
                   : AppBreakpoints.isTablet(context)
-                      ? 22
-                      : 20,
+                  ? 22
+                  : 20,
             ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(
                 AppBreakpoints.isDesktop(context)
                     ? 20
                     : AppBreakpoints.isTablet(context)
-                        ? 18
-                        : 16,
+                    ? 18
+                    : 16,
               ),
               color: colorScheme.primaryContainer.withValues(alpha: 0.3),
             ),
@@ -549,8 +551,8 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                     AppBreakpoints.isDesktop(context)
                         ? 16
                         : AppBreakpoints.isTablet(context)
-                            ? 14
-                            : 12,
+                        ? 14
+                        : 12,
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.primary.withValues(alpha: 0.1),
@@ -558,8 +560,8 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                       AppBreakpoints.isDesktop(context)
                           ? 16
                           : AppBreakpoints.isTablet(context)
-                              ? 14
-                              : 12,
+                          ? 14
+                          : 12,
                     ),
                   ),
                   child: Icon(
@@ -574,9 +576,10 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                   ),
                 ),
                 SizedBox(
-                  width: AppBreakpoints.isDesktop(context)
-                      ? 20
-                      : AppBreakpoints.isTablet(context)
+                  width:
+                      AppBreakpoints.isDesktop(context)
+                          ? 20
+                          : AppBreakpoints.isTablet(context)
                           ? 18
                           : 16,
                 ),
@@ -598,9 +601,10 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                         ),
                       ),
                       SizedBox(
-                        height: AppBreakpoints.isDesktop(context)
-                            ? 6
-                            : AppBreakpoints.isTablet(context)
+                        height:
+                            AppBreakpoints.isDesktop(context)
+                                ? 6
+                                : AppBreakpoints.isTablet(context)
                                 ? 5
                                 : 4,
                       ),
@@ -690,7 +694,8 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: AppSizing.responsiveGridCount(context),
-          childAspectRatio: 0.85, // Aspect ratio that matches the collection card design
+          childAspectRatio:
+              0.85, // Aspect ratio that matches the collection card design
           crossAxisSpacing: AppSpacing.responsive(context),
           mainAxisSpacing: AppSpacing.responsive(context),
         ),
@@ -720,228 +725,352 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
 
     return Stack(
       children: [
-          Card(
-            elevation: AppBreakpoints.isDesktop(context) ? 6 : 4,
-            shadowColor: collection.color.withValues(alpha: 0.3),
-            shape: RoundedRectangleBorder(
+        Card(
+          elevation: AppBreakpoints.isDesktop(context) ? 6 : 4,
+          shadowColor: collection.color.withValues(alpha: 0.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
+          child: InkWell(
+            onTap: () {
+              // Navigate to collection detail screen
+              Navigator.pushNamed(
+                context,
+                '/collectionDetail',
+                arguments: collection,
+              ).then((_) => _loadCollections()); // Refresh after returning
+            },
+            onLongPress:
+                !_isDefaultCollection(collection)
+                    ? () => _showCollectionContextMenu(collection)
+                    : null,
+            borderRadius: BorderRadius.circular(borderRadius),
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(borderRadius),
-            ),
-            child: InkWell(
-              onTap: () {
-                // Navigate to collection detail screen
-                Navigator.pushNamed(
-                  context,
-                  '/collectionDetail',
-                  arguments: collection,
-                ).then((_) => _loadCollections()); // Refresh after returning
-              },
-              borderRadius: BorderRadius.circular(borderRadius),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(borderRadius),
-                child: Stack(
-                  children: [
-                    // Background with recipe images or gradient
-                    Positioned.fill(
-                      child:
-                          hasRecipes && recipesWithImages.isNotEmpty
-                              ? _buildRecipeImagesBackground(
-                                recipesWithImages,
-                                collection.color,
-                              )
-                              : _buildGradientBackground(collection.color),
-                    ),
+              child: Stack(
+                children: [
+                  // Background with recipe images or gradient
+                  Positioned.fill(
+                    child:
+                        hasRecipes && recipesWithImages.isNotEmpty
+                            ? _buildRecipeImagesBackground(
+                              recipesWithImages,
+                              collection.color,
+                            )
+                            : _buildGradientBackground(collection.color),
+                  ),
 
-                    // Gradient overlay for text readability
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.7),
-                            ],
-                            stops: const [0.4, 1.0],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Collection icon (top-right corner)
-                    Positioned(
-                      top: AppBreakpoints.isDesktop(context) ? 16 : 12,
-                      right: AppBreakpoints.isDesktop(context) ? 16 : 12,
-                      child: Container(
-                        padding: EdgeInsets.all(
-                          AppBreakpoints.isDesktop(context) ? 12 : 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface.withValues(
-                            alpha: Theme.of(context).colorScheme.alphaVeryHigh,
-                          ),
-                          borderRadius: BorderRadius.circular(
-                            AppBreakpoints.isDesktop(context) ? 16 : 12,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: AppBreakpoints.isDesktop(context) ? 6 : 4,
-                              offset: Offset(
-                                0,
-                                AppBreakpoints.isDesktop(context) ? 3 : 2,
-                              ),
-                            ),
+                  // Gradient overlay for text readability
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.7),
                           ],
-                        ),
-                        child: Icon(
-                          collection.icon,
-                          size: AppBreakpoints.isDesktop(context) ? 28 : 20,
-                          color: _getIconColor(collection.color),
+                          stops: const [0.4, 1.0],
                         ),
                       ),
                     ),
+                  ),
 
-                    // Collection info (bottom)
-                    Positioned(
-                      left: AppBreakpoints.isDesktop(context) ? 20 : 16,
-                      right: AppBreakpoints.isDesktop(context) ? 20 : 16,
-                      bottom: AppBreakpoints.isDesktop(context) ? 20 : 16,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Collection name
-                          Text(
-                            collection.name,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style:
-                                AppBreakpoints.isDesktop(context)
-                                    ? theme.textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.surfaceContainerHighest,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.5,
-                                          ),
-                                          blurRadius: 2,
-                                          offset: const Offset(0, 1),
-                                        ),
-                                      ],
-                                    )
-                                    : theme.textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.surfaceContainerHighest,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.5,
-                                          ),
-                                          blurRadius: 2,
-                                          offset: const Offset(0, 1),
-                                        ),
-                                      ],
-                                    ),
-                          ),
-                          SizedBox(
-                            height: AppBreakpoints.isDesktop(context) ? 6 : 4,
-                          ),
-                          // Recipe count with icon
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.restaurant_menu_rounded,
-                                size: AppBreakpoints.isDesktop(context) ? 18 : 14,
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.surfaceContainerHighest,
-                              ),
-                              SizedBox(
-                                width: AppBreakpoints.isDesktop(context) ? 6 : 4,
-                              ),
-                              Text(
-                                '${collection.recipes.length} ${collection.recipes.length == 1 ? 'recipe' : 'recipes'}',
-                                style:
-                                    AppBreakpoints.isDesktop(context)
-                                        ? theme.textTheme.bodyMedium?.copyWith(
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.surfaceContainerHighest,
-                                          fontWeight: FontWeight.w500,
-                                        )
-                                        : theme.textTheme.bodySmall?.copyWith(
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.surfaceContainerHighest,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                              ),
-                            ],
+                  // Collection icon (top-right corner)
+                  Positioned(
+                    top: AppBreakpoints.isDesktop(context) ? 16 : 12,
+                    right: AppBreakpoints.isDesktop(context) ? 16 : 12,
+                    child: Container(
+                      padding: EdgeInsets.all(
+                        AppBreakpoints.isDesktop(context) ? 12 : 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface.withValues(
+                          alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          AppBreakpoints.isDesktop(context) ? 16 : 12,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius:
+                                AppBreakpoints.isDesktop(context) ? 6 : 4,
+                            offset: Offset(
+                              0,
+                              AppBreakpoints.isDesktop(context) ? 3 : 2,
+                            ),
                           ),
                         ],
                       ),
+                      child: Icon(
+                        collection.icon,
+                        size: AppBreakpoints.isDesktop(context) ? 28 : 20,
+                        color: _getIconColor(collection.color),
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+
+                  // Collection info (bottom)
+                  Positioned(
+                    left: AppBreakpoints.isDesktop(context) ? 20 : 16,
+                    right: AppBreakpoints.isDesktop(context) ? 20 : 16,
+                    bottom: AppBreakpoints.isDesktop(context) ? 20 : 16,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Collection name
+                        Text(
+                          collection.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              AppBreakpoints.isDesktop(context)
+                                  ? theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.surfaceContainerHighest,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        blurRadius: 2,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  )
+                                  : theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.surfaceContainerHighest,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        blurRadius: 2,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                        ),
+                        SizedBox(
+                          height: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                        ),
+                        // Recipe count with icon
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.restaurant_menu_rounded,
+                              size: AppBreakpoints.isDesktop(context) ? 18 : 14,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                            ),
+                            SizedBox(
+                              width: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                            ),
+                            Text(
+                              '${collection.recipes.length} ${collection.recipes.length == 1 ? 'recipe' : 'recipes'}',
+                              style:
+                                  AppBreakpoints.isDesktop(context)
+                                      ? theme.textTheme.bodyMedium?.copyWith(
+                                        color:
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                        fontWeight: FontWeight.w500,
+                                      )
+                                      : theme.textTheme.bodySmall?.copyWith(
+                                        color:
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-
-          // Delete button positioned absolutely in top left corner (outside card)
-          if (!_isDefaultCollection(collection))
-            Positioned(
-              top: AppBreakpoints.isDesktop(context)
-                  ? 8
-                  : AppBreakpoints.isTablet(context)
-                      ? 6
-                      : 4,
-              left: AppBreakpoints.isDesktop(context)
-                  ? 8
-                  : AppBreakpoints.isTablet(context)
-                      ? 6
-                      : 4,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface.withValues(
-                    alpha: Theme.of(context).colorScheme.alphaVeryHigh,
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.delete_outline,
-                    size: AppBreakpoints.isDesktop(context) ? 20 : 18,
-                  ),
-                  onPressed: () => _deleteCategory(collection.id, collection.name),
-                  tooltip: 'Delete collection',
-                  color: Colors.red.shade600,
-                  padding: EdgeInsets.all(
-                    AppBreakpoints.isDesktop(context) ? 8 : 6,
-                  ),
-                  constraints: const BoxConstraints(),
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
-            ),
+        ),
       ],
     );
+  }
+
+  void _showCollectionContextMenu(RecipeCollection collection) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (context) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Collection name header
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: collection.color.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          collection.icon,
+                          color: collection.color,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          collection.name,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+                // Edit option
+                ListTile(
+                  leading: Icon(
+                    Icons.edit_outlined,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  title: const Text('Edit Collection'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _editCollection(collection);
+                  },
+                ),
+                // Delete option
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: Colors.red),
+                  title: const Text(
+                    'Delete Collection',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _deleteCategory(collection.id, collection.name);
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Future<void> _editCollection(RecipeCollection collection) async {
+    final TextEditingController nameController = TextEditingController(
+      text: collection.name,
+    );
+
+    final result = await showDialog<Map<String, dynamic>?>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Edit Collection'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Collection Name',
+                    hintText: 'Enter collection name',
+                  ),
+                  autofocus: true,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (nameController.text.trim().isEmpty) {
+                    return;
+                  }
+                  Navigator.pop(context, {'name': nameController.text.trim()});
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+    );
+
+    // Dispose controller after dialog animation completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      nameController.dispose();
+    });
+
+    if (result != null && mounted) {
+      final collectionService = Provider.of<CollectionService>(
+        context,
+        listen: false,
+      );
+
+      final updatedCollection = await collectionService.updateCollection(
+        collection.id,
+        name: result['name'],
+      );
+
+      if (updatedCollection != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Updated "${result['name']}"'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _loadCollections(forceRefresh: true);
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update collection'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
