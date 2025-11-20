@@ -824,11 +824,39 @@ Shared from Recipe App
       // Handle existing collection selection
       final selectedCollection = result as RecipeCollection;
       
+      // Show loading indicator immediately
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Text('Adding to "${selectedCollection.name}"...'),
+              ],
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      
       // Add recipe to collection
       final success = await collectionService.addRecipeToCollection(
         selectedCollection.id,
         widget.recipe,
       );
+      
+      // Clear loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+      }
       
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -16,6 +16,9 @@ import '../components/inline_banner_ad.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/image_replacement_service.dart';
+import '../services/collection_service.dart';
+import '../models/recipe_collection.dart';
+import '../utils/snackbar_helper.dart';
 
 // Overflow menu actions for the recipe details screen
 enum MenuAction {
@@ -462,6 +465,177 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
   }
 
+  Future<void> _showAddToCollectionDialog() async {
+    final collectionService = CollectionService();
+    
+    try {
+      // Fetch all collections
+      final collections = await collectionService.getCollections();
+      
+      if (!mounted) return;
+      
+      if (collections.isEmpty) {
+        SnackBarHelper.showWarning(
+          context,
+          'No collections found. Create one first!',
+        );
+        return;
+      }
+      
+      // Show dialog to select collection or create new
+      final result = await showDialog<dynamic>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Add to Collection'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Create new collection button
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.add_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    'Create New Collection',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () => Navigator.pop(context, 'create_new'),
+                ),
+                const Divider(),
+                // Existing collections list
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: collections.length,
+                    itemBuilder: (context, index) {
+                      final collection = collections[index];
+                      // Skip default collections like "Recently Added"
+                      if (collection.name == 'Recently Added') return const SizedBox.shrink();
+                      
+                      return ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: collection.color.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            collection.icon,
+                            color: collection.color,
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(collection.name),
+                        subtitle: Text('${collection.recipes.length} recipes'),
+                        onTap: () => Navigator.pop(context, collection),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+      
+      if (result == null || !mounted) return;
+      
+      // Handle create new collection
+      if (result == 'create_new') {
+        // Navigate to collections screen to create new collection
+        Navigator.pushNamed(context, '/collections');
+        return;
+      }
+      
+      // Handle existing collection selection
+      final selectedCollection = result as RecipeCollection;
+      
+      // Show loading indicator immediately
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Text('Adding to "${selectedCollection.name}"...'),
+              ],
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      
+      // Add recipe to collection
+      final success = await collectionService.addRecipeToCollection(
+        selectedCollection.id,
+        _currentRecipe,
+      );
+      
+      // Clear loading snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+      }
+      
+      if (success && mounted) {
+        SnackBarHelper.showSuccess(
+          context,
+          'Added to "${selectedCollection.name}"',
+          action: SnackBarAction(
+            label: 'View',
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                '/collectionDetail',
+                arguments: selectedCollection,
+              );
+            },
+          ),
+        );
+      } else if (mounted) {
+        SnackBarHelper.showError(
+          context,
+          'Failed to add recipe to collection',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarHelper.showError(
+          context,
+          'Error: $e',
+        );
+      }
+    }
+  }
+
   String _formatCookingTime(String cookingTime) {
     // If already contains 'hour' or 'minute', it's already formatted
     if (cookingTime.contains('hour') || cookingTime.contains('minute')) {
@@ -588,8 +762,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     await _showReplaceImageSheet(context, recipe);
                     break;
                   case MenuAction.addToCollection:
-                    // Navigate to collections screen where user can add recipe
-                    Navigator.pushNamed(context, '/collections');
+                    // Show dialog to pick collection and add recipe immediately
+                    _showAddToCollectionDialog();
                     break;
                   case MenuAction.share:
                     try {
