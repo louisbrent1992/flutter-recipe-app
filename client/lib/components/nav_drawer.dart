@@ -46,12 +46,26 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
         .toList();
   }
 
-  // Calculate chef ranking based on difficulty and recipe count
+  // Calculate chef ranking based on recipe count (primary) and difficulty (secondary)
   Map<String, dynamic> get chefRanking {
-    int stars = 0;
+    int stars = 1;
 
-    // Calculate average difficulty stars (1-3)
-    if (recipeDifficulties.isNotEmpty) {
+    // Primary: Calculate stars based on recipe count thresholds (matches achievement requirements)
+    if (savedRecipesCount >= 500) {
+      stars = 5; // Master Chef
+    } else if (savedRecipesCount >= 300) {
+      stars = 4; // Executive Chef
+    } else if (savedRecipesCount >= 150) {
+      stars = 3; // Sous Chef
+    } else if (savedRecipesCount >= 50) {
+      stars = 2; // Line Cook
+    } else {
+      stars = 1; // Commis Chef
+    }
+
+    // Secondary: Add small bonus for recipe difficulty (max +1 star, only if below max)
+    // This allows users with challenging recipes to progress slightly faster
+    if (stars < 5 && recipeDifficulties.isNotEmpty) {
       double avgDifficulty =
           recipeDifficulties
               .map((difficulty) {
@@ -69,18 +83,10 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               .reduce((a, b) => a + b) /
           recipeDifficulties.length;
 
-      stars = avgDifficulty.round();
-    } else {
-      stars = 1; // Default for new users
-    }
-
-    // Add bonus stars for recipe count
-    if (savedRecipesCount >= 300) {
-      stars += 3;
-    } else if (savedRecipesCount >= 100) {
-      stars += 2;
-    } else if (savedRecipesCount >= 50) {
-      stars += 1;
+      // If average difficulty is high (>= 1.5), add 1 bonus star (but don't exceed recipe count threshold)
+      if (avgDifficulty >= 1.5 && stars < 5) {
+        stars = (stars + 1).clamp(1, 5);
+      }
     }
 
     // Ensure stars are between 1 and 5
@@ -1350,10 +1356,12 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
 
     if (savedRecipesCount < 50) {
       return 'Save ${50 - savedRecipesCount} more recipes to get closer to $nextTitle!';
-    } else if (savedRecipesCount < 100) {
-      return 'Save ${100 - savedRecipesCount} more recipes to reach $nextTitle!';
+    } else if (savedRecipesCount < 150) {
+      return 'Save ${150 - savedRecipesCount} more recipes to reach $nextTitle!';
     } else if (savedRecipesCount < 300) {
       return 'Save ${300 - savedRecipesCount} more recipes to reach $nextTitle!';
+    } else if (savedRecipesCount < 500) {
+      return 'Save ${500 - savedRecipesCount} more recipes to reach $nextTitle!';
     } else {
       return 'Try more challenging recipes to reach $nextTitle!';
     }

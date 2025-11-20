@@ -34,6 +34,7 @@ class GameCenterService {
   static const String achievement50Recipes = 'achievement_50_recipes';
   static const String achievement100Recipes = 'achievement_100_recipes';
   static const String achievement300Recipes = 'achievement_300_recipes';
+  static const String achievement500Recipes = 'achievement_500_recipes';
   static const String achievement1000Recipes = 'achievement_1000_recipes';
   static const String achievementFirstGeneration =
       'achievement_first_generation';
@@ -159,38 +160,53 @@ class GameCenterService {
   }
 
   /// Unlock achievement based on chef ranking
-  Future<void> unlockChefAchievement(int stars) async {
+  /// Now requires minimum recipe counts to prevent early unlocks
+  Future<void> unlockChefAchievement(int stars, {required int recipeCount}) async {
     if (!_isAuthenticated) return;
 
     try {
-      String achievementId;
+      String? achievementId;
+      
+      // Require minimum recipe counts for each chef level
       switch (stars) {
         case 1:
-          achievementId = achievementNoviceChef;
+          if (recipeCount >= 1) {
+            achievementId = achievementNoviceChef; // Commis Chef - 1 recipe minimum
+          }
           break;
         case 2:
-          achievementId = achievementHomeCook;
+          if (recipeCount >= 50) {
+            achievementId = achievementHomeCook; // Line Cook - 50 recipes minimum
+          }
           break;
         case 3:
-          achievementId = achievementSkilledChef;
+          if (recipeCount >= 150) {
+            achievementId = achievementSkilledChef; // Sous Chef - 150 recipes minimum
+          }
           break;
         case 4:
-          achievementId = achievementExpertChef;
+          if (recipeCount >= 300) {
+            achievementId = achievementExpertChef; // Executive Chef - 300 recipes minimum
+          }
           break;
         case 5:
-          achievementId = achievementMasterChef;
+          if (recipeCount >= 500) {
+            achievementId = achievementMasterChef; // Master Chef - 500 recipes minimum
+          }
           break;
         default:
           return;
       }
 
-      await GamesServices.unlock(
-        achievement: Achievement(
-          iOSID: achievementId,
-          androidID: achievementId,
-        ),
-      );
-      debugPrint('✅ Unlocked achievement: $achievementId ($stars stars)');
+      if (achievementId != null) {
+        await GamesServices.unlock(
+          achievement: Achievement(
+            iOSID: achievementId,
+            androidID: achievementId,
+          ),
+        );
+        debugPrint('✅ Unlocked achievement: $achievementId ($stars stars, $recipeCount recipes)');
+      }
     } catch (e) {
       debugPrint('Error unlocking chef achievement: $e');
     }
@@ -210,6 +226,8 @@ class GameCenterService {
         achievementId = achievement100Recipes;
       } else if (recipeCount == 300) {
         achievementId = achievement300Recipes;
+      } else if (recipeCount == 500) {
+        achievementId = achievement500Recipes;
       } else if (recipeCount == 1000) {
         achievementId = achievement1000Recipes;
       }
@@ -298,8 +316,8 @@ class GameCenterService {
     await submitChefStars(stars);
     await submitRecipesSaved(recipeCount);
 
-    // Unlock achievements
-    await unlockChefAchievement(stars);
+    // Unlock achievements - now with recipe count requirement
+    await unlockChefAchievement(stars, recipeCount: recipeCount);
     await unlockRecipeCountAchievement(recipeCount);
   }
 

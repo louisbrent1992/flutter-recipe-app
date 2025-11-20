@@ -840,18 +840,18 @@ class RecipeProvider extends ChangeNotifier {
       int stars = 1;
       final recipeCount = _totalUserRecipes;
 
-      // Calculate average difficulty (simplified - would need full recipe data)
-      // For now, base stars on recipe count
-      if (recipeCount >= 300) {
-        stars = 5;
-      } else if (recipeCount >= 100) {
-        stars = 4;
+      // Calculate stars based on recipe count thresholds
+      // Updated to match achievement requirements
+      if (recipeCount >= 500) {
+        stars = 5; // Master Chef
+      } else if (recipeCount >= 300) {
+        stars = 4; // Executive Chef
+      } else if (recipeCount >= 150) {
+        stars = 3; // Sous Chef
       } else if (recipeCount >= 50) {
-        stars = 3;
-      } else if (recipeCount >= 10) {
-        stars = 2;
+        stars = 2; // Line Cook
       } else {
-        stars = 1;
+        stars = 1; // Commis Chef
       }
 
       // Sync with Game Center
