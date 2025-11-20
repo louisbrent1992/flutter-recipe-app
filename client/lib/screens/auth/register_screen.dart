@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/invite_service.dart';
 import '../../theme/theme.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -18,9 +19,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final TextEditingController _inviteCodeController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _inviteCodeInitialized = false;
 
   // Password requirement states
   bool _hasMinLength = false;
@@ -38,6 +41,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _passwordController.addListener(_validatePasswordRequirements);
     _confirmPasswordController.addListener(_validatePasswordMatch);
     _emailController.addListener(_onEmailChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_inviteCodeInitialized) return;
+    _inviteCodeInitialized = true;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    String? code;
+    if (args is String) {
+      code = args;
+    } else if (args is Map) {
+      code = args['inviteCode'] as String?;
+    }
+    if (code != null && code.isNotEmpty) {
+      _inviteCodeController.text = code;
+      return;
+    }
+
+    InviteService().getPendingInviteCode().then((pending) {
+      if (!mounted || pending == null || pending.isEmpty) return;
+      setState(() {
+        _inviteCodeController.text = pending;
+      });
+    });
   }
 
   void _onEmailChanged() {
@@ -137,6 +165,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _inviteCodeController.dispose();
     super.dispose();
   }
 
@@ -146,6 +175,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final inviteCode = _inviteCodeController.text.trim();
+      if (inviteCode.isNotEmpty) {
+        await InviteService().savePendingInviteCode(inviteCode);
+      }
+
       await context.read<AuthService>().registerWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text.trim(),
@@ -238,6 +272,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _showSnackBar('Successfully signed up with Apple!');
         Navigator.pushNamed(context, '/home', arguments: userData);
       }
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (!mounted) return;
+      String message;
+      switch (e.code) {
+        case AuthorizationErrorCode.canceled:
+          message =
+              'Sign up was canceled. Please try again when you\'re ready.';
+          break;
+        case AuthorizationErrorCode.failed:
+          message = 'Sign up failed. Please try again.';
+          break;
+        case AuthorizationErrorCode.invalidResponse:
+          message = 'Invalid response from Apple. Please try again.';
+          break;
+        case AuthorizationErrorCode.notHandled:
+          message = 'Sign up could not be completed. Please try again.';
+          break;
+        case AuthorizationErrorCode.unknown:
+        default:
+          message = 'An unexpected error occurred. Please try again.';
+      }
+      _showSnackBar(message, isError: true);
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       String message;
@@ -278,7 +334,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       body: Center(
-          child: SingleChildScrollView(
+        child: SingleChildScrollView(
           padding: EdgeInsets.all(
             AppBreakpoints.isDesktop(context)
                 ? 32.0
@@ -431,6 +487,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       }
                       return null;
                     },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _inviteCodeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Invite Code (optional)',
+                      hintText: 'Enter a friend\'s code',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Use an invite code to earn bonus credits for you and your friend.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.secondary,
+                      fontSize: 11,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(

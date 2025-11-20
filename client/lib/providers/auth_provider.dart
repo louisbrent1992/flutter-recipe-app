@@ -9,6 +9,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../services/api_client.dart';
 import '../services/collection_service.dart';
 import '../services/credits_service.dart';
+import '../services/invite_service.dart';
 import '../firebase_options.dart';
 
 class AuthService with ChangeNotifier {
@@ -140,11 +141,11 @@ class AuthService with ChangeNotifier {
       // Update user profile in Firestore
       if (_user != null) {
         await _createOrUpdateUserProfile(_user!);
-        
+
         // Force refresh ID token to ensure currentUser is properly set
         // This prevents race conditions when making API calls immediately after login
         await _user!.getIdToken(true);
-        
+
         // Add a delay to ensure Firebase Auth state is fully propagated
         // This is crucial for preventing "User not authenticated" errors
         await Future.delayed(const Duration(milliseconds: 1000));
@@ -200,10 +201,11 @@ class AuthService with ChangeNotifier {
         await _auth.setPersistence(Persistence.LOCAL);
       }
 
-      UserCredential result = await _auth.createUserWithEmailAndPassword(
+      final UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+      final bool isNewUser = result.additionalUserInfo?.isNewUser ?? false;
 
       // Update display name
       await result.user!.updateDisplayName(displayName);
@@ -212,6 +214,11 @@ class AuthService with ChangeNotifier {
       // Create user profile in Firestore
       if (_user != null) {
         await _createOrUpdateUserProfile(_user!, displayName: displayName);
+        await _user!.getIdToken(true);
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (isNewUser) {
+          await InviteService().applyPendingInvite();
+        }
       }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'network-request-failed') {
@@ -257,9 +264,9 @@ class AuthService with ChangeNotifier {
         idToken: googleAuth.idToken,
       );
 
-      UserCredential userCredential = await _auth.signInWithCredential(
-        credential,
-      );
+      final userCredential = await _auth.signInWithCredential(credential);
+      final bool isNewUser =
+          userCredential.additionalUserInfo?.isNewUser ?? false;
 
       // Create or update user profile in Firestore
       if (userCredential.user != null) {
@@ -267,13 +274,17 @@ class AuthService with ChangeNotifier {
           userCredential.user!,
           displayName: googleUser.displayName,
         );
-        
+
         // Force refresh ID token to ensure currentUser is properly set
         // This prevents race conditions when making API calls immediately after login
         await userCredential.user!.getIdToken(true);
-        
+
         // Add a small delay to ensure Firebase Auth state is fully propagated
         await Future.delayed(const Duration(milliseconds: 500));
+
+        if (isNewUser) {
+          await InviteService().applyPendingInvite();
+        }
       }
 
       _user = userCredential.user;
@@ -314,9 +325,7 @@ class AuthService with ChangeNotifier {
       );
 
       // Create OAuth provider credential
-      final oauthCredential = OAuthProvider(
-        'apple.com',
-      ).credential(
+      final oauthCredential = OAuthProvider('apple.com').credential(
         idToken: credential.identityToken,
         rawNonce: rawNonce,
         // Some Firebase versions expect the Apple authorizationCode as accessToken
@@ -324,9 +333,9 @@ class AuthService with ChangeNotifier {
       );
 
       // Sign in to Firebase
-      UserCredential userCredential = await _auth.signInWithCredential(
-        oauthCredential,
-      );
+      final userCredential = await _auth.signInWithCredential(oauthCredential);
+      final bool isNewUser =
+          userCredential.additionalUserInfo?.isNewUser ?? false;
 
       // Create or update user profile in Firestore
       if (userCredential.user != null) {
@@ -339,18 +348,42 @@ class AuthService with ChangeNotifier {
           userCredential.user!,
           displayName: displayName,
         );
-        
+
         // Force refresh ID token to ensure currentUser is properly set
         // This prevents race conditions when making API calls immediately after login
         await userCredential.user!.getIdToken(true);
-        
+
         // Add a delay to ensure Firebase Auth state is fully propagated
         // This is crucial for preventing "User not authenticated" errors
         await Future.delayed(const Duration(milliseconds: 1500));
+
+        if (isNewUser) {
+          await InviteService().applyPendingInvite();
+        }
       }
 
       _user = userCredential.user;
       return _user;
+    } on SignInWithAppleAuthorizationException catch (e) {
+      // Handle Apple Sign In specific errors with user-friendly messages
+      switch (e.code) {
+        case AuthorizationErrorCode.canceled:
+          _error = 'Sign in was canceled';
+          break;
+        case AuthorizationErrorCode.failed:
+          _error = 'Sign in failed. Please try again.';
+          break;
+        case AuthorizationErrorCode.invalidResponse:
+          _error = 'Invalid response from Apple. Please try again.';
+          break;
+        case AuthorizationErrorCode.notHandled:
+          _error = 'Sign in could not be completed. Please try again.';
+          break;
+        case AuthorizationErrorCode.unknown:
+        default:
+          _error = 'An unexpected error occurred during Apple sign in.';
+      }
+      return null;
     } catch (e) {
       _error = e.toString();
       return null;

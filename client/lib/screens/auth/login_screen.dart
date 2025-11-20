@@ -28,10 +28,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _onEmailChanged() {
     final email = _emailController.text;
-    final newError = email.isNotEmpty && !email.contains('@')
-        ? 'Please enter a valid email'
-        : null;
-    
+    final newError =
+        email.isNotEmpty && !email.contains('@')
+            ? 'Please enter a valid email'
+            : null;
+
     // Only update if error state actually changed to prevent unnecessary rebuilds
     if (_emailError != newError) {
       setState(() {
@@ -204,11 +205,35 @@ class _LoginScreenState extends State<LoginScreen> {
           _showSnackBar(authService.error!, isError: true);
         }
       }
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (mounted) {
+        String message;
+        switch (e.code) {
+          case AuthorizationErrorCode.canceled:
+            message =
+                'Sign in was canceled. Please try again when you\'re ready.';
+            break;
+          case AuthorizationErrorCode.failed:
+            message = 'Sign in failed. Please try again.';
+            break;
+          case AuthorizationErrorCode.invalidResponse:
+            message = 'Invalid response from Apple. Please try again.';
+            break;
+          case AuthorizationErrorCode.notHandled:
+            message = 'Sign in could not be completed. Please try again.';
+            break;
+          case AuthorizationErrorCode.unknown:
+          default:
+            message = 'An unexpected error occurred. Please try again.';
+        }
+        _showSnackBar(message, isError: true);
+      }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         String message;
         if (e.code == 'invalid-credential') {
-          message = 'Apple sign-in configuration error. Please contact support or try another sign-in method.';
+          message =
+              'Apple sign-in configuration error. Please contact support or try another sign-in method.';
         } else {
           message = 'Failed to sign in with Apple: ${e.message}';
         }
@@ -346,185 +371,196 @@ class _LoginScreenState extends State<LoginScreen> {
               AppBreakpoints.isDesktop(context)
                   ? 32.0
                   : AppBreakpoints.isTablet(context)
-                      ? 28.0
-                      : 24.0,
+                  ? 28.0
+                  : 24.0,
             ),
             child: Container(
               constraints: BoxConstraints(
-                maxWidth: AppBreakpoints.isDesktop(context)
-                    ? 500
-                    : AppBreakpoints.isTablet(context)
+                maxWidth:
+                    AppBreakpoints.isDesktop(context)
+                        ? 500
+                        : AppBreakpoints.isTablet(context)
                         ? 450
                         : double.infinity,
               ),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Welcome Back!',
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: 20,
-                      ),
-                    textAlign: TextAlign.center,
-                  ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Welcome Back!',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineLarge?.copyWith(fontSize: 20),
+                      textAlign: TextAlign.center,
+                    ),
                     SizedBox(
-                      height: AppBreakpoints.isDesktop(context)
-                          ? 24
-                          : AppBreakpoints.isTablet(context)
+                      height:
+                          AppBreakpoints.isDesktop(context)
+                              ? 24
+                              : AppBreakpoints.isTablet(context)
                               ? 20
                               : 16,
                     ),
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      border: const OutlineInputBorder(),
-                      errorText: _emailError,
-                      errorMaxLines: 1,
-                      isDense: true,
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        border: const OutlineInputBorder(),
+                        errorText: _emailError,
+                        errorMaxLines: 1,
+                        isDense: true,
                       ),
-                    ),
-                    obscureText: _obscurePassword,
-                    validator: _validatePassword,
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: _showForgotPasswordDialog,
-                      child: const Text(
-                        'Forgot Password?',
-                        style: TextStyle(fontSize: 14),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed:
-                        authService.isLoading
-                            ? null
-                            : _signInWithEmailAndPassword,
-                    child:
-                        authService.isLoading
-                            ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                            : const Text('Sign In'),
-                  ),
-                  const SizedBox(height: 16),
-                  const Row(
-                    children: [
-                      Expanded(child: Divider()),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('OR'),
-                      ),
-                      Expanded(child: Divider()),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: authService.isLoading ? null : _signInWithGoogle,
-                    icon: Image.network(
-                      'https://www.google.com/favicon.ico',
-                      height: AppBreakpoints.isDesktop(context)
-                          ? 28
-                          : AppBreakpoints.isTablet(context)
-                              ? 26
-                              : 24,
-                    ),
-                    label: const Text('Sign in with Google'),
-                    style: OutlinedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(
-                        vertical: AppBreakpoints.isDesktop(context)
-                            ? 16
-                            : AppBreakpoints.isTablet(context)
-                                ? 14
-                                : 12,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Apple Sign In button - only show on iOS
-                  if (Theme.of(context).platform == TargetPlatform.iOS)
-                    FutureBuilder<bool>(
-                      future: SignInWithApple.isAvailable(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const SizedBox.shrink();
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your email';
                         }
-
-                        if (snapshot.data == true) {
-                          return OutlinedButton.icon(
-                            onPressed:
-                                authService.isLoading ? null : _signInWithApple,
-                            icon: Icon(
-                              Icons.apple,
-                              size: AppBreakpoints.isDesktop(context)
-                                  ? 28
-                                  : AppBreakpoints.isTablet(context)
-                                      ? 26
-                                      : 24,
-                            ),
-                            label: const Text('Sign in with Apple'),
-                            style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(
-                                vertical: AppBreakpoints.isDesktop(context)
-                                    ? 16
-                                    : AppBreakpoints.isTablet(context)
-                                        ? 14
-                                        : 12,
-                              ),
-                            ),
-                          );
+                        if (!value.contains('@')) {
+                          return 'Please enter a valid email';
                         }
-
-                        return const SizedBox.shrink();
+                        return null;
                       },
                     ),
-                  const SizedBox(height: 24),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/register');
-                    },
-                    child: const Text('Don\'t have an account? Sign up'),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                      ),
+                      obscureText: _obscurePassword,
+                      validator: _validatePassword,
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _showForgotPasswordDialog,
+                        child: const Text(
+                          'Forgot Password?',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed:
+                          authService.isLoading
+                              ? null
+                              : _signInWithEmailAndPassword,
+                      child:
+                          authService.isLoading
+                              ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Text('Sign In'),
+                    ),
+                    const SizedBox(height: 16),
+                    const Row(
+                      children: [
+                        Expanded(child: Divider()),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Text('OR'),
+                        ),
+                        Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed:
+                          authService.isLoading ? null : _signInWithGoogle,
+                      icon: Image.network(
+                        'https://www.google.com/favicon.ico',
+                        height:
+                            AppBreakpoints.isDesktop(context)
+                                ? 28
+                                : AppBreakpoints.isTablet(context)
+                                ? 26
+                                : 24,
+                      ),
+                      label: const Text('Sign in with Google'),
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          vertical:
+                              AppBreakpoints.isDesktop(context)
+                                  ? 16
+                                  : AppBreakpoints.isTablet(context)
+                                  ? 14
+                                  : 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Apple Sign In button - only show on iOS
+                    if (Theme.of(context).platform == TargetPlatform.iOS)
+                      FutureBuilder<bool>(
+                        future: SignInWithApple.isAvailable(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const SizedBox.shrink();
+                          }
+
+                          if (snapshot.data == true) {
+                            return OutlinedButton.icon(
+                              onPressed:
+                                  authService.isLoading
+                                      ? null
+                                      : _signInWithApple,
+                              icon: Icon(
+                                Icons.apple,
+                                size:
+                                    AppBreakpoints.isDesktop(context)
+                                        ? 28
+                                        : AppBreakpoints.isTablet(context)
+                                        ? 26
+                                        : 24,
+                              ),
+                              label: const Text('Sign in with Apple'),
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(
+                                  vertical:
+                                      AppBreakpoints.isDesktop(context)
+                                          ? 16
+                                          : AppBreakpoints.isTablet(context)
+                                          ? 14
+                                          : 12,
+                                ),
+                              ),
+                            );
+                          }
+
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    const SizedBox(height: 24),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/register');
+                      },
+                      child: const Text('Don\'t have an account? Sign up'),
+                    ),
+                  ],
                 ),
               ),
             ),
