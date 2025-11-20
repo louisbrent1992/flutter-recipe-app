@@ -5,3 +5,8 @@
 # Ignore all markdown files in root except README.md
 /*.md
 !README.md
+
+# Ignore scripts in parent directory
+/scripts
+
+/resized_screenshots
