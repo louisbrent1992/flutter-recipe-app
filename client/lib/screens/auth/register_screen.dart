@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/invite_service.dart';
 import '../../theme/theme.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -59,13 +58,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _inviteCodeController.text = code;
       return;
     }
-
-    InviteService().getPendingInviteCode().then((pending) {
-      if (!mounted || pending == null || pending.isEmpty) return;
-      setState(() {
-        _inviteCodeController.text = pending;
-      });
-    });
   }
 
   void _onEmailChanged() {
@@ -175,11 +167,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final inviteCode = _inviteCodeController.text.trim();
-      if (inviteCode.isNotEmpty) {
-        await InviteService().savePendingInviteCode(inviteCode);
-      }
-
       await context.read<AuthService>().registerWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text.trim(),

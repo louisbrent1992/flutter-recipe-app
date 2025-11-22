@@ -41,6 +41,12 @@ class RecipeProvider extends ChangeNotifier {
   final Map<String, Map<int, Map<String, dynamic>>> _generatedPaginationCache =
       {};
 
+  // Session-level discover cache (fetch once, filter client-side)
+  List<Recipe> _sessionDiscoverCache = [];
+  DateTime? _sessionCacheTime;
+  static const int _sessionCacheSize = 500;
+  static const Duration _sessionCacheDuration = Duration(hours: 1);
+
   // Favorites removed: no favorites cache
 
   // Getters
@@ -101,7 +107,9 @@ class RecipeProvider extends ChangeNotifier {
         cuisineType: cuisineType,
         random: random,
       );
-      debugPrint('🟡 [Provider] RecipeService.generateRecipes returned: success=${response.success}');
+      debugPrint(
+        '🟡 [Provider] RecipeService.generateRecipes returned: success=${response.success}',
+      );
 
       if (response.success && response.data != null) {
         _generatedRecipes = response.data ?? [];
@@ -124,7 +132,10 @@ class RecipeProvider extends ChangeNotifier {
 
   // Import recipe from social media URL
   // Returns a Map with 'recipe' and 'fromCache' keys
-  Future<Map<String, dynamic>?> importRecipeFromUrl(String url, BuildContext context) async {
+  Future<Map<String, dynamic>?> importRecipeFromUrl(
+    String url,
+    BuildContext context,
+  ) async {
     debugPrint('🟡 [Provider] importRecipeFromUrl called with: $url');
     _setLoading(true);
     clearError();
@@ -132,7 +143,9 @@ class RecipeProvider extends ChangeNotifier {
     try {
       debugPrint('🟡 [Provider] Calling RecipeService.importRecipeFromUrl');
       final response = await RecipeService.importRecipeFromUrl(url);
-      debugPrint('🟡 [Provider] RecipeService.importRecipeFromUrl returned: success=${response.success}');
+      debugPrint(
+        '🟡 [Provider] RecipeService.importRecipeFromUrl returned: success=${response.success}',
+      );
 
       if (response.success && response.data != null) {
         final recipe = response.data!;
@@ -425,28 +438,32 @@ class RecipeProvider extends ChangeNotifier {
       if (context.mounted) {
         // Handle duplicate error from server (409 status code)
         if (response.statusCode == 409) {
-          _setError(response.message ?? 'This recipe already exists in your collection');
+          _setError(
+            response.message ?? 'This recipe already exists in your collection',
+          );
           // Try to find the duplicate recipe to show "View Recipe" action
           final duplicateRecipe = findDuplicateRecipe(recipe);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                response.message ?? 'This recipe already exists in your collection',
+                response.message ??
+                    'This recipe already exists in your collection',
               ),
               backgroundColor: Colors.orange,
-              action: duplicateRecipe != null
-                  ? SnackBarAction(
-                      label: 'View Recipe',
-                      textColor: Colors.white,
-                      onPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/recipeDetail',
-                          arguments: duplicateRecipe,
-                        );
-                      },
-                    )
-                  : null,
+              action:
+                  duplicateRecipe != null
+                      ? SnackBarAction(
+                        label: 'View Recipe',
+                        textColor: Colors.white,
+                        onPressed: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/recipeDetail',
+                            arguments: duplicateRecipe,
+                          );
+                        },
+                      )
+                      : null,
               duration: const Duration(seconds: 6),
             ),
           );
@@ -613,6 +630,152 @@ class RecipeProvider extends ChangeNotifier {
   // API SEARCH METHODS
   //----------------------------------------
 
+  // Fetch session-level discover cache (500 recipes, reused for filtering)
+  Future<void> fetchSessionDiscoverCache({bool forceRefresh = false}) async {
+    // Check if cache is still valid
+    if (!forceRefresh &&
+        _sessionDiscoverCache.isNotEmpty &&
+        _sessionCacheTime != null &&
+        DateTime.now().difference(_sessionCacheTime!) < _sessionCacheDuration) {
+      debugPrint(
+        '✅ Using valid session cache (${_sessionDiscoverCache.length} recipes)',
+      );
+      return; // Use existing cache
+    }
+
+    debugPrint('🔄 Fetching $_sessionCacheSize recipes for session cache...');
+    clearError();
+    _setLoading(true);
+
+    try {
+      final response = await RecipeService.searchExternalRecipes(
+        limit: _sessionCacheSize,
+        random: true,
+      );
+
+      if (response.success && response.data != null) {
+        final data = response.data!;
+        final recipesList = data['recipes'];
+
+        if (recipesList != null && recipesList is List) {
+          _sessionDiscoverCache =
+              recipesList
+                  .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
+                  .toList();
+          
+          // Shuffle immediately for true randomization (server returns all 500)
+          _sessionDiscoverCache.shuffle();
+          
+          _sessionCacheTime = DateTime.now();
+          debugPrint(
+            '✅ Session cache populated and shuffled with ${_sessionDiscoverCache.length} recipes',
+          );
+        }
+      } else {
+        _setError(response.message ?? 'Failed to fetch discover recipes');
+      }
+    } catch (e) {
+      debugPrint('❌ Error fetching session cache: $e');
+      _setError('Failed to load recipes: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Get filtered and paginated recipes from session cache
+  List<Recipe> getFilteredDiscoverRecipes({
+    String? query,
+    String? difficulty,
+    String? tag,
+    int page = 1,
+    int limit = 12,
+  }) {
+    if (_sessionDiscoverCache.isEmpty) {
+      return [];
+    }
+
+    // Filter from session cache
+    var filtered = List<Recipe>.from(_sessionDiscoverCache);
+
+    // Apply difficulty filter
+    if (difficulty != null && difficulty != 'All') {
+      filtered =
+          filtered
+              .where(
+                (r) => r.difficulty.toLowerCase() == difficulty.toLowerCase(),
+              )
+              .toList();
+    }
+
+    // Apply tag filter
+    if (tag != null && tag != 'All') {
+      filtered =
+          filtered
+              .where(
+                (r) => r.tags.any((t) => t.toLowerCase() == tag.toLowerCase()),
+              )
+              .toList();
+    }
+
+    // Apply text search filter (if query provided)
+    if (query != null && query.isNotEmpty) {
+      final lowerQuery = query.toLowerCase();
+      filtered =
+          filtered
+              .where(
+                (r) =>
+                    r.title.toLowerCase().contains(lowerQuery) ||
+                    r.description.toLowerCase().contains(lowerQuery) ||
+                    r.tags.any((t) => t.toLowerCase().contains(lowerQuery)),
+              )
+              .toList();
+    }
+
+    // Calculate pagination
+    final total = filtered.length;
+    final totalPages = (total / limit).ceil();
+    final startIndex = (page - 1) * limit;
+    final endIndex = (startIndex + limit).clamp(0, total);
+
+    // Update pagination state
+    _currentPage = page;
+    _totalPages = totalPages > 0 ? totalPages : 1;
+    _hasNextPage = page < totalPages;
+    _hasPrevPage = page > 1;
+    _totalRecipes = total;
+
+    // Return paginated subset
+    if (startIndex >= total) {
+      return [];
+    }
+
+    return filtered.sublist(startIndex, endIndex);
+  }
+
+  // Randomize the session cache
+  void randomizeSessionCache() {
+    if (_sessionDiscoverCache.isNotEmpty) {
+      _sessionDiscoverCache.shuffle();
+      debugPrint(
+        '🔀 Randomized session cache (${_sessionDiscoverCache.length} recipes)',
+      );
+      notifyListeners();
+    }
+  }
+
+  // Clear session cache (force refresh)
+  void clearSessionCache() {
+    _sessionDiscoverCache.clear();
+    _sessionCacheTime = null;
+    debugPrint('🗑️ Session cache cleared');
+  }
+
+  // Set generated recipes from cache (internal helper)
+  void setGeneratedRecipesFromCache(List<Recipe> recipes) {
+    _generatedRecipes = recipes;
+    notifyListeners();
+  }
+
   // Search for recipes from external API
   Future<void> searchExternalRecipes({
     String? query,
@@ -703,13 +866,13 @@ class RecipeProvider extends ChangeNotifier {
         final pagination = data['pagination'];
         if (pagination != null && pagination is Map<String, dynamic>) {
           _currentPage = pagination['page'] ?? page;
-          
+
           // Validate pagination against actual results
           // If we got fewer results than the limit, or no results on page > 1,
           // adjust the total pages accordingly
           final actualResultsCount = recipes.length;
           final serverTotalPages = pagination['totalPages'] ?? 1;
-          
+
           // If we're on page 1 and got fewer results than the limit, there's only 1 page
           if (page == 1 && actualResultsCount < limit) {
             _totalPages = 1;
@@ -736,23 +899,23 @@ class RecipeProvider extends ChangeNotifier {
             if (actualResultsCount < limit) {
               _hasNextPage = false;
             } else {
-          _hasNextPage = pagination['hasNextPage'] ?? false;
+              _hasNextPage = pagination['hasNextPage'] ?? false;
             }
           }
-          
+
           _hasPrevPage = pagination['hasPrevPage'] ?? (page > 1);
           _totalRecipes = pagination['total'] ?? actualResultsCount;
-          
+
           // Ensure hasNextPage is false if we're on the last page
           if (_currentPage >= _totalPages) {
             _hasNextPage = false;
           }
-          
+
           // Ensure hasPrevPage is false if we're on page 1
           if (_currentPage <= 1) {
             _hasPrevPage = false;
           }
-          
+
           _generatedPaginationCache.putIfAbsent(
             cacheKey,
             () => <int, Map<String, dynamic>>{},
@@ -768,20 +931,20 @@ class RecipeProvider extends ChangeNotifier {
           // Fallback values if pagination data is missing
           // Calculate pagination based on actual results
           _currentPage = page;
-          
+
           // If we got fewer results than the limit, there's only 1 page
           if (recipes.length < limit) {
-          _totalPages = 1;
-          _hasNextPage = false;
+            _totalPages = 1;
+            _hasNextPage = false;
           } else {
             // Estimate total pages from results (this is a fallback, server should provide this)
             _totalPages = 1; // Default to 1 if we can't determine
             _hasNextPage = false; // Can't know for sure without server data
           }
-          
+
           _hasPrevPage = page > 1;
           _totalRecipes = recipes.length;
-          
+
           _generatedPaginationCache.putIfAbsent(
             cacheKey,
             () => <int, Map<String, dynamic>>{},

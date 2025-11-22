@@ -9,7 +9,6 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../services/api_client.dart';
 import '../services/collection_service.dart';
 import '../services/credits_service.dart';
-import '../services/invite_service.dart';
 import '../firebase_options.dart';
 
 class AuthService with ChangeNotifier {
@@ -205,7 +204,6 @@ class AuthService with ChangeNotifier {
         email: email,
         password: password,
       );
-      final bool isNewUser = result.additionalUserInfo?.isNewUser ?? false;
 
       // Update display name
       await result.user!.updateDisplayName(displayName);
@@ -216,9 +214,6 @@ class AuthService with ChangeNotifier {
         await _createOrUpdateUserProfile(_user!, displayName: displayName);
         await _user!.getIdToken(true);
         await Future.delayed(const Duration(milliseconds: 500));
-        if (isNewUser) {
-          await InviteService().applyPendingInvite();
-        }
       }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'network-request-failed') {
@@ -265,8 +260,6 @@ class AuthService with ChangeNotifier {
       );
 
       final userCredential = await _auth.signInWithCredential(credential);
-      final bool isNewUser =
-          userCredential.additionalUserInfo?.isNewUser ?? false;
 
       // Create or update user profile in Firestore
       if (userCredential.user != null) {
@@ -281,10 +274,6 @@ class AuthService with ChangeNotifier {
 
         // Add a small delay to ensure Firebase Auth state is fully propagated
         await Future.delayed(const Duration(milliseconds: 500));
-
-        if (isNewUser) {
-          await InviteService().applyPendingInvite();
-        }
       }
 
       _user = userCredential.user;
@@ -334,8 +323,6 @@ class AuthService with ChangeNotifier {
 
       // Sign in to Firebase
       final userCredential = await _auth.signInWithCredential(oauthCredential);
-      final bool isNewUser =
-          userCredential.additionalUserInfo?.isNewUser ?? false;
 
       // Create or update user profile in Firestore
       if (userCredential.user != null) {
@@ -356,10 +343,6 @@ class AuthService with ChangeNotifier {
         // Add a delay to ensure Firebase Auth state is fully propagated
         // This is crucial for preventing "User not authenticated" errors
         await Future.delayed(const Duration(milliseconds: 1500));
-
-        if (isNewUser) {
-          await InviteService().applyPendingInvite();
-        }
       }
 
       _user = userCredential.user;

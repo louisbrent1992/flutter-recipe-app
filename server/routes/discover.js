@@ -16,7 +16,9 @@ router.get("/search", auth, async (req, res) => {
         const { query, difficulty, tag, random } = req.query;
 		const page = parseInt(req.query.page) || 1;
 		const limitParam = parseInt(req.query.limit);
-		const limit = isNaN(limitParam) ? 10 : Math.min(limitParam, 100);
+		// For random mode, return up to 500 recipes for client-side caching and randomization
+		// For non-random mode, keep the 100 limit for traditional pagination
+		const limit = isNaN(limitParam) ? 10 : (random === 'true' ? Math.min(limitParam, 500) : Math.min(limitParam, 100));
 		const isRandom = random === 'true';
 
         // Build Firestore query - only Spoonacular recipes (isExternal === true)
@@ -137,14 +139,14 @@ router.get("/search", auth, async (req, res) => {
 			let snapshot;
 			try {
 				if (isRandom) {
-                // For random: fetch a larger sample, shuffle, then paginate
-                // Fetch up to 500 recipes to get a good random sample
+                // For random: fetch up to 500 recipes and return ALL of them
+                // Client will handle randomization and pagination locally for better caching
                 const randomSampleSize = Math.min(500, totalRecipes);
 					snapshot = await recipesRef
                     .limit(randomSampleSize)
 						.get();
 				} else {
-					// Default: order by creation date (latest first)
+					// Default: order by creation date (latest first) with server-side pagination
 					snapshot = await recipesRef
 						.orderBy("createdAt", "desc")
                     .limit(limit)
@@ -173,19 +175,9 @@ router.get("/search", auth, async (req, res) => {
 				});
 			});
 
-        // Apply random shuffling if requested (after fetching)
-        let paginatedRecipes = recipes;
-        if (isRandom && recipes.length > 0) {
-			// Fisher-Yates shuffle algorithm for true randomization
-            const shuffled = [...recipes];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-				const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-			}
-            // Then apply pagination to shuffled results
-        const pageStart = Math.max(0, (page - 1) * limit);
-            paginatedRecipes = shuffled.slice(pageStart, pageStart + limit);
-        }
+        // For random mode: return ALL fetched recipes (client handles shuffle & pagination)
+        // For non-random mode: recipes are already paginated by Firestore query
+        const returnedRecipes = recipes;
 
         // Calculate accurate pagination info
         const totalPages = Math.ceil(totalRecipes / limit);
@@ -193,11 +185,11 @@ router.get("/search", auth, async (req, res) => {
         const hasPrevPage = page > 1;
 
 		console.log(
-            `Fetched ${recipes.length} recipes, returning ${paginatedRecipes.length} for page ${page} of ${totalPages} (total: ${totalRecipes})`
+            `Fetched ${recipes.length} recipes, returning ${returnedRecipes.length} for page ${page} of ${totalPages} (total: ${totalRecipes})${isRandom ? ' [RANDOM MODE - client handles shuffle]' : ''}`
 		);
 
 		res.json({
-			recipes: paginatedRecipes,
+			recipes: returnedRecipes,
 			pagination: {
 				total: totalRecipes,
 				page,
