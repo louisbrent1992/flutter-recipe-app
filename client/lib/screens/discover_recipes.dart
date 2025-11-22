@@ -139,9 +139,6 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
 
     // Always use client-side filtering on cached 500 recipes (no server requests)
-    debugPrint('💾 Using CLIENT-side filtering on cached recipes');
-    debugPrint('   UI State: difficulty="${_selectedDifficulty}", tag="${_selectedTag}", query="${_searchQuery}"');
-    
     // Ensure session cache is populated (will use existing cache if valid)
     await recipeProvider.fetchSessionDiscoverCache(forceRefresh: forceRefresh);
 
@@ -445,10 +442,6 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                     // Server now handles filtering (excludes current user's recipes)
                     // and deduplication, so we can use recipes directly
                     final displayRecipes = recipeProvider.generatedRecipes;
-                    
-                    debugPrint('🎨 UI RENDER: ${displayRecipes.length} recipes to display');
-                    debugPrint('   Loading: ${recipeProvider.isLoading}, Has error: ${recipeProvider.error != null}');
-                    debugPrint('   Search query: "$_searchQuery", Selected tag: "$_selectedTag"');
 
                     // Friendly empty state: show when not loading and no results
                     if (!recipeProvider.isLoading && displayRecipes.isEmpty) {

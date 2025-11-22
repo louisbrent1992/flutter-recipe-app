@@ -73,7 +73,7 @@ void startTutorial(BuildContext context, List<GlobalKey> keys) {
   debugPrint('🚀 Starting tutorial with ${keys.length} keys');
   if (keys.isNotEmpty) {
     try {
-      ShowcaseView.get().startShowCase(keys);
+  ShowcaseView.get().startShowCase(keys);
     } catch (e) {
       debugPrint('❌ Error starting showcase: $e');
     }
