@@ -14,6 +14,9 @@ import '../models/recipe_collection.dart';
 import '../components/dynamic_banner.dart';
 import '../providers/dynamic_ui_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:showcaseview/showcaseview.dart';
+import '../components/app_tutorial.dart';
+import '../services/tutorial_service.dart';
 
 /// Lightweight model representing a quick-access category on the home screen.
 class _CategoryItem {
@@ -89,6 +92,67 @@ class _HomeScreenState extends State<HomeScreen>
         }
       });
     });
+
+    // Check if tutorial should be shown and start it
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final tutorialService = TutorialService();
+
+      final shouldShow = await tutorialService.shouldShowTutorial();
+      if (shouldShow && mounted) {
+        // Wait longer for recipes to load before starting tutorial
+        await Future.delayed(const Duration(milliseconds: 1500));
+        if (mounted) {
+          _startTutorial();
+        }
+      }
+    });
+  }
+
+  void _startTutorial() {
+    try {
+      final recipeProvider = Provider.of<RecipeProvider>(
+        context,
+        listen: false,
+      );
+      final List<GlobalKey> tutorialTargets = [TutorialKeys.homeHero];
+
+      // Only include "Your Recipes" if the user has saved recipes
+      if (recipeProvider.userRecipes.isNotEmpty) {
+        tutorialTargets.add(TutorialKeys.homeYourRecipes);
+      }
+
+      // Only include "Discover" if there are random recipes to show
+      final randomRecipes =
+          recipeProvider.generatedRecipes
+              .where(
+                (r) => !recipeProvider.userRecipes.any((u) => u.id == r.id),
+              )
+              .take(10)
+              .toList();
+
+      if (randomRecipes.isNotEmpty) {
+        tutorialTargets.add(TutorialKeys.homeDiscover);
+      }
+
+      // Collections are always shown (even if empty state), so safe to include
+      tutorialTargets.add(TutorialKeys.homeCollections);
+
+      // Add Features section
+      tutorialTargets.add(TutorialKeys.homeFeatures);
+
+      // Add bottom navigation targets
+      tutorialTargets.addAll([
+        TutorialKeys.bottomNavHome,
+        TutorialKeys.bottomNavDiscover,
+        TutorialKeys.bottomNavMyRecipes,
+        TutorialKeys.bottomNavGenerate,
+        TutorialKeys.bottomNavSettings,
+      ]);
+
+      ShowcaseView.get().startShowCase(tutorialTargets);
+    } catch (e) {
+      debugPrint('Error starting tutorial: $e');
+    }
   }
 
   // Refresh all home sections at once
@@ -154,8 +218,9 @@ class _HomeScreenState extends State<HomeScreen>
                         maxWidth: () {
                           final width = MediaQuery.of(context).size.width;
                           // iPad 13 inch is ~1024px, so handle tablets and small desktops similarly
-                          if (AppBreakpoints.isTablet(context) || 
-                              (AppBreakpoints.isDesktop(context) && width < 1400)) {
+                          if (AppBreakpoints.isTablet(context) ||
+                              (AppBreakpoints.isDesktop(context) &&
+                                  width < 1400)) {
                             return 1000.0; // Natural max width for iPad and small desktops
                           }
                           if (AppBreakpoints.isDesktop(context)) {
@@ -177,163 +242,169 @@ class _HomeScreenState extends State<HomeScreen>
                                 80, // Extra space for floating bar
                           ),
                           children: [
-                        // Dynamic UI banners (home_top)
-                        Consumer<DynamicUiProvider>(
-                          builder: (context, dyn, _) {
-                            final banners = dyn.bannersForPlacement('home_top');
-                            if (banners.isEmpty) return const SizedBox.shrink();
-                            return Column(
-                              children:
-                                  banners
-                                      .map((b) => DynamicBanner(banner: b))
-                                      .toList(),
-                            );
-                          },
-                        ),
-                        _buildHeroSection(context),
-                        // --- Your Recipes carousel ---
-                        Consumer<DynamicUiProvider>(
-                          builder: (context, dynamicUi, _) {
-                            if (!(dynamicUi.config?.isSectionVisible(
-                                  'yourRecipesCarousel',
-                                ) ??
-                                true)) {
-                              return const SizedBox.shrink();
-                            }
-                            return Consumer<RecipeProvider>(
-                              builder: (context, recipeProvider, _) {
-                                final saved = recipeProvider.userRecipes;
-                                if ((recipeProvider.isLoading || _isBooting) &&
-                                    saved.isEmpty) {
-                                  return _buildSectionLoading(
-                                    context,
-                                    title: 'Your Recipes',
-                                    height: 180,
-                                  );
-                                }
-                                if (saved.isEmpty &&
-                                    recipeProvider.error != null) {
-                                  return _buildSectionMessage(
-                                    context,
-                                    title: 'Your Recipes',
-                                    message:
-                                        recipeProvider
-                                            .error!
-                                            .userFriendlyMessage,
-                                    onRetry: () {
-                                      _refreshAllSections(context);
-                                    },
-                                  );
-                                }
-                                if (saved.isEmpty) return const SizedBox();
-                                return _buildRecipeCarousel(
-                                  context,
-                                  title: 'Your Recipes',
-                                  recipes: saved.take(10).toList(),
+                            // Dynamic UI banners (home_top)
+                            Consumer<DynamicUiProvider>(
+                              builder: (context, dyn, _) {
+                                final banners = dyn.bannersForPlacement(
+                                  'home_top',
+                                );
+                                if (banners.isEmpty)
+                                  return const SizedBox.shrink();
+                                return Column(
+                                  children:
+                                      banners
+                                          .map((b) => DynamicBanner(banner: b))
+                                          .toList(),
                                 );
                               },
-                            );
-                          },
-                        ),
-                        SizedBox(height: AppSpacing.responsive(context)),
-                        // --- Discover & Try carousel ---
-                        Consumer<DynamicUiProvider>(
-                          builder: (context, dynamicUi, _) {
-                            if (!(dynamicUi.config?.isSectionVisible(
-                                  'discoverCarousel',
-                                ) ??
-                                true)) {
-                              return const SizedBox.shrink();
-                            }
-                            return Consumer<RecipeProvider>(
-                              builder: (context, recipeProvider, _) {
-                                final random =
-                                    recipeProvider.generatedRecipes
-                                        .where(
-                                          (r) =>
-                                              !recipeProvider.userRecipes.any(
-                                                (u) => u.id == r.id,
-                                              ),
+                            ),
+                            _buildHeroSection(context),
+                            // --- Your Recipes carousel ---
+                            Consumer<DynamicUiProvider>(
+                              builder: (context, dynamicUi, _) {
+                                if (!(dynamicUi.config?.isSectionVisible(
+                                      'yourRecipesCarousel',
+                                    ) ??
+                                    true)) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Consumer<RecipeProvider>(
+                                  builder: (context, recipeProvider, _) {
+                                    final saved = recipeProvider.userRecipes;
+                                    if ((recipeProvider.isLoading ||
+                                            _isBooting) &&
+                                        saved.isEmpty) {
+                                      return _buildSectionLoading(
+                                        context,
+                                        title: 'Your Recipes',
+                                        height: 180,
+                                      );
+                                    }
+                                    if (saved.isEmpty &&
+                                        recipeProvider.error != null) {
+                                      return _buildSectionMessage(
+                                        context,
+                                        title: 'Your Recipes',
+                                        message:
+                                            recipeProvider
+                                                .error!
+                                                .userFriendlyMessage,
+                                        onRetry: () {
+                                          _refreshAllSections(context);
+                                        },
+                                      );
+                                    }
+                                    if (saved.isEmpty) return const SizedBox();
+                                    return _buildRecipeCarousel(
+                                      context,
+                                      title: 'Your Recipes',
+                                      recipes: saved.take(10).toList(),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                            SizedBox(height: AppSpacing.responsive(context)),
+                            // --- Discover & Try carousel ---
+                            Consumer<DynamicUiProvider>(
+                              builder: (context, dynamicUi, _) {
+                                if (!(dynamicUi.config?.isSectionVisible(
+                                      'discoverCarousel',
+                                    ) ??
+                                    true)) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Consumer<RecipeProvider>(
+                                  builder: (context, recipeProvider, _) {
+                                    final random =
+                                        recipeProvider.generatedRecipes
+                                            .where(
+                                              (r) =>
+                                                  !recipeProvider.userRecipes
+                                                      .any((u) => u.id == r.id),
+                                            )
+                                            .take(10)
+                                            .toList();
+                                    if ((recipeProvider.isLoading ||
+                                            _isBooting) &&
+                                        random.isEmpty) {
+                                      return _buildSectionLoading(
+                                        context,
+                                        title: 'Discover & Try',
+                                        height: 180,
+                                      );
+                                    }
+                                    if (random.isEmpty &&
+                                        recipeProvider.error != null) {
+                                      return _buildSectionMessage(
+                                        context,
+                                        title: 'Discover & Try',
+                                        message:
+                                            recipeProvider
+                                                .error!
+                                                .userFriendlyMessage,
+                                        onRetry: () {
+                                          _refreshAllSections(context);
+                                        },
+                                      );
+                                    }
+                                    if (random.isEmpty) return const SizedBox();
+                                    return _buildRecipeCarousel(
+                                      context,
+                                      title: 'Discover & Try',
+                                      recipes: random,
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                            SizedBox(height: AppSpacing.responsive(context)),
+                            // --- Collections carousel ---
+                            Consumer<DynamicUiProvider>(
+                              builder: (context, dynamicUi, _) {
+                                if (!(dynamicUi.config?.isSectionVisible(
+                                      'collectionsCarousel',
+                                    ) ??
+                                    true)) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Consumer<CollectionService>(
+                                  builder: (context, collectionProvider, _) {
+                                    final collections = collectionProvider
+                                        .getCollections(
+                                          updateSpecialCollections: true,
                                         )
-                                        .take(10)
-                                        .toList();
-                                if ((recipeProvider.isLoading || _isBooting) &&
-                                    random.isEmpty) {
-                                  return _buildSectionLoading(
-                                    context,
-                                    title: 'Discover & Try',
-                                    height: 180,
-                                  );
-                                }
-                                if (random.isEmpty &&
-                                    recipeProvider.error != null) {
-                                  return _buildSectionMessage(
-                                    context,
-                                    title: 'Discover & Try',
-                                    message:
-                                        recipeProvider
-                                            .error!
-                                            .userFriendlyMessage,
-                                    onRetry: () {
-                                      _refreshAllSections(context);
-                                    },
-                                  );
-                                }
-                                if (random.isEmpty) return const SizedBox();
-                                return _buildRecipeCarousel(
-                                  context,
-                                  title: 'Discover & Try',
-                                  recipes: random,
+                                        .then(
+                                          (value) => value.take(10).toList(),
+                                        );
+                                    return _buildCollectionCarousel(
+                                      context,
+                                      title: 'Collections',
+                                      collections: collections,
+                                    );
+                                  },
                                 );
                               },
-                            );
-                          },
-                        ),
-                        SizedBox(height: AppSpacing.responsive(context)),
-                        // --- Collections carousel ---
-                        Consumer<DynamicUiProvider>(
-                          builder: (context, dynamicUi, _) {
-                            if (!(dynamicUi.config?.isSectionVisible(
-                                  'collectionsCarousel',
-                                ) ??
-                                true)) {
-                              return const SizedBox.shrink();
-                            }
-                            return Consumer<CollectionService>(
-                              builder: (context, collectionProvider, _) {
-                                final collections = collectionProvider
-                                    .getCollections(
-                                      updateSpecialCollections: true,
-                                    )
-                                    .then((value) => value.take(10).toList());
-                                return _buildCollectionCarousel(
+                            ),
+                            SizedBox(height: AppSpacing.responsive(context)),
+                            // Category scroller with features
+                            Consumer<DynamicUiProvider>(
+                              builder: (context, dynamicUi, _) {
+                                if (!(dynamicUi.config?.isSectionVisible(
+                                      'featuresSection',
+                                    ) ??
+                                    true)) {
+                                  return const SizedBox.shrink();
+                                }
+                                return _buildCategoryScroller(
                                   context,
-                                  title: 'Collections',
-                                  collections: collections,
+                                  title: 'Features',
                                 );
                               },
-                            );
-                          },
+                            ),
+                          ],
                         ),
-                        SizedBox(height: AppSpacing.responsive(context)),
-                        // Category scroller with features
-                        Consumer<DynamicUiProvider>(
-                          builder: (context, dynamicUi, _) {
-                            if (!(dynamicUi.config?.isSectionVisible(
-                                  'featuresSection',
-                                ) ??
-                                true)) {
-                              return const SizedBox.shrink();
-                            }
-                            return _buildCategoryScroller(
-                              context,
-                              title: 'Features',
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
                     ),
                   ),
                 );
@@ -348,196 +419,178 @@ class _HomeScreenState extends State<HomeScreen>
   /// Builds the top hero banner with an enticing recipe photo and overlay text.
   Widget _buildHeroSection(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: EdgeInsets.only(
-        top: AppSpacing.responsive(context),
-        bottom: AppSpacing.responsive(context),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          alignment: Alignment.bottomLeft,
-          children: [
-            // Background image
-            AspectRatio(
-              aspectRatio: 3 / 2,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final devicePixelRatio =
-                      MediaQuery.of(context).devicePixelRatio;
+    return TutorialShowcase(
+      showcaseKey: TutorialKeys.homeHero,
+      title: 'Welcome to RecipEase! 👋',
+      description:
+          'Your personal AI kitchen assistant. Discover, create, and organize recipes seamlessly.',
+      child: Padding(
+        padding: EdgeInsets.only(
+          top: AppSpacing.responsive(context),
+          bottom: AppSpacing.responsive(context),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            alignment: Alignment.bottomLeft,
+            children: [
+              // Background image
+              AspectRatio(
+                aspectRatio: 3 / 2,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final devicePixelRatio =
+                        MediaQuery.of(context).devicePixelRatio;
 
-                  return Consumer<DynamicUiProvider>(
-                    builder: (context, dynamicUi, _) {
-                      // Get hero image from dynamic UI config, fallback to default
-                      final heroImageUrl =
-                          dynamicUi.config?.heroImageUrl ??
-                          _defaultHeroImageUrl;
+                    return Consumer<DynamicUiProvider>(
+                      builder: (context, dynamicUi, _) {
+                        // Get hero image from dynamic UI config, fallback to default
+                        final heroImageUrl =
+                            dynamicUi.config?.heroImageUrl ??
+                            _defaultHeroImageUrl;
 
-                      return Image.network(
-                        heroImageUrl,
-                        fit: BoxFit.cover,
-                        cacheWidth:
-                            (constraints.maxWidth * devicePixelRatio).round(),
-                        cacheHeight:
-                            (constraints.maxHeight * devicePixelRatio).round(),
-                        filterQuality: FilterQuality.high,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.bottomLeft,
-                                end: Alignment.topRight,
-                                colors: [
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.primary.withValues(
-                                    alpha:
-                                        Theme.of(
-                                          context,
-                                        ).colorScheme.alphaMedium,
-                                  ),
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.primary.withValues(
-                                    alpha:
-                                        Theme.of(context).colorScheme.alphaHigh,
-                                  ),
-                                  Theme.of(context).colorScheme.primary,
-                                ],
+                        return Image.network(
+                          heroImageUrl,
+                          fit: BoxFit.cover,
+                          cacheWidth:
+                              (constraints.maxWidth * devicePixelRatio).round(),
+                          cacheHeight:
+                              (constraints.maxHeight * devicePixelRatio)
+                                  .round(),
+                          filterQuality: FilterQuality.high,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.bottomLeft,
+                                  end: Alignment.topRight,
+                                  colors: [
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.primary.withValues(
+                                      alpha:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.alphaMedium,
+                                    ),
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.primary.withValues(
+                                      alpha:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.alphaHigh,
+                                    ),
+                                    Theme.of(context).colorScheme.primary,
+                                  ],
+                                ),
                               ),
-                            ),
-                            child: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.error_outline,
-                                    color:
-                                        Theme.of(context).colorScheme.onPrimary,
-                                    size: 48,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Failed to load image',
-                                    style: TextStyle(
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.error_outline,
                                       color:
                                           Theme.of(
                                             context,
                                           ).colorScheme.onPrimary,
-                                      fontSize: 16,
+                                      size: 48,
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Please check the image file',
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onPrimary.withValues(
-                                        alpha:
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Failed to load image',
+                                      style: TextStyle(
+                                        color:
                                             Theme.of(
                                               context,
-                                            ).colorScheme.alphaHigh,
+                                            ).colorScheme.onPrimary,
+                                        fontSize: 16,
                                       ),
-                                      fontSize: 12,
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-            // Gradient overlay - reduced opacity for clearer background image
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Theme.of(context).colorScheme.surface.withValues(
-                        alpha: Theme.of(context).colorScheme.alphaMedium,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // Text overlay
-            Padding(
-              padding: AppSpacing.allResponsive(context),
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.responsive(context) * 0.75,
-                  vertical: AppSpacing.responsive(context) * 0.5,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface.withValues(
-                    alpha: Theme.of(context).colorScheme.alphaHigh,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Consumer<DynamicUiProvider>(
-                  builder: (context, dynamicUi, _) {
-                    final config = dynamicUi.config;
-                    // Get dynamic welcome message or use default
-                    final welcomeText =
-                        config?.formatWelcomeMessage(username) ?? 'Welcome,';
-                    // Split welcome text to handle username placement
-                    final welcomeParts = welcomeText.split('{username}');
-                    final hasUsernamePlaceholder = welcomeText.contains(
-                      '{username}',
-                    );
-
-                    // Get dynamic subtitle or use default
-                    final subtitle =
-                        config?.heroSubtitle ??
-                        'What would you like to cook today?';
-
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Welcome message - handle {username} placeholder
-                        if (hasUsernamePlaceholder && welcomeParts.length == 2)
-                          RichText(
-                            text: TextSpan(
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                shadows: [
-                                  Shadow(
-                                    offset: const Offset(0, 1),
-                                    blurRadius: 2,
-                                    color: Colors.black.withValues(alpha: 0.3),
-                                  ),
-                                ],
-                              ),
-                              children: [
-                                TextSpan(text: welcomeParts[0]),
-                                TextSpan(
-                                  text: username,
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Please check the image file',
+                                      style: TextStyle(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onPrimary.withValues(
+                                          alpha:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.alphaHigh,
+                                        ),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                TextSpan(text: welcomeParts[1]),
-                              ],
-                            ),
-                          )
-                        else
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                welcomeText,
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              // Gradient overlay - reduced opacity for clearer background image
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Theme.of(context).colorScheme.surface.withValues(
+                          alpha: Theme.of(context).colorScheme.alphaMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Text overlay
+              Padding(
+                padding: AppSpacing.allResponsive(context),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.responsive(context) * 0.75,
+                    vertical: AppSpacing.responsive(context) * 0.5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface.withValues(
+                      alpha: Theme.of(context).colorScheme.alphaHigh,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Consumer<DynamicUiProvider>(
+                    builder: (context, dynamicUi, _) {
+                      final config = dynamicUi.config;
+                      // Get dynamic welcome message or use default
+                      final welcomeText =
+                          config?.formatWelcomeMessage(username) ?? 'Welcome,';
+                      // Split welcome text to handle username placement
+                      final welcomeParts = welcomeText.split('{username}');
+                      final hasUsernamePlaceholder = welcomeText.contains(
+                        '{username}',
+                      );
+
+                      // Get dynamic subtitle or use default
+                      final subtitle =
+                          config?.heroSubtitle ??
+                          'What would you like to cook today?';
+
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Welcome message - handle {username} placeholder
+                          if (hasUsernamePlaceholder &&
+                              welcomeParts.length == 2)
+                            RichText(
+                              text: TextSpan(
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   color:
                                       Theme.of(context).colorScheme.onSurface,
@@ -551,11 +604,28 @@ class _HomeScreenState extends State<HomeScreen>
                                     ),
                                   ],
                                 ),
+                                children: [
+                                  TextSpan(text: welcomeParts[0]),
+                                  TextSpan(
+                                    text: username,
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  TextSpan(text: welcomeParts[1]),
+                                ],
                               ),
-                              if (!welcomeText.contains(username))
+                            )
+                          else
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                 Text(
-                                  username,
-                                  style: theme.textTheme.titleLarge?.copyWith(
+                                  welcomeText,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
                                     shadows: [
@@ -569,30 +639,52 @@ class _HomeScreenState extends State<HomeScreen>
                                     ],
                                   ),
                                 ),
-                            ],
+                                if (!welcomeText.contains(username))
+                                  Text(
+                                    username,
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                      shadows: [
+                                        Shadow(
+                                          offset: const Offset(0, 1),
+                                          blurRadius: 2,
+                                          color: Colors.black.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                              shadows: [
+                                Shadow(
+                                  offset: const Offset(0, 1),
+                                  blurRadius: 2,
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                ),
+                              ],
+                            ),
                           ),
-                        const SizedBox(height: 4),
-                        Text(
-                          subtitle,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                            shadows: [
-                              Shadow(
-                                offset: const Offset(0, 1),
-                                blurRadius: 2,
-                                color: Colors.black.withValues(alpha: 0.2),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -602,75 +694,82 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildCategoryScroller(BuildContext context, {required String title}) {
     final categories = _quickCategories();
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.all(AppSpacing.sm),
+    return TutorialShowcase(
+      showcaseKey: TutorialKeys.homeFeatures,
+      title: 'Powerful Tools 🚀',
+      description:
+          'Import recipes from Instagram/TikTok, or use AI to generate new meals from your ingredients!',
+      targetPadding: const EdgeInsets.all(AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(AppSpacing.sm),
 
-          child: GestureDetector(
-            onTap: () {
-              // Navigate based on the title
-              if (title.contains('Your Recipes')) {
-                Navigator.pushNamed(context, '/myRecipes');
-              } else {
-                Navigator.pushNamed(context, '/discover');
-              }
-            },
-            child: Row(
-              children: [
-                if (title.contains('Features')) ...[
-                  Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 24,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  SizedBox(width: AppSpacing.sm),
-                ],
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: AppTypography.responsiveFontSize(
-                        context,
-                        mobile: 20,
-                        tablet: 22,
-                        desktop: 24,
+            child: GestureDetector(
+              onTap: () {
+                // Navigate based on the title
+                if (title.contains('Your Recipes')) {
+                  Navigator.pushNamed(context, '/myRecipes');
+                } else {
+                  Navigator.pushNamed(context, '/discover');
+                }
+              },
+              child: Row(
+                children: [
+                  if (title.contains('Features')) ...[
+                    Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 24,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                  ],
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: AppTypography.responsiveFontSize(
+                          context,
+                          mobile: 20,
+                          tablet: 22,
+                          desktop: 24,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-        SizedBox(
-          height:
-              AppBreakpoints.isDesktop(context)
-                  ? 160
-                  : AppBreakpoints.isTablet(context)
-                  ? 140
-                  : 120,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: categories.length,
-            separatorBuilder:
-                (_, __) => SizedBox(
-                  width: AppSpacing.responsive(
-                    context,
-                    mobile: 12,
-                    tablet: 16,
-                    desktop: 20,
+          SizedBox(
+            height:
+                AppBreakpoints.isDesktop(context)
+                    ? 160
+                    : AppBreakpoints.isTablet(context)
+                    ? 140
+                    : 120,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: categories.length,
+              separatorBuilder:
+                  (_, __) => SizedBox(
+                    width: AppSpacing.responsive(
+                      context,
+                      mobile: 12,
+                      tablet: 16,
+                      desktop: 20,
+                    ),
                   ),
-                ),
-            itemBuilder: (context, index) {
-              final cat = categories[index];
-              return _buildCategoryCard(context, cat);
-            },
+              itemBuilder: (context, index) {
+                final cat = categories[index];
+                return _buildCategoryCard(context, cat);
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -850,61 +949,82 @@ class _HomeScreenState extends State<HomeScreen>
   }) {
     final theme = Theme.of(context);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-          child: GestureDetector(
-            onTap: () {
-              // Navigate based on the title
-              if (title.contains('Your Recipes')) {
-                Navigator.pushNamed(context, '/myRecipes');
-              } else if (title.contains('Discover')) {
-                Navigator.pushNamed(context, '/discover');
-              } else {
-                // Default to my recipes for other cases
-                Navigator.pushNamed(context, '/myRecipes');
-              }
-            },
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: AppTypography.responsiveFontSize(
-                        context,
-                        mobile: 20,
-                        tablet: 22,
-                        desktop: 24,
+    // Determine which showcase key to use based on title
+    final showcaseKey =
+        title.contains('Your Recipes')
+            ? TutorialKeys.homeYourRecipes
+            : TutorialKeys.homeDiscover;
+
+    final showcaseTitle =
+        title.contains('Your Recipes')
+            ? 'Your Digital Cookbook 📚'
+            : 'Explore & Inspire 🔍';
+
+    final showcaseDescription =
+        title.contains('Your Recipes')
+            ? 'All your saved, created, and imported recipes in one place. Available offline!'
+            : 'Find trending recipes, filter by diet (Keto, Vegan), and discover new favorites.';
+
+    return TutorialShowcase(
+      showcaseKey: showcaseKey,
+      title: showcaseTitle,
+      description: showcaseDescription,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: GestureDetector(
+              onTap: () {
+                // Navigate based on the title
+                if (title.contains('Your Recipes')) {
+                  Navigator.pushNamed(context, '/myRecipes');
+                } else if (title.contains('Discover')) {
+                  Navigator.pushNamed(context, '/discover');
+                } else {
+                  // Default to my recipes for other cases
+                  Navigator.pushNamed(context, '/myRecipes');
+                }
+              },
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: AppTypography.responsiveFontSize(
+                          context,
+                          mobile: 20,
+                          tablet: 22,
+                          desktop: 24,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ],
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        SizedBox(
-          height: 180,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: recipes.length,
-            separatorBuilder: (_, __) => SizedBox(width: AppSpacing.sm),
-            itemBuilder: (context, index) {
-              final recipe = recipes[index];
-              return _buildRecipeCard(context, recipe);
-            },
+          SizedBox(
+            height: 180,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: recipes.length,
+              separatorBuilder: (_, __) => SizedBox(width: AppSpacing.sm),
+              itemBuilder: (context, index) {
+                final recipe = recipes[index];
+                return _buildRecipeCard(context, recipe);
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1121,115 +1241,123 @@ Shared from Recipe App
   }) {
     final theme = Theme.of(context);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-          child: GestureDetector(
-            onTap: () => Navigator.pushNamed(context, '/collections'),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: AppTypography.responsiveFontSize(
-                        context,
-                        mobile: 20,
-                        tablet: 22,
-                        desktop: 24,
+    return TutorialShowcase(
+      showcaseKey: TutorialKeys.homeCollections,
+      title: 'Smart Organization 📁',
+      description:
+          'Group recipes your way. Colors and icons are assigned automatically based on collection names!',
+      targetPadding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: GestureDetector(
+              onTap: () => Navigator.pushNamed(context, '/collections'),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: AppTypography.responsiveFontSize(
+                          context,
+                          mobile: 20,
+                          tablet: 22,
+                          desktop: 24,
+                        ),
+                        color: Theme.of(context).colorScheme.onSurface,
+                        decorationColor:
+                            Theme.of(context).colorScheme.onSurface,
                       ),
-                      color: Theme.of(context).colorScheme.onSurface,
-                      decorationColor: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ],
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        SizedBox(
-          height: 220,
-          child: FutureBuilder<List<RecipeCollection>>(
-            future: collections,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return _buildSectionLoading(
-                  context,
-                  title: title,
-                  height: 220,
-                  includeTitle: false,
-                );
-              }
-              if (snapshot.hasError) {
-                return _buildSectionMessage(
-                  context,
-                  title: title,
-                  message:
-                      'Unable to load collections right now. Please try again.',
-                  onRetry: () {
-                    _refreshAllSections(context);
+          SizedBox(
+            height: 220,
+            child: FutureBuilder<List<RecipeCollection>>(
+              future: collections,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return _buildSectionLoading(
+                    context,
+                    title: title,
+                    height: 220,
+                    includeTitle: false,
+                  );
+                }
+                if (snapshot.hasError) {
+                  return _buildSectionMessage(
+                    context,
+                    title: title,
+                    message:
+                        'Unable to load collections right now. Please try again.',
+                    onRetry: () {
+                      _refreshAllSections(context);
+                    },
+                    includeTitle: false,
+                    leadingIcon: null,
+                    height: 220,
+                  );
+                }
+                if (!snapshot.hasData) {
+                  return _buildSectionMessage(
+                    context,
+                    title: title,
+                    message:
+                        'No collections yet. Add your first recipe to see it here.',
+                    onRetry: () {
+                      _refreshAllSections(context);
+                    },
+                    includeTitle: false,
+                    leadingIcon: null,
+                    secondaryActionLabel: 'Add a Recipe',
+                    secondaryAction: () {
+                      Navigator.pushNamed(context, '/import');
+                    },
+                    height: 220,
+                  );
+                }
+                final collections = snapshot.data!;
+                if (collections.isEmpty) {
+                  return _buildSectionMessage(
+                    context,
+                    title: title,
+                    message:
+                        'No collections yet. Add your first recipe to see it here.',
+                    onRetry: null,
+                    includeTitle: false,
+                    leadingIcon: null,
+                    secondaryActionLabel: 'Add a Recipe',
+                    secondaryAction: () {
+                      Navigator.pushNamed(context, '/import');
+                    },
+                    height: 220,
+                  );
+                }
+                return ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: collections.length,
+                  separatorBuilder: (_, __) => SizedBox(width: AppSpacing.sm),
+                  itemBuilder: (context, index) {
+                    final collection = collections[index];
+                    return _buildCollectionCard(context, collection);
                   },
-                  includeTitle: false,
-                  leadingIcon: null,
-                  height: 220,
                 );
-              }
-              if (!snapshot.hasData) {
-                return _buildSectionMessage(
-                  context,
-                  title: title,
-                  message:
-                      'No collections yet. Add your first recipe to see it here.',
-                  onRetry: () {
-                    _refreshAllSections(context);
-                  },
-                  includeTitle: false,
-                  leadingIcon: null,
-                  secondaryActionLabel: 'Add a Recipe',
-                  secondaryAction: () {
-                    Navigator.pushNamed(context, '/import');
-                  },
-                  height: 220,
-                );
-              }
-              final collections = snapshot.data!;
-              if (collections.isEmpty) {
-                return _buildSectionMessage(
-                  context,
-                  title: title,
-                  message:
-                      'No collections yet. Add your first recipe to see it here.',
-                  onRetry: null,
-                  includeTitle: false,
-                  leadingIcon: null,
-                  secondaryActionLabel: 'Add a Recipe',
-                  secondaryAction: () {
-                    Navigator.pushNamed(context, '/import');
-                  },
-                  height: 220,
-                );
-              }
-              return ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: collections.length,
-                separatorBuilder: (_, __) => SizedBox(width: AppSpacing.sm),
-                itemBuilder: (context, index) {
-                  final collection = collections[index];
-                  return _buildCollectionCard(context, collection);
-                },
-              );
-            },
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

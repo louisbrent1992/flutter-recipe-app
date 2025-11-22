@@ -48,6 +48,8 @@ import 'dart:convert';
 import 'package:recipease/services/notification_scheduler.dart';
 import 'package:recipease/services/game_center_service.dart';
 import 'package:recipease/services/debug_settings.dart';
+import 'package:recipease/services/tutorial_service.dart';
+import 'package:recipease/components/app_tutorial.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -144,6 +146,9 @@ void main() async {
 
   // Initialize Debug Settings (only in debug mode)
   await DebugSettings().init();
+
+  // Initialize Tutorial Service
+  await TutorialService().init();
 
   // Initialize Game Center (iOS only, fails silently on other platforms)
   try {
@@ -678,25 +683,27 @@ class _MyAppState extends State<MyApp> {
                 );
               };
               // Global dynamic background wrapper
-              return Consumer<DynamicUiProvider>(
-                builder: (context, dyn, _) {
-                  final hasBg = dyn.config?.globalBackground != null;
-                  final themedChild =
-                      hasBg
-                          ? Theme(
-                            data: Theme.of(context).copyWith(
-                              scaffoldBackgroundColor: Colors.transparent,
-                            ),
-                            child: Stack(
-                              children: [
-                                const DynamicGlobalBackground(),
-                                if (child != null) child,
-                              ],
-                            ),
-                          )
-                          : (child ?? const SizedBox.shrink());
-                  return themedChild;
-                },
+              return AppTutorial(
+                child: Consumer<DynamicUiProvider>(
+                  builder: (context, dyn, _) {
+                    final hasBg = dyn.config?.globalBackground != null;
+                    final themedChild =
+                        hasBg
+                            ? Theme(
+                              data: Theme.of(context).copyWith(
+                                scaffoldBackgroundColor: Colors.transparent,
+                              ),
+                              child: Stack(
+                                children: [
+                                  const DynamicGlobalBackground(),
+                                  if (child != null) child,
+                                ],
+                              ),
+                            )
+                            : (child ?? const SizedBox.shrink());
+                    return themedChild;
+                  },
+                ),
               );
             },
             home: const SplashScreen(),

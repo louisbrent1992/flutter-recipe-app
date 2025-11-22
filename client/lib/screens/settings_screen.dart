@@ -17,6 +17,9 @@ import '../services/image_resolver_cache.dart';
 import '../utils/image_utils.dart';
 import '../services/notification_scheduler.dart';
 import '../services/debug_settings.dart';
+import '../services/tutorial_service.dart';
+import 'package:showcaseview/showcaseview.dart';
+import '../components/app_tutorial.dart';
 import '../main.dart' show navigatorKey;
 
 class SettingsScreen extends StatefulWidget {
@@ -36,7 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   final User? user = FirebaseAuth.instance.currentUser;
   late AnimationController _animationController;
   final ScrollController _scrollController = ScrollController();
-  
+
   // Debug settings
   bool _debugFeaturesEnabled = false;
   final _debugSettings = DebugSettings();
@@ -90,7 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       _loadDebugSettings();
     });
   }
-  
+
   Future<void> _loadDebugSettings() async {
     if (!kDebugMode) return;
     await _debugSettings.init();
@@ -358,6 +361,52 @@ class _SettingsScreenState extends State<SettingsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error triggering notification: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _restartTutorial() async {
+    try {
+      // Reset tutorial completion status
+      await TutorialService().resetTutorial();
+
+      if (mounted) {
+        // Navigate to home screen
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+
+        // Wait a moment for navigation to complete
+        await Future.delayed(const Duration(milliseconds: 300));
+
+        // Start the tutorial showcase
+        if (navigatorKey.currentContext != null) {
+          ShowcaseView.get().startShowCase([
+            TutorialKeys.homeHero,
+            TutorialKeys.homeYourRecipes,
+            TutorialKeys.homeDiscover,
+            TutorialKeys.homeCollections,
+            TutorialKeys.homeFeatures,
+          ]);
+        }
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tutorial started! 👋'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error starting tutorial: $e'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -1200,6 +1249,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                       onTap: () => Navigator.pushNamed(context, '/discover'),
                     ),
 
+                    SizedBox(height: AppSpacing.md),
+                    _buildAnimatedListTile(
+                      title: 'App Tutorial',
+                      subtitle: 'Learn how to use RecipEase',
+                      icon: Icons.help_outline_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                      onTap: _restartTutorial,
+                    ),
 
                     SizedBox(height: AppSpacing.xxl),
                     const Divider(height: 1, thickness: 0.1),
@@ -1377,7 +1434,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       SizedBox(height: AppSpacing.xxl),
                       const Divider(height: 1, thickness: 0.1),
                       SizedBox(height: AppSpacing.md),
-                      
+
                       // Debug Features Toggle
                       _buildAnimatedSwitchTile(
                         title: 'Enable Debug Features',
@@ -1405,7 +1462,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         icon: Icons.developer_mode_rounded,
                         color: Colors.deepPurple,
                       ),
-                      
+
                       // Show Developer Tools section only when debug features enabled
                       if (_debugFeaturesEnabled) ...[
                         SizedBox(height: AppSpacing.md),
@@ -1428,7 +1485,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                         // Clear Image Cache
                         _buildAnimatedListTile(
                           title: 'Clear Image Cache',
-                          subtitle: 'Remove cached image resolutions to force fresh fetch',
+                          subtitle:
+                              'Remove cached image resolutions to force fresh fetch',
                           icon: Icons.delete_sweep_rounded,
                           color: colorScheme.error,
                           onTap: () async {
@@ -1436,7 +1494,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Cleared $removed cached images'),
+                                  content: Text(
+                                    'Cleared $removed cached images',
+                                  ),
                                   behavior: SnackBarBehavior.floating,
                                 ),
                               );
@@ -1451,7 +1511,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                         // Notification Tests Section Header
                         Text(
                           'Test Notifications',
-                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          style: Theme.of(
+                            context,
+                          ).textTheme.labelLarge?.copyWith(
                             color: colorScheme.onSurface.withValues(alpha: 0.6),
                             fontWeight: FontWeight.w600,
                           ),
@@ -1461,7 +1523,8 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                         _buildAnimatedListTile(
                           title: 'Test Daily Inspiration',
-                          subtitle: 'Trigger the daily inspiration notification',
+                          subtitle:
+                              'Trigger the daily inspiration notification',
                           icon: Icons.notifications_active_rounded,
                           color: colorScheme.primary,
                           onTap:

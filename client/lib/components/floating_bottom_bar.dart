@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/theme.dart';
+import '../components/app_tutorial.dart';
 
 class FloatingBottomBar extends StatelessWidget {
   // Pagination parameters
@@ -132,35 +133,60 @@ class FloatingBottomBar extends StatelessWidget {
 
   Widget _buildNavOnly(BuildContext context) {
     final iconsList = [
-      _buildMinimalNavIcon(
-        context,
-        icon: Icons.home_rounded,
-        isSelected: _isNavSelected(context, 0),
-        onTap: () => _handleNavigation(context, 0),
+      TutorialShowcase(
+        showcaseKey: TutorialKeys.bottomNavHome,
+        title: 'Dashboard 🏠',
+        description: 'Your central hub for recipes, features, and daily inspiration.',
+        child: _buildMinimalNavIcon(
+          context,
+          icon: Icons.home_rounded,
+          isSelected: _isNavSelected(context, 0),
+          onTap: () => _handleNavigation(context, 0),
+        ),
       ),
-      _buildMinimalNavIcon(
-        context,
-        icon: Icons.explore_rounded,
-        isSelected: _isNavSelected(context, 1),
-        onTap: () => _handleNavigation(context, 1),
+      TutorialShowcase(
+        showcaseKey: TutorialKeys.bottomNavDiscover,
+        title: 'Explore 🔍',
+        description: 'Browse thousands of curated recipes with smart filters.',
+        child: _buildMinimalNavIcon(
+          context,
+          icon: Icons.explore_rounded,
+          isSelected: _isNavSelected(context, 1),
+          onTap: () => _handleNavigation(context, 1),
+        ),
       ),
-      _buildMinimalNavIcon(
-        context,
-        icon: Icons.restaurant_rounded,
-        isSelected: _isNavSelected(context, 2),
-        onTap: () => _handleNavigation(context, 2),
+      TutorialShowcase(
+        showcaseKey: TutorialKeys.bottomNavMyRecipes,
+        title: 'My Kitchen 📖',
+        description: 'Access all your personal recipes and collections.',
+        child: _buildMinimalNavIcon(
+          context,
+          icon: Icons.restaurant_rounded,
+          isSelected: _isNavSelected(context, 2),
+          onTap: () => _handleNavigation(context, 2),
+        ),
       ),
-      _buildMinimalNavIcon(
-        context,
-        icon: Icons.auto_awesome_rounded,
-        isSelected: _isNavSelected(context, 3),
-        onTap: () => _handleNavigation(context, 3),
+      TutorialShowcase(
+        showcaseKey: TutorialKeys.bottomNavGenerate,
+        title: 'AI Chef ✨',
+        description: 'Create unique recipes instantly based on your ingredients and preferences.',
+        child: _buildMinimalNavIcon(
+          context,
+          icon: Icons.auto_awesome_rounded,
+          isSelected: _isNavSelected(context, 3),
+          onTap: () => _handleNavigation(context, 3),
+        ),
       ),
-      _buildMinimalNavIcon(
-        context,
-        icon: Icons.person_rounded,
-        isSelected: _isNavSelected(context, 4),
-        onTap: () => _handleNavigation(context, 4),
+      TutorialShowcase(
+        showcaseKey: TutorialKeys.bottomNavSettings,
+        title: 'Customize ⚙️',
+        description: 'Manage your profile, preferences, and subscription.',
+        child: _buildMinimalNavIcon(
+          context,
+          icon: Icons.person_rounded,
+          isSelected: _isNavSelected(context, 4),
+          onTap: () => _handleNavigation(context, 4),
+        ),
       ),
     ];
 
@@ -172,35 +198,60 @@ class FloatingBottomBar extends StatelessWidget {
 
   Widget _buildWithPagination(BuildContext context) {
     final iconsList = [
-      _buildMinimalNavIcon(
-        context,
-        icon: Icons.home_rounded,
-        isSelected: _isNavSelected(context, 0),
-        onTap: () => _handleNavigation(context, 0),
+      TutorialShowcase(
+        showcaseKey: TutorialKeys.bottomNavHome,
+        title: 'Dashboard 🏠',
+        description: 'Your central hub for recipes, features, and daily inspiration.',
+        child: _buildMinimalNavIcon(
+          context,
+          icon: Icons.home_rounded,
+          isSelected: _isNavSelected(context, 0),
+          onTap: () => _handleNavigation(context, 0),
+        ),
       ),
-      _buildMinimalNavIcon(
-        context,
-        icon: Icons.explore_rounded,
-        isSelected: _isNavSelected(context, 1),
-        onTap: () => _handleNavigation(context, 1),
+      TutorialShowcase(
+        showcaseKey: TutorialKeys.bottomNavDiscover,
+        title: 'Explore 🔍',
+        description: 'Browse thousands of curated recipes with smart filters.',
+        child: _buildMinimalNavIcon(
+          context,
+          icon: Icons.explore_rounded,
+          isSelected: _isNavSelected(context, 1),
+          onTap: () => _handleNavigation(context, 1),
+        ),
       ),
-      _buildMinimalNavIcon(
-        context,
-        icon: Icons.restaurant_rounded,
-        isSelected: _isNavSelected(context, 2),
-        onTap: () => _handleNavigation(context, 2),
+      TutorialShowcase(
+        showcaseKey: TutorialKeys.bottomNavMyRecipes,
+        title: 'My Kitchen 📖',
+        description: 'Access all your personal recipes and collections.',
+        child: _buildMinimalNavIcon(
+          context,
+          icon: Icons.restaurant_rounded,
+          isSelected: _isNavSelected(context, 2),
+          onTap: () => _handleNavigation(context, 2),
+        ),
       ),
-      _buildMinimalNavIcon(
-        context,
-        icon: Icons.auto_awesome_rounded,
-        isSelected: _isNavSelected(context, 3),
-        onTap: () => _handleNavigation(context, 3),
+      TutorialShowcase(
+        showcaseKey: TutorialKeys.bottomNavGenerate,
+        title: 'AI Chef ✨',
+        description: 'Create unique recipes instantly based on your ingredients and preferences.',
+        child: _buildMinimalNavIcon(
+          context,
+          icon: Icons.auto_awesome_rounded,
+          isSelected: _isNavSelected(context, 3),
+          onTap: () => _handleNavigation(context, 3),
+        ),
       ),
-      _buildMinimalNavIcon(
-        context,
-        icon: Icons.person_rounded,
-        isSelected: _isNavSelected(context, 4),
-        onTap: () => _handleNavigation(context, 4),
+      TutorialShowcase(
+        showcaseKey: TutorialKeys.bottomNavSettings,
+        title: 'Customize ⚙️',
+        description: 'Manage your profile, preferences, and subscription.',
+        child: _buildMinimalNavIcon(
+          context,
+          icon: Icons.person_rounded,
+          isSelected: _isNavSelected(context, 4),
+          onTap: () => _handleNavigation(context, 4),
+        ),
       ),
     ];
 
