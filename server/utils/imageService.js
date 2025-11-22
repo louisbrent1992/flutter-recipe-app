@@ -40,6 +40,7 @@ function isPlaceholderUrl(url) {
 
 /**
  * Validate if an image URL is accessible
+ * Uses the same headers as the client to ensure compatibility
  */
 async function validateImageUrl(url) {
   if (!url || isPlaceholderUrl(url)) {
@@ -47,15 +48,46 @@ async function validateImageUrl(url) {
   }
 
   try {
+    // Use the same User-Agent headers as the client for better compatibility
     const response = await axios.head(url, {
-      timeout: 5000,
+      timeout: 8000, // Increased timeout to match client
       maxRedirects: 5,
       validateStatus: (status) => status < 400,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 Safari/604.1',
+        'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+      },
     });
-    return response.status >= 200 && response.status < 400;
+    
+    // Also verify the content-type is an image
+    const contentType = response.headers['content-type'] || '';
+    const isImage = contentType.startsWith('image/');
+    
+    return response.status >= 200 && response.status < 400 && isImage;
   } catch (error) {
-    console.log(`Image validation failed for ${url}:`, error.message);
-    return false;
+    // If HEAD fails, try a GET request with range to verify it's actually an image
+    // This helps catch cases where HEAD is blocked but GET works
+    try {
+      const getResponse = await axios.get(url, {
+        timeout: 8000,
+        maxRedirects: 5,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 Safari/604.1',
+          'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+          'Range': 'bytes=0-1023', // Only fetch first 1KB to verify it's an image
+        },
+        validateStatus: (status) => status < 400,
+        maxContentLength: 1024, // Limit to 1KB for validation
+      });
+      
+      const contentType = getResponse.headers['content-type'] || '';
+      const isImage = contentType.startsWith('image/');
+      
+      return getResponse.status >= 200 && getResponse.status < 400 && isImage;
+    } catch (getError) {
+      console.log(`Image validation failed for ${url}:`, error.message);
+      return false;
+    }
   }
 }
 

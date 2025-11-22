@@ -56,7 +56,7 @@ class SmartRecipeImage extends StatefulWidget {
 class _SmartRecipeImageState extends State<SmartRecipeImage>
     with SingleTickerProviderStateMixin {
   String? _resolvedUrl;
-  bool _checkedPrimary = false;
+  bool _hasTriedFallback = false; // Track if we've already tried fallback
   late final AnimationController _spinController;
   bool _isRefreshing = false;
 
@@ -98,8 +98,6 @@ class _SmartRecipeImageState extends State<SmartRecipeImage>
             onTimeout: () => http.Response('', 408),
           );
 
-      _checkedPrimary = true;
-
       if (response.statusCode == 400 ||
           response.statusCode == 403 ||
           response.statusCode == 404) {
@@ -120,6 +118,12 @@ class _SmartRecipeImageState extends State<SmartRecipeImage>
   }
 
   Future<void> _tryGoogleFallback() async {
+    if (_hasTriedFallback && _resolvedUrl != widget.primaryImageUrl) {
+      // Already tried fallback and have a resolved URL
+      return;
+    }
+    
+    _hasTriedFallback = true;
     final googleUrl = await GoogleImageService.fetchImageForQuery(
       '${widget.recipeTitle} recipe',
     );
@@ -220,8 +224,12 @@ class _SmartRecipeImageState extends State<SmartRecipeImage>
               fadeOutDuration: const Duration(milliseconds: 100),
               placeholder: (context, u) => placeholder,
               errorWidget: (context, u, err) {
-                if (!_checkedPrimary && u == widget.primaryImageUrl) {
-                  scheduleMicrotask(() => _tryGoogleFallback());
+                // If primary image fails to load, try Google fallback
+                if (u == widget.primaryImageUrl && _resolvedUrl == widget.primaryImageUrl) {
+                  // Only trigger fallback if we haven't already tried it
+                  if (!_isRefreshing) {
+                    scheduleMicrotask(() => _tryGoogleFallback());
+                  }
                 }
                 return error;
               },
