@@ -654,9 +654,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                           Text(
                             'Subscription Price',
                             style: TextStyle(
-                              fontSize: AppDialog.responsiveContentSize(context) * 0.875,
+                              fontSize:
+                                  AppDialog.responsiveContentSize(context) *
+                                  0.875,
                               fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimaryContainer,
                             ),
                           ),
                           SizedBox(
@@ -672,7 +677,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                             style: TextStyle(
                               fontSize: AppDialog.responsiveTitleSize(context),
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimaryContainer,
                             ),
                           ),
                         ],
@@ -712,7 +720,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               color: Colors.green,
-                              fontSize: AppDialog.responsiveContentSize(context) * 0.875,
+                              fontSize:
+                                  AppDialog.responsiveContentSize(context) *
+                                  0.875,
                             ),
                           ),
                         ),
@@ -729,7 +739,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                     Text(
                       'Start your free trial today. The subscription will begin at ${product.price} after the 7-day trial ends.',
                       style: TextStyle(
-                        fontSize: AppDialog.responsiveContentSize(context) * 0.875,
+                        fontSize:
+                            AppDialog.responsiveContentSize(context) * 0.875,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -750,7 +761,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                             : 12,
                       ),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        color:
+                            Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(
                           AppBreakpoints.isDesktop(context)
                               ? 12
@@ -890,10 +904,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               : 'Purchase successful!',
         );
       } else if (context.mounted && provider.error != null) {
-        SnackBarHelper.showError(
-          context,
-          'Purchase failed: ${provider.error}',
-        );
+        SnackBarHelper.showError(context, 'Purchase failed: ${provider.error}');
       }
     }
   }
@@ -911,10 +922,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       listen: false,
     );
     final bool trialEligible = subscriptionProvider.eligibleForTrial;
-    final bool isUnlimited =
-        product.productType == ProductType.unlimitedPremium ||
-        product.productType == ProductType.unlimitedPremiumYearly ||
-        product.unlimitedUsage;
 
     final cardBorderRadius =
         AppBreakpoints.isDesktop(context)
@@ -1069,7 +1076,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 ),
 
                 // Free Trial Badge for subscriptions (only when eligible)
-                if (isSubscription && trialEligible && !isUnlimited) ...[
+                if (isSubscription && trialEligible) ...[
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -1154,17 +1161,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+
                         // Show trial info as secondary text
-                        if (isSubscription && trialEligible && !isUnlimited) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            '7-day free trial included',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.green,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
                         if (product.productType ==
                             ProductType.unlimitedPremiumYearly) ...[
                           const SizedBox(height: 2),
@@ -1182,16 +1180,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       onPressed: onTap,
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
-                            isSubscription && trialEligible && !isUnlimited
+                            isSubscription && trialEligible
                                 ? Colors.green
                                 : colorScheme.primary,
                         foregroundColor: Colors.white,
                       ),
                       child: Text(
                         isSubscription
-                            ? (trialEligible && !isUnlimited
-                                ? 'Start Trial'
-                                : 'Subscribe')
+                            ? (trialEligible ? 'Start Trial' : 'Subscribe')
                             : 'Buy',
                       ),
                     ),
@@ -1249,7 +1245,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Starting at \$6.99/month • 7-day free trial available',
+                  'Starting at \$6.99/month • All plans include 7-day free trial',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.white.withValues(alpha: 0.9),
                     fontWeight: FontWeight.w600,
@@ -1297,8 +1293,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           Text(
             '• Premium Monthly: \$6.99/month with 7-day free trial\n'
             '• Premium Yearly: \$44.99/year (\$3.75/month) with 7-day free trial\n'
-            '• Premium Unlimited: \$19.99/month (no trial)\n'
-            '• Premium Unlimited Yearly: \$79.99/year (\$6.67/month)\n'
+            '• Premium Unlimited Monthly: \$19.99/month with 7-day free trial\n'
+            '• Premium Unlimited Yearly: \$79.99/year (\$6.67/month) with 7-day free trial\n'
+            '• All subscriptions include 7-day free trial with unlimited usage\n'
             '• Auto-renewable subscriptions\n'
             '• Cancel anytime in Account Settings\n'
             '• No charge if cancelled during trial period\n'
@@ -1423,9 +1420,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           ),
           const SizedBox(height: 6),
           // Show trial information as secondary detail
-          if (trialEligible &&
-              product.productType != ProductType.unlimitedPremium &&
-              product.productType != ProductType.unlimitedPremiumYearly) ...[
+          if (trialEligible) ...[
             Row(
               children: [
                 Icon(Icons.celebration, size: 14, color: Colors.green),
