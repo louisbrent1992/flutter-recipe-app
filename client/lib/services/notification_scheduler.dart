@@ -115,7 +115,9 @@ class NotificationScheduler {
           body: 'Plan your week with batch-friendly recipes.',
           route: '/discover',
           args: {
-            'tag': 'meal prep, batch cooking, prep ahead, prep for the week',
+            'query':
+                'prep, quick, bulk, batch, weekly, freezer, meal, meals, easy, simple, fast, ready, storage, portion, servings, leftovers, reheat, organize, plan',
+            'displayQuery': 'Meal Prep Recipes',
           },
         );
         break;
@@ -129,8 +131,9 @@ class NotificationScheduler {
           body: 'New festive recipes just dropped.',
           route: '/discover',
           args: {
-            'tag':
-                'holliday, fall, thanksgiving, turkey, christmas, winter, pumpkin, cranberry, cinnamon',
+            'query':
+                'holiday, holidays, fall, autumn, thanksgiving, turkey, christmas, winter, pumpkin, cranberry, cinnamon, festive, seasonal, ham, stuffing, gravy, pie, dessert, cookies, baking, roast, feast, dinner, celebration, tradition, comfort, warm, spices, nutmeg, ginger, apple, pear, squash',
+            'displayQuery': 'Holliday Season ${DateTime.now().year}',
           },
         );
         break;
@@ -143,7 +146,11 @@ class NotificationScheduler {
           title: '20-Minute Dinners ⏱️',
           body: 'Fast, tasty, and minimal cleanup.',
           route: '/discover',
-          args: {'tag': 'easy, 20 minutes, quick, minimal cleanup'},
+          args: {
+            'query':
+                'easy, quick, fast, simple, speedy, minutes, minimal, one pot, one pan, skillet, stir fry, sheet pan, instant, ready, simple, basic, no fuss, hassle free, time saving, fast prep, quick prep, easy prep, simple prep, fast cooking, quick cooking, easy cooking, fast meals, quick meals, simple meals, fast dinner, quick dinner, easy dinner',
+            'displayQuery': 'Quick & Easy Meals',
+          },
         );
         break;
       case AppNotificationCategory.budget:
@@ -155,7 +162,11 @@ class NotificationScheduler {
           title: 'Save on Groceries 💸',
           body: 'Delicious meals under \$10.',
           route: '/discover',
-          args: {'tag': 'budget, under \$10, frugal, cheap, affordable'},
+          args: {
+            'query':
+                'budget, cheap, affordable, inexpensive, economical, frugal, wallet, money, saving, low cost, cost, effective, value, economical, thrifty, bargain, discount, savings, affordable, budget friendly, cost conscious, budget conscious, simple, basic, pantry, staple, common, everyday',
+            'displayQuery': 'Budget-Friendly Recipes',
+          },
         );
         break;
       case AppNotificationCategory.keto:
@@ -167,7 +178,11 @@ class NotificationScheduler {
           title: 'Keto Spotlight 🥑',
           body: 'Popular low-carb recipes this week.',
           route: '/discover',
-          args: {'tag': 'keto'},
+          args: {
+            'query':
+                'keto, low carb, carb, ketogenic, protein, fat, healthy, diet, weight, loss, fitness, nutrition, avocado, eggs, cheese, meat, chicken, beef, fish, vegetables, salad, greens, cauliflower, broccoli, spinach, mushrooms, zucchini, bell pepper, onion, garlic, olive oil, butter, cream, bacon, sausage, nuts, seeds, almond, coconut',
+            'displayQuery': 'Keto Recipes',
+          },
         );
         break;
     }
@@ -332,8 +347,9 @@ class NotificationScheduler {
           body = 'Plan your week with batch-friendly recipes.';
           route = '/discover';
           args = {
-            'tag':
-                'meal prep, batch cooking, prep ahead, make ahead, meal planning, weekly prep, batch recipes, freezer friendly',
+            'query':
+                'prep, quick, bulk, batch, weekly, freezer, meal, meals, easy, simple, fast, ready, storage, portion, servings, leftovers, reheat, organize, plan',
+            'displayQuery': 'Meal Prep Recipes',
           };
           break;
         case AppNotificationCategory.seasonal:
@@ -341,8 +357,9 @@ class NotificationScheduler {
           body = 'New festive recipes just dropped.';
           route = '/discover';
           args = {
-            'tag':
-                'fall, autumn, thanksgiving, turkey, seasonal, christmas, pumpkin, holliday, holiday',
+            'query':
+                'holiday, holliday,fall, autumn, thanksgiving, turkey, christmas, winter, pumpkin, cranberry, cinnamon, festive, seasonal, ham, stuffing, gravy, pie, dessert, cookies, baking, roast, feast, dinner, celebration, tradition, comfort, warm, spices, nutmeg, ginger, apple, pear, squash',
+            'displayQuery': 'Holliday Season ${DateTime.now().year}',
           };
           break;
         case AppNotificationCategory.quickMeals:
@@ -350,8 +367,9 @@ class NotificationScheduler {
           body = 'Fast, tasty, and minimal cleanup.';
           route = '/discover';
           args = {
-            'tag':
-                'easy, quick, fast, 20 minutes, 15 minutes, 30 minutes, minimal, simple, speedy, fast dinner',
+            'query':
+                'easy, quick, fast, simple, speedy, minutes, minimal, instant, ready, basic, skillet, pan, cooking, meals, dinner',
+            'displayQuery': 'Quick & Easy Meals',
           };
           break;
         case AppNotificationCategory.budget:
@@ -359,8 +377,9 @@ class NotificationScheduler {
           body = 'Delicious meals under \$10.';
           route = '/discover';
           args = {
-            'tag':
-                'budget, budget friendly, under \$10, under \$5, frugal, cheap, affordable, inexpensive, economical, cost effective',
+            'query':
+                'budget, cheap, affordable, inexpensive, economical, frugal, saving, cost, value, thrifty, bargain, discount, simple, basic, pantry, staple, common',
+            'displayQuery': 'Budget-Friendly Recipes',
           };
           break;
         case AppNotificationCategory.keto:
@@ -368,8 +387,9 @@ class NotificationScheduler {
           body = 'Popular low-carb recipes this week.';
           route = '/discover';
           args = {
-            'tag':
-                'keto, low-carb, ketogenic, keto-friendly, keto-diet, keto-recipes, low carb, lowcarb, no carb, zero carb',
+            'query':
+                'keto, carb, ketogenic, protein, fat, healthy, diet, weight, fitness, nutrition, avocado, eggs, cheese, meat, chicken, beef, fish, vegetables, salad, greens, cauliflower, broccoli, spinach, mushrooms, zucchini, onion, garlic, butter, cream, bacon, sausage, nuts, seeds, almond, coconut',
+            'displayQuery': 'Keto Recipes',
           };
           break;
       }

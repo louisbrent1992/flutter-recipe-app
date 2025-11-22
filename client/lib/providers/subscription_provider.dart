@@ -20,6 +20,7 @@ class SubscriptionProvider with ChangeNotifier {
   bool _trialUsed = false;
   DateTime? _trialEndAt;
   bool _unlimitedUsage = false;
+  String? _subscriptionType;
   String? _error;
 
   // Getters
@@ -32,6 +33,7 @@ class SubscriptionProvider with ChangeNotifier {
   bool get eligibleForTrial => !_hasActiveSubscription && !_trialActive && !_trialUsed;
   DateTime? get trialEndAt => _trialEndAt;
   bool get unlimitedUsage => _unlimitedUsage;
+  String? get subscriptionType => _subscriptionType;
   String? get error => _error;
 
   // Get products by type
@@ -119,7 +121,7 @@ class SubscriptionProvider with ChangeNotifier {
         _hasActiveSubscription = data['subscriptionActive'] ?? false;
         _trialActive = data['trialActive'] ?? false;
         _trialUsed = data['trialUsed'] ?? false;
-        final String? subscriptionType = data['subscriptionType'];
+        _subscriptionType = data['subscriptionType'];
         final Timestamp? trialEndAtTs = data['trialEndAt'];
         _trialEndAt = trialEndAtTs?.toDate();
         _unlimitedUsage = data['unlimitedUsage'] ?? false;
@@ -129,7 +131,7 @@ class SubscriptionProvider with ChangeNotifier {
           if (DateTime.now().isAfter(trialEnd)) {
             // Determine full monthly credit amounts based on plan
             final bool isMonthly =
-                subscriptionType == 'recipease_premium_monthly';
+                _subscriptionType == 'recipease_premium_monthly';
             final int importCredits = isMonthly ? 25 : 35;
             final int generationCredits = isMonthly ? 20 : 30;
 
@@ -234,6 +236,16 @@ class SubscriptionProvider with ChangeNotifier {
     }
 
     return success;
+  }
+
+  /// Check if a product is already subscribed
+  bool isProductSubscribed(PurchaseProduct product) {
+    if (!_hasActiveSubscription || _subscriptionType == null) {
+      return false;
+    }
+
+    // Subscription type is stored as the product ID
+    return _subscriptionType == product.id;
   }
 
   @override

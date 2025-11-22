@@ -124,7 +124,10 @@ router.get("/ui/notifications", (req, res) => {
         title: "Meal Prep Sunday 🍱",
         body: "Plan your week with batch-friendly recipes.",
         route: "/discover",
-        args: { tag: "meal prep, mealprep, batch cooking, prep ahead" },
+        args: { 
+          query: "prep, quick, bulk, batch, weekly, freezer, meal, meals, easy, simple, fast, ready, storage, portion, servings, leftovers, reheat, organize, plan",
+          displayQuery: "Meal Prep Recipes"
+        },
       },
       {
         key: "seasonal",
@@ -133,7 +136,10 @@ router.get("/ui/notifications", (req, res) => {
         title: "Holliday Favorites 🎄",
         body: "New festive recipes just dropped.",
         route: "/discover",
-        args: { tag: "holliday, holiday, holidays, fall, autumn, thanksgiving, turkey, christmas, winter, pumpkin" },
+        args: { 
+          query: "holiday, holidays, fall, autumn, thanksgiving, turkey, christmas, winter, pumpkin, cranberry, cinnamon, festive, seasonal, ham, stuffing, gravy, pie, dessert, cookies, baking, roast, feast, dinner, celebration, tradition, comfort, warm, spices, nutmeg, ginger, apple, pear, squash",
+          displayQuery: `Holliday Season ${new Date().getFullYear()}`
+        },
       },
       {
         key: "quickMeals",
@@ -142,7 +148,10 @@ router.get("/ui/notifications", (req, res) => {
         title: "20-Minute Dinners ⏱️",
         body: "Fast, tasty, and minimal cleanup.",
         route: "/discover",
-        args: { tag: "easy, quick, fast, 20 minutes, 15 minutes, 30 minutes, minimal cleanup, simple, speedy, fast dinner" },
+        args: { 
+          query: "easy, quick, fast, simple, speedy, minutes, minimal, instant, ready, basic, skillet, pan, cooking, meals, dinner",
+          displayQuery: "Quick & Easy Meals"
+        },
       },
       {
         key: "budget",
@@ -151,7 +160,10 @@ router.get("/ui/notifications", (req, res) => {
         title: "Save on Groceries 💸",
         body: "Delicious meals under $10.",
         route: "/discover",
-        args: { tag: "budget, budget friendly, under $10, under $5, frugal, cheap, affordable, inexpensive, economical, cost effective" },
+        args: { 
+          query: "budget, cheap, affordable, inexpensive, economical, frugal, saving, cost, value, thrifty, bargain, discount, simple, basic, pantry, staple, common",
+          displayQuery: "Budget-Friendly Recipes"
+        },
       },
       {
         key: "keto",
@@ -160,7 +172,10 @@ router.get("/ui/notifications", (req, res) => {
         title: "Keto Spotlight 🥑",
         body: "Popular low-carb recipes this week.",
         route: "/discover",
-        args: { tag: "keto, low-carb, ketogenic, keto-friendly, keto-diet, keto-recipes, low carb, lowcarb, no carb, zero carb" },
+        args: { 
+          query: "keto, carb, ketogenic, protein, fat, healthy, diet, weight, fitness, nutrition, avocado, eggs, cheese, meat, chicken, beef, fish, vegetables, salad, greens, cauliflower, broccoli, spinach, mushrooms, zucchini, onion, garlic, butter, cream, bacon, sausage, nuts, seeds, almond, coconut",
+          displayQuery: "Keto Recipes"
+        },
       },
     ],
   };

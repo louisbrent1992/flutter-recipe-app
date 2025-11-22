@@ -18,9 +18,9 @@ import '../utils/image_utils.dart';
 import '../services/notification_scheduler.dart';
 import '../services/debug_settings.dart';
 import '../services/tutorial_service.dart';
-import 'package:showcaseview/showcaseview.dart';
 import '../components/app_tutorial.dart';
 import '../main.dart' show navigatorKey;
+import '../providers/recipe_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -378,18 +378,56 @@ class _SettingsScreenState extends State<SettingsScreen>
         // Navigate to home screen
         Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
 
-        // Wait a moment for navigation to complete
-        await Future.delayed(const Duration(milliseconds: 300));
+        // Wait for the home screen to be built
+        await Future.delayed(const Duration(milliseconds: 800));
 
         // Start the tutorial showcase
         if (navigatorKey.currentContext != null) {
-          ShowcaseView.get().startShowCase([
-            TutorialKeys.homeHero,
-            TutorialKeys.homeYourRecipes,
-            TutorialKeys.homeDiscover,
-            TutorialKeys.homeCollections,
-            TutorialKeys.homeFeatures,
+          final homeContext = navigatorKey.currentContext!;
+          final recipeProvider = Provider.of<RecipeProvider>(
+            homeContext,
+            listen: false,
+          );
+          
+          final List<GlobalKey> tutorialTargets = [TutorialKeys.homeHero];
+
+          // Only include "Your Recipes" if the user has saved recipes
+          if (recipeProvider.userRecipes.isNotEmpty) {
+            tutorialTargets.add(TutorialKeys.homeYourRecipes);
+          }
+
+          // Only include "Discover" if there are random recipes to show
+          final randomRecipes =
+              recipeProvider.generatedRecipes
+                  .where(
+                    (r) => !recipeProvider.userRecipes.any((u) => u.id == r.id),
+                  )
+                  .take(10)
+                  .toList();
+
+          if (randomRecipes.isNotEmpty) {
+            tutorialTargets.add(TutorialKeys.homeDiscover);
+          }
+
+          // Collections are always shown (even if empty state), so safe to include
+          tutorialTargets.add(TutorialKeys.homeCollections);
+
+          // Add Features section
+          tutorialTargets.add(TutorialKeys.homeFeatures);
+
+          // Add bottom navigation targets
+          tutorialTargets.addAll([
+            TutorialKeys.bottomNavHome,
+            TutorialKeys.bottomNavDiscover,
+            TutorialKeys.bottomNavMyRecipes,
+            TutorialKeys.bottomNavGenerate,
+            TutorialKeys.bottomNavSettings,
           ]);
+
+          // Start tutorial after a short delay to ensure widgets are built
+          Future.delayed(const Duration(milliseconds: 500), () {
+            startTutorial(homeContext, tutorialTargets);
+          });
         }
 
         // Show success message

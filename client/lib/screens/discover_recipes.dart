@@ -16,12 +16,14 @@ class DiscoverRecipesScreen extends StatefulWidget {
   final String? initialQuery;
   final String? initialDifficulty;
   final String? initialTag;
+  final String? displayQuery;
 
   const DiscoverRecipesScreen({
     super.key,
     this.initialQuery,
     this.initialDifficulty,
     this.initialTag,
+    this.displayQuery,
   });
 
   @override
@@ -49,7 +51,8 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     // Seed initial filters if provided via widget parameters
     if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
       _searchQuery = widget.initialQuery!.trim();
-      _searchController.text = _searchQuery;
+      // Use displayQuery from server if available, otherwise use actual query
+      _searchController.text = widget.displayQuery ?? _searchQuery;
     }
     if (widget.initialDifficulty != null &&
         widget.initialDifficulty!.isNotEmpty) {
@@ -58,24 +61,29 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
         _selectedDifficulty = 'All';
       }
     }
+    // Treat initialTag as a search query (from notifications/server)
     if (widget.initialTag != null && widget.initialTag!.isNotEmpty) {
-      _selectedTag = widget.initialTag!;
-      if (!_availableTags.contains(_selectedTag)) {
-        // Insert custom tag right after 'All' to make it visible
-        _availableTags.insert(1, _selectedTag);
-      }
+      _searchQuery = widget.initialTag!.trim();
+      // Use displayQuery from server if available, otherwise use actual query
+      _searchController.text = widget.displayQuery ?? _searchQuery;
+      _selectedTag = 'All'; // Clear tag filter, use query instead
     }
 
     // Load recipes after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadRecipes();
-      // Listen for cross-screen recipe updates to refetch current page
+      // Fetch session cache first (500 recipes)
       final recipeProvider = Provider.of<RecipeProvider>(
         context,
         listen: false,
       );
+      recipeProvider.fetchSessionDiscoverCache().then((_) {
+        // After cache is ready, load filtered results
+        _loadRecipes();
+      });
+
+      // Listen for cross-screen recipe updates to refetch current page
       _recipesChangedSubscription = recipeProvider.onRecipesChanged.listen((_) {
-        _loadRecipes(forceRefresh: true);
+        _loadRecipes();
       });
     });
   }
@@ -126,37 +134,28 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     }
   }
 
-  // Load recipes from external API
+  // Load recipes from session cache (client-side filtering)
   Future<void> _loadRecipes({bool forceRefresh = false}) async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    await recipeProvider.searchExternalRecipes(
-      query: _searchQuery.isEmpty ? null : _searchQuery,
+
+    // Always use client-side filtering on cached 500 recipes (no server requests)
+    debugPrint('💾 Using CLIENT-side filtering on cached recipes');
+    debugPrint('   UI State: difficulty="${_selectedDifficulty}", tag="${_selectedTag}", query="${_searchQuery}"');
+    
+    // Ensure session cache is populated (will use existing cache if valid)
+    await recipeProvider.fetchSessionDiscoverCache(forceRefresh: forceRefresh);
+
+    // Filter the cached recipes using all filters (query, difficulty, tag)
+    final filtered = recipeProvider.getFilteredDiscoverRecipes(
+      query: _searchQuery.isNotEmpty ? _searchQuery : null,
       difficulty: _selectedDifficulty == 'All' ? null : _selectedDifficulty,
       tag: _selectedTag == 'All' ? null : _selectedTag,
       page: _currentPage,
       limit: _itemsPerPage,
-      random: true, // Always load recipes in random order
-      forceRefresh: forceRefresh,
     );
 
-    // If current page is beyond total pages, reset to page 1
-    if (mounted &&
-        _currentPage > recipeProvider.totalPages &&
-        recipeProvider.totalPages > 0) {
-      setState(() {
-        _currentPage = 1;
-      });
-      // Reload with page 1
-      await recipeProvider.searchExternalRecipes(
-        query: _searchQuery.isEmpty ? null : _searchQuery,
-        difficulty: _selectedDifficulty == 'All' ? null : _selectedDifficulty,
-        tag: _selectedTag == 'All' ? null : _selectedTag,
-        page: 1,
-        limit: _itemsPerPage,
-        random: true, // Always load recipes in random order
-        forceRefresh: true,
-      );
-    }
+    // Update generatedRecipes for UI (without notifying again)
+    recipeProvider.setGeneratedRecipesFromCache(filtered);
 
     _updateAvailableTagsFromRecipes();
   }
@@ -181,26 +180,23 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     }
   }
 
-  // Randomize search results
+  // Randomize search results from session cache
   Future<void> _randomizeResults() async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
     setState(() {
       _currentPage = 1;
     });
-    await recipeProvider.searchExternalRecipes(
-      query: _searchQuery.isEmpty ? null : _searchQuery,
-      difficulty: _selectedDifficulty == 'All' ? null : _selectedDifficulty,
-      tag: _selectedTag == 'All' ? null : _selectedTag,
-      page: 1,
-      limit: _itemsPerPage,
-      random: true,
-      forceRefresh: true,
-    );
-    _updateAvailableTagsFromRecipes();
+
+    // Shuffle the session cache
+    recipeProvider.randomizeSessionCache();
+
+    // Reload with page 1 to show reshuffled results
+    await _loadRecipes();
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Showing random recipes'),
+          content: Text('Showing randomized recipes'),
           duration: Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
@@ -421,7 +417,16 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                 },
                 onTagSelected: (tag) {
                   setState(() {
-                    _selectedTag = tag;
+                    // Use tag as search query instead of tag filter
+                    if (tag == 'All') {
+                      _searchQuery = '';
+                      _selectedTag = 'All';
+                      _searchController.clear();
+                    } else {
+                      _searchQuery = tag;
+                      _selectedTag = 'All'; // Clear tag filter, use query instead
+                      _searchController.text = tag;
+                    }
                     _currentPage = 1;
                   });
                   _loadRecipes();
@@ -440,22 +445,13 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                     // Server now handles filtering (excludes current user's recipes)
                     // and deduplication, so we can use recipes directly
                     final displayRecipes = recipeProvider.generatedRecipes;
+                    
+                    debugPrint('🎨 UI RENDER: ${displayRecipes.length} recipes to display');
+                    debugPrint('   Loading: ${recipeProvider.isLoading}, Has error: ${recipeProvider.error != null}');
+                    debugPrint('   Search query: "$_searchQuery", Selected tag: "$_selectedTag"');
 
                     // Friendly empty state: show when not loading and no results
                     if (!recipeProvider.isLoading && displayRecipes.isEmpty) {
-                      final parts = <String>[];
-                      if (_selectedTag != 'All') {
-                        parts.add('tag "$_selectedTag"');
-                      }
-                      if (_selectedDifficulty != 'All') {
-                        parts.add('difficulty "$_selectedDifficulty"');
-                      }
-                      if (_searchQuery.isNotEmpty) {
-                        parts.add('search "$_searchQuery"');
-                      }
-                      final contextLine =
-                          parts.isEmpty ? '' : ' for ${parts.join(' · ')}';
-
                       return Column(
                         children: [
                           Expanded(
@@ -489,12 +485,16 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                       ),
                                     ),
                                     child: Text(
-                                      'No recipes found$contextLine',
+                                      'No recipes found',
                                       textAlign: TextAlign.center,
-                                      style:
-                                          Theme.of(
-                                            context,
-                                          ).textTheme.headlineLarge,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleLarge?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.7),
+                                      ),
                                     ),
                                   ),
                                   SizedBox(
@@ -512,7 +512,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                       ),
                                     ),
                                     child: Text(
-                                      'Try a different tag, change filters, or clear filters to see more.',
+                                      'Try adjusting your filters or search terms',
                                       textAlign: TextAlign.center,
                                       style: Theme.of(
                                         context,
@@ -520,7 +520,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                         color: Theme.of(context)
                                             .colorScheme
                                             .onSurface
-                                            .withValues(alpha: 0.7),
+                                            .withValues(alpha: 0.6),
                                       ),
                                     ),
                                   ),

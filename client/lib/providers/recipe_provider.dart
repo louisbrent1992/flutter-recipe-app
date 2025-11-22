@@ -690,49 +690,183 @@ class RecipeProvider extends ChangeNotifier {
     int page = 1,
     int limit = 12,
   }) {
+    // Log all filter parameters at the start
+    debugPrint('🔎 FILTER INPUTS:');
+    debugPrint('   query: ${query ?? "null"}');
+    debugPrint('   difficulty: ${difficulty ?? "null"}');
+    debugPrint('   tag: ${tag ?? "null"}');
+    debugPrint('   page: $page, limit: $limit');
+    
     if (_sessionDiscoverCache.isEmpty) {
+      debugPrint('⚠️ Session cache is empty');
       return [];
     }
 
-    // Filter from session cache
+    // Start with all recipes from session cache
     var filtered = List<Recipe>.from(_sessionDiscoverCache);
+    debugPrint('📊 Starting with ${filtered.length} recipes from cache');
 
     // Apply difficulty filter
     if (difficulty != null && difficulty != 'All') {
+      final beforeCount = filtered.length;
       filtered =
           filtered
               .where(
                 (r) => r.difficulty.toLowerCase() == difficulty.toLowerCase(),
               )
               .toList();
+      debugPrint('🔍 After difficulty filter ($difficulty): ${filtered.length} recipes (was $beforeCount)');
+    } else {
+      debugPrint('🔍 Difficulty filter: NONE (showing all difficulties)');
     }
 
-    // Apply tag filter
+    // Apply tag filter - split by comma and search each tag individually (OR logic)
     if (tag != null && tag != 'All') {
+      final beforeCount = filtered.length;
+      
+      // Split by comma and treat each as individual search term
+      final tagList = tag
+          .split(',')
+          .map((t) => t.trim().toLowerCase())
+          .where((t) => t.isNotEmpty)
+          .toList();
+      
+      if (tagList.isEmpty) {
+        return [];
+      }
+      
+      // Debug: Show sample tags from first few recipes
+      if (filtered.isNotEmpty) {
+        final sampleTags = filtered.take(3).expand((r) => r.tags).take(10).toList();
+        debugPrint('📋 Sample recipe tags: ${sampleTags.join(", ")}');
+      }
+      
+      // Match recipes where ANY recipe tag matches ANY filter tag (OR logic - cumulative results)
       filtered =
           filtered
               .where(
-                (r) => r.tags.any((t) => t.toLowerCase() == tag.toLowerCase()),
+                (r) {
+                  final recipeTagsLower = r.tags.map((t) => t.trim().toLowerCase()).toList();
+                  // Check if any recipe tag matches any filter tag
+                  return tagList.any(
+                    (filterTag) => recipeTagsLower.any(
+                      (recipeTag) {
+                        // Normalize both tags (remove extra spaces, special chars)
+                        final normalizedRecipe = recipeTag.replaceAll(RegExp(r'[^\w\s]'), '').trim();
+                        final normalizedFilter = filterTag.replaceAll(RegExp(r'[^\w\s]'), '').trim();
+                        
+                        // Exact match
+                        if (normalizedRecipe == normalizedFilter) return true;
+                        
+                        // Stem matching (handles "holiday" vs "holidays", "fall" vs "falls")
+                        final recipeStem = normalizedRecipe.replaceAll(RegExp(r's$'), '');
+                        final filterStem = normalizedFilter.replaceAll(RegExp(r's$'), '');
+                        if (recipeStem == filterStem && recipeStem.isNotEmpty) return true;
+                        
+                        // Word boundary matching (handles multi-word tags)
+                        final recipeWords = normalizedRecipe.split(RegExp(r'[\s\-_]+'));
+                        final filterWords = normalizedFilter.split(RegExp(r'[\s\-_]+'));
+                        if (recipeWords.any((w) => filterWords.contains(w)) ||
+                            filterWords.any((w) => recipeWords.contains(w))) {
+                          return true;
+                        }
+                        
+                        // Contains match (fallback) - more lenient
+                        if (normalizedRecipe.contains(normalizedFilter) || 
+                            normalizedFilter.contains(normalizedRecipe)) {
+                          return true;
+                        }
+                        
+                        return false;
+                      },
+                    ),
+                  );
+                },
               )
               .toList();
+      debugPrint('🔍 After tag filter (${tagList.length} tags: ${tagList.join(", ")}): ${filtered.length} recipes (was $beforeCount)');
+      
+      // If no matches, show what tags are available in recipes
+      if (filtered.isEmpty && beforeCount > 0) {
+        // Get tags from recipes that passed previous filters
+        final recipesBeforeTagFilter = List<Recipe>.from(_sessionDiscoverCache);
+        var tempFiltered = recipesBeforeTagFilter;
+        
+        // Apply same difficulty filter if it was applied
+        if (difficulty != null && difficulty != 'All') {
+          tempFiltered = tempFiltered.where(
+            (r) => r.difficulty.toLowerCase() == difficulty.toLowerCase(),
+          ).toList();
+        }
+        
+        if (tempFiltered.isNotEmpty) {
+          final uniqueTags = tempFiltered.take(50).expand((r) => r.tags).toSet().toList();
+          debugPrint('📋 Available recipe tags (sample from ${tempFiltered.length} recipes): ${uniqueTags.take(30).join(", ")}');
+          debugPrint('🔎 Looking for tags: ${tagList.join(", ")}');
+        }
+      }
+    } else {
+      debugPrint('🔍 Tag filter: NONE (showing all tags)');
     }
 
-    // Apply text search filter (if query provided)
+    // Apply text search filter (if query provided) - split by comma for OR logic
     if (query != null && query.isNotEmpty) {
-      final lowerQuery = query.toLowerCase();
-      filtered =
-          filtered
-              .where(
-                (r) =>
-                    r.title.toLowerCase().contains(lowerQuery) ||
-                    r.description.toLowerCase().contains(lowerQuery) ||
-                    r.tags.any((t) => t.toLowerCase().contains(lowerQuery)),
-              )
-              .toList();
+      final beforeCount = filtered.length;
+      
+      // Split by comma and treat each as individual search term (OR logic)
+      final queryTerms = query
+          .split(',')
+          .map((t) => t.trim().toLowerCase())
+          .where((t) => t.isNotEmpty)
+          .toList();
+      
+      if (queryTerms.isEmpty) {
+        debugPrint('🔍 Query filter: EMPTY (no valid terms after splitting)');
+      } else {
+        // Match recipes where ANY term appears in title, description, or tags (OR logic)
+        filtered =
+            filtered
+                .where(
+                  (r) {
+                    final titleLower = r.title.toLowerCase();
+                    final descLower = r.description.toLowerCase();
+                    final tagsLower = r.tags.map((t) => t.toLowerCase()).toList();
+                    
+                    // Check if ANY query term matches ANY field
+                    return queryTerms.any(
+                      (term) =>
+                          titleLower.contains(term) ||
+                          descLower.contains(term) ||
+                          tagsLower.any((tag) => tag.contains(term)),
+                    );
+                  },
+                )
+                .toList();
+        debugPrint('🔍 After query filter (${queryTerms.length} terms: ${queryTerms.join(", ")}): ${filtered.length} recipes (was $beforeCount)');
+        
+        // If no matches, show sample recipe data to help diagnose
+        if (filtered.isEmpty && beforeCount > 0) {
+          final sampleRecipes = List<Recipe>.from(_sessionDiscoverCache).take(5).toList();
+          debugPrint('📋 Sample recipe data (first 5 recipes):');
+          for (final recipe in sampleRecipes) {
+            debugPrint('   "${recipe.title}" - Tags: ${recipe.tags.take(5).join(", ")}');
+          }
+        }
+      }
+    } else {
+      debugPrint('🔍 Query filter: NONE (no text search)');
     }
 
     // Calculate pagination
     final total = filtered.length;
+    final activeFilters = <String>[];
+    if (query != null && query.isNotEmpty) activeFilters.add('query');
+    if (difficulty != null && difficulty != 'All') activeFilters.add('difficulty');
+    if (tag != null && tag != 'All') activeFilters.add('tag');
+    
+    debugPrint('✅ FILTER SUMMARY:');
+    debugPrint('   Active filters: ${activeFilters.isEmpty ? "NONE" : activeFilters.join(", ")}');
+    debugPrint('   Final results: $total recipes (page $page, limit $limit)');
     final totalPages = (total / limit).ceil();
     final startIndex = (page - 1) * limit;
     final endIndex = (startIndex + limit).clamp(0, total);
@@ -864,6 +998,9 @@ class RecipeProvider extends ChangeNotifier {
 
         // Safely handle pagination data
         final pagination = data['pagination'];
+        debugPrint('✅ SERVER search results stored: ${recipes.length} recipes');
+        debugPrint('   Query: ${query ?? "null"}, Difficulty: ${difficulty ?? "null"}, Tag: ${tag ?? "null"}');
+        debugPrint('   Page: $page, Total pages: ${pagination != null && pagination is Map<String, dynamic> ? (pagination['totalPages'] ?? "unknown") : "unknown"}');
         if (pagination != null && pagination is Map<String, dynamic>) {
           _currentPage = pagination['page'] ?? page;
 
@@ -958,6 +1095,9 @@ class RecipeProvider extends ChangeNotifier {
           };
         }
 
+        debugPrint('📤 Notifying listeners with ${_generatedRecipes.length} recipes');
+        debugPrint('   Current page: $_currentPage, Total pages: $_totalPages');
+        debugPrint('   Has next: $_hasNextPage, Has prev: $_hasPrevPage');
         notifyListeners();
       } else {
         _setError(response.message ?? 'Failed to search recipes');

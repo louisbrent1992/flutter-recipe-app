@@ -56,7 +56,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final kWebRecaptchaSiteKey = '6Lemcn0dAAAAABLkf6aiiHvpGD6x-zF3nOSDU2M8';
 
 // Debug flag to disable ads for screenshots - set to false to show ads in testing
-const bool hideAds = false;
+const bool hideAds = kDebugMode ? true : false;
 
 // Alternative: Environment-based approach
 // const bool HIDE_ADS_FOR_SCREENSHOTS = bool.fromEnvironment('HIDE_ADS', defaultValue: false);
@@ -318,7 +318,9 @@ class _MyAppState extends State<MyApp> {
             // Encode route + args so deep links can include parameters
             payload: jsonEncode({
               'route': (message.data['route'] as String?) ?? '/home',
-              'args': {'tag': (message.data['tag'] as String?) ?? ''},
+              'args': {
+                'query': (message.data['query'] as String?) ?? (message.data['tag'] as String?) ?? '',
+              },
             }),
           );
         }
@@ -328,7 +330,7 @@ class _MyAppState extends State<MyApp> {
       FirebaseMessaging.onMessageOpenedApp.listen((message) {
         debugPrint('📱 App opened from background notification');
         debugPrint('📱 Message data: ${message.data}');
-        
+
         // Use the same navigation logic as local notifications
         final payload = jsonEncode({
           'route': message.data['route'] ?? '/home',
@@ -342,13 +344,13 @@ class _MyAppState extends State<MyApp> {
       if (initialMsg != null) {
         debugPrint('📱 App launched from terminated state via notification');
         debugPrint('📱 Initial message data: ${initialMsg.data}');
-        
+
         // Use the same navigation logic as local notifications
         final payload = jsonEncode({
           'route': initialMsg.data['route'] ?? '/home',
           'args': initialMsg.data['args'] ?? {},
         });
-        
+
         // Delay navigation until navigator is ready
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _handleNotificationNavigation(payload);
@@ -400,7 +402,9 @@ class _MyAppState extends State<MyApp> {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('⚠️ Error parsing notification payload: $e');
-        debugPrint('📱 Attempting backward-compat navigation with payload as route');
+        debugPrint(
+          '📱 Attempting backward-compat navigation with payload as route',
+        );
       }
       // Backward-compat: treat payload as a simple route string
       _waitForNavigatorAndNavigateToRoute(payload, null);
@@ -429,9 +433,7 @@ class _MyAppState extends State<MyApp> {
             _performNavigation(route, args);
           } else {
             // Log even in production for crash reporting
-            debugPrint(
-              '⚠️ Failed to navigate to $route - navigator not ready',
-            );
+            debugPrint('⚠️ Failed to navigate to $route - navigator not ready');
           }
         });
       }
@@ -446,17 +448,16 @@ class _MyAppState extends State<MyApp> {
       // For routes that expect Map<String, String>, convert args
       Map<String, String>? stringArgs;
       if (args != null && args.isNotEmpty) {
-        stringArgs = args.map((key, value) => MapEntry(
-              key,
-              value?.toString() ?? '',
-            ));
+        stringArgs = args.map(
+          (key, value) => MapEntry(key, value?.toString() ?? ''),
+        );
       }
 
       navigatorKey.currentState?.pushNamed(
         route,
         arguments: stringArgs ?? args,
       );
-      
+
       debugPrint('✅ Navigation completed to: $route');
     } catch (e) {
       // Log even in production for crash reporting
@@ -719,12 +720,16 @@ class _MyAppState extends State<MyApp> {
                 String? initialQuery;
                 String? initialDifficulty;
                 String? initialTag;
+                String? displayQuery;
 
                 if (args is Map) {
                   try {
-                    initialQuery = args['query'] as String?;
+                    // Prioritize 'query' over 'tag' for backward compatibility
+                    initialQuery = (args['query'] as String?) ?? (args['tag'] as String?);
                     initialDifficulty = args['difficulty'] as String?;
-                    initialTag = args['tag'] as String?;
+                    displayQuery = args['displayQuery'] as String?;
+                    // Don't use initialTag anymore - query is used instead
+                    initialTag = null;
                   } catch (_) {
                     // ignore malformed args
                   }
@@ -735,6 +740,7 @@ class _MyAppState extends State<MyApp> {
                     initialQuery: initialQuery,
                     initialDifficulty: initialDifficulty,
                     initialTag: initialTag,
+                    displayQuery: displayQuery,
                   ),
                 );
               },
@@ -794,9 +800,8 @@ class _MyAppState extends State<MyApp> {
                     child: GeneratedRecipesScreen(),
                   ),
               '/randomRecipe':
-                  (context) => const PersistentBannerLayout(
-                    child: RandomRecipeScreen(),
-                  ),
+                  (context) =>
+                      const PersistentBannerLayout(child: RandomRecipeScreen()),
               '/subscription':
                   (context) =>
                       const PersistentBannerLayout(child: SubscriptionScreen()),

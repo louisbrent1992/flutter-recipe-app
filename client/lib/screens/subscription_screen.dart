@@ -917,287 +917,307 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isSubscription = product.purchaseType == PurchaseType.subscription;
-    final subscriptionProvider = Provider.of<SubscriptionProvider>(
-      context,
-      listen: false,
-    );
-    final bool trialEligible = subscriptionProvider.eligibleForTrial;
 
-    final cardBorderRadius =
-        AppBreakpoints.isDesktop(context)
-            ? 16.0
-            : AppBreakpoints.isTablet(context)
-            ? 14.0
-            : 12.0;
+    return Consumer<SubscriptionProvider>(
+      builder: (context, subscriptionProvider, _) {
+        final bool trialEligible = subscriptionProvider.eligibleForTrial;
+        final bool isSubscribed =
+            isSubscription && subscriptionProvider.isProductSubscribed(product);
 
-    return Card(
-      margin: EdgeInsets.only(
-        bottom:
+        final cardBorderRadius =
             AppBreakpoints.isDesktop(context)
-                ? 16
+                ? 16.0
                 : AppBreakpoints.isTablet(context)
-                ? 14
-                : 12,
-      ),
-      elevation: product.isBestValue ? 4 : 1,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(cardBorderRadius),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(cardBorderRadius),
-            border:
-                product.isBestValue
-                    ? Border.all(color: Colors.green, width: 2)
-                    : null,
+                ? 14.0
+                : 12.0;
+
+        return Card(
+          margin: EdgeInsets.only(
+            bottom:
+                AppBreakpoints.isDesktop(context)
+                    ? 16
+                    : AppBreakpoints.isTablet(context)
+                    ? 14
+                    : 12,
           ),
-          child: Padding(
-            padding: EdgeInsets.all(
-              AppBreakpoints.isDesktop(context)
-                  ? 20
-                  : AppBreakpoints.isTablet(context)
-                  ? 18
-                  : 16,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          elevation: product.isBestValue ? 4 : 1,
+          child: InkWell(
+            onTap: isSubscribed ? null : onTap,
+            borderRadius: BorderRadius.circular(cardBorderRadius),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(cardBorderRadius),
+                border:
+                    product.isBestValue
+                        ? Border.all(color: Colors.green, width: 2)
+                        : null,
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(
+                  AppBreakpoints.isDesktop(context)
+                      ? 20
+                      : AppBreakpoints.isTablet(context)
+                      ? 18
+                      : 16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Product Icon
-                    Container(
-                      padding: EdgeInsets.all(
-                        AppBreakpoints.isDesktop(context)
-                            ? 12
-                            : AppBreakpoints.isTablet(context)
-                            ? 10
-                            : 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(
-                          AppBreakpoints.isDesktop(context)
-                              ? 12
-                              : AppBreakpoints.isTablet(context)
-                              ? 10
-                              : 8,
-                        ),
-                      ),
-                      child: Icon(
-                        product.icon,
-                        color: colorScheme.onPrimaryContainer,
-                        size: AppSizing.responsiveIconSize(
-                          context,
-                          mobile: 22,
-                          tablet: 26,
-                          desktop: 30,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width:
-                          AppBreakpoints.isDesktop(context)
-                              ? 16
-                              : AppBreakpoints.isTablet(context)
-                              ? 14
-                              : 12,
-                    ),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              product.title,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                    Row(
+                      children: [
+                        // Product Icon
+                        Container(
+                          padding: EdgeInsets.all(
+                            AppBreakpoints.isDesktop(context)
+                                ? 12
+                                : AppBreakpoints.isTablet(context)
+                                ? 10
+                                : 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(
+                              AppBreakpoints.isDesktop(context)
+                                  ? 12
+                                  : AppBreakpoints.isTablet(context)
+                                  ? 10
+                                  : 8,
                             ),
                           ),
-                          if (product.unlimitedUsage) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.purple.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.purple,
-                                  width: 1,
+                          child: Icon(
+                            product.icon,
+                            color: colorScheme.onPrimaryContainer,
+                            size: AppSizing.responsiveIconSize(
+                              context,
+                              mobile: 22,
+                              tablet: 26,
+                              desktop: 30,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width:
+                              AppBreakpoints.isDesktop(context)
+                                  ? 16
+                                  : AppBreakpoints.isTablet(context)
+                                  ? 14
+                                  : 12,
+                        ),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  product.title,
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.all_inclusive,
-                                    size: 14,
-                                    color: Colors.purple,
+                              if (product.unlimitedUsage) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
                                   ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Unlimited',
-                                    style: theme.textTheme.labelSmall?.copyWith(
+                                  decoration: BoxDecoration(
+                                    color: Colors.purple.withValues(
+                                      alpha: 0.12,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
                                       color: Colors.purple,
-                                      fontWeight: FontWeight.bold,
+                                      width: 1,
                                     ),
                                   ),
-                                ],
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.all_inclusive,
+                                        size: 14,
+                                        color: Colors.purple,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Unlimited',
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                              color: Colors.purple,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(width: 4),
+                            ],
+                          ),
+                        ),
+                        if (product.isBestValue)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'BEST VALUE',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ],
-                          const SizedBox(width: 4),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
-                    if (product.isBestValue)
+
+                    // Free Trial Badge for subscriptions (only when eligible)
+                    if (isSubscription && trialEligible) ...[
+                      const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.green,
-                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.green.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green, width: 1),
                         ),
-                        child: Text(
-                          'BEST VALUE',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.celebration,
+                              size: 14,
+                              color: Colors.green,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '7 Days FREE Trial',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                  ],
-                ),
+                    ],
 
-                // Free Trial Badge for subscriptions (only when eligible)
-                if (isSubscription && trialEligible) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                    const SizedBox(height: 8),
+                    Text(
+                      product.description,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.green, width: 1),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    // Display subscription details (required by App Store)
+                    if (isSubscription) ...[
+                      const SizedBox(height: 8),
+                      _buildSubscriptionDetails(
+                        context,
+                        product,
+                        trialEligible,
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    Row(
                       children: [
-                        Icon(Icons.celebration, size: 14, color: Colors.green),
-                        const SizedBox(width: 4),
-                        Text(
-                          '7 Days FREE Trial',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: Colors.green,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 8),
-                Text(
-                  product.description,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                // Display subscription details (required by App Store)
-                if (isSubscription) ...[
-                  const SizedBox(height: 8),
-                  _buildSubscriptionDetails(context, product, trialEligible),
-                ],
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    if (product.includesAdFree) ...[
-                      const Icon(Icons.block, size: 16),
-                      const SizedBox(width: 4),
-                      const Text('Ad-Free'),
-                      const SizedBox(width: 12),
-                    ],
-                    if (product.creditAmount != null) ...[
-                      const Icon(Icons.star, size: 16),
-                      const SizedBox(width: 4),
-                      Text('${product.creditAmount} Credits'),
-                      const SizedBox(width: 12),
-                    ],
-                    if (product.monthlyCredits != null) ...[
-                      const Icon(Icons.autorenew, size: 16),
-                      const SizedBox(width: 4),
-                      Text('${product.monthlyCredits} Credits/month'),
-                      const SizedBox(width: 12),
-                    ],
-                    if (product.unlimitedUsage) ...[
-                      const Icon(Icons.all_inclusive, size: 16),
-                      const SizedBox(width: 4),
-                      const Text('Unlimited'),
-                      const SizedBox(width: 12),
-                    ],
-                  ],
-                ),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Always show the actual price prominently (Apple requirement)
-                        Text(
-                          product.price,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        // Show trial info as secondary text
-                        if (product.productType ==
-                            ProductType.unlimitedPremiumYearly) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            'Equivalent to \$6.67/month',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
+                        if (product.includesAdFree) ...[
+                          const Icon(Icons.block, size: 16),
+                          const SizedBox(width: 4),
+                          const Text('Ad-Free'),
+                          const SizedBox(width: 12),
+                        ],
+                        if (product.creditAmount != null) ...[
+                          const Icon(Icons.star, size: 16),
+                          const SizedBox(width: 4),
+                          Text('${product.creditAmount} Credits'),
+                          const SizedBox(width: 12),
+                        ],
+                        if (product.monthlyCredits != null) ...[
+                          const Icon(Icons.autorenew, size: 16),
+                          const SizedBox(width: 4),
+                          Text('${product.monthlyCredits} Credits/month'),
+                          const SizedBox(width: 12),
+                        ],
+                        if (product.unlimitedUsage) ...[
+                          const Icon(Icons.all_inclusive, size: 16),
+                          const SizedBox(width: 4),
+                          const Text('Unlimited'),
+                          const SizedBox(width: 12),
                         ],
                       ],
                     ),
-                    ElevatedButton(
-                      onPressed: onTap,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            isSubscription && trialEligible
-                                ? Colors.green
-                                : colorScheme.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: Text(
-                        isSubscription
-                            ? (trialEligible ? 'Start Trial' : 'Subscribe')
-                            : 'Buy',
-                      ),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Always show the actual price prominently (Apple requirement)
+                            Text(
+                              product.price,
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            // Show trial info as secondary text
+                            if (product.productType ==
+                                ProductType.unlimitedPremiumYearly) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                'Equivalent to \$6.67/month',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        ElevatedButton(
+                          onPressed: isSubscribed ? null : onTap,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                isSubscribed
+                                    ? Colors.grey
+                                    : (isSubscription && trialEligible
+                                        ? Colors.green
+                                        : colorScheme.primary),
+                            foregroundColor: Colors.white,
+                          ),
+                          child: Text(
+                            isSubscribed
+                                ? 'Subscribed'
+                                : (isSubscription
+                                    ? (trialEligible
+                                        ? 'Start Trial'
+                                        : 'Subscribe')
+                                    : 'Buy'),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

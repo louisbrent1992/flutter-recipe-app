@@ -68,12 +68,15 @@ class _HomeScreenState extends State<HomeScreen>
         // Load first batch of user's own recipes
         recipeProvider.loadUserRecipes(limit: 20);
 
-        // Fetch a larger set of random recipes for discovery to ensure we have enough after filtering
-        recipeProvider.searchExternalRecipes(
-          query: '',
-          limit: 50,
-          random: true,
-        );
+        // Fetch session cache for discovery (500 recipes, used everywhere)
+        recipeProvider.fetchSessionDiscoverCache().then((_) {
+          // After cache loads, get first 50 for home screen carousel
+          final discover = recipeProvider.getFilteredDiscoverRecipes(
+            page: 1,
+            limit: 50,
+          );
+          recipeProvider.setGeneratedRecipesFromCache(discover);
+        });
 
         // Ensure first frame shows placeholders even before provider flips loading
         if (mounted) setState(() => _isBooting = false);

@@ -1367,6 +1367,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     }
   }
 
+
   Widget _buildNavigationContent(
     BuildContext context,
     ColorScheme colorScheme,

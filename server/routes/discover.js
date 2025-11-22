@@ -139,9 +139,10 @@ router.get("/search", auth, async (req, res) => {
 			let snapshot;
 			try {
 				if (isRandom) {
-                // For random: fetch up to 500 recipes and return ALL of them
+                // For random: fetch up to the requested limit (up to 500) and return ALL of them
                 // Client will handle randomization and pagination locally for better caching
-                const randomSampleSize = Math.min(500, totalRecipes);
+                const randomSampleSize = Math.min(limit, totalRecipes);
+                console.log(`[RANDOM MODE] Requested limit: ${limit}, totalRecipes: ${totalRecipes}, fetching: ${randomSampleSize}`);
 					snapshot = await recipesRef
                     .limit(randomSampleSize)
 						.get();

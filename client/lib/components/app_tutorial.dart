@@ -70,7 +70,14 @@ class _AppTutorialState extends State<AppTutorial> {
 
 /// Helper method to start the tutorial showcase
 void startTutorial(BuildContext context, List<GlobalKey> keys) {
-  ShowcaseView.get().startShowCase(keys);
+  debugPrint('🚀 Starting tutorial with ${keys.length} keys');
+  if (keys.isNotEmpty) {
+    try {
+      ShowcaseView.get().startShowCase(keys);
+    } catch (e) {
+      debugPrint('❌ Error starting showcase: $e');
+    }
+  }
 }
 
 /// Tutorial showcase wrapper widget
