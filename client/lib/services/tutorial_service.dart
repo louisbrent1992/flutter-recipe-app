@@ -21,6 +21,10 @@ class TutorialService {
   // Stream controller for active step notifications
   final _stepController = StreamController<GlobalKey>.broadcast();
   Stream<GlobalKey> get onStepChanged => _stepController.stream;
+  
+  // Flag to prevent auto-start when manually restarting
+  bool _isManualRestart = false;
+  bool get isManualRestart => _isManualRestart;
 
   /// Initialize the tutorial service
   Future<void> init() async {
@@ -56,15 +60,22 @@ class TutorialService {
   }
 
   /// Reset the tutorial (allows user to see it again)
-  Future<void> resetTutorial() async {
+  /// [isManual] indicates if this is a manual restart (prevents auto-start)
+  Future<void> resetTutorial({bool isManual = false}) async {
     if (_prefs == null) await init();
     
+    _isManualRestart = isManual;
     await _prefs?.remove(_tutorialCompletedKey);
     await _prefs?.setInt(_tutorialVersionKey, _currentTutorialVersion);
     
     if (kDebugMode) {
-      debugPrint('🔄 TutorialService: Tutorial reset');
+      debugPrint('🔄 TutorialService: Tutorial reset (manual: $isManual)');
     }
+  }
+  
+  /// Clear the manual restart flag (called after tutorial starts)
+  void clearManualRestartFlag() {
+    _isManualRestart = false;
   }
 
   /// Check if tutorial should be shown (not completed)

@@ -371,64 +371,67 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Future<void> _restartTutorial() async {
     try {
-      // Reset tutorial completion status
-      await TutorialService().resetTutorial();
+      final tutorialService = TutorialService();
+      
+      // Reset tutorial completion status with manual flag
+      await tutorialService.resetTutorial(isManual: true);
 
       if (mounted) {
         // Navigate to home screen
         Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
 
-        // Wait for the home screen to be built
-        await Future.delayed(const Duration(milliseconds: 800));
+        // Use frame callbacks to wait for widgets to be built instead of arbitrary delays
+        // This ensures smooth transition without stuttering
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          // Wait one more frame to ensure all widgets are fully rendered
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (navigatorKey.currentContext != null) {
+              final homeContext = navigatorKey.currentContext!;
+              final recipeProvider = Provider.of<RecipeProvider>(
+                homeContext,
+                listen: false,
+              );
+              
+              final List<GlobalKey> tutorialTargets = [TutorialKeys.homeHero];
 
-        // Start the tutorial showcase
-        if (navigatorKey.currentContext != null) {
-          final homeContext = navigatorKey.currentContext!;
-          final recipeProvider = Provider.of<RecipeProvider>(
-            homeContext,
-            listen: false,
-          );
-          
-          final List<GlobalKey> tutorialTargets = [TutorialKeys.homeHero];
+              // Only include "Your Recipes" if the user has saved recipes
+              if (recipeProvider.userRecipes.isNotEmpty) {
+                tutorialTargets.add(TutorialKeys.homeYourRecipes);
+              }
 
-          // Only include "Your Recipes" if the user has saved recipes
-          if (recipeProvider.userRecipes.isNotEmpty) {
-            tutorialTargets.add(TutorialKeys.homeYourRecipes);
-          }
+              // Only include "Discover" if there are random recipes to show
+              final randomRecipes =
+                  recipeProvider.generatedRecipes
+                      .where(
+                        (r) => !recipeProvider.userRecipes.any((u) => u.id == r.id),
+                      )
+                      .take(10)
+                      .toList();
 
-          // Only include "Discover" if there are random recipes to show
-          final randomRecipes =
-              recipeProvider.generatedRecipes
-                  .where(
-                    (r) => !recipeProvider.userRecipes.any((u) => u.id == r.id),
-                  )
-                  .take(10)
-                  .toList();
+              if (randomRecipes.isNotEmpty) {
+                tutorialTargets.add(TutorialKeys.homeDiscover);
+              }
 
-          if (randomRecipes.isNotEmpty) {
-            tutorialTargets.add(TutorialKeys.homeDiscover);
-          }
+              // Collections are always shown (even if empty state), so safe to include
+              tutorialTargets.add(TutorialKeys.homeCollections);
 
-          // Collections are always shown (even if empty state), so safe to include
-          tutorialTargets.add(TutorialKeys.homeCollections);
+              // Add Features section
+              tutorialTargets.add(TutorialKeys.homeFeatures);
 
-          // Add Features section
-          tutorialTargets.add(TutorialKeys.homeFeatures);
+              // Add bottom navigation targets
+              tutorialTargets.addAll([
+                TutorialKeys.bottomNavHome,
+                TutorialKeys.bottomNavDiscover,
+                TutorialKeys.bottomNavMyRecipes,
+                TutorialKeys.bottomNavGenerate,
+                TutorialKeys.bottomNavSettings,
+              ]);
 
-          // Add bottom navigation targets
-          tutorialTargets.addAll([
-            TutorialKeys.bottomNavHome,
-            TutorialKeys.bottomNavDiscover,
-            TutorialKeys.bottomNavMyRecipes,
-            TutorialKeys.bottomNavGenerate,
-            TutorialKeys.bottomNavSettings,
-          ]);
-
-          // Start tutorial after a short delay to ensure widgets are built
-          Future.delayed(const Duration(milliseconds: 500), () {
-            startTutorial(homeContext, tutorialTargets);
+              // Start tutorial immediately after widgets are built
+              startTutorial(homeContext, tutorialTargets);
+            }
           });
-        }
+        });
 
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(

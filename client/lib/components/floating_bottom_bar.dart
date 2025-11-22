@@ -137,6 +137,8 @@ class FloatingBottomBar extends StatelessWidget {
         showcaseKey: TutorialKeys.bottomNavHome,
         title: 'Dashboard 🏠',
         description: 'Your central hub for recipes, features, and daily inspiration.',
+        isCircular: true,
+        targetPadding: const EdgeInsets.all(12),
         child: _buildMinimalNavIcon(
           context,
           icon: Icons.home_rounded,
@@ -148,6 +150,8 @@ class FloatingBottomBar extends StatelessWidget {
         showcaseKey: TutorialKeys.bottomNavDiscover,
         title: 'Explore 🔍',
         description: 'Browse thousands of curated recipes with smart filters.',
+        isCircular: true,
+        targetPadding: const EdgeInsets.all(12),
         child: _buildMinimalNavIcon(
           context,
           icon: Icons.explore_rounded,
@@ -159,6 +163,8 @@ class FloatingBottomBar extends StatelessWidget {
         showcaseKey: TutorialKeys.bottomNavMyRecipes,
         title: 'My Kitchen 📖',
         description: 'Access all your personal recipes and collections.',
+        isCircular: true,
+        targetPadding: const EdgeInsets.all(12),
         child: _buildMinimalNavIcon(
           context,
           icon: Icons.restaurant_rounded,
@@ -170,6 +176,8 @@ class FloatingBottomBar extends StatelessWidget {
         showcaseKey: TutorialKeys.bottomNavGenerate,
         title: 'AI Chef ✨',
         description: 'Create unique recipes instantly based on your ingredients and preferences.',
+        isCircular: true,
+        targetPadding: const EdgeInsets.all(12),
         child: _buildMinimalNavIcon(
           context,
           icon: Icons.auto_awesome_rounded,
@@ -181,6 +189,8 @@ class FloatingBottomBar extends StatelessWidget {
         showcaseKey: TutorialKeys.bottomNavSettings,
         title: 'Customize ⚙️',
         description: 'Manage your profile, preferences, and subscription.',
+        isCircular: true,
+        targetPadding: const EdgeInsets.all(12),
         child: _buildMinimalNavIcon(
           context,
           icon: Icons.person_rounded,
@@ -202,6 +212,8 @@ class FloatingBottomBar extends StatelessWidget {
         showcaseKey: TutorialKeys.bottomNavHome,
         title: 'Dashboard 🏠',
         description: 'Your central hub for recipes, features, and daily inspiration.',
+        isCircular: true,
+        targetPadding: const EdgeInsets.all(12),
         child: _buildMinimalNavIcon(
           context,
           icon: Icons.home_rounded,
@@ -213,6 +225,8 @@ class FloatingBottomBar extends StatelessWidget {
         showcaseKey: TutorialKeys.bottomNavDiscover,
         title: 'Explore 🔍',
         description: 'Browse thousands of curated recipes with smart filters.',
+        isCircular: true,
+        targetPadding: const EdgeInsets.all(12),
         child: _buildMinimalNavIcon(
           context,
           icon: Icons.explore_rounded,
@@ -224,6 +238,8 @@ class FloatingBottomBar extends StatelessWidget {
         showcaseKey: TutorialKeys.bottomNavMyRecipes,
         title: 'My Kitchen 📖',
         description: 'Access all your personal recipes and collections.',
+        isCircular: true,
+        targetPadding: const EdgeInsets.all(12),
         child: _buildMinimalNavIcon(
           context,
           icon: Icons.restaurant_rounded,
@@ -235,6 +251,8 @@ class FloatingBottomBar extends StatelessWidget {
         showcaseKey: TutorialKeys.bottomNavGenerate,
         title: 'AI Chef ✨',
         description: 'Create unique recipes instantly based on your ingredients and preferences.',
+        isCircular: true,
+        targetPadding: const EdgeInsets.all(12),
         child: _buildMinimalNavIcon(
           context,
           icon: Icons.auto_awesome_rounded,
@@ -246,6 +264,8 @@ class FloatingBottomBar extends StatelessWidget {
         showcaseKey: TutorialKeys.bottomNavSettings,
         title: 'Customize ⚙️',
         description: 'Manage your profile, preferences, and subscription.',
+        isCircular: true,
+        targetPadding: const EdgeInsets.all(12),
         child: _buildMinimalNavIcon(
           context,
           icon: Icons.person_rounded,

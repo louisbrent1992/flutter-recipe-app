@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:showcaseview/showcaseview.dart';
 import '../services/tutorial_service.dart';
@@ -47,12 +48,16 @@ class _AppTutorialState extends State<AppTutorial> {
               backgroundColor: Theme.of(context).colorScheme.primary,
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 6,
             ),
           );
         }
       },
       enableAutoScroll: true,
-      scrollDuration: const Duration(milliseconds: 500),
+      scrollDuration: const Duration(milliseconds: 600),
     );
   }
 
@@ -69,24 +74,33 @@ class _AppTutorialState extends State<AppTutorial> {
 }
 
 /// Helper method to start the tutorial showcase
+/// Uses a microtask to ensure it runs after the current build cycle completes
 void startTutorial(BuildContext context, List<GlobalKey> keys) {
-  debugPrint('🚀 Starting tutorial with ${keys.length} keys');
-  if (keys.isNotEmpty) {
+  if (keys.isEmpty) return;
+  
+  // Clear manual restart flag since tutorial is starting
+  TutorialService().clearManualRestartFlag();
+  
+  // Use scheduleMicrotask to ensure this runs after current frame completes
+  // This prevents stuttering by ensuring all widgets are fully built
+  scheduleMicrotask(() {
     try {
-  ShowcaseView.get().startShowCase(keys);
+      ShowcaseView.get().startShowCase(keys);
     } catch (e) {
       debugPrint('❌ Error starting showcase: $e');
     }
-  }
+  });
 }
 
-/// Tutorial showcase wrapper widget
+/// Tutorial showcase wrapper widget with advanced styling
 class TutorialShowcase extends StatelessWidget {
   final GlobalKey showcaseKey;
   final String title;
   final String description;
   final Widget child;
   final EdgeInsets? targetPadding;
+  final ShapeBorder? targetShapeBorder;
+  final bool isCircular;
 
   const TutorialShowcase({
     super.key,
@@ -95,15 +109,50 @@ class TutorialShowcase extends StatelessWidget {
     required this.description,
     required this.child,
     this.targetPadding,
+    this.targetShapeBorder,
+    this.isCircular = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    // Determine shape border
+    final ShapeBorder shapeBorder = targetShapeBorder ?? 
+        (isCircular 
+            ? const CircleBorder() 
+            : RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ));
+
     return Showcase(
       key: showcaseKey,
       title: title,
       description: description,
-      targetPadding: targetPadding ?? const EdgeInsets.all(4),
+      targetPadding: targetPadding ?? const EdgeInsets.all(8),
+      targetShapeBorder: shapeBorder,
+      // Advanced tooltip styling
+      tooltipBackgroundColor: colorScheme.surface,
+      titleTextStyle: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: colorScheme.onSurface,
+        letterSpacing: 0.5,
+      ),
+      descTextStyle: TextStyle(
+        fontSize: 15,
+        color: colorScheme.onSurface.withOpacity(0.8),
+        height: 1.4,
+      ),
+      tooltipPadding: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: 16,
+      ),
+      tooltipBorderRadius: BorderRadius.circular(16),
+      // Animation settings
+      movingAnimationDuration: const Duration(milliseconds: 400),
+      disableMovingAnimation: false,
       child: child,
     );
   }

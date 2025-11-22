@@ -97,8 +97,15 @@ class _HomeScreenState extends State<HomeScreen>
     });
 
     // Check if tutorial should be shown and start it
+    // Skip auto-start if this is a manual restart (to prevent double-start)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final tutorialService = TutorialService();
+
+      // Don't auto-start if this is a manual restart
+      if (tutorialService.isManualRestart) {
+        tutorialService.clearManualRestartFlag();
+        return;
+      }
 
       final shouldShow = await tutorialService.shouldShowTutorial();
       if (shouldShow && mounted) {
@@ -427,6 +434,7 @@ class _HomeScreenState extends State<HomeScreen>
       title: 'Welcome to RecipEase! 👋',
       description:
           'Your personal AI kitchen assistant. Discover, create, and organize recipes seamlessly.',
+      targetPadding: const EdgeInsets.all(16),
       child: Padding(
         padding: EdgeInsets.only(
           top: AppSpacing.responsive(context),
