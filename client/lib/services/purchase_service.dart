@@ -267,7 +267,10 @@ class PurchaseService {
       }
 
       // Verify purchase with backend (simplified version)
-      // In production, you should verify with your backend server
+      // In production, you should verify with your backend server.
+      // NOTE: Apple recommends verifying the receipt with the App Store to confirm validity
+      // and checking for 'Sandbox receipt used in production' (error 21007) to handle test environments.
+      // Currently, this implementation trusts the client-side transaction and syncs to Firestore.
       final verificationData = {
         'productId': purchaseDetails.productID,
         'purchaseId': purchaseDetails.purchaseID,
@@ -323,32 +326,37 @@ class PurchaseService {
         updates['subscriptionType'] = product.id;
         updates['subscriptionStartDate'] = FieldValue.serverTimestamp();
 
-        // Unlimited tier: enable unlimitedUsage, no trials or credits
+        // Check if this is the first time enabling subscription (no prior sub/trial)
+        final bool hasActiveSub =
+            (data?['subscriptionActive'] ?? false) == true;
+        // Check both current active trial AND history of trial usage
+        final bool hasTrial = (data?['trialActive'] ?? false) == true;
+        final bool trialUsed = (data?['trialUsed'] ?? false) == true;
+
+        // If user is eligible for a trial (no active sub, no active trial, never used trial)
+        // Note: In production, StoreKit handles the actual billing trial.
+        // This logic ensures the app's UI reflects the trial status.
+        // Ensure 'Introductory Offer' is configured in App Store Connect.
+        if (!hasActiveSub && !hasTrial && !trialUsed) {
+          // Mark trial active and set end timestamp (7 days from now)
+          updates['trialActive'] = true;
+          updates['trialUsed'] = true;
+          updates['trialEndAt'] = Timestamp.fromDate(
+            DateTime.now().add(const Duration(days: 7)),
+          );
+
+          if (kDebugMode) {
+            debugPrint('✨ Trial activated: Unlimited usage for 7 days');
+          }
+        } else {
+          // If upgrading or re-subscribing, ensure trial is cleared
+          updates['trialActive'] = false;
+        }
+
+        // Unlimited tier: enable unlimitedUsage
         if (product.productType == ProductType.unlimitedPremium ||
             product.unlimitedUsage) {
           updates['unlimitedUsage'] = true;
-          // If user had an active trial, end it immediately
-          updates['trialActive'] = false;
-        } else {
-          // If this is the first time enabling subscription (no prior sub/trial),
-          // start a 7-day trial and grant capped trial credits (total 12).
-          final bool hasActiveSub =
-              (data?['subscriptionActive'] ?? false) == true;
-          final bool hasTrial = (data?['trialActive'] ?? false) == true;
-          if (!hasActiveSub && !hasTrial) {
-            // Mark trial active and set end timestamp (7 days from now)
-            updates['trialActive'] = true;
-            updates['trialUsed'] = true;
-            updates['trialEndAt'] = Timestamp.fromDate(
-              DateTime.now().add(const Duration(days: 7)),
-            );
-
-            // No trial credits needed - users get unlimited usage during trial!
-            // Trial provides full unlimited access for 7 days
-            if (kDebugMode) {
-              debugPrint('✨ Trial activated: Unlimited usage for 7 days');
-            }
-          }
         }
       }
 
