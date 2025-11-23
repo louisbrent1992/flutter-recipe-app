@@ -10,6 +10,7 @@ import '../components/error_display.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/loading_dialog_helper.dart';
 import '../utils/error_utils.dart';
+import '../components/offline_banner.dart';
 
 class GenerateRecipeScreen extends StatefulWidget {
   const GenerateRecipeScreen({super.key});
@@ -118,14 +119,13 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
       // Show loading dialog
       debugPrint('🔵 [Generate] About to show loading dialog');
       if (context.mounted) {
-        LoadingDialogHelper.show(
-          context,
-          message: 'Generating Recipes',
-        );
+        LoadingDialogHelper.show(context, message: 'Generating Recipes');
         debugPrint('🔵 [Generate] Loading dialog shown');
       }
 
-      debugPrint('🔵 [Generate] Calling generateRecipes with ${_ingredients.length} ingredients');
+      debugPrint(
+        '🔵 [Generate] Calling generateRecipes with ${_ingredients.length} ingredients',
+      );
       await recipeProvider.generateRecipes(
         ingredients: _ingredients,
         dietaryRestrictions: _dietaryRestrictions,
@@ -1004,6 +1004,14 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                     ),
                   ),
                 ),
+              ),
+
+              // Offline banner at the top (after content so it appears on top)
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: OfflineBanner(),
               ),
             ],
           );

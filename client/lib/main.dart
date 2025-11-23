@@ -50,6 +50,8 @@ import 'package:recipease/services/game_center_service.dart';
 import 'package:recipease/services/debug_settings.dart';
 import 'package:recipease/services/tutorial_service.dart';
 import 'package:recipease/components/app_tutorial.dart';
+import 'package:recipease/providers/connectivity_provider.dart';
+import 'package:recipease/services/local_storage_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -143,6 +145,14 @@ void main() async {
 
   await Hive.initFlutter();
   await Hive.openBox('preferences');
+
+  // Initialize Local Storage Service for offline support
+  try {
+    final localStorageService = LocalStorageService();
+    await localStorageService.initialize();
+  } catch (e) {
+    debugPrint('LocalStorageService initialization failed: $e');
+  }
 
   // Initialize Debug Settings (only in debug mode)
   await DebugSettings().init();
@@ -621,6 +631,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
         ChangeNotifierProvider(create: (_) => DynamicUiProvider()),
         ChangeNotifierProvider(create: (_) => CollectionService()),
+        ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
       ],
       child: Consumer2<AuthService, ThemeProvider>(
         builder: (context, authService, themeProvider, _) {

@@ -5,6 +5,7 @@ import 'package:recipease/components/custom_app_bar.dart';
 import '../providers/recipe_provider.dart';
 import '../components/recipe_card.dart';
 import '../components/compact_filter_bar.dart';
+import '../components/cache_status_indicator.dart';
 import '../mixins/recipe_filter_mixin.dart';
 import '../models/recipe.dart';
 import '../components/error_display.dart';
@@ -81,9 +82,14 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
         _loadRecipes();
       });
 
-      // Listen for cross-screen recipe updates to refetch current page
+      // Listen for cross-screen recipe updates
+      // Note: We don't reload discover recipes when user recipes change
+      // because discover recipes are from external API, not user's collection
+      // Only reload if explicitly needed (e.g., pull-to-refresh)
       _recipesChangedSubscription = recipeProvider.onRecipesChanged.listen((_) {
-        _loadRecipes();
+        // Don't reload discover recipes when user recipes change
+        // The discover screen shows external recipes, not user's saved recipes
+        // This prevents recipes from disappearing after saving
       });
     });
   }
@@ -138,6 +144,9 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
   Future<void> _loadRecipes({bool forceRefresh = false}) async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
 
+    // Preserve current recipes to avoid clearing the list
+    final currentRecipes = List<Recipe>.from(recipeProvider.generatedRecipes);
+
     // Always use client-side filtering on cached 500 recipes (no server requests)
     // Ensure session cache is populated (will use existing cache if valid)
     await recipeProvider.fetchSessionDiscoverCache(forceRefresh: forceRefresh);
@@ -151,8 +160,19 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
       limit: _itemsPerPage,
     );
 
-    // Update generatedRecipes for UI (without notifying again)
-    recipeProvider.setGeneratedRecipesFromCache(filtered);
+    // Only update if we have filtered results
+    // If filtered is empty but we had recipes, keep current recipes
+    // This prevents clearing the list when session cache is temporarily unavailable
+    if (filtered.isNotEmpty) {
+      recipeProvider.setGeneratedRecipesFromCache(filtered);
+    } else if (currentRecipes.isNotEmpty && !forceRefresh) {
+      // If filtered is empty but we had recipes and we're not forcing refresh,
+      // keep current recipes to prevent UI flicker
+      recipeProvider.setGeneratedRecipesFromCache(currentRecipes);
+    } else if (forceRefresh && filtered.isEmpty) {
+      // Only clear if we're explicitly forcing a refresh and got empty results
+      recipeProvider.setGeneratedRecipesFromCache([]);
+    }
 
     _updateAvailableTagsFromRecipes();
   }
@@ -414,16 +434,8 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                 },
                 onTagSelected: (tag) {
                   setState(() {
-                    // Use tag as search query instead of tag filter
-                    if (tag == 'All') {
-                      _searchQuery = '';
-                      _selectedTag = 'All';
-                      _searchController.clear();
-                    } else {
-                      _searchQuery = tag;
-                      _selectedTag = 'All'; // Clear tag filter, use query instead
-                      _searchController.text = tag;
-                    }
+                    // Set selected tag (like difficulty selection)
+                    _selectedTag = tag;
                     _currentPage = 1;
                   });
                   _loadRecipes();
@@ -435,6 +447,12 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                     _searchQuery.isNotEmpty,
               ),
 
+              // Cache status indicator
+              const CacheStatusIndicator(
+                dataType: 'discover_cache',
+                compact: true,
+              ),
+
               // Main content area
               Expanded(
                 child: Consumer<RecipeProvider>(
@@ -442,6 +460,24 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                     // Server now handles filtering (excludes current user's recipes)
                     // and deduplication, so we can use recipes directly
                     final displayRecipes = recipeProvider.generatedRecipes;
+
+                    // Show errors only if we have no recipes AND there's an error
+                    // This prevents showing error screen when we have cached recipes
+                    // (errors from home screen refresh shouldn't affect discover screen)
+                    if (recipeProvider.error != null &&
+                        displayRecipes.isEmpty &&
+                        !recipeProvider.isLoading) {
+                      return ErrorDisplay(
+                        message: recipeProvider.error!.userFriendlyMessage,
+                        isNetworkError: recipeProvider.error!.isNetworkError,
+                        isAuthError: recipeProvider.error!.isAuthError,
+                        isFormatError: recipeProvider.error!.isFormatError,
+                        onRetry: () {
+                          recipeProvider.clearError();
+                          _loadRecipes();
+                        },
+                      );
+                    }
 
                     // Friendly empty state: show when not loading and no results
                     if (!recipeProvider.isLoading && displayRecipes.isEmpty) {
@@ -530,20 +566,8 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                       );
                     }
 
-                    // Show errors after empty-state check so genuine results absence doesn't look like a network issue
-                    if (recipeProvider.error != null) {
-                      return ErrorDisplay(
-                        message: recipeProvider.error!.userFriendlyMessage,
-                        isNetworkError: recipeProvider.error!.isNetworkError,
-                        isAuthError: recipeProvider.error!.isAuthError,
-                        isFormatError: recipeProvider.error!.isFormatError,
-                        onRetry: () {
-                          recipeProvider.clearError();
-                          _loadRecipes();
-                        },
-                      );
-                    }
-
+                    // If we have recipes, show them (even if there's an error from another screen)
+                    // This ensures cached recipes are always displayed
                     return Padding(
                       padding: EdgeInsets.fromLTRB(
                         AppSpacing.responsive(context),
@@ -573,7 +597,9 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                               ? recipe.id
                                               : '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
                                       return RecipeCard(
-                                        key: ValueKey('discover-card-$identity'),
+                                        key: ValueKey(
+                                          'discover-card-$identity',
+                                        ),
                                         recipe: recipe,
                                         showSaveButton:
                                             true, // All displayed recipes are unsaved
@@ -581,7 +607,8 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                             false, // Saved recipes are filtered out
                                         showRefreshButton: false,
                                         showDeleteButton: false,
-                                        onSave: () => _handleRecipeAction(recipe),
+                                        onSave:
+                                            () => _handleRecipeAction(recipe),
                                       );
                                     },
                                     itemCount: displayRecipes.length,
@@ -595,12 +622,10 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                               AppSizing.responsiveAspectRatio(
                                                 context,
                                               ),
-                                          crossAxisSpacing: AppSpacing.responsive(
-                                            context,
-                                          ),
-                                          mainAxisSpacing: AppSpacing.responsive(
-                                            context,
-                                          ),
+                                          crossAxisSpacing:
+                                              AppSpacing.responsive(context),
+                                          mainAxisSpacing:
+                                              AppSpacing.responsive(context),
                                         ),
                                   ),
                                 ),

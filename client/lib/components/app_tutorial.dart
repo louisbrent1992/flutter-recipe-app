@@ -89,7 +89,7 @@ void startTutorial(BuildContext context, List<GlobalKey> keys) {
   // This prevents stuttering by ensuring all widgets are fully built
   scheduleMicrotask(() {
     try {
-      ShowcaseView.get().startShowCase(keys);
+  ShowcaseView.get().startShowCase(keys);
     } catch (e) {
       debugPrint('❌ Error starting showcase: $e');
     }

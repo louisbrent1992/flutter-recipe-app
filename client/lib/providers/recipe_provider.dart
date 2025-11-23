@@ -6,6 +6,8 @@ import '../models/api_response.dart';
 import '../services/recipe_service.dart';
 import '../services/collection_service.dart';
 import '../services/game_center_service.dart';
+import '../services/local_storage_service.dart';
+import '../services/connectivity_service.dart';
 
 class RecipeProvider extends ChangeNotifier {
   // Cross-screen refresh mechanism
@@ -243,7 +245,33 @@ class RecipeProvider extends ChangeNotifier {
     // Create cache key with page and limit
     final cacheKey = '${page}_$limit';
 
-    // Serve from cache if available and not forced
+    // OFFLINE-FIRST: Load from local storage first (for page 1 only)
+    // Even on forceRefresh, show local data first, then sync
+    bool hasLocalData = false;
+    if (page == 1) {
+      try {
+        final localStorage = LocalStorageService();
+        final localRecipes = await localStorage.loadUserRecipes();
+        if (localRecipes.isNotEmpty) {
+          hasLocalData = true;
+          // Show cached data immediately (even on refresh)
+          _userRecipes = localRecipes;
+          _totalRecipes = localRecipes.length;
+          _totalUserRecipes = localRecipes.length;
+          _totalPages = (localRecipes.length / limit).ceil();
+          _currentPage = 1;
+          _hasNextPage = localRecipes.length > limit;
+          _hasPrevPage = false;
+          notifyListeners();
+
+          // Continue to network fetch in background (will update if successful)
+        }
+      } catch (e) {
+        debugPrint('❌ Error loading user recipes: $e');
+      }
+    }
+
+    // Serve from in-memory cache if available and not forced
     if (!forceRefresh && _userRecipesCache.containsKey(cacheKey)) {
       final cached = _userRecipesCache[cacheKey];
       _userRecipes = cached != null ? List<Recipe>.from(cached) : <Recipe>[];
@@ -259,7 +287,32 @@ class RecipeProvider extends ChangeNotifier {
       return;
     }
 
-    _setLoading(true);
+    // Only set loading if we don't have local data (to avoid hiding cached data)
+    if (!hasLocalData) {
+      _setLoading(true);
+    }
+
+    // Skip network request if we have local data and aren't forcing a refresh.
+    // Note: We skip regardless of connectivity status because:
+    // 1. connectivity_plus only checks network interface (WiFi/mobile), not actual internet
+    // 2. Even if WiFi is connected, the server might not be reachable
+    // 3. We want to avoid unnecessary network requests when we have cached data
+    if (hasLocalData && !forceRefresh) {
+      debugPrint(
+        '⚠️ Network sync skipped (has cached data), using cached data',
+      );
+      _setLoading(false);
+      return; // Use cached data, skip network request
+    }
+
+    // Also skip if connectivity reports offline and no local data (no point trying)
+    // This is a best-effort check - connectivity_plus may report online even if server is unreachable
+    final connectivityService = ConnectivityService();
+    if (!hasLocalData && !connectivityService.isOnline) {
+      debugPrint('⚠️ Network sync skipped (offline, no cached data)');
+      _setLoading(false);
+      return;
+    }
 
     try {
       final response = await RecipeService.getUserRecipes(
@@ -285,6 +338,16 @@ class RecipeProvider extends ChangeNotifier {
         }
 
         _userRecipes = List<Recipe>.from(recipesList as List<Recipe>);
+
+        // Save to local storage (for page 1, save all recipes)
+        if (page == 1) {
+          try {
+            final localStorage = LocalStorageService();
+            await localStorage.saveUserRecipes(_userRecipes);
+          } catch (e) {
+            debugPrint('Error saving to local storage: $e');
+          }
+        }
 
         // Cache the page data with limit-aware key
         _userRecipesCache[cacheKey] = List<Recipe>.unmodifiable(_userRecipes);
@@ -346,16 +409,37 @@ class RecipeProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
-        _setError(response.message ?? 'Failed to load recipes');
-        _userRecipes = [];
-        _totalUserRecipes = 0;
+        // Only set error if we don't have local data
+        if (!hasLocalData) {
+          _setError(response.message ?? 'Failed to load recipes');
+          _userRecipes = [];
+          _totalUserRecipes = 0;
+        } else {
+          // If we have local data, just log at debug level
+          debugPrint(
+            '⚠️ Network sync failed, using cached data: ${response.message}',
+          );
+          // Ensure we notify listeners to show the cached data
+          notifyListeners();
+        }
       }
     } catch (e) {
-      _setError(e.toString());
-      _userRecipes = [];
-      _totalUserRecipes = 0;
+      // Only set error if we don't have local data
+      if (!hasLocalData) {
+        _setError(e.toString());
+        _userRecipes = [];
+        _totalUserRecipes = 0;
+      } else {
+        // If we have local data, just log at debug level
+        debugPrint('⚠️ Network sync failed, using cached data: $e');
+        // Ensure we notify listeners to show the cached data
+        notifyListeners();
+      }
     } finally {
-      _setLoading(false);
+      // Only set loading to false if we set it to true
+      if (!hasLocalData) {
+        _setLoading(false);
+      }
     }
   }
 
@@ -429,6 +513,41 @@ class RecipeProvider extends ChangeNotifier {
       return null;
     }
 
+    // OPTIMISTIC UPDATE: Save locally first (works offline)
+    final tempId =
+        recipe.id.isEmpty
+            ? 'temp_${DateTime.now().millisecondsSinceEpoch}'
+            : recipe.id;
+    final optimisticRecipe = recipe.copyWith(id: tempId);
+
+    // Add to local list immediately
+    _userRecipes.add(optimisticRecipe);
+    _totalUserRecipes = (_totalUserRecipes + 1).clamp(0, 1 << 31);
+
+    // Save to local storage immediately
+    try {
+      final localStorage = LocalStorageService();
+      await localStorage.saveUserRecipe(optimisticRecipe);
+    } catch (e) {
+      debugPrint('Error saving recipe to local storage: $e');
+    }
+
+    // Notify UI immediately
+    notifyListeners();
+    emitRecipesChanged();
+
+    // Show success message
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Recipe saved! Syncing with server...'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+
+    // Try server sync in background (non-blocking)
     _setLoading(true);
     clearError();
 
@@ -473,10 +592,24 @@ class RecipeProvider extends ChangeNotifier {
         final collectionService = context.read<CollectionService>();
 
         if (response.success && response.data != null) {
-          final newRecipe = response.data;
-          _userRecipes.add(newRecipe!);
-          // Update user recipes total optimistically
-          _totalUserRecipes = (_totalUserRecipes + 1).clamp(0, 1 << 31);
+          final serverRecipe = response.data!;
+
+          // Replace optimistic recipe with server version (has real ID)
+          final index = _userRecipes.indexWhere((r) => r.id == tempId);
+          if (index != -1) {
+            _userRecipes[index] = serverRecipe;
+          } else {
+            // If not found, just add it
+            _userRecipes.add(serverRecipe);
+          }
+
+          // Save server version to local storage
+          try {
+            final localStorage = LocalStorageService();
+            await localStorage.saveUserRecipe(serverRecipe);
+          } catch (e) {
+            debugPrint('Error saving server recipe to local storage: $e');
+          }
 
           // Force refresh collections to update recently added
           await collectionService.getCollections(forceRefresh: true);
@@ -486,19 +619,68 @@ class RecipeProvider extends ChangeNotifier {
 
           notifyListeners();
           emitRecipesChanged();
-          return newRecipe;
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Recipe synced with server!'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+
+          return serverRecipe;
+        } else {
+          // Server failed but we already saved locally
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'Recipe saved locally. Will sync when online.',
+                ),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+          // Return the optimistic recipe (already in list)
+          return optimisticRecipe;
         }
       } else {
-        _setError(response.message ?? 'Failed to create recipe');
-        return null;
+        // Server failed but we already saved locally
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Recipe saved locally. Will sync when online.',
+              ),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+        return optimisticRecipe;
       }
     } catch (e) {
-      _setError(e.toString());
-      return null;
+      // Network error - recipe already saved locally
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Recipe saved locally. Will sync when online.'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      return optimisticRecipe;
     } finally {
       _setLoading(false);
     }
-    return null;
   }
 
   // Update an existing user recipe
@@ -516,6 +698,14 @@ class RecipeProvider extends ChangeNotifier {
         final index = _userRecipes.indexWhere((r) => r.id == recipe.id);
         if (index != -1) {
           _userRecipes[index] = updatedRecipe!;
+        }
+
+        // Save to local storage
+        try {
+          final localStorage = LocalStorageService();
+          await localStorage.saveUserRecipe(updatedRecipe!);
+        } catch (e) {
+          debugPrint('Error saving updated recipe to local storage: $e');
         }
 
         // Favorites removed
@@ -554,6 +744,14 @@ class RecipeProvider extends ChangeNotifier {
           // Clear imported recipe if it matches
           if (_importedRecipe?.id == id) {
             _importedRecipe = null;
+          }
+
+          // Remove from local storage
+          try {
+            final localStorage = LocalStorageService();
+            await localStorage.deleteUserRecipe(id);
+          } catch (e) {
+            debugPrint('Error deleting recipe from local storage: $e');
           }
 
           // Refresh collections to ensure the deleted recipe is removed from all collections
@@ -639,8 +837,28 @@ class RecipeProvider extends ChangeNotifier {
         DateTime.now().difference(_sessionCacheTime!) < _sessionCacheDuration) {
       return; // Use existing cache
     }
+
+    // OFFLINE-FIRST: Load from local storage first (even on forceRefresh)
+    bool hasLocalCache = false;
+    try {
+      final localStorage = LocalStorageService();
+      final localCache = await localStorage.loadDiscoverCache();
+      if (localCache.isNotEmpty) {
+        hasLocalCache = true;
+        _sessionDiscoverCache = localCache;
+        _sessionCacheTime = DateTime.now();
+        notifyListeners();
+        // Continue to network fetch in background
+      }
+    } catch (e) {
+      debugPrint('Error loading discover cache from local storage: $e');
+    }
+
     clearError();
-    _setLoading(true);
+    // Only set loading if we don't have local cache (to avoid hiding cached data)
+    if (!hasLocalCache) {
+      _setLoading(true);
+    }
 
     try {
       final response = await RecipeService.searchExternalRecipes(
@@ -657,20 +875,47 @@ class RecipeProvider extends ChangeNotifier {
               recipesList
                   .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
                   .toList();
-          
+
           // Shuffle immediately for true randomization (server returns all 500)
           _sessionDiscoverCache.shuffle();
-          
+
           _sessionCacheTime = DateTime.now();
+
+          // Save to local storage
+          try {
+            final localStorage = LocalStorageService();
+            await localStorage.saveDiscoverCache(_sessionDiscoverCache);
+          } catch (e) {
+            debugPrint('Error saving discover cache to local storage: $e');
+          }
         }
       } else {
-        _setError(response.message ?? 'Failed to fetch discover recipes');
+        // Only set error if we don't have local cache
+        if (!hasLocalCache) {
+          _setError(response.message ?? 'Failed to fetch discover recipes');
+        } else {
+          debugPrint(
+            '⚠️ Network sync failed, using cached discover recipes: ${response.message}',
+          );
+          // Ensure we notify listeners to show the cached data
+          notifyListeners();
+        }
       }
     } catch (e) {
-      debugPrint('❌ Error fetching session cache: $e');
-      _setError('Failed to load recipes: $e');
+      // Only set error if we don't have local cache
+      if (!hasLocalCache) {
+        debugPrint('❌ Error fetching session cache: $e');
+        _setError('Failed to load recipes: $e');
+      } else {
+        debugPrint('⚠️ Network sync failed, using cached discover recipes: $e');
+        // Ensure we notify listeners to show the cached data
+        notifyListeners();
+      }
     } finally {
-      _setLoading(false);
+      // Only set loading to false if we set it to true
+      if (!hasLocalCache) {
+        _setLoading(false);
+      }
     }
   }
 
@@ -682,7 +927,14 @@ class RecipeProvider extends ChangeNotifier {
     int page = 1,
     int limit = 12,
   }) {
+    // If session cache is empty, try to preserve current generated recipes
+    // This prevents clearing the list when cache is temporarily unavailable
     if (_sessionDiscoverCache.isEmpty) {
+      // If we have generated recipes already displayed, return them to preserve UI
+      // This can happen during cache refresh or when offline
+      if (_generatedRecipes.isNotEmpty) {
+        return _generatedRecipes;
+      }
       return [];
     }
 
@@ -702,90 +954,92 @@ class RecipeProvider extends ChangeNotifier {
     // Apply tag filter - split by comma and search each tag individually (OR logic)
     if (tag != null && tag != 'All') {
       // Split by comma and treat each as individual search term
-      final tagList = tag
-          .split(',')
-          .map((t) => t.trim().toLowerCase())
-          .where((t) => t.isNotEmpty)
-          .toList();
-      
+      final tagList =
+          tag
+              .split(',')
+              .map((t) => t.trim().toLowerCase())
+              .where((t) => t.isNotEmpty)
+              .toList();
+
       if (tagList.isEmpty) {
         return [];
       }
-      
+
       // Match recipes where ANY recipe tag matches ANY filter tag (OR logic - cumulative results)
       filtered =
-          filtered
-              .where(
-                (r) {
-                  final recipeTagsLower = r.tags.map((t) => t.trim().toLowerCase()).toList();
-                  // Check if any recipe tag matches any filter tag
-                  return tagList.any(
-                    (filterTag) => recipeTagsLower.any(
-                      (recipeTag) {
-                        // Normalize both tags (remove extra spaces, special chars)
-                        final normalizedRecipe = recipeTag.replaceAll(RegExp(r'[^\w\s]'), '').trim();
-                        final normalizedFilter = filterTag.replaceAll(RegExp(r'[^\w\s]'), '').trim();
-                        
-                        // Exact match
-                        if (normalizedRecipe == normalizedFilter) return true;
-                        
-                        // Stem matching (handles "holiday" vs "holidays", "fall" vs "falls")
-                        final recipeStem = normalizedRecipe.replaceAll(RegExp(r's$'), '');
-                        final filterStem = normalizedFilter.replaceAll(RegExp(r's$'), '');
-                        if (recipeStem == filterStem && recipeStem.isNotEmpty) return true;
-                        
-                        // Word boundary matching (handles multi-word tags)
-                        final recipeWords = normalizedRecipe.split(RegExp(r'[\s\-_]+'));
-                        final filterWords = normalizedFilter.split(RegExp(r'[\s\-_]+'));
-                        if (recipeWords.any((w) => filterWords.contains(w)) ||
-                            filterWords.any((w) => recipeWords.contains(w))) {
-                          return true;
-                        }
-                        
-                        // Contains match (fallback) - more lenient
-                        if (normalizedRecipe.contains(normalizedFilter) || 
-                            normalizedFilter.contains(normalizedRecipe)) {
-                          return true;
-                        }
-                        
-                        return false;
-                      },
-                    ),
-                  );
-                },
-              )
-              .toList();
+          filtered.where((r) {
+            final recipeTagsLower =
+                r.tags.map((t) => t.trim().toLowerCase()).toList();
+            // Check if any recipe tag matches any filter tag
+            return tagList.any(
+              (filterTag) => recipeTagsLower.any((recipeTag) {
+                // Normalize both tags (remove extra spaces, special chars)
+                final normalizedRecipe =
+                    recipeTag.replaceAll(RegExp(r'[^\w\s]'), '').trim();
+                final normalizedFilter =
+                    filterTag.replaceAll(RegExp(r'[^\w\s]'), '').trim();
+
+                // Exact match
+                if (normalizedRecipe == normalizedFilter) return true;
+
+                // Stem matching (handles "holiday" vs "holidays", "fall" vs "falls")
+                final recipeStem = normalizedRecipe.replaceAll(
+                  RegExp(r's$'),
+                  '',
+                );
+                final filterStem = normalizedFilter.replaceAll(
+                  RegExp(r's$'),
+                  '',
+                );
+                if (recipeStem == filterStem && recipeStem.isNotEmpty)
+                  return true;
+
+                // Word boundary matching (handles multi-word tags)
+                final recipeWords = normalizedRecipe.split(RegExp(r'[\s\-_]+'));
+                final filterWords = normalizedFilter.split(RegExp(r'[\s\-_]+'));
+                if (recipeWords.any((w) => filterWords.contains(w)) ||
+                    filterWords.any((w) => recipeWords.contains(w))) {
+                  return true;
+                }
+
+                // Contains match (fallback) - more lenient
+                if (normalizedRecipe.contains(normalizedFilter) ||
+                    normalizedFilter.contains(normalizedRecipe)) {
+                  return true;
+                }
+
+                return false;
+              }),
+            );
+          }).toList();
     }
 
     // Apply text search filter (if query provided) - split by comma for OR logic
     if (query != null && query.isNotEmpty) {
       // Split by comma and treat each as individual search term (OR logic)
-      final queryTerms = query
-          .split(',')
-          .map((t) => t.trim().toLowerCase())
-          .where((t) => t.isNotEmpty)
-          .toList();
-      
+      final queryTerms =
+          query
+              .split(',')
+              .map((t) => t.trim().toLowerCase())
+              .where((t) => t.isNotEmpty)
+              .toList();
+
       if (queryTerms.isNotEmpty) {
         // Match recipes where ANY term appears in title, description, or tags (OR logic)
         filtered =
-            filtered
-                .where(
-                  (r) {
-                    final titleLower = r.title.toLowerCase();
-                    final descLower = r.description.toLowerCase();
-                    final tagsLower = r.tags.map((t) => t.toLowerCase()).toList();
-                    
-                    // Check if ANY query term matches ANY field
-                    return queryTerms.any(
-                      (term) =>
-                          titleLower.contains(term) ||
-                          descLower.contains(term) ||
-                          tagsLower.any((tag) => tag.contains(term)),
-                    );
-                  },
-                )
-                .toList();
+            filtered.where((r) {
+              final titleLower = r.title.toLowerCase();
+              final descLower = r.description.toLowerCase();
+              final tagsLower = r.tags.map((t) => t.toLowerCase()).toList();
+
+              // Check if ANY query term matches ANY field
+              return queryTerms.any(
+                (term) =>
+                    titleLower.contains(term) ||
+                    descLower.contains(term) ||
+                    tagsLower.any((tag) => tag.contains(term)),
+              );
+            }).toList();
       }
     }
 
@@ -850,6 +1104,11 @@ class RecipeProvider extends ChangeNotifier {
       limit: limit,
       random: random,
     );
+
+    // Preserve current recipes to avoid clearing discover screen
+    // The discover screen uses _generatedRecipes, so we shouldn't clear it
+    // unless we're explicitly refreshing for this specific search
+    final currentRecipes = List<Recipe>.from(_generatedRecipes);
 
     // Serve from cache if available
     if (!forceRefresh &&
@@ -1015,11 +1274,21 @@ class RecipeProvider extends ChangeNotifier {
         notifyListeners();
       } else {
         _setError(response.message ?? 'Failed to search recipes');
-        _generatedRecipes = [];
+        // Don't clear _generatedRecipes on error - preserve current recipes
+        // This prevents clearing the discover screen when home screen refresh fails
+        // Only clear if we had no recipes to begin with
+        if (currentRecipes.isEmpty) {
+          _generatedRecipes = [];
+        }
       }
     } catch (e) {
       _setError(e.toString());
-      _generatedRecipes = [];
+      // Don't clear _generatedRecipes on error - preserve current recipes
+      // This prevents clearing the discover screen when home screen refresh fails
+      // Only clear if we had no recipes to begin with
+      if (currentRecipes.isEmpty) {
+        _generatedRecipes = [];
+      }
     } finally {
       _setLoading(false);
     }

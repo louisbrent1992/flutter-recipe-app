@@ -44,7 +44,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
       duration: const Duration(milliseconds: 600),
     );
     _animationController.forward();
-    
+
     // Add observer for app lifecycle events
     WidgetsBinding.instance.addObserver(this);
   }
@@ -57,7 +57,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
     _searchController.dispose();
     super.dispose();
   }
-  
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
@@ -92,6 +92,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
     print("Refreshing collection: ${_collection.id}");
     setState(() => _isLoading = true);
     try {
+      // Try getCollection which will use cached/local storage first (works offline)
+      // This will return the cached collection immediately if available
       final updatedCollection = await _collectionService.getCollection(
         _collection.id,
       );
@@ -106,18 +108,20 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
           "Collection updated in state: ${_collection.recipes.length} recipes",
         );
       } else {
-        print("Failed to get updated collection");
+        print("Failed to get updated collection - using current state");
+        // If getCollection fails, at least update filtered recipes from current collection
+        setState(() {
+          _filteredRecipes = _collection.recipes;
+          _filterRecipes(_searchQuery);
+        });
       }
     } catch (e) {
       print("Error refreshing collection: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error refreshing collection: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      // On error, just update filtered recipes from current collection
+      setState(() {
+        _filteredRecipes = _collection.recipes;
+        _filterRecipes(_searchQuery);
+      });
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -372,7 +376,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
   Color _getIconColor(Color collectionColor) {
     // Calculate brightness of the collection color
     final brightness = collectionColor.computeLuminance();
-    
+
     // If the color is light (brightness > 0.5), use a darker, more saturated version
     // If the color is dark (brightness <= 0.5), use a lighter version or white
     if (brightness > 0.5) {
@@ -408,67 +412,68 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              itemBuilder: (context) => [
-                PopupMenuItem<String>(
-                  value: 'refresh',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.refresh_rounded,
-                        size: 20,
-                        color: Theme.of(context).colorScheme.onSurface,
+              itemBuilder:
+                  (context) => [
+                    PopupMenuItem<String>(
+                      value: 'refresh',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.refresh_rounded,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          const SizedBox(width: 12),
+                          const Text('Refresh Collection'),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      const Text('Refresh Collection'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.edit_note_rounded,
-                        size: 20,
-                        color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_note_rounded,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          const SizedBox(width: 12),
+                          const Text('Edit Collection'),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      const Text('Edit Collection'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'add',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.add_rounded,
-                        size: 20,
-                        color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'add',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.add_rounded,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          const SizedBox(width: 12),
+                          const Text('Add Recipes'),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      const Text('Add Recipes'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.delete_outline_rounded,
-                        size: 20,
-                        color: Colors.red,
+                    ),
+                    PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.delete_outline_rounded,
+                            size: 20,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Delete Collection',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Delete Collection',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+                  ],
               onSelected: (value) {
                 switch (value) {
                   case 'refresh':
@@ -537,9 +542,10 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                                   ),
                                 ),
                                 SizedBox(
-                                  height: AppBreakpoints.isDesktop(context)
-                                      ? 24
-                                      : AppBreakpoints.isTablet(context)
+                                  height:
+                                      AppBreakpoints.isDesktop(context)
+                                          ? 24
+                                          : AppBreakpoints.isTablet(context)
                                           ? 20
                                           : 16,
                                 ),
@@ -570,14 +576,17 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                           sliver: SliverGrid(
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount:
-                                      AppSizing.responsiveGridCount(context),
+                                  crossAxisCount: AppSizing.responsiveGridCount(
+                                    context,
+                                  ),
                                   childAspectRatio:
                                       AppSizing.responsiveAspectRatio(context),
-                                  crossAxisSpacing:
-                                      AppSpacing.responsive(context),
-                                  mainAxisSpacing:
-                                      AppSpacing.responsive(context),
+                                  crossAxisSpacing: AppSpacing.responsive(
+                                    context,
+                                  ),
+                                  mainAxisSpacing: AppSpacing.responsive(
+                                    context,
+                                  ),
                                 ),
                             delegate: SliverChildBuilderDelegate((
                               context,
@@ -593,7 +602,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                                       '/recipeDetail',
                                       arguments: recipe,
                                     ),
-                                showRemoveButton: !_isDefaultCollection(_collection),
+                                showRemoveButton:
+                                    !_isDefaultCollection(_collection),
                                 onRemove: () => _removeRecipe(recipe),
                                 showRefreshButton: true,
                                 onRecipeUpdated: (updatedRecipe) {
@@ -637,16 +647,16 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
           AppBreakpoints.isDesktop(context)
               ? 24
               : AppBreakpoints.isTablet(context)
-                  ? 20
-                  : 16,
+              ? 20
+              : 16,
         ),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(
             AppBreakpoints.isDesktop(context)
                 ? 20
                 : AppBreakpoints.isTablet(context)
-                    ? 18
-                    : 16,
+                ? 18
+                : 16,
           ),
           color: _collection.color.withValues(alpha: 0.2),
         ),
@@ -657,8 +667,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                 AppBreakpoints.isDesktop(context)
                     ? 16
                     : AppBreakpoints.isTablet(context)
-                        ? 14
-                        : 12,
+                    ? 14
+                    : 12,
               ),
               decoration: BoxDecoration(
                 color: _collection.color.withValues(alpha: 0.15),
@@ -666,8 +676,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                   AppBreakpoints.isDesktop(context)
                       ? 16
                       : AppBreakpoints.isTablet(context)
-                          ? 14
-                          : 12,
+                      ? 14
+                      : 12,
                 ),
               ),
               child: Icon(
@@ -682,9 +692,10 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
               ),
             ),
             SizedBox(
-              width: AppBreakpoints.isDesktop(context)
-                  ? 20
-                  : AppBreakpoints.isTablet(context)
+              width:
+                  AppBreakpoints.isDesktop(context)
+                      ? 20
+                      : AppBreakpoints.isTablet(context)
                       ? 18
                       : 16,
             ),
@@ -707,9 +718,10 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(
-                    height: AppBreakpoints.isDesktop(context)
-                        ? 6
-                        : AppBreakpoints.isTablet(context)
+                    height:
+                        AppBreakpoints.isDesktop(context)
+                            ? 6
+                            : AppBreakpoints.isTablet(context)
                             ? 5
                             : 4,
                   ),
@@ -772,8 +784,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
               AppBreakpoints.isDesktop(context)
                   ? 16
                   : AppBreakpoints.isTablet(context)
-                      ? 14
-                      : 12,
+                  ? 14
+                  : 12,
             ),
             borderSide: BorderSide.none,
           ),
@@ -782,8 +794,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
               AppBreakpoints.isDesktop(context)
                   ? 16
                   : AppBreakpoints.isTablet(context)
-                      ? 14
-                      : 12,
+                  ? 14
+                  : 12,
             ),
             borderSide: BorderSide(
               color: colorScheme.outline.withValues(alpha: 0.2),
@@ -794,8 +806,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
               AppBreakpoints.isDesktop(context)
                   ? 16
                   : AppBreakpoints.isTablet(context)
-                      ? 14
-                      : 12,
+                  ? 14
+                  : 12,
             ),
             borderSide: BorderSide(
               color: colorScheme.primary.withValues(alpha: 0.5),

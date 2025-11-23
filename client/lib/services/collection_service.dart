@@ -5,6 +5,7 @@ import '../models/recipe.dart';
 import '../models/recipe_collection.dart';
 import '../services/recipe_service.dart';
 import '../services/api_client.dart';
+import 'local_storage_service.dart';
 
 class CollectionService extends ChangeNotifier {
   static final logger = Logger();
@@ -38,7 +39,24 @@ class CollectionService extends ChangeNotifier {
         _clearCache();
       }
 
-      // Check cache first
+      // OFFLINE-FIRST: Load from local storage first
+      if (!forceRefresh) {
+        try {
+          final localStorage = LocalStorageService();
+          final localCollections = await localStorage.loadCollections();
+          if (localCollections.isNotEmpty) {
+            // Show cached data immediately
+            _cachedCollections = localCollections;
+            _lastCacheTime = DateTime.now();
+            notifyListeners();
+            // Continue to network fetch in background
+          }
+        } catch (e) {
+          logger.e('Error loading collections from local storage: $e');
+        }
+      }
+
+      // Check in-memory cache first
       if (!forceRefresh &&
           _cachedCollections != null &&
           _lastCacheTime != null) {
@@ -73,7 +91,16 @@ class CollectionService extends ChangeNotifier {
                   .toList();
         }
       } else {
+        // Network failed - preserve existing cached collections
+        if (_cachedCollections != null && _cachedCollections!.isNotEmpty) {
+          logger.w(
+            'Network sync failed, using cached collections: ${response.message}',
+          );
+          // Don't overwrite with empty array - keep existing cache
+          return _cachedCollections!;
+        }
         logger.e('Error getting collections: ${response.message}');
+        // Only set to empty if we have no cached data
         collections = [];
       }
 
@@ -86,6 +113,16 @@ class CollectionService extends ChangeNotifier {
       // Cache the result AFTER all updates are complete
       _cachedCollections = collections;
       _lastCacheTime = DateTime.now();
+
+      // Save to local storage (only if we have collections to save)
+      if (collections.isNotEmpty) {
+        try {
+          final localStorage = LocalStorageService();
+          await localStorage.saveCollections(collections);
+        } catch (e) {
+          logger.e('Error saving collections to local storage: $e');
+        }
+      }
 
       // Notify listeners of the update
       notifyListeners();
@@ -123,19 +160,146 @@ class CollectionService extends ChangeNotifier {
         return null;
       }
 
+      // OFFLINE-FIRST: Try to get from cached collections first
+      RecipeCollection? cachedCollection;
+      if (_cachedCollections != null) {
+        try {
+          cachedCollection = _cachedCollections!.firstWhere((c) => c.id == id);
+          // Return cached collection immediately, then sync in background
+        } catch (e) {
+          // Collection not in cache
+        }
+      }
+
+      // If not in cache, try to load from local storage
+      if (cachedCollection == null) {
+        try {
+          final localStorage = LocalStorageService();
+          final localCollections = await localStorage.loadCollections();
+          try {
+            cachedCollection = localCollections.firstWhere((c) => c.id == id);
+            // Update cache if not already set
+            if (_cachedCollections == null) {
+              _cachedCollections = localCollections;
+              _lastCacheTime = DateTime.now();
+              notifyListeners();
+            } else {
+              // Update cache with this collection
+              final index = _cachedCollections!.indexWhere((c) => c.id == id);
+              if (index != -1) {
+                _cachedCollections![index] = cachedCollection;
+              } else {
+                _cachedCollections!.add(cachedCollection);
+              }
+              _lastCacheTime = DateTime.now();
+              notifyListeners();
+            }
+          } catch (e) {
+            // Collection not in local storage
+          }
+        } catch (e) {
+          logger.e('Error loading collection from local storage: $e');
+        }
+      }
+
+      // If we have a cached/local collection, return it immediately
+      if (cachedCollection != null) {
+        // Continue to server fetch in background (non-blocking)
+        _syncCollectionFromServer(id).catchError((e) {
+          logger.w('Background sync failed for collection: $e');
+        });
+        return cachedCollection;
+      }
+
+      // Try server fetch (will update cache if successful)
+      try {
+        final response = await _api.authenticatedGet<Map<String, dynamic>>(
+          'collections/$id',
+        );
+
+        if (response.success && response.data != null) {
+          final serverCollection = RecipeCollection.fromJson(response.data!);
+
+          // Update cache
+          if (_cachedCollections != null) {
+            final index = _cachedCollections!.indexWhere((c) => c.id == id);
+            if (index != -1) {
+              _cachedCollections![index] = serverCollection;
+            } else {
+              _cachedCollections!.add(serverCollection);
+            }
+            _lastCacheTime = DateTime.now();
+            notifyListeners();
+
+            // Save to local storage
+            try {
+              final localStorage = LocalStorageService();
+              await localStorage.saveCollections(_cachedCollections!);
+            } catch (e) {
+              logger.e('Error saving collections to local storage: $e');
+            }
+          }
+
+          return serverCollection;
+        } else {
+          logger.w('Server fetch failed: ${response.message}');
+        }
+      } catch (e) {
+        logger.w('Network error fetching collection: $e');
+      }
+
+      // Return cached collection if available
+      if (_cachedCollections != null) {
+        final cachedCollection = _cachedCollections!.firstWhere(
+          (c) => c.id == id,
+          orElse: () => RecipeCollection.withName(''),
+        );
+        if (cachedCollection.id.isNotEmpty) {
+          return cachedCollection;
+        }
+      }
+
+      logger.e('Collection not found in cache or server');
+      return null;
+    } catch (e) {
+      logger.e('Error getting collection: $e');
+      return null;
+    }
+  }
+
+  // Background sync method for collections
+  Future<void> _syncCollectionFromServer(String id) async {
+    try {
       final response = await _api.authenticatedGet<Map<String, dynamic>>(
         'collections/$id',
       );
 
       if (response.success && response.data != null) {
-        return RecipeCollection.fromJson(response.data!);
-      } else {
-        logger.e('Error getting collection: ${response.message}');
-        return null;
+        final serverCollection = RecipeCollection.fromJson(response.data!);
+
+        // Update cache
+        if (_cachedCollections != null) {
+          final index = _cachedCollections!.indexWhere((c) => c.id == id);
+          if (index != -1) {
+            _cachedCollections![index] = serverCollection;
+          } else {
+            _cachedCollections!.add(serverCollection);
+          }
+          _lastCacheTime = DateTime.now();
+          notifyListeners();
+
+          // Save to local storage
+          try {
+            final localStorage = LocalStorageService();
+            await localStorage.saveCollections(_cachedCollections!);
+          } catch (e) {
+            logger.e('Error saving collections to local storage: $e');
+          }
+        }
       }
     } catch (e) {
-      logger.e('Error getting collection: $e');
-      return null;
+      // Silently fail - we already have cached data
+      logger.w('Background sync failed for collection $id: $e');
     }
   }
 
@@ -242,25 +406,57 @@ class CollectionService extends ChangeNotifier {
         return false;
       }
 
-      // Collection ID is already provided, no need to fetch all collections
-      final response = await _api.authenticatedPost(
-        'collections/$collectionId/recipes',
-        body: {'recipe': recipe.toJson()},
-      );
+      // OPTIMISTIC UPDATE: Update collection locally first (works offline)
+      if (_cachedCollections != null) {
+        final collectionIndex = _cachedCollections!.indexWhere(
+          (c) => c.id == collectionId,
+        );
+        if (collectionIndex != -1) {
+          final collection = _cachedCollections![collectionIndex];
+          // Check if recipe already in collection
+          if (!collection.recipes.any((r) => r.id == recipe.id)) {
+            final updatedCollection = collection.addRecipe(recipe);
+            _cachedCollections![collectionIndex] = updatedCollection;
 
-      if (response.success) {
-        // Update collections after adding a recipe (this will refresh the cache)
-        // Skip updating special collections to avoid duplicate getRecentlyAddedRecipes calls
-        // The recently added collection will be updated on next full refresh
-        await updateCollections(
-          forceRefresh: true,
-          updateSpecialCollections: false,
+            // Save to local storage immediately
+            try {
+              final localStorage = LocalStorageService();
+              await localStorage.saveCollections(_cachedCollections!);
+            } catch (e) {
+              logger.e('Error saving collections to local storage: $e');
+            }
+
+            // Notify listeners immediately
+            notifyListeners();
+          }
+        }
+      }
+
+      // Try server sync in background (non-blocking)
+      try {
+        final response = await _api.authenticatedPost(
+          'collections/$collectionId/recipes',
+          body: {'recipe': recipe.toJson()},
         );
-        return true;
-      } else {
-        throw Exception(
-          response.message ?? 'Failed to add recipe to collection',
-        );
+
+        if (response.success) {
+          // Server sync succeeded - refresh from server to get latest state
+          await updateCollections(
+            forceRefresh: true,
+            updateSpecialCollections: false,
+          );
+          return true;
+        } else {
+          // Server failed but local update already done
+          logger.w(
+            'Server sync failed, but recipe added locally: ${response.message}',
+          );
+          return true; // Return true because local update succeeded
+        }
+      } catch (e) {
+        // Network error - local update already done
+        logger.w('Network error, but recipe added locally: $e');
+        return true; // Return true because local update succeeded
       }
     } catch (e) {
       logger.e('Error adding recipe to collection: $e');

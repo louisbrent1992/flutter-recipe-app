@@ -7,7 +7,29 @@ class DynamicUiProvider with ChangeNotifier {
   DynamicUiConfig? _config;
   bool _loading = false;
 
-  DynamicUiConfig? get config => _config;
+  // Default fallback config for offline mode (matches server default)
+  static DynamicUiConfig get _defaultConfig => DynamicUiConfig(
+        version: 1,
+        fetchedAt: DateTime.now(),
+        banners: [],
+        globalBackground: const DynamicBackgroundConfig(
+          colors: ['#FFF3E0', '#FFE0B2'], // soft seasonal gradient
+          animateGradient: true,
+          kenBurns: true,
+          opacity: 1.0,
+        ),
+        welcomeMessage: 'Welcome,',
+        heroSubtitle: 'What would you like to cook today?',
+        sectionVisibility: {
+          'yourRecipesCarousel': true,
+          'discoverCarousel': true,
+          'collectionsCarousel': true,
+          'featuresSection': true,
+        },
+      );
+
+  // Return config from server, or default fallback if offline
+  DynamicUiConfig? get config => _config ?? _defaultConfig;
   bool get isLoading => _loading;
 
   DynamicUiProvider() {
@@ -21,6 +43,10 @@ class DynamicUiProvider with ChangeNotifier {
     try {
       final cfg = await _service.fetchConfig();
       _config = cfg;
+    } catch (e) {
+      // If fetch fails (offline), use default config
+      // _config remains null, so getter will return _defaultConfig
+      debugPrint('⚠️ Failed to fetch dynamic UI config, using default: $e');
     } finally {
       _loading = false;
       notifyListeners();

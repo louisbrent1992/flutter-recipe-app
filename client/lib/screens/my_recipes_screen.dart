@@ -7,6 +7,7 @@ import 'package:recipease/components/floating_bottom_bar.dart';
 
 import 'package:recipease/components/recipe_card.dart';
 import 'package:recipease/components/compact_filter_bar.dart';
+import 'package:recipease/components/cache_status_indicator.dart';
 import 'package:recipease/mixins/recipe_filter_mixin.dart';
 import '../providers/recipe_provider.dart';
 import '../models/recipe.dart';
@@ -248,6 +249,9 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                 _selectedTag != 'All' ||
                 _searchQuery.isNotEmpty,
           ),
+
+          // Cache status indicator
+          const CacheStatusIndicator(dataType: 'user_recipes', compact: true),
 
           // Main content area
           Expanded(

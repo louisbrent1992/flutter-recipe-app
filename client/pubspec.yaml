@@ -81,6 +81,7 @@ dependencies:
   games_services: ^4.0.0
   device_frame: ^1.4.0
   showcaseview: ^5.0.1
+  connectivity_plus: ^7.0.0
 
 dev_dependencies:
   flutter_test:

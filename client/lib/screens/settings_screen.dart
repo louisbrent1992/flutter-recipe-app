@@ -385,7 +385,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         WidgetsBinding.instance.addPostFrameCallback((_) {
           // Wait one more frame to ensure all widgets are fully rendered
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (navigatorKey.currentContext != null) {
+        if (navigatorKey.currentContext != null) {
               final homeContext = navigatorKey.currentContext!;
               final recipeProvider = Provider.of<RecipeProvider>(
                 homeContext,
@@ -432,7 +432,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 TutorialKeys.bottomNavMyRecipes,
                 TutorialKeys.bottomNavGenerate,
                 TutorialKeys.bottomNavSettings,
-              ]);
+          ]);
 
               // Start tutorial immediately after widgets are built
               startTutorial(homeContext, tutorialTargets);

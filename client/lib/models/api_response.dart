@@ -49,9 +49,15 @@ class ApiResponse<T> {
 
   /// Utility method to check if there was a network error
   bool get isNetworkError =>
+      statusCode == 0 || // Offline indicator
       message?.toLowerCase().contains('network') == true ||
       message?.toLowerCase().contains('connection') == true ||
+      message?.toLowerCase().contains('offline') == true ||
+      message?.toLowerCase().contains('internet') == true ||
       statusCode == null;
+
+  /// Utility method to check if the error is due to being offline
+  bool get isOfflineError => statusCode == 0;
 
   /// Utility method to check if there was an authentication error
   bool get isAuthError =>

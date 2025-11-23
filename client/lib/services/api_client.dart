@@ -374,8 +374,18 @@ class ApiClient {
   ApiResponse<T> _handleError<T>(dynamic error, String operation) {
     _logger.e('Error during $operation: $error');
 
+    // Detect offline/network errors
     if (error is SocketException) {
-      return ApiResponse<T>.error('Network error: Unable to connect to server');
+      return ApiResponse<T>.error(
+        'No internet connection. Please check your network and try again.',
+        statusCode: 0, // Use 0 to indicate offline
+      );
+    } else if (error is HttpException) {
+      // HTTP exceptions can indicate network issues
+      return ApiResponse<T>.error(
+        'Network error: ${error.message}',
+        statusCode: 0,
+      );
     } else if (error is FormatException) {
       return ApiResponse<T>.error('Data format error: ${error.message}');
     } else if (error is FirebaseAuthException) {
@@ -384,8 +394,24 @@ class ApiClient {
         statusCode: 401,
       );
     } else if (error is TimeoutException) {
+      // Timeout could be due to slow network or offline
+      final message = error.message?.toLowerCase() ?? '';
+      if (message.contains('timeout') || message.contains('timed out')) {
+        return ApiResponse<T>.error(
+          'Request timeout: This may be due to a slow connection or being offline.',
+          statusCode: 0, // Treat timeout as potential offline
+        );
+      }
       return ApiResponse<T>.error(
         'Request timeout: Server took too long to respond',
+      );
+    } else if (error.toString().toLowerCase().contains('network') ||
+        error.toString().toLowerCase().contains('connection') ||
+        error.toString().toLowerCase().contains('offline')) {
+      // Catch other network-related errors
+      return ApiResponse<T>.error(
+        'Network error: ${error.toString()}',
+        statusCode: 0,
       );
     } else {
       return ApiResponse<T>.error('Unexpected error: ${error.toString()}');

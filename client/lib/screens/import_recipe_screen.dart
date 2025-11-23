@@ -11,6 +11,7 @@ import 'package:recipease/config/app_config.dart';
 import 'package:recipease/theme/theme.dart';
 import '../utils/loading_dialog_helper.dart';
 import '../utils/snackbar_helper.dart';
+import '../components/offline_banner.dart';
 
 class ImportRecipeScreen extends StatefulWidget {
   final String? sharedUrl;
@@ -67,7 +68,9 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
   Future<void> _pasteUrl(BuildContext context) async {
     try {
       final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
-      if (clipboardData != null && clipboardData.text != null && clipboardData.text!.isNotEmpty) {
+      if (clipboardData != null &&
+          clipboardData.text != null &&
+          clipboardData.text!.isNotEmpty) {
         _urlController.text = clipboardData.text!;
         // Show a brief feedback
         if (mounted) {
@@ -184,13 +187,10 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
       // Show loading dialog
       debugPrint('🟢 [Import] About to show loading dialog');
       if (context.mounted) {
-        LoadingDialogHelper.show(
-          context,
-          message: 'Importing Recipe',
-        );
+        LoadingDialogHelper.show(context, message: 'Importing Recipe');
         debugPrint('🟢 [Import] Loading dialog shown');
       }
-      
+
       if (context.mounted) {
         debugPrint('🟢 [Import] Calling importRecipeFromUrl with URL: $url');
         final result = await recipeProvider.importRecipeFromUrl(url, context);
@@ -282,50 +282,51 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                   break;
               }
             },
-            itemBuilder: (BuildContext context) => [
-              PopupMenuItem<String>(
-                value: 'new_recipe',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.add_rounded,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.primary,
+            itemBuilder:
+                (BuildContext context) => [
+                  PopupMenuItem<String>(
+                    value: 'new_recipe',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.add_rounded,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('New Recipe'),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    const Text('New Recipe'),
-                  ],
-                ),
-              ),
-              PopupMenuItem<String>(
-                value: 'paste_url',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.paste_rounded,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.primary,
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'paste_url',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.paste_rounded,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('Paste URL'),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    const Text('Paste URL'),
-                  ],
-                ),
-              ),
-              PopupMenuItem<String>(
-                value: 'clear_url',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.clear_rounded,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'clear_url',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.clear_rounded,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('Clear URL'),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    const Text('Clear URL'),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                ],
           ),
         ],
       ),
@@ -335,6 +336,14 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
             fit: StackFit.expand,
 
             children: [
+              // Offline banner at the top
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: OfflineBanner(),
+              ),
+
               // Background aligned to global scaffold background with subtle pattern
               Positioned.fill(
                 child: Container(
@@ -876,6 +885,14 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                   ),
                 ),
               ),
+
+              // Offline banner at the top (after content so it appears on top)
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: OfflineBanner(),
+              ),
             ],
           );
         },
@@ -924,4 +941,3 @@ class _BackgroundPatternPainter extends CustomPainter {
   bool shouldRepaint(_BackgroundPatternPainter oldDelegate) =>
       color != oldDelegate.color;
 }
-
