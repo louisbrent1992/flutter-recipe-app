@@ -47,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen>
       'https://res.cloudinary.com/client-images/image/upload/v1763258640/Recipe%20App/Gemini_Generated_Image_1isjyd1isjyd1isj_jv1rvc.png';
   bool _isBooting = true;
   StreamSubscription<void>? _recipesChangedSubscription;
+  Future<List<RecipeCollection>>? _collectionsFuture; // Cache collections future
 
   @override
   void initState() {
@@ -64,9 +65,18 @@ class _HomeScreenState extends State<HomeScreen>
           context,
           listen: false,
         );
+        final collectionService = Provider.of<CollectionService>(
+          context,
+          listen: false,
+        );
 
-        // Load first batch of user's own recipes
+        // Load first batch of user's own recipes (only once)
         recipeProvider.loadUserRecipes(limit: 20);
+
+        // Fetch collections once and cache the future
+        _collectionsFuture = collectionService.getCollections(
+          updateSpecialCollections: true,
+        );
 
         // Fetch session cache for discovery (500 recipes, used everywhere)
         recipeProvider.fetchSessionDiscoverCache().then((_) {
@@ -178,7 +188,8 @@ class _HomeScreenState extends State<HomeScreen>
       forceRefresh: true,
       random: true,
     );
-    collectionService.getCollections(forceRefresh: true);
+    // Update cached collections future
+    _collectionsFuture = collectionService.getCollections(forceRefresh: true);
 
     // Ensure widgets depending on FutureBuilder rebuild
     setState(() {});
@@ -378,21 +389,16 @@ class _HomeScreenState extends State<HomeScreen>
                                     true)) {
                                   return const SizedBox.shrink();
                                 }
-                                return Consumer<CollectionService>(
-                                  builder: (context, collectionProvider, _) {
-                                    final collections = collectionProvider
-                                        .getCollections(
-                                          updateSpecialCollections: true,
-                                        )
-                                        .then(
-                                          (value) => value.take(10).toList(),
-                                        );
-                                    return _buildCollectionCarousel(
-                                      context,
-                                      title: 'Collections',
-                                      collections: collections,
-                                    );
-                                  },
+                                // Use cached collections future to avoid duplicate API calls
+                                final collections = (_collectionsFuture ?? 
+                                  Provider.of<CollectionService>(context, listen: false)
+                                    .getCollections(updateSpecialCollections: true))
+                                  .then((value) => value.take(10).toList());
+                                
+                                return _buildCollectionCarousel(
+                                  context,
+                                  title: 'Collections',
+                                  collections: collections,
                                 );
                               },
                             ),

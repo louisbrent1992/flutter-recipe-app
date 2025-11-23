@@ -32,7 +32,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
   void initState() {
     super.initState();
     _collectionService = CollectionService();
-    _collectionService.getCollection(widget.collection.id);
+    // Don't fetch collection here - use the one passed in widget.collection
+    // Only fetch if we need to refresh (e.g., after returning from another screen)
     _collection = widget.collection;
     _scrollController = ScrollController();
     _searchController = TextEditingController();

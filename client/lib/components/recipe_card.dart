@@ -759,10 +759,8 @@ Shared from Recipe App
           // Wait a moment for server to fully process the collection creation
           await Future.delayed(const Duration(milliseconds: 500));
           
-          // Refresh collections cache to ensure new collection is available
-          await collectionService.updateCollections(forceRefresh: true);
-          
           // Add recipe to the newly created collection
+          // Note: addRecipeToCollection already calls updateCollections, so no need to call it here
           final success = await collectionService.addRecipeToCollection(
             newCollection.id,
             widget.recipe,

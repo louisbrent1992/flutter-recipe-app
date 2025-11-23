@@ -160,7 +160,11 @@ class CollectionService extends ChangeNotifier {
 
       if (response.success && response.data != null) {
         // Update collections after creating a new one
-        await updateCollections(forceRefresh: true);
+        // Skip updating special collections to avoid duplicate getRecentlyAddedRecipes calls
+        await updateCollections(
+          forceRefresh: true,
+          updateSpecialCollections: false,
+        );
         return RecipeCollection.fromJson(response.data!);
       } else {
         throw Exception(response.message ?? 'Failed to create collection');
@@ -238,18 +242,20 @@ class CollectionService extends ChangeNotifier {
         return false;
       }
 
-      // Resolve real collection ID if a name was provided
-      await getCollections(updateSpecialCollections: false);
-      final targetCollectionId = collectionId;
-
+      // Collection ID is already provided, no need to fetch all collections
       final response = await _api.authenticatedPost(
-        'collections/$targetCollectionId/recipes',
+        'collections/$collectionId/recipes',
         body: {'recipe': recipe.toJson()},
       );
 
       if (response.success) {
-        // Update collections after adding a recipe
-        await updateCollections(forceRefresh: true);
+        // Update collections after adding a recipe (this will refresh the cache)
+        // Skip updating special collections to avoid duplicate getRecentlyAddedRecipes calls
+        // The recently added collection will be updated on next full refresh
+        await updateCollections(
+          forceRefresh: true,
+          updateSpecialCollections: false,
+        );
         return true;
       } else {
         throw Exception(
