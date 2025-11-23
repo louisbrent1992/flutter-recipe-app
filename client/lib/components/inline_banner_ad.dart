@@ -4,6 +4,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../services/ad_helper.dart';
 import 'package:provider/provider.dart';
 import '../providers/subscription_provider.dart';
+import '../services/tutorial_service.dart';
 import '../main.dart'; // Import to access the debug flag
 
 /// Inline banner ad widget for embedding within scrollable content
@@ -19,13 +20,34 @@ class _InlineBannerAdState extends State<InlineBannerAd> {
   bool _isAdLoaded = false;
   int _retryCount = 0;
   static const int _maxRetries = 3;
+  StreamSubscription<GlobalKey>? _tutorialSubscription;
 
   @override
   void initState() {
     super.initState();
-    // Only load ads if not in screenshot mode
+    // Only load ads if not in screenshot mode and tutorial is completed
     if (!hideAds) {
+      _checkTutorialAndLoadAd();
+    }
+  }
+
+  Future<void> _checkTutorialAndLoadAd() async {
+    final tutorialService = TutorialService();
+    final isCompleted = await tutorialService.isTutorialCompleted();
+    
+    // Only load ads after tutorial is completed
+    if (isCompleted && mounted) {
       _loadAd();
+    } else {
+      // Listen for tutorial completion via step changes
+      _tutorialSubscription?.cancel();
+      _tutorialSubscription = tutorialService.onStepChanged.listen((_) async {
+        final completed = await tutorialService.isTutorialCompleted();
+        if (completed && mounted && !_isAdLoaded) {
+          _loadAd();
+          _tutorialSubscription?.cancel();
+        }
+      });
     }
   }
 
@@ -69,6 +91,7 @@ class _InlineBannerAdState extends State<InlineBannerAd> {
 
   @override
   void dispose() {
+    _tutorialSubscription?.cancel();
     _bannerAd?.dispose();
     super.dispose();
   }

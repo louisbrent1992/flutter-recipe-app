@@ -319,7 +319,10 @@ class _MyAppState extends State<MyApp> {
             payload: jsonEncode({
               'route': (message.data['route'] as String?) ?? '/home',
               'args': {
-                'query': (message.data['query'] as String?) ?? (message.data['tag'] as String?) ?? '',
+                'query':
+                    (message.data['query'] as String?) ??
+                    (message.data['tag'] as String?) ??
+                    '',
               },
             }),
           );
@@ -725,7 +728,8 @@ class _MyAppState extends State<MyApp> {
                 if (args is Map) {
                   try {
                     // Prioritize 'query' over 'tag' for backward compatibility
-                    initialQuery = (args['query'] as String?) ?? (args['tag'] as String?);
+                    initialQuery =
+                        (args['query'] as String?) ?? (args['tag'] as String?);
                     initialDifficulty = args['difficulty'] as String?;
                     displayQuery = args['displayQuery'] as String?;
                     // Don't use initialTag anymore - query is used instead

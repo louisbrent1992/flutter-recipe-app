@@ -10,6 +10,8 @@ class TutorialKeys {
   static final GlobalKey homeDiscover = GlobalKey();
   static final GlobalKey homeCollections = GlobalKey();
   static final GlobalKey homeFeatures = GlobalKey();
+  static final GlobalKey navDrawerMenu = GlobalKey();
+  static final GlobalKey creditBalance = GlobalKey();
   static final GlobalKey bottomNavHome = GlobalKey();
   static final GlobalKey bottomNavDiscover = GlobalKey();
   static final GlobalKey bottomNavMyRecipes = GlobalKey();
@@ -54,6 +56,8 @@ class _AppTutorialState extends State<AppTutorial> {
               elevation: 6,
             ),
           );
+          // Notify that tutorial is complete (triggers ad loading)
+          _tutorialService.notifyStepChanged(GlobalKey());
         }
       },
       enableAutoScroll: true,

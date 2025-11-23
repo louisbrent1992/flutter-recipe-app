@@ -392,7 +392,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                 listen: false,
               );
               
-              final List<GlobalKey> tutorialTargets = [TutorialKeys.homeHero];
+              // Start with navigation drawer menu and credit balance (most important UI elements)
+              final List<GlobalKey> tutorialTargets = [
+                TutorialKeys.navDrawerMenu,
+                TutorialKeys.creditBalance,
+              ];
+
+              // Then add home hero section
+              tutorialTargets.add(TutorialKeys.homeHero);
 
               // Only include "Your Recipes" if the user has saved recipes
               if (recipeProvider.userRecipes.isNotEmpty) {

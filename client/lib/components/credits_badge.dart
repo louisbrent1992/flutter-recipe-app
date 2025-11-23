@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/subscription_provider.dart';
 import '../theme/theme.dart';
+import '../components/app_tutorial.dart';
 
 /// Small, reusable widgets to display the user's current credit balances.
 /// - [CreditsHeader] is a larger header-style row (used in screens).
@@ -120,22 +121,28 @@ class CreditsPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SubscriptionProvider>(
-      builder: (context, provider, _) {
-        final imports = provider.credits['recipeImports'] ?? 0;
-        final gens = provider.credits['recipeGenerations'] ?? 0;
-        final theme = Theme.of(context);
-        final isDesktop = AppBreakpoints.isDesktop(context);
-        final isTablet = AppBreakpoints.isTablet(context);
-        
-        return Padding(
-          padding: EdgeInsets.all(isDesktop ? 6.0 : isTablet ? 5.0 : 4.0),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(
-              isDesktop ? 20 : isTablet ? 18 : 16,
-            ),
-            onTap: onTap,
-            child: Container(
+    return TutorialShowcase(
+      showcaseKey: TutorialKeys.creditBalance,
+      title: 'Credit Balance 💎',
+      description: 'Track your recipe imports and generations. Tap to manage credits and subscriptions.',
+      isCircular: false,
+      targetPadding: const EdgeInsets.all(8),
+      child: Consumer<SubscriptionProvider>(
+        builder: (context, provider, _) {
+          final imports = provider.credits['recipeImports'] ?? 0;
+          final gens = provider.credits['recipeGenerations'] ?? 0;
+          final theme = Theme.of(context);
+          final isDesktop = AppBreakpoints.isDesktop(context);
+          final isTablet = AppBreakpoints.isTablet(context);
+          
+          return Padding(
+            padding: EdgeInsets.all(isDesktop ? 6.0 : isTablet ? 5.0 : 4.0),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(
+                isDesktop ? 20 : isTablet ? 18 : 16,
+              ),
+              onTap: onTap,
+              child: Container(
               padding: EdgeInsets.symmetric(
                 horizontal: isDesktop ? 14 : isTablet ? 12 : 10,
                 vertical: isDesktop ? 8 : isTablet ? 7 : 6,
@@ -271,7 +278,8 @@ class CreditsPill extends StatelessWidget {
             ),
           ),
         );
-      },
+        },
+      ),
     );
   }
 }

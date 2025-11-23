@@ -4,6 +4,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../services/ad_helper.dart';
 import 'package:provider/provider.dart';
 import '../providers/subscription_provider.dart';
+import '../services/tutorial_service.dart';
 import '../main.dart'; // Import to access the debug flag
 
 class BannerAdWidget extends StatefulWidget {
@@ -24,10 +25,40 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
   @override
   void initState() {
     super.initState();
-    // Only load ads if not in screenshot mode
+    // Only load ads if not in screenshot mode and tutorial is completed
     if (!hideAds) {
-      _loadAd();
+      _checkTutorialAndLoadAd();
     }
+  }
+
+  StreamSubscription<GlobalKey>? _tutorialSubscription;
+
+  Future<void> _checkTutorialAndLoadAd() async {
+    final tutorialService = TutorialService();
+    final isCompleted = await tutorialService.isTutorialCompleted();
+    
+    // Only load ads after tutorial is completed
+    if (isCompleted && mounted) {
+      _loadAd();
+    } else {
+      // Listen for tutorial completion via step changes
+      _tutorialSubscription?.cancel();
+      _tutorialSubscription = tutorialService.onStepChanged.listen((_) async {
+        final completed = await tutorialService.isTutorialCompleted();
+        if (completed && mounted && !_isAdLoaded) {
+          _loadAd();
+          _tutorialSubscription?.cancel();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _tutorialSubscription?.cancel();
+    _bannerAd?.dispose();
+    _closeTimer?.cancel();
+    super.dispose();
   }
 
   void _loadAd() {
@@ -82,13 +113,6 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
     );
 
     _bannerAd?.load();
-  }
-
-  @override
-  void dispose() {
-    _bannerAd?.dispose();
-    _closeTimer?.cancel();
-    super.dispose();
   }
 
   void _navigateToSubscription() {

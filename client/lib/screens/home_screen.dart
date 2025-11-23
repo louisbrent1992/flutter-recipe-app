@@ -134,7 +134,14 @@ class _HomeScreenState extends State<HomeScreen>
         context,
         listen: false,
       );
-      final List<GlobalKey> tutorialTargets = [TutorialKeys.homeHero];
+      // Start with navigation drawer menu and credit balance (most important UI elements)
+      final List<GlobalKey> tutorialTargets = [
+        TutorialKeys.navDrawerMenu,
+        TutorialKeys.creditBalance,
+      ];
+
+      // Then add home hero section
+      tutorialTargets.add(TutorialKeys.homeHero);
 
       // Only include "Your Recipes" if the user has saved recipes
       if (recipeProvider.userRecipes.isNotEmpty) {
@@ -1879,59 +1886,66 @@ Shared from Recipe App
 
   /// Builds a modern, theme-aligned menu button with refined styling.
   Widget _buildModernMenuButton(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(
-        AppSpacing.responsive(context, mobile: 8, tablet: 12, desktop: 16),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => _scaffoldKey.currentState?.openDrawer(),
-          child: Container(
-            width: AppSizing.responsiveIconSize(
-              context,
-              mobile: 36,
-              tablet: 40,
-              desktop: 44,
-            ),
-            height: AppSizing.responsiveIconSize(
-              context,
-              mobile: 36,
-              tablet: 40,
-              desktop: 44,
-            ),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              color: Theme.of(context).colorScheme.surface.withValues(
-                alpha: Theme.of(context).colorScheme.alphaHigh,
+    return TutorialShowcase(
+      showcaseKey: TutorialKeys.navDrawerMenu,
+      title: 'Navigation Menu 📱',
+      description: 'Tap here to access your profile, recipes, collections, and settings.',
+      isCircular: true,
+      targetPadding: const EdgeInsets.all(12),
+      child: Padding(
+        padding: EdgeInsets.all(
+          AppSpacing.responsive(context, mobile: 8, tablet: 12, desktop: 16),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => _scaffoldKey.currentState?.openDrawer(),
+            child: Container(
+              width: AppSizing.responsiveIconSize(
+                context,
+                mobile: 36,
+                tablet: 40,
+                desktop: 44,
               ),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withValues(
-                  alpha: Theme.of(context).colorScheme.overlayLight,
+              height: AppSizing.responsiveIconSize(
+                context,
+                mobile: 36,
+                tablet: 40,
+                desktop: 44,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: Theme.of(context).colorScheme.surface.withValues(
+                  alpha: Theme.of(context).colorScheme.alphaHigh,
                 ),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.shadow.withValues(
-                    alpha: Theme.of(context).colorScheme.shadowLight,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline.withValues(
+                    alpha: Theme.of(context).colorScheme.overlayLight,
                   ),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                  spreadRadius: 0,
+                  width: 1.5,
                 ),
-              ],
-            ),
-            child: Center(
-              child: Icon(
-                Icons.menu_rounded,
-                color: Theme.of(context).colorScheme.onSurface,
-                size: AppSizing.responsiveIconSize(
-                  context,
-                  mobile: 18,
-                  tablet: 20,
-                  desktop: 22,
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).colorScheme.shadow.withValues(
+                      alpha: Theme.of(context).colorScheme.shadowLight,
+                    ),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.menu_rounded,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  size: AppSizing.responsiveIconSize(
+                    context,
+                    mobile: 18,
+                    tablet: 20,
+                    desktop: 22,
+                  ),
                 ),
               ),
             ),
