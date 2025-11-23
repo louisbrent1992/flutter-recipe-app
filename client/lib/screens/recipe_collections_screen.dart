@@ -6,6 +6,7 @@ import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/services/collection_service.dart';
 import '../theme/theme.dart';
+import '../components/inline_banner_ad.dart';
 
 class RecipeCollectionScreen extends StatefulWidget {
   const RecipeCollectionScreen({super.key});
@@ -484,6 +485,9 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Inline banner ad between app bar and title banner
+                          const InlineBannerAd(),
+
                           // Header section
                           _buildHeader(colorScheme),
 

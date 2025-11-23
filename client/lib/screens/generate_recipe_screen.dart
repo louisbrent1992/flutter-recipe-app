@@ -11,6 +11,8 @@ import '../utils/snackbar_helper.dart';
 import '../utils/loading_dialog_helper.dart';
 import '../utils/error_utils.dart';
 import '../components/offline_banner.dart';
+import '../components/inline_banner_ad.dart';
+import '../main.dart';
 
 class GenerateRecipeScreen extends StatefulWidget {
   const GenerateRecipeScreen({super.key});
@@ -269,7 +271,21 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                SizedBox(height: size.height * 0.08),
+                                // Show spacing only when ads are hidden (premium users or debug mode)
+                                Consumer<SubscriptionProvider>(
+                                  builder: (context, subscriptionProvider, _) {
+                                    if (hideAds ||
+                                        subscriptionProvider.isPremium) {
+                                      return SizedBox(
+                                        height: size.height * 0.08,
+                                      );
+                                    }
+                                    return const SizedBox.shrink();
+                                  },
+                                ),
+
+                                // Inline banner ad above hero icon
+                                const InlineBannerAd(),
 
                                 // Decorative Icon
                                 FadeTransition(

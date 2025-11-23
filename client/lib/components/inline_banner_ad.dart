@@ -5,9 +5,9 @@ import '../services/ad_helper.dart';
 import 'package:provider/provider.dart';
 import '../providers/subscription_provider.dart';
 import '../services/tutorial_service.dart';
-import '../main.dart'; // Import to access the debug flag
+import '../main.dart';
+import '../theme/theme.dart';
 
-/// Inline banner ad widget for embedding within scrollable content
 class InlineBannerAd extends StatefulWidget {
   const InlineBannerAd({super.key});
 
@@ -22,11 +22,14 @@ class _InlineBannerAdState extends State<InlineBannerAd> {
   static const int _maxRetries = 3;
   StreamSubscription<GlobalKey>? _tutorialSubscription;
 
+  // Keep track of the loaded size to update the container height dynamically
+  AdSize? _adSize;
+
   @override
-  void initState() {
-    super.initState();
-    // Only load ads if not in screenshot mode and tutorial is completed
-    if (!hideAds) {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // We load the ad here to ensure we can access MediaQuery for the correct width
+    if (!_isAdLoaded && _bannerAd == null && !hideAds) {
       _checkTutorialAndLoadAd();
     }
   }
@@ -34,12 +37,10 @@ class _InlineBannerAdState extends State<InlineBannerAd> {
   Future<void> _checkTutorialAndLoadAd() async {
     final tutorialService = TutorialService();
     final isCompleted = await tutorialService.isTutorialCompleted();
-    
-    // Only load ads after tutorial is completed
+
     if (isCompleted && mounted) {
       _loadAd();
     } else {
-      // Listen for tutorial completion via step changes
       _tutorialSubscription?.cancel();
       _tutorialSubscription = tutorialService.onStepChanged.listen((_) async {
         final completed = await tutorialService.isTutorialCompleted();
@@ -51,21 +52,39 @@ class _InlineBannerAdState extends State<InlineBannerAd> {
     }
   }
 
-  void _loadAd() {
-    if (_retryCount >= _maxRetries) {
-      debugPrint('Max retry attempts reached for inline banner ad');
-      return;
-    }
+  Future<void> _loadAd() async {
+    if (_retryCount >= _maxRetries || !mounted) return;
+
+    // 1. Calculate the available width for the ad
+    // This ensures the ad expands to the edges of your content area
+    final horizontalPadding = AppSpacing.responsive(
+      context,
+      mobile: AppSpacing.md,
+      tablet: AppSpacing.lg,
+      desktop: AppSpacing.xl,
+    );
+
+    // Get screen width minus the padding used by your app
+    final double adWidth =
+        MediaQuery.of(context).size.width - (horizontalPadding * 2);
+
+    // 2. Get the Adaptive Ad Size
+    final AdSize adaptiveSize =
+        await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+          adWidth.truncate(), // Width must be an integer
+        ) ??
+        AdSize.banner;
 
     _bannerAd = BannerAd(
       adUnitId: AdHelper.bannerAdUnitId,
-      size: AdSize.banner,
+      size: adaptiveSize, // Use the calculated adaptive size
       request: const AdRequest(),
       listener: BannerAdListener(
-        onAdLoaded: (_) {
+        onAdLoaded: (ad) {
           setState(() {
             _isAdLoaded = true;
-            _retryCount = 0; // Reset retry count on successful load
+            _retryCount = 0;
+            _adSize = adaptiveSize; // Save the size to use in the build method
           });
         },
         onAdFailedToLoad: (ad, error) {
@@ -75,12 +94,8 @@ class _InlineBannerAdState extends State<InlineBannerAd> {
             _isAdLoaded = false;
             _retryCount++;
           });
-
-          // Retry loading after a delay
           Future.delayed(const Duration(seconds: 5), () {
-            if (mounted) {
-              _loadAd();
-            }
+            if (mounted) _loadAd();
           });
         },
       ),
@@ -100,41 +115,56 @@ class _InlineBannerAdState extends State<InlineBannerAd> {
   Widget build(BuildContext context) {
     return Consumer<SubscriptionProvider>(
       builder: (context, subscriptionProvider, _) {
-        // Hide ads if user is premium or if debug flag is set
         if (hideAds || subscriptionProvider.isPremium) {
           return const SizedBox.shrink();
         }
 
-        if (!_isAdLoaded || _bannerAd == null) {
+        if (!_isAdLoaded || _bannerAd == null || _adSize == null) {
           return const SizedBox.shrink();
         }
 
-        // Return inline banner as a card-style widget
-        return Container(
-          margin: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Theme.of(
-                context,
-              ).colorScheme.outline.withValues(alpha: 0.2),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+        // 3. Simplified Layout
+        // No LayoutBuilder or Transform needed.
+        // We simply let the container fill the parent width.
+        final double adHeight = _adSize!.height.toDouble();
+
+        return SizedBox(
+          height: adHeight + 32, // Height + Margins
+          width: double.infinity,
+          child: Center(
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 16),
+              // Width matches the ad size (which we calculated to match the content)
+              width: _adSize!.width.toDouble(),
+              height: adHeight,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outline.withValues(alpha: 0.2),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: double.infinity,
-              height: _bannerAd!.size.height.toDouble(),
-              child: AdWidget(ad: _bannerAd!),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: _adSize!.width.toDouble(),
+                  height: adHeight,
+                  child: AdWidget(
+                    key: ValueKey('ad_widget_${_bannerAd.hashCode}'),
+                    ad: _bannerAd!,
+                  ),
+                ),
+              ),
             ),
           ),
         );

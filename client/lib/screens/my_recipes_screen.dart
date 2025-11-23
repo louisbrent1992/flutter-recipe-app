@@ -12,6 +12,7 @@ import 'package:recipease/mixins/recipe_filter_mixin.dart';
 import '../providers/recipe_provider.dart';
 import '../models/recipe.dart';
 import '../theme/theme.dart';
+import '../components/inline_banner_ad.dart';
 
 class MyRecipesScreen extends StatefulWidget {
   const MyRecipesScreen({super.key});
@@ -252,6 +253,9 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                     _selectedTag != 'All' ||
                     _searchQuery.isNotEmpty,
               ),
+
+              // Inline banner ad under search bar
+              const InlineBannerAd(),
 
               // Cache status indicator
               const CacheStatusIndicator(

@@ -36,7 +36,7 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
   Future<void> _checkTutorialAndLoadAd() async {
     final tutorialService = TutorialService();
     final isCompleted = await tutorialService.isTutorialCompleted();
-    
+
     // Only load ads after tutorial is completed
     if (isCompleted && mounted) {
       _loadAd();

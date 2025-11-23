@@ -21,6 +21,7 @@ import '../services/tutorial_service.dart';
 import '../components/app_tutorial.dart';
 import '../main.dart' show navigatorKey;
 import '../providers/recipe_provider.dart';
+import '../components/inline_banner_ad.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -317,44 +318,20 @@ class _SettingsScreenState extends State<SettingsScreen>
     AppNotificationCategory category,
   ) async {
     try {
-      // Trigger notification and get route info
-      final routeInfo = await NotificationScheduler.triggerTestNotification(
-        category,
-      );
+      // Trigger notification (route info is embedded in the notification payload)
+      await NotificationScheduler.triggerTestNotification(category);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Test notification triggered!'),
+            content: Text('Test notification triggered! Tap it to test navigation.'),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
           ),
         );
 
-        // Also navigate directly since notification tap might not work in foreground
-        if (routeInfo != null) {
-          final route = routeInfo['route'] as String?;
-          final args = routeInfo['args'] as Map<String, String>?;
-
-          if (route != null && route.isNotEmpty) {
-            // Wait a moment for the notification to show, then navigate
-            Future.delayed(const Duration(milliseconds: 500), () {
-              if (navigatorKey.currentState != null) {
-                navigatorKey.currentState!.pushNamed(route, arguments: args);
-              } else {
-                // If navigator not ready, try again after a frame
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (navigatorKey.currentState != null) {
-                    navigatorKey.currentState!.pushNamed(
-                      route,
-                      arguments: args,
-                    );
-                  }
-                });
-              }
-            });
-          }
-        }
+        // Removed auto-navigation to allow proper testing of notification tap behavior
       }
     } catch (e) {
       if (mounted) {
@@ -1020,6 +997,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Inline banner ad between app bar and profile pic
+                    const InlineBannerAd(),
+
                     // Profile Header
                     _buildProfileHeader(colorScheme),
 

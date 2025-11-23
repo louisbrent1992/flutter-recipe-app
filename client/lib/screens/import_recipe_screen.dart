@@ -12,6 +12,8 @@ import 'package:recipease/theme/theme.dart';
 import '../utils/loading_dialog_helper.dart';
 import '../utils/snackbar_helper.dart';
 import '../components/offline_banner.dart';
+import '../components/inline_banner_ad.dart';
+import '../main.dart';
 
 class ImportRecipeScreen extends StatefulWidget {
   final String? sharedUrl;
@@ -396,7 +398,18 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                SizedBox(height: size.height * 0.08),
+                                // Show spacing only when ads are hidden (premium users or debug mode)
+                                Consumer<SubscriptionProvider>(
+                                  builder: (context, subscriptionProvider, _) {
+                                    if (hideAds || subscriptionProvider.isPremium) {
+                                      return SizedBox(height: size.height * 0.08);
+                                    }
+                                    return const SizedBox.shrink();
+                                  },
+                                ),
+
+                                // Inline banner ad above hero icon
+                                const InlineBannerAd(),
 
                                 // Decorative Icon
                                 FadeTransition(

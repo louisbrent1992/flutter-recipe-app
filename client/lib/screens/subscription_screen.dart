@@ -12,6 +12,7 @@ import '../components/error_display.dart';
 import '../theme/theme.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/error_utils.dart';
+import '../components/inline_banner_ad.dart';
 // import '../components/floating_bottom_bar.dart';
 
 class SubscriptionScreen extends StatefulWidget {
@@ -352,6 +353,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Inline banner ad above limited time offer banner
+              const InlineBannerAd(),
+
               // Dynamic UI banners (shop_top)
               Consumer<DynamicUiProvider>(
                 builder: (context, dyn, _) {
@@ -468,6 +472,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Inline banner ad above title header
+              const InlineBannerAd(),
               Text(
                 'One-time purchases',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -550,6 +556,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Inline banner ad above title header
+              const InlineBannerAd(),
               Text(
                 'Buy Credits',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(

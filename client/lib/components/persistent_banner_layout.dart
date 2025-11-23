@@ -17,8 +17,17 @@ class PersistentBannerLayout extends StatelessWidget {
         child,
         // Offline banner at the top
         const Positioned(top: 0, left: 0, right: 0, child: OfflineBanner()),
-        // Banner ad at the bottom (hide on Recipe Details since it uses inline ads)
-        if (routeName != '/recipeDetail') const BannerAdWidget(),
+        // Banner ad at the bottom (hide on screens that use inline ads)
+        if (routeName != '/recipeDetail' &&
+            routeName != '/discover' &&
+            routeName != '/myRecipes' &&
+            routeName != '/generate' &&
+            routeName != '/import' &&
+            routeName != '/home' &&
+            routeName != '/settings' &&
+            routeName != '/collections' &&
+            routeName != '/subscription')
+          const BannerAdWidget(),
         // Global floating bottom navigation (avoid duplicating on Home which already includes it)
         if (routeName != '/discover' && routeName != '/myRecipes')
           const FloatingBottomBar(),

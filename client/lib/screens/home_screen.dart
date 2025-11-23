@@ -17,6 +17,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:showcaseview/showcaseview.dart';
 import '../components/app_tutorial.dart';
 import '../services/tutorial_service.dart';
+import '../components/inline_banner_ad.dart';
 
 /// Lightweight model representing a quick-access category on the home screen.
 class _CategoryItem {
@@ -271,6 +272,9 @@ class _HomeScreenState extends State<HomeScreen>
                                 30, // Extra space for floating bar
                           ),
                           children: [
+                            // Inline banner ad between app bar and seasonal banner
+                            const InlineBannerAd(),
+
                             // Dynamic UI banners (home_top)
                             Consumer<DynamicUiProvider>(
                               builder: (context, dyn, _) {

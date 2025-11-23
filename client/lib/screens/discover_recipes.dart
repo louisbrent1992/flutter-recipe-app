@@ -12,6 +12,7 @@ import '../components/error_display.dart';
 import '../theme/theme.dart';
 import '../components/floating_bottom_bar.dart';
 import '../utils/snackbar_helper.dart';
+import '../components/inline_banner_ad.dart';
 
 class DiscoverRecipesScreen extends StatefulWidget {
   final String? initialQuery;
@@ -447,6 +448,9 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                     _selectedTag != 'All' ||
                     _searchQuery.isNotEmpty,
               ),
+
+              // Inline banner ad under search bar
+              const InlineBannerAd(),
 
               // Cache status indicator
               const CacheStatusIndicator(

@@ -16,9 +16,10 @@ class AuthService with ChangeNotifier {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     // For iOS, use explicit client ID
     // For Android, don't specify clientId - it will be auto-detected from google-services.json
-    clientId: defaultTargetPlatform == TargetPlatform.iOS
+    clientId:
+        defaultTargetPlatform == TargetPlatform.iOS
             ? '826154873845-9n1vqk797jnrvarkd3stsehjhl6ff1le.apps.googleusercontent.com'
-        : null,
+            : null,
     scopes: ['email', 'profile'],
   );
   final ApiClient _apiClient = ApiClient();
@@ -238,24 +239,30 @@ class AuthService with ChangeNotifier {
 
     try {
       debugPrint('🔐 [GOOGLE SIGN IN] Starting Google Sign In...');
-      debugPrint('🔐 [GOOGLE SIGN IN] Platform: ${defaultTargetPlatform}');
-      
+      debugPrint('🔐 [GOOGLE SIGN IN] Platform: $defaultTargetPlatform');
+
       // Ensure we're signed out first to avoid cached state issues
-      debugPrint('🔐 [GOOGLE SIGN IN] Signing out from any previous session...');
+      debugPrint(
+        '🔐 [GOOGLE SIGN IN] Signing out from any previous session...',
+      );
       await _googleSignIn.signOut();
 
       debugPrint('🔐 [GOOGLE SIGN IN] Requesting Google Sign In...');
-      debugPrint('🔐 [GOOGLE SIGN IN] Client ID: ${_googleSignIn.clientId ?? "null (auto-detect from google-services.json)"}');
+      debugPrint(
+        '🔐 [GOOGLE SIGN IN] Client ID: ${_googleSignIn.clientId ?? "null (auto-detect from google-services.json)"}',
+      );
 
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
+
       if (googleUser == null) {
         debugPrint('⚠️ [GOOGLE SIGN IN] User cancelled sign in');
         _error = 'Google sign in was cancelled';
         return null;
       }
 
-      debugPrint('✅ [GOOGLE SIGN IN] Google account selected: ${googleUser.email}');
+      debugPrint(
+        '✅ [GOOGLE SIGN IN] Google account selected: ${googleUser.email}',
+      );
       debugPrint('🔐 [GOOGLE SIGN IN] Getting authentication tokens...');
 
       final GoogleSignInAuthentication googleAuth =
@@ -263,8 +270,12 @@ class AuthService with ChangeNotifier {
 
       if (googleAuth.accessToken == null || googleAuth.idToken == null) {
         debugPrint('❌ [GOOGLE SIGN IN] Missing authentication tokens');
-        debugPrint('❌ [GOOGLE SIGN IN] Access token: ${googleAuth.accessToken != null ? "present" : "null"}');
-        debugPrint('❌ [GOOGLE SIGN IN] ID token: ${googleAuth.idToken != null ? "present" : "null"}');
+        debugPrint(
+          '❌ [GOOGLE SIGN IN] Access token: ${googleAuth.accessToken != null ? "present" : "null"}',
+        );
+        debugPrint(
+          '❌ [GOOGLE SIGN IN] ID token: ${googleAuth.idToken != null ? "present" : "null"}',
+        );
         throw 'Failed to get authentication tokens from Google';
       }
 
@@ -305,22 +316,28 @@ class AuthService with ChangeNotifier {
     } catch (e, stackTrace) {
       debugPrint('❌ [GOOGLE SIGN IN] Error during sign in: $e');
       debugPrint('❌ [GOOGLE SIGN IN] Stack trace: $stackTrace');
-      
+
       // Provide more helpful error messages for common issues
       final errorString = e.toString();
-      if (errorString.contains('ApiException: 10') || 
+      if (errorString.contains('ApiException: 10') ||
           errorString.contains('DEVELOPER_ERROR') ||
           errorString.contains('sign_in_failed')) {
-        debugPrint('❌ [GOOGLE SIGN IN] DEVELOPER_ERROR detected - this usually means:');
-        debugPrint('   1. SHA-1/SHA-256 fingerprints not registered in Firebase');
-        debugPrint('   2. If using Google Play, need Google Play App Signing key SHA fingerprints');
+        debugPrint(
+          '❌ [GOOGLE SIGN IN] DEVELOPER_ERROR detected - this usually means:',
+        );
+        debugPrint(
+          '   1. SHA-1/SHA-256 fingerprints not registered in Firebase',
+        );
+        debugPrint(
+          '   2. If using Google Play, need Google Play App Signing key SHA fingerprints',
+        );
         debugPrint('   3. OAuth client ID mismatch');
         debugPrint('   4. Package name mismatch');
         _error = 'Google Sign In configuration error. Please contact support.';
       } else {
         _error = errorString;
       }
-      
+
       return null;
     } finally {
       _isLoading = false;
