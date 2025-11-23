@@ -146,7 +146,7 @@ class TutorialShowcase extends StatelessWidget {
       ),
       descTextStyle: TextStyle(
         fontSize: 15,
-        color: colorScheme.onSurface.withOpacity(0.8),
+        color: colorScheme.onSurface.withValues(alpha: 0.8),
         height: 1.4,
       ),
       tooltipPadding: const EdgeInsets.symmetric(

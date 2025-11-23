@@ -208,7 +208,10 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Generate'),
+      appBar: const CustomAppBar(
+        title: 'Generate',
+        fullTitle: 'Generate Recipe',
+      ),
       body: Consumer<RecipeProvider>(
         builder: (context, recipeProvider, _) {
           return Stack(
@@ -251,7 +254,14 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                       physics: const BouncingScrollPhysics(),
                       controller: _scrollController,
                       child: Padding(
-                        padding: AppSpacing.allResponsive(context),
+                        padding: EdgeInsets.only(
+                          left: AppSpacing.responsive(context),
+                          right: AppSpacing.responsive(context),
+                          top: AppSpacing.responsive(context),
+                          bottom:
+                              AppSpacing.responsive(context) +
+                              30, // Extra space for floating bar
+                        ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -958,45 +968,6 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
 
                                 SizedBox(height: AppSpacing.xxl),
                               ],
-                            ),
-
-                            // Bottom section - pushed to bottom of screen
-                            Padding(
-                              padding: EdgeInsets.only(bottom: AppSpacing.md),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(
-                                    Icons.help_outline,
-                                    size: AppSizing.responsiveIconSize(
-                                      context,
-                                      mobile: 14,
-                                      tablet: 16,
-                                      desktop: 18,
-                                    ),
-                                    color: colorScheme.onSurface.withAlpha(
-                                      102,
-                                    ), // 0.4 alpha
-                                  ),
-                                  SizedBox(width: AppSpacing.sm),
-                                  Expanded(
-                                    child: Text(
-                                      'Recipes are generated based on your preferences and available ingredients',
-                                      style: TextStyle(
-                                        fontSize:
-                                            AppTypography.responsiveCaptionSize(
-                                              context,
-                                            ),
-                                        color: colorScheme.onSurface.withAlpha(
-                                          128,
-                                        ), // 0.5 alpha
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                      textAlign: TextAlign.left,
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ),
                           ],
                         ),

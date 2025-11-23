@@ -1011,11 +1011,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                           ? 700
                           : double.infinity,
                 ),
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.responsive(context),
-                  AppSpacing.responsive(context),
-                  AppSpacing.responsive(context),
-                  30,
+                padding: EdgeInsets.only(
+                  left: AppSpacing.responsive(context),
+                  right: AppSpacing.responsive(context),
+                  top: AppSpacing.responsive(context),
+                  bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1489,23 +1489,24 @@ class _SettingsScreenState extends State<SettingsScreen>
                         subtitle: 'Show debug-only features like Refresh Image',
                         value: _debugFeaturesEnabled,
                         onChanged: (value) async {
+                          if (!mounted) return;
+                          final messenger = ScaffoldMessenger.of(context);
                           await _debugSettings.setDebugEnabled(value);
-                          if (mounted) {
-                            setState(() {
-                              _debugFeaturesEnabled = value;
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  value
-                                      ? 'Debug features enabled'
-                                      : 'Debug features disabled',
-                                ),
-                                behavior: SnackBarBehavior.floating,
-                                duration: const Duration(seconds: 2),
+                          if (!mounted) return;
+                          setState(() {
+                            _debugFeaturesEnabled = value;
+                          });
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                value
+                                    ? 'Debug features enabled'
+                                    : 'Debug features disabled',
                               ),
-                            );
-                          }
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
                         },
                         icon: Icons.developer_mode_rounded,
                         color: Colors.deepPurple,

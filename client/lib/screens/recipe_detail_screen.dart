@@ -684,6 +684,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       child: Scaffold(
         appBar: CustomAppBar(
           title: 'Details',
+          fullTitle: 'Recipe Details',
           floatingButtons: [
             // Overflow menu (Edit/Delete)
             PopupMenuButton<MenuAction>(
@@ -1169,11 +1170,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      AppSpacing.responsive(context),
-                      AppSpacing.responsive(context),
-                      AppSpacing.responsive(context),
-                      60,
+                    padding: EdgeInsets.only(
+                      left: AppSpacing.responsive(context),
+                      right: AppSpacing.responsive(context),
+                      top: AppSpacing.responsive(context),
+                      bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

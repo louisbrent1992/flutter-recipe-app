@@ -343,7 +343,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                     ? 700
                     : double.infinity,
           ),
-          padding: EdgeInsets.all(AppSpacing.responsive(context)),
+          padding: EdgeInsets.only(
+            left: AppSpacing.responsive(context),
+            right: AppSpacing.responsive(context),
+            top: AppSpacing.responsive(context),
+            bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -454,7 +459,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                     ? 700
                     : double.infinity,
           ),
-          padding: EdgeInsets.all(AppSpacing.responsive(context)),
+          padding: EdgeInsets.only(
+            left: AppSpacing.responsive(context),
+            right: AppSpacing.responsive(context),
+            top: AppSpacing.responsive(context),
+            bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -531,7 +541,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                     ? 700
                     : double.infinity,
           ),
-          padding: EdgeInsets.all(AppSpacing.responsive(context)),
+          padding: EdgeInsets.only(
+            left: AppSpacing.responsive(context),
+            right: AppSpacing.responsive(context),
+            top: AppSpacing.responsive(context),
+            bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

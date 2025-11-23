@@ -47,7 +47,8 @@ class _HomeScreenState extends State<HomeScreen>
       'https://res.cloudinary.com/client-images/image/upload/v1763258640/Recipe%20App/Gemini_Generated_Image_1isjyd1isjyd1isj_jv1rvc.png';
   bool _isBooting = true;
   StreamSubscription<void>? _recipesChangedSubscription;
-  Future<List<RecipeCollection>>? _collectionsFuture; // Cache collections future
+  Future<List<RecipeCollection>>?
+  _collectionsFuture; // Cache collections future
 
   @override
   void initState() {
@@ -267,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen>
                             top: AppSpacing.responsive(context),
                             bottom:
                                 AppSpacing.responsive(context) +
-                                80, // Extra space for floating bar
+                                30, // Extra space for floating bar
                           ),
                           children: [
                             // Dynamic UI banners (home_top)
@@ -276,8 +277,9 @@ class _HomeScreenState extends State<HomeScreen>
                                 final banners = dyn.bannersForPlacement(
                                   'home_top',
                                 );
-                                if (banners.isEmpty)
+                                if (banners.isEmpty) {
                                   return const SizedBox.shrink();
+                                }
                                 return Column(
                                   children:
                                       banners
@@ -396,12 +398,23 @@ class _HomeScreenState extends State<HomeScreen>
                                     true)) {
                                   return const SizedBox.shrink();
                                 }
+                                // Ensure collections future is initialized
+                                if (_collectionsFuture == null) {
+                                  final collectionService =
+                                      Provider.of<CollectionService>(
+                                        context,
+                                        listen: false,
+                                      );
+                                  _collectionsFuture = collectionService
+                                      .getCollections(
+                                        updateSpecialCollections: true,
+                                      );
+                                }
                                 // Use cached collections future to avoid duplicate API calls
-                                final collections = (_collectionsFuture ?? 
-                                  Provider.of<CollectionService>(context, listen: false)
-                                    .getCollections(updateSpecialCollections: true))
-                                  .then((value) => value.take(10).toList());
-                                
+                                final collections = _collectionsFuture!.then(
+                                  (value) => value.take(10).toList(),
+                                );
+
                                 return _buildCollectionCarousel(
                                   context,
                                   title: 'Collections',
@@ -1208,8 +1221,10 @@ class _HomeScreenState extends State<HomeScreen>
             ],
           ),
           onTap: () {
+            final navigator = Navigator.of(context);
             Future.delayed(const Duration(milliseconds: 100), () {
-              Navigator.pushNamed(context, '/recipeDetail', arguments: recipe);
+              if (!mounted) return;
+              navigator.pushNamed('/recipeDetail', arguments: recipe);
             });
           },
         ),
@@ -1889,7 +1904,8 @@ Shared from Recipe App
     return TutorialShowcase(
       showcaseKey: TutorialKeys.navDrawerMenu,
       title: 'Navigation Menu 📱',
-      description: 'Tap here to access your profile, recipes, collections, and settings.',
+      description:
+          'Tap here to access your profile, recipes, collections, and settings.',
       isCircular: true,
       targetPadding: const EdgeInsets.all(12),
       child: Padding(

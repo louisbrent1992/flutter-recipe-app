@@ -991,8 +991,9 @@ class RecipeProvider extends ChangeNotifier {
                   RegExp(r's$'),
                   '',
                 );
-                if (recipeStem == filterStem && recipeStem.isNotEmpty)
+                if (recipeStem == filterStem && recipeStem.isNotEmpty) {
                   return true;
+                }
 
                 // Word boundary matching (handles multi-word tags)
                 final recipeWords = normalizedRecipe.split(RegExp(r'[\s\-_]+'));

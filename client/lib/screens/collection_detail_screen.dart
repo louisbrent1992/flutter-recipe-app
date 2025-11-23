@@ -512,11 +512,11 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                     // Search field
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          AppSpacing.responsive(context),
-                          AppSpacing.responsive(context) * 0.5,
-                          AppSpacing.responsive(context),
-                          AppSpacing.responsive(context),
+                        padding: EdgeInsets.only(
+                          left: AppSpacing.responsive(context),
+                          right: AppSpacing.responsive(context),
+                          top: AppSpacing.responsive(context) * 0.5,
+                          bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
                         ),
                         child: _buildSearchField(colorScheme),
                       ),

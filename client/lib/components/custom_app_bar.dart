@@ -6,6 +6,7 @@ import '../theme/theme.dart';
 /// This component is designed to be reused across the application for consistent UI.
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
+  final String? fullTitle;
   final List<Widget>? actions;
   final Widget? leading;
   final bool centerTitle;
@@ -24,6 +25,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBar({
     super.key,
     required this.title,
+    this.fullTitle,
     this.actions,
     this.leading,
     this.centerTitle = true,
@@ -43,6 +45,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Show full title on tablet/desktop, short title on mobile
+    final displayTitle =
+        (fullTitle != null &&
+                (AppBreakpoints.isTablet(context) ||
+                    AppBreakpoints.isDesktop(context)))
+            ? fullTitle!
+            : title;
 
     return AppBar(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -60,7 +69,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
               )
               : Text(
-                title,
+                displayTitle,
                 style: TextStyle(
                   fontSize: AppTypography.responsiveFontSize(
                     context,
@@ -78,6 +87,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       foregroundColor: Theme.of(context).colorScheme.onSurface,
       elevation: elevation,
       flexibleSpace: flexibleSpace,
+
       bottom: bottom,
       leading:
           leading != null
@@ -86,8 +96,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
       actions: [
         if (showCreditsPill)
-          CreditsPill(
-            onTap: () => Navigator.pushNamed(context, '/subscription'),
+          Padding(
+            padding: const EdgeInsets.only(left: 4.0),
+            child: CreditsPill(
+              onTap: () => Navigator.pushNamed(context, '/subscription'),
+            ),
           ),
         if (floatingButtons != null) ...floatingButtons!,
         if (actions != null) ...actions!,

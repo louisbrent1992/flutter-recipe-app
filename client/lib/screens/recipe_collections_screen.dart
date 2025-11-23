@@ -387,6 +387,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
       child: Scaffold(
         appBar: CustomAppBar(
           title: 'Collections',
+          fullTitle: 'My Collections',
           floatingButtons: [
             // Context menu
             PopupMenuButton<String>(
@@ -474,11 +475,11 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                   child: SingleChildScrollView(
                     controller: _scrollController,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        AppSpacing.responsive(context),
-                        AppSpacing.responsive(context),
-                        AppSpacing.responsive(context),
-                        70,
+                      padding: EdgeInsets.only(
+                        left: AppSpacing.responsive(context),
+                        right: AppSpacing.responsive(context),
+                        top: AppSpacing.responsive(context),
+                        bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

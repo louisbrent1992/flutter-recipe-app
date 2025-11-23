@@ -438,6 +438,10 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
             (widget.recipe?.toEdit == true || currentRecipe.toEdit == true)
                 ? 'Edit'
                 : 'New',
+        fullTitle:
+            (widget.recipe?.toEdit == true || currentRecipe.toEdit == true)
+                ? 'Edit Recipe'
+                : 'New Recipe',
         floatingButtons: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -462,11 +466,11 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                               ? 700
                               : double.infinity,
                     ),
-                  padding: EdgeInsets.fromLTRB(
-                    AppSpacing.responsive(context),
-                    AppSpacing.responsive(context),
-                    AppSpacing.responsive(context),
-                    AppSpacing.responsive(context),
+                  padding: EdgeInsets.only(
+                    left: AppSpacing.responsive(context),
+                    right: AppSpacing.responsive(context),
+                    top: AppSpacing.responsive(context),
+                    bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
                   ),
                   child: Consumer<RecipeProvider>(
                     builder: (context, recipeProvider, _) {

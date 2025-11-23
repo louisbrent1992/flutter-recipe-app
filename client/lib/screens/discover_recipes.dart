@@ -345,6 +345,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Discover',
+        fullTitle: 'Discover Recipes',
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert_rounded),
@@ -569,11 +570,11 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                     // If we have recipes, show them (even if there's an error from another screen)
                     // This ensures cached recipes are always displayed
                     return Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        AppSpacing.responsive(context),
-                        AppSpacing.responsive(context),
-                        AppSpacing.responsive(context),
-                        0,
+                      padding: EdgeInsets.only(
+                        left: AppSpacing.responsive(context),
+                        right: AppSpacing.responsive(context),
+                        top: AppSpacing.responsive(context),
+                        bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
                       ),
                       child: Column(
                         children: [

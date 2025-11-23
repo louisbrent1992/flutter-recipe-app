@@ -919,6 +919,7 @@ Shared from Recipe App
           ),
           onTap: () {
             Future.delayed(const Duration(milliseconds: 100), () {
+              if (!mounted) return;
               Navigator.pushNamed(
                 context,
                 '/recipeDetail',
@@ -986,6 +987,7 @@ Shared from Recipe App
             ),
             onTap: () {
               Future.delayed(const Duration(milliseconds: 100), () {
+                if (!mounted) return;
                 Navigator.pushNamed(
                   context,
                   '/editRecipe',

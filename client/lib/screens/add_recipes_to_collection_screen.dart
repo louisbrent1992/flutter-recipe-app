@@ -186,6 +186,7 @@ class _AddRecipesToCollectionScreenState
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Add',
+        fullTitle: 'Add to Collection',
         actions: [
           if (_selectedRecipes.isNotEmpty)
             Center(

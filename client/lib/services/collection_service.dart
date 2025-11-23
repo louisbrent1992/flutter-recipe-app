@@ -39,8 +39,18 @@ class CollectionService extends ChangeNotifier {
         _clearCache();
       }
 
-      // OFFLINE-FIRST: Load from local storage first
-      if (!forceRefresh) {
+      // Check in-memory cache first (before loading from local storage)
+      if (!forceRefresh &&
+          _cachedCollections != null &&
+          _lastCacheTime != null) {
+        final timeSinceCache = DateTime.now().difference(_lastCacheTime!);
+        if (timeSinceCache < _cacheTimeout) {
+          return _cachedCollections!;
+        }
+      }
+
+      // OFFLINE-FIRST: Load from local storage if in-memory cache is empty/expired
+      if (!forceRefresh && (_cachedCollections == null || _cachedCollections!.isEmpty)) {
         try {
           final localStorage = LocalStorageService();
           final localCollections = await localStorage.loadCollections();
@@ -53,16 +63,6 @@ class CollectionService extends ChangeNotifier {
           }
         } catch (e) {
           logger.e('Error loading collections from local storage: $e');
-        }
-      }
-
-      // Check in-memory cache first
-      if (!forceRefresh &&
-          _cachedCollections != null &&
-          _lastCacheTime != null) {
-        final timeSinceCache = DateTime.now().difference(_lastCacheTime!);
-        if (timeSinceCache < _cacheTimeout) {
-          return _cachedCollections!;
         }
       }
 

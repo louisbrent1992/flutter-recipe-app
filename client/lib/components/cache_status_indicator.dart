@@ -87,10 +87,10 @@ class CacheStatusIndicator extends StatelessWidget {
         vertical: AppSpacing.responsive(context, mobile: 4, tablet: 5, desktop: 6),
       ),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).colorScheme.error.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -158,7 +158,7 @@ class CacheStatusIndicator extends StatelessWidget {
             Text(
               'Synced $timeText',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -176,10 +176,10 @@ class CacheStatusIndicator extends StatelessWidget {
         vertical: AppSpacing.responsive(context, mobile: 4, tablet: 5, desktop: 6),
       ),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
           width: 1,
         ),
       ),

@@ -103,7 +103,10 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Generated'),
+      appBar: const CustomAppBar(
+        title: 'Generated',
+        fullTitle: 'Generated Recipes',
+      ),
       body: Stack(
         children: [
           Consumer<RecipeProvider>(
@@ -130,7 +133,12 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
               }
 
               return SingleChildScrollView(
-                padding: AppSpacing.allResponsive(context),
+                padding: EdgeInsets.only(
+                  left: AppSpacing.responsive(context),
+                  right: AppSpacing.responsive(context),
+                  top: AppSpacing.responsive(context),
+                  bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

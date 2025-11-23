@@ -1783,7 +1783,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                 ),
                 SizedBox(height: isMobile ? 4 : 8),
                 Text(
-                  'v1.0.1 • Made with ❤️',
+                  'v1.0.2 • Made with ❤️',
                   style: TextStyle(
                     fontSize: isMobile ? 10 : 12,
                     color: (isDark ? Colors.white : colorScheme.onSurface)
