@@ -445,9 +445,14 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
 
                     // Friendly empty state: show when not loading and no results
                     if (!recipeProvider.isLoading && displayRecipes.isEmpty) {
-                      return Column(
-                        children: [
-                          Expanded(
+                      return RefreshIndicator(
+                        onRefresh: () async {
+                          await _loadRecipes(forceRefresh: true);
+                        },
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.7,
                             child: Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -521,7 +526,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                               ),
                             ),
                           ),
-                        ],
+                        ),
                       );
                     }
 
@@ -548,51 +553,56 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                       ),
                       child: Column(
                         children: [
-                          // Recipe grid with loading overlay
+                          // Recipe grid with loading overlay and pull-to-refresh
                           Expanded(
                             child: Stack(
                               children: [
-                                GridView.builder(
-                                  key: const PageStorageKey('discover_grid'),
-                                  controller: _scrollController,
-                                  padding: EdgeInsets.only(bottom: 100),
-                                  itemBuilder: (context, index) {
-                                    final recipe = displayRecipes[index];
-                                    // Use a stable key so Flutter does not reuse state across pages
-                                    final String identity =
-                                        recipe.id.isNotEmpty
-                                            ? recipe.id
-                                            : '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
-                                    return RecipeCard(
-                                      key: ValueKey('discover-card-$identity'),
-                                      recipe: recipe,
-                                      showSaveButton:
-                                          true, // All displayed recipes are unsaved
-                                      showRemoveButton:
-                                          false, // Saved recipes are filtered out
-                                      showRefreshButton: false,
-                                      showDeleteButton: false,
-                                      onSave: () => _handleRecipeAction(recipe),
-                                    );
+                                RefreshIndicator(
+                                  onRefresh: () async {
+                                    await _loadRecipes(forceRefresh: true);
                                   },
-                                  itemCount: displayRecipes.length,
-                                  gridDelegate:
-                                      SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount:
-                                            AppSizing.responsiveGridCount(
-                                              context,
-                                            ),
-                                        childAspectRatio:
-                                            AppSizing.responsiveAspectRatio(
-                                              context,
-                                            ),
-                                        crossAxisSpacing: AppSpacing.responsive(
-                                          context,
+                                  child: GridView.builder(
+                                    key: const PageStorageKey('discover_grid'),
+                                    controller: _scrollController,
+                                    padding: EdgeInsets.only(bottom: 100),
+                                    itemBuilder: (context, index) {
+                                      final recipe = displayRecipes[index];
+                                      // Use a stable key so Flutter does not reuse state across pages
+                                      final String identity =
+                                          recipe.id.isNotEmpty
+                                              ? recipe.id
+                                              : '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
+                                      return RecipeCard(
+                                        key: ValueKey('discover-card-$identity'),
+                                        recipe: recipe,
+                                        showSaveButton:
+                                            true, // All displayed recipes are unsaved
+                                        showRemoveButton:
+                                            false, // Saved recipes are filtered out
+                                        showRefreshButton: false,
+                                        showDeleteButton: false,
+                                        onSave: () => _handleRecipeAction(recipe),
+                                      );
+                                    },
+                                    itemCount: displayRecipes.length,
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount:
+                                              AppSizing.responsiveGridCount(
+                                                context,
+                                              ),
+                                          childAspectRatio:
+                                              AppSizing.responsiveAspectRatio(
+                                                context,
+                                              ),
+                                          crossAxisSpacing: AppSpacing.responsive(
+                                            context,
+                                          ),
+                                          mainAxisSpacing: AppSpacing.responsive(
+                                            context,
+                                          ),
                                         ),
-                                        mainAxisSpacing: AppSpacing.responsive(
-                                          context,
-                                        ),
-                                      ),
+                                  ),
                                 ),
 
                                 // Loading overlay only on the recipe grid
