@@ -74,6 +74,8 @@ class DynamicBannerConfig {
   final int priority;
   final DateTime? startAt;
   final DateTime? endAt;
+  final String? query; // Search query for discover screen (similar to notifications)
+  final String? displayQuery; // Display name for query (similar to notifications)
 
   DynamicBannerConfig({
     required this.id,
@@ -88,6 +90,8 @@ class DynamicBannerConfig {
     this.priority = 0,
     this.startAt,
     this.endAt,
+    this.query,
+    this.displayQuery,
   });
 
   factory DynamicBannerConfig.fromJson(Map<String, dynamic> json) {
@@ -113,6 +117,8 @@ class DynamicBannerConfig {
       priority: (json['priority'] ?? 0) as int,
       startAt: parseDate(json['startAt']),
       endAt: parseDate(json['endAt']),
+      query: json['query'],
+      displayQuery: json['displayQuery'],
     );
   }
 

@@ -63,8 +63,33 @@ class _DynamicBannerState extends State<DynamicBanner>
     if (appRouteRaw != null) {
       final uri = Uri.parse(appRouteRaw);
       final routePath = uri.path.startsWith('/') ? uri.path : '/${uri.path}';
-      final args = uri.queryParameters.isNotEmpty ? uri.queryParameters : null;
-      Navigator.pushNamed(context, routePath, arguments: args);
+      
+      // Build arguments map, prioritizing query and displayQuery from banner config
+      Map<String, dynamic> args = {};
+      
+      // If banner has query and displayQuery, use those (similar to notifications)
+      if (widget.banner.query != null && widget.banner.query!.isNotEmpty) {
+        args['query'] = widget.banner.query;
+        if (widget.banner.displayQuery != null && widget.banner.displayQuery!.isNotEmpty) {
+          args['displayQuery'] = widget.banner.displayQuery;
+        }
+      } else {
+        // Fallback to query parameters from URL (for backward compatibility)
+        if (uri.queryParameters.isNotEmpty) {
+          args = Map<String, dynamic>.from(uri.queryParameters);
+          // Convert 'tag' to 'query' for backward compatibility
+          if (args.containsKey('tag') && !args.containsKey('query')) {
+            args['query'] = args['tag'];
+            args.remove('tag');
+          }
+        }
+      }
+      
+      Navigator.pushNamed(
+        context,
+        routePath,
+        arguments: args.isNotEmpty ? args : null,
+      );
       return;
     }
 
