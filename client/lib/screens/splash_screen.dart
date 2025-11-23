@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -91,11 +92,42 @@ class _SplashScreenState extends State<SplashScreen>
     // Check if there's a pending shared URL from cold start
     final pendingUrl = getPendingSharedUrl();
 
+    // Check if there's a pending notification from cold start
+    final pendingNotification = getPendingNotificationPayload();
+
     if (pendingUrl != null) {
       // If we have a shared URL, navigate directly to import screen
-      // This ensures the loading dialog stays visible during import
       Navigator.pushReplacementNamed(context, '/import', arguments: pendingUrl);
-    } else if (authService.user != null) {
+    } else if (pendingNotification != null) {
+      // If we have a notification, navigate to the notification route
+      try {
+        final obj = jsonDecode(pendingNotification) as Map<String, dynamic>;
+        final route = obj['route'] as String?;
+        final args = obj['args'] as Map<String, dynamic>?;
+
+        if (route != null && route.isNotEmpty) {
+          // Convert args to Map<String, String> if needed
+          Map<String, String>? stringArgs;
+          if (args != null && args.isNotEmpty) {
+            stringArgs = args.map(
+              (key, value) => MapEntry(key, value?.toString() ?? ''),
+            );
+          }
+
+          Navigator.pushReplacementNamed(
+            context,
+            route,
+            arguments: stringArgs ?? args,
+          );
+          return;
+        }
+      } catch (e) {
+        // Fall through to default navigation
+      }
+    }
+
+    // Default navigation
+    if (authService.user != null) {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       Navigator.pushReplacementNamed(context, '/login');

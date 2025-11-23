@@ -58,7 +58,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final kWebRecaptchaSiteKey = '6Lemcn0dAAAAABLkf6aiiHvpGD6x-zF3nOSDU2M8';
 
 // Debug flag to disable ads for screenshots - set to false to show ads in testing
-const bool hideAds = kDebugMode ? true : false;
+const bool hideAds = false;
 
 // Alternative: Environment-based approach
 // const bool HIDE_ADS_FOR_SCREENSHOTS = bool.fromEnvironment('HIDE_ADS', defaultValue: false);
@@ -201,7 +201,11 @@ class MyApp extends StatefulWidget {
 // Global function to access pending shared URL from anywhere
 String? getPendingSharedUrl() => _MyAppState._getPendingSharedUrl();
 
-class _MyAppState extends State<MyApp> {
+// Global function to access pending notification payload from anywhere
+String? getPendingNotificationPayload() =>
+    _MyAppState._getPendingNotificationPayload();
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   StreamSubscription<SharedMedia>? _mediaStreamSub;
   StreamSubscription<Uri>? _linkStreamSub;
   final PermissionService _permissionService = PermissionService();
@@ -210,6 +214,10 @@ class _MyAppState extends State<MyApp> {
   static String? _pendingSharedUrl; // Static for cross-widget access
   static String?
   _processedInitialUrl; // Track the initial URL to prevent duplicates
+  static String?
+  _pendingNotificationPayload; // Track notification from cold start
+  NotificationResponse?
+  _lastNotificationResponse; // Track last notification response
   static const AndroidNotificationChannel _androidChannel =
       AndroidNotificationChannel(
         'recipease_general',
@@ -221,12 +229,54 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initReceiveSharing();
     _initDeepLinkHandling();
     _initPushNotifications();
 
     // Request necessary permissions when app starts
     _requestInitialPermissions();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // Check for notification responses when app becomes active/resumed
+    // This is especially important for iOS where the callback may not fire
+    if (state == AppLifecycleState.resumed ||
+        state == AppLifecycleState.inactive) {
+      // Add a small delay to ensure notification system has processed the tap
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _checkForPendingNotificationResponse();
+      });
+    }
+  }
+
+  // Check for pending notification response when app resumes
+  // This is a workaround for iOS where foreground notification taps may not trigger the callback
+  Future<void> _checkForPendingNotificationResponse() async {
+    try {
+      final details =
+          await _localNotifications.getNotificationAppLaunchDetails();
+
+      if (details != null &&
+          details.didNotificationLaunchApp &&
+          details.notificationResponse != null) {
+        final response = details.notificationResponse!;
+        final payload = response.payload;
+
+        // Only handle if we haven't already processed this
+        if (_lastNotificationResponse?.payload != payload &&
+            payload != null &&
+            payload.isNotEmpty) {
+          _handleNotificationNavigation(payload);
+          _lastNotificationResponse = response;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking for pending notification: $e');
+    }
   }
 
   // Request initial permissions needed for the app
@@ -270,14 +320,19 @@ class _MyAppState extends State<MyApp> {
       const androidInit = AndroidInitializationSettings(
         '@mipmap/launcher_icon',
       );
-      const iosInit = DarwinInitializationSettings();
+      const iosInit = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+
       await _localNotifications.initialize(
         const InitializationSettings(android: androidInit, iOS: iosInit),
         onDidReceiveNotificationResponse: (resp) {
+          // Store the response to prevent duplicate processing
+          _lastNotificationResponse = resp;
+
           final payload = resp.payload;
-          if (kDebugMode) {
-            debugPrint('📱 Notification tapped - payload: $payload');
-          }
           if (payload != null && payload.isNotEmpty) {
             _handleNotificationNavigation(payload);
           }
@@ -312,6 +367,16 @@ class _MyAppState extends State<MyApp> {
       FirebaseMessaging.onMessage.listen((message) {
         final notif = message.notification;
         if (notif != null) {
+          final payload = jsonEncode({
+            'route': (message.data['route'] as String?) ?? '/home',
+            'args': {
+              'query':
+                  (message.data['query'] as String?) ??
+                  (message.data['tag'] as String?) ??
+                  '',
+            },
+          });
+
           _localNotifications.show(
             notif.hashCode,
             notif.title,
@@ -325,26 +390,13 @@ class _MyAppState extends State<MyApp> {
               ),
               iOS: DarwinNotificationDetails(),
             ),
-            // Encode route + args so deep links can include parameters
-            payload: jsonEncode({
-              'route': (message.data['route'] as String?) ?? '/home',
-              'args': {
-                'query':
-                    (message.data['query'] as String?) ??
-                    (message.data['tag'] as String?) ??
-                    '',
-              },
-            }),
+            payload: payload,
           );
         }
       });
 
       // App opened from notification (background)
       FirebaseMessaging.onMessageOpenedApp.listen((message) {
-        debugPrint('📱 App opened from background notification');
-        debugPrint('📱 Message data: ${message.data}');
-
-        // Use the same navigation logic as local notifications
         final payload = jsonEncode({
           'route': message.data['route'] ?? '/home',
           'args': message.data['args'] ?? {},
@@ -355,19 +407,14 @@ class _MyAppState extends State<MyApp> {
       // App launched from terminated via notification
       final initialMsg = await messaging.getInitialMessage();
       if (initialMsg != null) {
-        debugPrint('📱 App launched from terminated state via notification');
-        debugPrint('📱 Initial message data: ${initialMsg.data}');
-
-        // Use the same navigation logic as local notifications
+        // Store payload for splash screen to handle
+        // This prevents race condition where splash screen navigates to /home
+        // after notification navigation has already pushed a route
         final payload = jsonEncode({
           'route': initialMsg.data['route'] ?? '/home',
           'args': initialMsg.data['args'] ?? {},
         });
-
-        // Delay navigation until navigator is ready
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _handleNotificationNavigation(payload);
-        });
+        _pendingNotificationPayload = payload;
       }
 
       // After init, (re)schedule local notifications based on user prefs
@@ -399,26 +446,12 @@ class _MyAppState extends State<MyApp> {
       final route = obj['route'] as String?;
       final args = obj['args'] as Map<String, dynamic>?;
 
-      if (kDebugMode) {
-        debugPrint('📱 Navigating to route: $route with args: $args');
-      }
-
       if (route == null || route.isEmpty) {
-        if (kDebugMode) {
-          debugPrint('⚠️ Invalid route in notification payload');
-        }
         return;
       }
 
-      // Wait for navigator to be ready
       _waitForNavigatorAndNavigateToRoute(route, args);
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('⚠️ Error parsing notification payload: $e');
-        debugPrint(
-          '📱 Attempting backward-compat navigation with payload as route',
-        );
-      }
       // Backward-compat: treat payload as a simple route string
       _waitForNavigatorAndNavigateToRoute(payload, null);
     }
@@ -444,9 +477,6 @@ class _MyAppState extends State<MyApp> {
         Future.delayed(const Duration(milliseconds: 500), () {
           if (navigatorKey.currentState != null) {
             _performNavigation(route, args);
-          } else {
-            // Log even in production for crash reporting
-            debugPrint('⚠️ Failed to navigate to $route - navigator not ready');
           }
         });
       }
@@ -456,8 +486,6 @@ class _MyAppState extends State<MyApp> {
   // Perform the actual navigation
   void _performNavigation(String route, Map<String, dynamic>? args) {
     try {
-      debugPrint('✅ Navigating to: $route with args: $args');
-
       // For routes that expect Map<String, String>, convert args
       Map<String, String>? stringArgs;
       if (args != null && args.isNotEmpty) {
@@ -466,16 +494,14 @@ class _MyAppState extends State<MyApp> {
         );
       }
 
-      navigatorKey.currentState?.pushNamed(
-        route,
-        arguments: stringArgs ?? args,
-      );
+      final navigatorState = navigatorKey.currentState;
+      if (navigatorState == null) {
+        return;
+      }
 
-      debugPrint('✅ Navigation completed to: $route');
+      navigatorState.pushNamed(route, arguments: stringArgs ?? args);
     } catch (e) {
-      // Log even in production for crash reporting
-      debugPrint('❌ Navigation error to $route: $e');
-      debugPrint('❌ Args were: $args');
+      debugPrint('Navigation error to $route: $e');
     }
   }
 
@@ -483,7 +509,6 @@ class _MyAppState extends State<MyApp> {
   void _handleInitialUrlScheme() {
     // This method will be enhanced with platform-specific URL handling
     // For now, we rely on the existing receive_sharing_intent mechanism
-    debugPrint('URL scheme handling initialized');
   }
 
   // Initialize share_handler to receive shared content
@@ -509,7 +534,6 @@ class _MyAppState extends State<MyApp> {
       if (maybeUrl != null) {
         // Skip if this is the same URL we already handled in cold start
         if (_processedInitialUrl == maybeUrl) {
-          debugPrint('Skipping duplicate URL from stream: $maybeUrl');
           return;
         }
         WidgetsBinding.instance.addPostFrameCallback(
@@ -591,10 +615,6 @@ class _MyAppState extends State<MyApp> {
         Future.delayed(const Duration(milliseconds: 500), () {
           if (navigatorKey.currentState != null) {
             navigatorKey.currentState!.pushNamed('/import', arguments: url);
-          } else {
-            debugPrint(
-              'Failed to navigate to import screen - navigator not ready',
-            );
           }
         });
       }
@@ -608,8 +628,16 @@ class _MyAppState extends State<MyApp> {
     return url;
   }
 
+  // Internal static method to get and clear pending notification payload
+  static String? _getPendingNotificationPayload() {
+    final payload = _pendingNotificationPayload;
+    _pendingNotificationPayload = null; // Clear after reading
+    return payload;
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     try {
       _mediaStreamSub?.cancel();
       _linkStreamSub?.cancel();

@@ -49,7 +49,12 @@ class NotificationScheduler {
         importance: Importance.high,
         priority: Priority.high,
       ),
-      iOS: DarwinNotificationDetails(),
+      // iOS: Configure to ensure notification taps are properly handled
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
     );
   }
 
@@ -229,6 +234,7 @@ class NotificationScheduler {
       scheduled = scheduled.add(const Duration(days: 1));
     }
     final payload = jsonEncode({'route': route, 'args': args ?? {}});
+
     await _plugin?.zonedSchedule(
       id,
       title,
@@ -264,6 +270,7 @@ class NotificationScheduler {
       scheduled = scheduled.add(const Duration(days: 1));
     }
     final payload = jsonEncode({'route': route, 'args': args ?? {}});
+
     await _plugin?.zonedSchedule(
       id,
       title,
@@ -396,6 +403,7 @@ class NotificationScheduler {
     }
 
     final payload = jsonEncode({'route': route, 'args': args});
+
     await _plugin?.show(id, title, body, _details(), payload: payload);
 
     // Return route info for direct navigation

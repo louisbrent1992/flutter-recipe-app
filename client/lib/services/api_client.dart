@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logger/logger.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import '../models/api_response.dart';
 
 /// A centralized API client for making HTTP requests with standardized error handling
@@ -18,10 +19,60 @@ class ApiClient {
   ApiClient._internal();
 
   final String port = '8080';
+  final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
+  bool? _cachedIsPhysicalDevice;
+
+  /// Check if running on a physical device (not emulator/simulator)
+  /// This is cached after first check to avoid repeated async calls
+  Future<bool> _checkIsPhysicalDevice() async {
+    if (_cachedIsPhysicalDevice != null) {
+      return _cachedIsPhysicalDevice!;
+    }
+
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final androidInfo = await _deviceInfo.androidInfo;
+        _cachedIsPhysicalDevice = androidInfo.isPhysicalDevice;
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final iosInfo = await _deviceInfo.iosInfo;
+        // Check if it's a simulator using multiple methods
+        // 1. Check environment variable (most reliable for iOS simulators)
+        final hasSimulatorUdid = Platform.environment.containsKey(
+          'SIMULATOR_UDID',
+        );
+        // 2. Check device name/model for simulator indicators
+        final nameContainsSimulator = iosInfo.name.toLowerCase().contains(
+          'simulator',
+        );
+        final modelContainsSimulator = iosInfo.model.toLowerCase().contains(
+          'simulator',
+        );
+        // 3. Check utsname.machine for simulator architectures (i386, x86_64 are simulators)
+        final machine = iosInfo.utsname.machine.toLowerCase();
+        final isSimulatorArch = machine == 'i386' || machine == 'x86_64';
+
+        final isSimulator =
+            hasSimulatorUdid ||
+            nameContainsSimulator ||
+            modelContainsSimulator ||
+            isSimulatorArch;
+
+        _cachedIsPhysicalDevice = !isSimulator;
+      } else {
+        // For web/desktop, assume it's a development environment
+        _cachedIsPhysicalDevice = false;
+      }
+    } catch (e) {
+      // Default to physical device if check fails (safer for production)
+      _cachedIsPhysicalDevice = true;
+    }
+
+    return _cachedIsPhysicalDevice ?? true;
+  }
 
   /// Base URL for API requests
-  /// Uses development server in debug mode, production server in release mode
-  String get baseUrl {
+  /// Uses development server for emulator/simulator, production server for physical devices
+  Future<String> get baseUrl async {
     final String productionUrl =
         'https://recipease-app-server-826154873845.us-west2.run.app/api';
     final String developmentUrl =
@@ -29,7 +80,9 @@ class ApiClient {
             ? 'http://10.0.2.2:$port/api'
             : 'http://localhost:$port/api';
 
-    return kDebugMode ? developmentUrl : productionUrl;
+    final bool isPhysical = await _checkIsPhysicalDevice();
+
+    return isPhysical ? productionUrl : developmentUrl;
   }
 
   /// Get headers with Firebase authentication token
@@ -147,7 +200,8 @@ class ApiClient {
     T Function(Map<String, dynamic>)? fromJson,
   }) async {
     try {
-      debugPrint('🔴 [ApiClient] publicPost to: $baseUrl/$endpoint');
+      final url = await baseUrl;
+      debugPrint('🔴 [ApiClient] publicPost to: $url/$endpoint');
       debugPrint('🔴 [ApiClient] Body: $body');
       final response = await _post(endpoint, _standardHeaders, body);
       debugPrint('🔴 [ApiClient] Response status: ${response.statusCode}');
@@ -164,8 +218,9 @@ class ApiClient {
     Map<String, String> headers,
     Map<String, String>? queryParams,
   ) async {
+    final url = await baseUrl;
     final uri = Uri.parse(
-      '$baseUrl/$endpoint',
+      '$url/$endpoint',
     ).replace(queryParameters: queryParams);
 
     // debug logging removed
@@ -196,7 +251,8 @@ class ApiClient {
     Map<String, String> headers,
     dynamic body,
   ) async {
-    final uri = Uri.parse('$baseUrl/$endpoint');
+    final url = await baseUrl;
+    final uri = Uri.parse('$url/$endpoint');
 
     // Add timeout to requests with longer timeout for AI recipe operations
     final isAIRecipeOperation =
@@ -230,7 +286,8 @@ class ApiClient {
     Map<String, String> headers,
     dynamic body,
   ) async {
-    final uri = Uri.parse('$baseUrl/$endpoint');
+    final url = await baseUrl;
+    final uri = Uri.parse('$url/$endpoint');
 
     // debug logging removed
 
@@ -266,7 +323,8 @@ class ApiClient {
     Map<String, String> headers,
     dynamic body,
   ) async {
-    final uri = Uri.parse('$baseUrl/$endpoint');
+    final url = await baseUrl;
+    final uri = Uri.parse('$url/$endpoint');
 
     // debug logging removed
 
@@ -301,7 +359,8 @@ class ApiClient {
     String endpoint,
     Map<String, String> headers,
   ) async {
-    final uri = Uri.parse('$baseUrl/$endpoint');
+    final url = await baseUrl;
+    final uri = Uri.parse('$url/$endpoint');
 
     // debug logging removed
 
@@ -423,8 +482,9 @@ class ApiClient {
     Map<String, String>? headers,
     T Function(dynamic)? fromJson,
   }) async {
+    final url = await baseUrl;
     return _sendRequest<T>(
-      http.get(Uri.parse('$baseUrl$endpoint'), headers: _getHeaders(headers)),
+      http.get(Uri.parse('$url$endpoint'), headers: _getHeaders(headers)),
       fromJson: fromJson,
     );
   }
@@ -435,9 +495,10 @@ class ApiClient {
     dynamic body,
     T Function(dynamic)? fromJson,
   }) async {
+    final url = await baseUrl;
     return _sendRequest<T>(
       http.post(
-        Uri.parse('$baseUrl$endpoint'),
+        Uri.parse('$url$endpoint'),
         headers: _getHeaders(headers),
         body: body != null ? jsonEncode(body) : null,
       ),
@@ -451,9 +512,10 @@ class ApiClient {
     dynamic body,
     T Function(dynamic)? fromJson,
   }) async {
+    final url = await baseUrl;
     return _sendRequest<T>(
       http.put(
-        Uri.parse('$baseUrl$endpoint'),
+        Uri.parse('$url$endpoint'),
         headers: _getHeaders(headers),
         body: body != null ? jsonEncode(body) : null,
       ),
@@ -466,11 +528,9 @@ class ApiClient {
     Map<String, String>? headers,
     T Function(dynamic)? fromJson,
   }) async {
+    final url = await baseUrl;
     return _sendRequest<T>(
-      http.delete(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: _getHeaders(headers),
-      ),
+      http.delete(Uri.parse('$url$endpoint'), headers: _getHeaders(headers)),
       fromJson: fromJson,
     );
   }
