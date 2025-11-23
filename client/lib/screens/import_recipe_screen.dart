@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 
@@ -61,6 +62,48 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
     _urlController.dispose();
     _animationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pasteUrl(BuildContext context) async {
+    try {
+      final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+      if (clipboardData != null && clipboardData.text != null && clipboardData.text!.isNotEmpty) {
+        _urlController.text = clipboardData.text!;
+        // Show a brief feedback
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('URL pasted'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Clipboard is empty'),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to paste from clipboard'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   void _showInsufficientCreditsDialog(BuildContext context) {
@@ -219,15 +262,70 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
       appBar: CustomAppBar(
         title: 'Import',
         floatingButtons: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
-            tooltip: 'New Recipe',
-            onPressed:
-                () => Navigator.pushNamed(
-                  context,
-                  '/recipeEdit',
-                  arguments: Recipe(title: 'New Recipe', toEdit: false),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            tooltip: 'More options',
+            onSelected: (value) {
+              switch (value) {
+                case 'new_recipe':
+                  Navigator.pushNamed(
+                    context,
+                    '/recipeEdit',
+                    arguments: Recipe(title: 'New Recipe', toEdit: false),
+                  );
+                  break;
+                case 'clear_url':
+                  _urlController.clear();
+                  break;
+                case 'paste_url':
+                  _pasteUrl(context);
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem<String>(
+                value: 'new_recipe',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.add_rounded,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text('New Recipe'),
+                  ],
                 ),
+              ),
+              PopupMenuItem<String>(
+                value: 'paste_url',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.paste_rounded,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text('Paste URL'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'clear_url',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.clear_rounded,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text('Clear URL'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -433,7 +531,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                             ),
                                             WidgetSpan(
                                               child: Icon(
-                                                Icons.add,
+                                                Icons.more_vert_rounded,
                                                 size:
                                                     AppSizing.responsiveIconSize(
                                                       context,
@@ -446,7 +544,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                             ),
                                             const TextSpan(
                                               text:
-                                                  ' button at the top of your screen.',
+                                                  ' menu at the top of your screen.',
                                             ),
                                           ],
                                         ),
