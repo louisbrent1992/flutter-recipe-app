@@ -14,6 +14,11 @@
 -keep class com.google.firebase.** { *; }
 -keep class com.google.android.gms.** { *; }
 
+# Google Sign In
+-keep class com.google.android.gms.auth.** { *; }
+-keep class com.google.android.gms.common.** { *; }
+-dontwarn com.google.android.gms.**
+
 # Google Play Core (for app bundles and dynamic delivery)
 -keep class com.google.android.play.core.** { *; }
 -keep interface com.google.android.play.core.** { *; }

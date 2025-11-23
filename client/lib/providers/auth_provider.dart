@@ -9,17 +9,16 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../services/api_client.dart';
 import '../services/collection_service.dart';
 import '../services/credits_service.dart';
-import '../firebase_options.dart';
 
 class AuthService with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    // Use correct iOS client ID from GoogleService-Info.plist
-    clientId:
-        defaultTargetPlatform == TargetPlatform.iOS
+    // For iOS, use explicit client ID
+    // For Android, don't specify clientId - it will be auto-detected from google-services.json
+    clientId: defaultTargetPlatform == TargetPlatform.iOS
             ? '826154873845-9n1vqk797jnrvarkd3stsehjhl6ff1le.apps.googleusercontent.com'
-            : DefaultFirebaseOptions.android.androidClientId,
+        : null,
     scopes: ['email', 'profile'],
   );
   final ApiClient _apiClient = ApiClient();
@@ -238,31 +237,54 @@ class AuthService with ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint('🔐 [GOOGLE SIGN IN] Starting Google Sign In...');
+      debugPrint('🔐 [GOOGLE SIGN IN] Platform: ${defaultTargetPlatform}');
+      
       // Ensure we're signed out first to avoid cached state issues
+      debugPrint('🔐 [GOOGLE SIGN IN] Signing out from any previous session...');
       await _googleSignIn.signOut();
 
+      debugPrint('🔐 [GOOGLE SIGN IN] Requesting Google Sign In...');
+      debugPrint('🔐 [GOOGLE SIGN IN] Client ID: ${_googleSignIn.clientId ?? "null (auto-detect from google-services.json)"}');
+
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      
       if (googleUser == null) {
+        debugPrint('⚠️ [GOOGLE SIGN IN] User cancelled sign in');
         _error = 'Google sign in was cancelled';
         return null;
       }
+
+      debugPrint('✅ [GOOGLE SIGN IN] Google account selected: ${googleUser.email}');
+      debugPrint('🔐 [GOOGLE SIGN IN] Getting authentication tokens...');
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
       if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+        debugPrint('❌ [GOOGLE SIGN IN] Missing authentication tokens');
+        debugPrint('❌ [GOOGLE SIGN IN] Access token: ${googleAuth.accessToken != null ? "present" : "null"}');
+        debugPrint('❌ [GOOGLE SIGN IN] ID token: ${googleAuth.idToken != null ? "present" : "null"}');
         throw 'Failed to get authentication tokens from Google';
       }
+
+      debugPrint('✅ [GOOGLE SIGN IN] Authentication tokens received');
+      debugPrint('🔐 [GOOGLE SIGN IN] Creating Firebase credential...');
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
+      debugPrint('🔐 [GOOGLE SIGN IN] Signing in with Firebase...');
       final userCredential = await _auth.signInWithCredential(credential);
+
+      debugPrint('✅ [GOOGLE SIGN IN] Firebase sign in successful');
+      debugPrint('🔐 [GOOGLE SIGN IN] User ID: ${userCredential.user?.uid}');
 
       // Create or update user profile in Firestore
       if (userCredential.user != null) {
+        debugPrint('🔐 [GOOGLE SIGN IN] Creating/updating user profile...');
         await _createOrUpdateUserProfile(
           userCredential.user!,
           displayName: googleUser.displayName,
@@ -270,16 +292,35 @@ class AuthService with ChangeNotifier {
 
         // Force refresh ID token to ensure currentUser is properly set
         // This prevents race conditions when making API calls immediately after login
+        debugPrint('🔐 [GOOGLE SIGN IN] Refreshing ID token...');
         await userCredential.user!.getIdToken(true);
 
         // Add a small delay to ensure Firebase Auth state is fully propagated
         await Future.delayed(const Duration(milliseconds: 500));
+        debugPrint('✅ [GOOGLE SIGN IN] Sign in process completed');
       }
 
       _user = userCredential.user;
       return _user;
-    } catch (e) {
-      _error = e.toString();
+    } catch (e, stackTrace) {
+      debugPrint('❌ [GOOGLE SIGN IN] Error during sign in: $e');
+      debugPrint('❌ [GOOGLE SIGN IN] Stack trace: $stackTrace');
+      
+      // Provide more helpful error messages for common issues
+      final errorString = e.toString();
+      if (errorString.contains('ApiException: 10') || 
+          errorString.contains('DEVELOPER_ERROR') ||
+          errorString.contains('sign_in_failed')) {
+        debugPrint('❌ [GOOGLE SIGN IN] DEVELOPER_ERROR detected - this usually means:');
+        debugPrint('   1. SHA-1/SHA-256 fingerprints not registered in Firebase');
+        debugPrint('   2. If using Google Play, need Google Play App Signing key SHA fingerprints');
+        debugPrint('   3. OAuth client ID mismatch');
+        debugPrint('   4. Package name mismatch');
+        _error = 'Google Sign In configuration error. Please contact support.';
+      } else {
+        _error = errorString;
+      }
+      
       return null;
     } finally {
       _isLoading = false;
