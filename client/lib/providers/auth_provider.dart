@@ -478,7 +478,25 @@ class AuthService with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _auth.sendPasswordResetEmail(email: email);
+      if (kIsWeb) {
+        // Web platform requires ActionCodeSettings for password reset
+        // Construct the redirect URL to send users back to login after reset
+        final uri = Uri.base;
+        final continueUrl = uri.resolveUri(Uri(path: '/#/login')).toString();
+        
+        final actionCodeSettings = ActionCodeSettings(
+          url: continueUrl,
+          handleCodeInApp: false,
+        );
+        
+        await _auth.sendPasswordResetEmail(
+          email: email,
+          actionCodeSettings: actionCodeSettings,
+        );
+      } else {
+        // Mobile platforms don't require ActionCodeSettings
+        await _auth.sendPasswordResetEmail(email: email);
+      }
       return true;
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
@@ -490,6 +508,12 @@ class AuthService with ChangeNotifier {
           break;
         case 'network-request-failed':
           _error = 'Network error. Please check your internet connection.';
+          break;
+        case 'invalid-continue-uri':
+          _error = 'Invalid redirect URL configuration. Please contact support.';
+          break;
+        case 'unauthorized-continue-uri':
+          _error = 'Redirect URL not authorized. Please contact support.';
           break;
         default:
           _error = 'Failed to send password reset email. Please try again.';
