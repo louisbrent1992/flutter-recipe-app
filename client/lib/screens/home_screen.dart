@@ -305,9 +305,16 @@ class _HomeScreenState extends State<HomeScreen>
                                 return Consumer<RecipeProvider>(
                                   builder: (context, recipeProvider, _) {
                                     final saved = recipeProvider.userRecipes;
-                                    if ((recipeProvider.isLoading ||
-                                            _isBooting) &&
+                                    // Show loading if loading user recipes or still booting
+                                    if (recipeProvider.isLoading &&
                                         saved.isEmpty) {
+                                      return _buildSectionLoading(
+                                        context,
+                                        title: 'Your Recipes',
+                                        height: 180,
+                                      );
+                                    }
+                                    if (_isBooting && saved.isEmpty) {
                                       return _buildSectionLoading(
                                         context,
                                         title: 'Your Recipes',
@@ -359,9 +366,16 @@ class _HomeScreenState extends State<HomeScreen>
                                             )
                                             .take(10)
                                             .toList();
-                                    if ((recipeProvider.isLoading ||
-                                            _isBooting) &&
+                                    // Show loading if loading discover recipes or still booting
+                                    if (recipeProvider.isLoading &&
                                         random.isEmpty) {
+                                      return _buildSectionLoading(
+                                        context,
+                                        title: 'Discover & Try',
+                                        height: 180,
+                                      );
+                                    }
+                                    if (_isBooting && random.isEmpty) {
                                       return _buildSectionLoading(
                                         context,
                                         title: 'Discover & Try',

@@ -461,19 +461,17 @@ class ApiClient {
           statusCode: 0, // Treat timeout as potential offline
         );
       }
-      return ApiResponse<T>.error(
-        'Request timeout: Server took too long to respond',
-      );
+      return ApiResponse<T>.error('Request took too long. Please try again.');
     } else if (error.toString().toLowerCase().contains('network') ||
         error.toString().toLowerCase().contains('connection') ||
         error.toString().toLowerCase().contains('offline')) {
       // Catch other network-related errors
       return ApiResponse<T>.error(
-        'Network error: ${error.toString()}',
+        'Connection issue. Please check your internet and try again.',
         statusCode: 0,
       );
     } else {
-      return ApiResponse<T>.error('Unexpected error: ${error.toString()}');
+      return ApiResponse<T>.error('Something went wrong. Please try again.');
     }
   }
 

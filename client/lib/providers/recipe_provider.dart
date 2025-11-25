@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:math';
 import 'package:provider/provider.dart';
 import '../models/recipe.dart';
 import '../models/api_response.dart';
@@ -45,6 +46,9 @@ class RecipeProvider extends ChangeNotifier {
 
   // Session-level discover cache (fetch once, filter client-side)
   List<Recipe> _sessionDiscoverCache = [];
+  // Preserve original deterministic order for daily random recipe selection
+  // This ensures daily recipe is consistent even if user manually shuffles
+  List<Recipe> _sessionDiscoverCacheOriginalOrder = [];
   DateTime? _sessionCacheTime;
   static const int _sessionCacheSize = 500;
   static const Duration _sessionCacheDuration = Duration(hours: 1);
@@ -327,13 +331,13 @@ class RecipeProvider extends ChangeNotifier {
         final recipesList = data['recipes'];
         if (recipesList == null) {
           _userRecipes = [];
-          _setError('No recipes data received from server');
+          _setError('Unable to load recipes. Please try again.');
           return;
         }
 
         if (recipesList is! List) {
           _userRecipes = [];
-          _setError('Invalid recipes data format received from server');
+          _setError('Unable to load recipes. Please try again.');
           return;
         }
 
@@ -540,7 +544,7 @@ class RecipeProvider extends ChangeNotifier {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Recipe saved! Syncing with server...'),
+          content: Text('Recipe saved! Syncing...'),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 2),
         ),
@@ -624,7 +628,7 @@ class RecipeProvider extends ChangeNotifier {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Recipe synced with server!'),
+                content: Text('Recipe synced!'),
                 backgroundColor: Colors.green,
                 duration: Duration(seconds: 2),
               ),
@@ -846,6 +850,8 @@ class RecipeProvider extends ChangeNotifier {
       if (localCache.isNotEmpty) {
         hasLocalCache = true;
         _sessionDiscoverCache = localCache;
+        // Preserve original order from local cache (should already be deterministically shuffled)
+        _sessionDiscoverCacheOriginalOrder = List<Recipe>.from(localCache);
         _sessionCacheTime = DateTime.now();
         notifyListeners();
         // Continue to network fetch in background
@@ -876,8 +882,19 @@ class RecipeProvider extends ChangeNotifier {
                   .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
                   .toList();
 
-          // Shuffle immediately for true randomization (server returns all 500)
-          _sessionDiscoverCache.shuffle();
+          // Use deterministic shuffle based on date for consistent daily random recipe selection
+          // This ensures the same shuffle order throughout the day, but different each day
+          final now = DateTime.now();
+          final start = DateTime(now.year, 1, 1);
+          final dayOfYear = now.difference(start).inDays + 1;
+          final seed = now.year * 365 + dayOfYear;
+          _sessionDiscoverCache.shuffle(Random(seed));
+
+          // Preserve original deterministic order for daily recipe selection
+          // This ensures daily recipe is consistent even if user manually shuffles
+          _sessionDiscoverCacheOriginalOrder = List<Recipe>.from(
+            _sessionDiscoverCache,
+          );
 
           _sessionCacheTime = DateTime.now();
 
@@ -1065,10 +1082,13 @@ class RecipeProvider extends ChangeNotifier {
     return filtered.sublist(startIndex, endIndex);
   }
 
-  // Randomize the session cache
+  // Randomize the session cache for display purposes
+  // This does NOT affect the daily random recipe selection, which uses the original order
   void randomizeSessionCache() {
     if (_sessionDiscoverCache.isNotEmpty) {
       _sessionDiscoverCache.shuffle();
+      // Note: We don't update _sessionDiscoverCacheOriginalOrder
+      // This ensures daily recipe selection remains consistent
       notifyListeners();
     }
   }
@@ -1076,7 +1096,33 @@ class RecipeProvider extends ChangeNotifier {
   // Clear session cache (force refresh)
   void clearSessionCache() {
     _sessionDiscoverCache.clear();
+    _sessionDiscoverCacheOriginalOrder.clear();
     _sessionCacheTime = null;
+  }
+
+  // Get a daily random recipe from discover cache if available
+  // Uses date-based seeding to ensure same recipe throughout the day
+  // Uses original deterministic order, not the potentially shuffled cache
+  Recipe? getDailyRandomRecipeFromCache() {
+    // Use original order if available, fallback to current cache if not
+    final cacheToUse =
+        _sessionDiscoverCacheOriginalOrder.isNotEmpty
+            ? _sessionDiscoverCacheOriginalOrder
+            : _sessionDiscoverCache;
+
+    if (cacheToUse.isEmpty) {
+      return null;
+    }
+
+    // Calculate day of year (1-365/366) for deterministic daily selection
+    final now = DateTime.now();
+    final start = DateTime(now.year, 1, 1);
+    final dayOfYear = now.difference(start).inDays + 1;
+
+    // Create deterministic index based on year and day of year
+    // This ensures same recipe for same day, different each day
+    final dailyIndex = (now.year * 365 + dayOfYear) % cacheToUse.length;
+    return cacheToUse[dailyIndex];
   }
 
   // Set generated recipes from cache (internal helper)
@@ -1149,13 +1195,13 @@ class RecipeProvider extends ChangeNotifier {
         final recipesList = data['recipes'];
         if (recipesList == null) {
           _generatedRecipes = [];
-          _setError('No recipes data received from server');
+          _setError('Unable to load recipes. Please try again.');
           return;
         }
 
         if (recipesList is! List) {
           _generatedRecipes = [];
-          _setError('Invalid recipes data format received from server');
+          _setError('Unable to load recipes. Please try again.');
           return;
         }
 

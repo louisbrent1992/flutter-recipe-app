@@ -139,13 +139,24 @@ router.get("/search", auth, async (req, res) => {
 			let snapshot;
 			try {
 				if (isRandom) {
-                // For random: fetch up to the requested limit (up to 500) and return ALL of them
-                // Client will handle randomization and pagination locally for better caching
-                const randomSampleSize = Math.min(limit, totalRecipes);
-                console.log(`[RANDOM MODE] Requested limit: ${limit}, totalRecipes: ${totalRecipes}, fetching: ${randomSampleSize}`);
-					snapshot = await recipesRef
-                    .limit(randomSampleSize)
-						.get();
+                // For random mode with limit=1 (daily inspiration): fetch a larger pool and use date-based seeding
+                // to ensure different recipe each day, but same recipe throughout the day
+                if (limit === 1) {
+                    // Fetch a pool of recipes for daily randomization
+                    const dailyPoolSize = Math.min(500, totalRecipes);
+                    console.log(`[DAILY RANDOM MODE] Fetching pool of ${dailyPoolSize} recipes for date-based selection`);
+                    snapshot = await recipesRef
+                        .limit(dailyPoolSize)
+                        .get();
+                } else {
+                    // For random mode with limit > 1: fetch up to the requested limit (up to 500) and return ALL of them
+                    // Client will handle randomization and pagination locally for better caching
+                    const randomSampleSize = Math.min(limit, totalRecipes);
+                    console.log(`[RANDOM MODE] Requested limit: ${limit}, totalRecipes: ${totalRecipes}, fetching: ${randomSampleSize}`);
+                    snapshot = await recipesRef
+                        .limit(randomSampleSize)
+                        .get();
+                }
 				} else {
 					// Default: order by creation date (latest first) with server-side pagination
 					snapshot = await recipesRef
@@ -176,9 +187,22 @@ router.get("/search", auth, async (req, res) => {
 				});
 			});
 
-        // For random mode: return ALL fetched recipes (client handles shuffle & pagination)
+        // For random mode with limit=1: use date-based seeding to select one recipe per day
+        // For random mode with limit > 1: return ALL fetched recipes (client handles shuffle & pagination)
         // For non-random mode: recipes are already paginated by Firestore query
-        const returnedRecipes = recipes;
+        let returnedRecipes = recipes;
+        if (isRandom && limit === 1 && recipes.length > 0) {
+            // Calculate day of year (1-365/366) for deterministic daily selection
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 0);
+            const dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+            
+            // Create deterministic index based on year and day of year
+            // This ensures same recipe for same day, different each day
+            const dailyIndex = (now.getFullYear() * 365 + dayOfYear) % recipes.length;
+            returnedRecipes = [recipes[dailyIndex]];
+            console.log(`[DAILY RANDOM MODE] Selected recipe ${dailyIndex + 1} of ${recipes.length} for day ${dayOfYear} of year ${now.getFullYear()}`);
+        }
 
         // Calculate accurate pagination info
         const totalPages = Math.ceil(totalRecipes / limit);

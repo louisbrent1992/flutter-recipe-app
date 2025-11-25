@@ -181,8 +181,8 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
               (context) => ErrorDisplay(
                 message:
                     ErrorUtils.isNetworkError(e.toString())
-                        ? 'Unable to connect to server. Please check your internet connection.'
-                        : 'Error generating recipes: ${e.toString()}',
+                        ? 'Connection issue. Please check your internet and try again.'
+                        : 'Unable to generate recipes. Please try again.',
                 isNetworkError: ErrorUtils.isNetworkError(e.toString()),
                 isAuthError: ErrorUtils.isAuthError(e.toString()),
                 isFormatError: ErrorUtils.isFormatError(e.toString()),

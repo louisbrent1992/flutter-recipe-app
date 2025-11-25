@@ -29,7 +29,38 @@ class _RandomRecipeScreenState extends State<RandomRecipeScreen> {
         listen: false,
       );
 
-      // Fetch a random recipe (limit 1, random=true)
+      // First, try to get a daily random recipe from discover cache if available
+      // This avoids making a backend call if the discover cache is already populated
+      final cachedRecipe = recipeProvider.getDailyRandomRecipeFromCache();
+      if (cachedRecipe != null) {
+        if (!mounted) return;
+        // Navigate directly to recipe detail screen using cached recipe
+        Navigator.pushReplacementNamed(
+          context,
+          '/recipeDetail',
+          arguments: cachedRecipe,
+        );
+        return;
+      }
+
+      // If discover cache is not available, ensure it's populated first
+      // This will use local cache if available, or fetch from backend
+      await recipeProvider.fetchSessionDiscoverCache(forceRefresh: false);
+
+      // Try again from discover cache after fetching
+      final recipeFromCache = recipeProvider.getDailyRandomRecipeFromCache();
+      if (recipeFromCache != null) {
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(
+          context,
+          '/recipeDetail',
+          arguments: recipeFromCache,
+        );
+        return;
+      }
+
+      // Fallback: Fetch a random recipe directly from backend (limit 1, random=true)
+      // This happens if discover cache fetch failed or returned empty
       await recipeProvider.searchExternalRecipes(
         query: '',
         tag: '',
@@ -85,9 +116,7 @@ class _RandomRecipeScreenState extends State<RandomRecipeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(
-                colorScheme.primary,
-              ),
+              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
             ),
             const SizedBox(height: 24),
             Text(
@@ -108,4 +137,3 @@ class _RandomRecipeScreenState extends State<RandomRecipeScreen> {
     );
   }
 }
-
