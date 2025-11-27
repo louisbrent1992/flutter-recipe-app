@@ -17,7 +17,9 @@ const GOOGLE_SEARCH_URL = 'https://www.googleapis.com/customsearch/v1';
 
 // Cache configuration
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
+const VALIDATION_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours for validation results
 const imageCache = {};
+const validationCache = {}; // Cache validation results to avoid re-validating same URLs
 
 /**
  * Check if a URL is a placeholder or invalid
@@ -41,12 +43,26 @@ function isPlaceholderUrl(url) {
 /**
  * Validate if an image URL is accessible
  * Uses the same headers as the client to ensure compatibility
+ * Caches validation results to avoid re-validating same URLs
  */
 async function validateImageUrl(url) {
   if (!url || isPlaceholderUrl(url)) {
     return false;
   }
 
+  // Check validation cache first
+  if (validationCache[url]) {
+    const cached = validationCache[url];
+    if (Date.now() - cached.timestamp < VALIDATION_CACHE_DURATION) {
+      console.log(`✅ Image validation found in cache for ${url}`);
+      return cached.isValid;
+    } else {
+      // Cache expired, remove it
+      delete validationCache[url];
+    }
+  }
+
+  let isValid = false;
   try {
     // Use the same User-Agent headers as the client for better compatibility
     const response = await axios.head(url, {
@@ -63,7 +79,7 @@ async function validateImageUrl(url) {
     const contentType = response.headers['content-type'] || '';
     const isImage = contentType.startsWith('image/');
     
-    return response.status >= 200 && response.status < 400 && isImage;
+    isValid = response.status >= 200 && response.status < 400 && isImage;
   } catch (error) {
     // If HEAD fails, try a GET request with range to verify it's actually an image
     // This helps catch cases where HEAD is blocked but GET works
@@ -83,12 +99,20 @@ async function validateImageUrl(url) {
       const contentType = getResponse.headers['content-type'] || '';
       const isImage = contentType.startsWith('image/');
       
-      return getResponse.status >= 200 && getResponse.status < 400 && isImage;
+      isValid = getResponse.status >= 200 && getResponse.status < 400 && isImage;
     } catch (getError) {
       console.log(`Image validation failed for ${url}:`, error.message);
-      return false;
+      isValid = false;
     }
   }
+
+  // Cache the validation result
+  validationCache[url] = {
+    isValid,
+    timestamp: Date.now(),
+  };
+
+  return isValid;
 }
 
 /**
@@ -216,7 +240,8 @@ function getDefaultImage(cuisineType) {
  */
 function clearCache() {
   Object.keys(imageCache).forEach(key => delete imageCache[key]);
-  console.log('Image cache cleared');
+  Object.keys(validationCache).forEach(key => delete validationCache[key]);
+  console.log('Image cache and validation cache cleared');
 }
 
 /**

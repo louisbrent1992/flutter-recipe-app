@@ -71,7 +71,7 @@ class ApiClient {
   }
 
   /// Base URL for API requests
-  /// Uses development server for emulator/simulator, production server for physical devices
+  /// Uses development server in debug mode or for emulator/simulator, production server for physical devices in release mode
   Future<String> get baseUrl async {
     final String productionUrl =
         'https://recipease-app-server-826154873845.us-west2.run.app/api';
@@ -80,8 +80,13 @@ class ApiClient {
             ? 'http://10.0.2.2:$port/api'
             : 'http://localhost:$port/api';
 
-    final bool isPhysical = await _checkIsPhysicalDevice();
+    // Always use development URL in debug mode (for testing on emulators)
+    if (kDebugMode) {
+      return developmentUrl;
+    }
 
+    // In release mode, use production URL for physical devices, development for emulators
+    final bool isPhysical = await _checkIsPhysicalDevice();
     return isPhysical ? productionUrl : developmentUrl;
   }
 

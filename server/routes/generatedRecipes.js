@@ -301,7 +301,7 @@ IMPORTANT: ALL recipe fields must be filled with realistic values. NEVER use "un
 						- Cuisine type: ${cuisineType || "Any"}`,
 				},
 			],
-			reasoning_effort: "low", // Reduces reasoning time and tokens for faster responses
+			reasoning_effort: "minimal", // Minimal reasoning for fastest responses
 			response_format: {
 				type: "json_schema",
 				json_schema: {
@@ -424,37 +424,62 @@ IMPORTANT: ALL recipe fields must be filled with realistic values. NEVER use "un
 		
 		console.log(`✅ Generated ${recipesData.length} recipes`);
 
-		const generatedRecipes = await Promise.all(
-			recipesData.map(async (recipeData) => {
-				const recipeTitle = recipeData.title || "Generated Recipe";
-				const imageQuery = recipeTitle !== "Generated Recipe" ? recipeTitle : `${cuisineType || 'delicious'} food dish`;
-				
-				// Get image URL, filtering out placeholders
-				let imageUrl = null;
-				if (typeof recipeData.image === "object" && recipeData.image.url) {
-					// Check if AI provided image is a placeholder
-					if (!isPlaceholderUrl(recipeData.image.url)) {
-						imageUrl = recipeData.image.url;
-					}
+		// Parallelize image searches for all recipes to improve performance
+		// First, prepare all image queries
+		const imageQueries = recipesData.map((recipeData) => {
+			const recipeTitle = recipeData.title || "Generated Recipe";
+			return recipeTitle !== "Generated Recipe" ? recipeTitle : `${cuisineType || 'delicious'} food dish`;
+		});
+
+		// Search all images in parallel
+		const imageSearchPromises = recipesData.map(async (recipeData, index) => {
+			const recipeTitle = recipeData.title || "Generated Recipe";
+			const imageQuery = imageQueries[index];
+			
+			// Get image URL, filtering out placeholders
+			let imageUrl = null;
+			if (typeof recipeData.image === "object" && recipeData.image.url) {
+				// Check if AI provided image is a placeholder
+				if (!isPlaceholderUrl(recipeData.image.url)) {
+					imageUrl = recipeData.image.url;
 				}
-				
-				// If no valid image from AI, fetch from Google
-				if (!imageUrl) {
-					imageUrl = await searchImage(imageQuery);
-				}
-				
-				// Validate that the image URL is accessible before sending to client
-				if (imageUrl) {
-					console.log(`🖼️  Validating image for "${recipeTitle}"...`);
-					const isValid = await validateImageUrl(imageUrl);
-					if (!isValid) {
-						console.log(`⚠️ Image validation failed, setting to null`);
-						imageUrl = null;
-					} else {
-						console.log(`✅ Image validated successfully`);
-					}
-				}
-				
+			}
+			
+			// If no valid image from AI, fetch from Google
+			if (!imageUrl) {
+				imageUrl = await searchImage(imageQuery);
+			}
+			
+			return imageUrl;
+		});
+
+		// Wait for all image searches to complete in parallel
+		const imageUrls = await Promise.all(imageSearchPromises);
+
+		// Validate all images in parallel (non-blocking but we wait for completion)
+		const validationPromises = imageUrls.map(async (imageUrl, index) => {
+			const recipeTitle = recipesData[index].title || "Generated Recipe";
+			if (!imageUrl || isPlaceholderUrl(imageUrl)) {
+				return null;
+			}
+			console.log(`🖼️  Validating image for "${recipeTitle}"...`);
+			const isValid = await validateImageUrl(imageUrl);
+			if (!isValid) {
+				console.log(`⚠️ Image validation failed for "${recipeTitle}", setting to null`);
+				return null;
+			}
+			console.log(`✅ Image validated successfully for "${recipeTitle}"`);
+			return imageUrl;
+		});
+
+		// Wait for all validations to complete in parallel
+		const validatedImageUrls = await Promise.all(validationPromises);
+
+		// Now build the recipes with the validated images
+		const generatedRecipes = recipesData.map((recipeData, index) => {
+			const recipeTitle = recipeData.title || "Generated Recipe";
+			const imageUrl = validatedImageUrls[index];
+			
 			// Clean up any "unknown" values that might slip through
 			const cleanValue = (value, defaultValue) => {
 				if (!value || value.toLowerCase() === 'unknown' || value.trim() === '') {
@@ -464,28 +489,27 @@ IMPORTANT: ALL recipe fields must be filled with realistic values. NEVER use "un
 			};
 
 			return {
-			id: uuidv4(),
+				id: uuidv4(),
 				title: recipeTitle,
-			cuisineType: recipeData.cuisineType || cuisineType,
-			description: recipeData.description || "Enjoy your generated recipe!",
-			ingredients: Array.isArray(recipeData.ingredients)
-				? recipeData.ingredients
-				: [],
-			instructions: Array.isArray(recipeData.instructions)
-				? recipeData.instructions
-				: [],
+				cuisineType: recipeData.cuisineType || cuisineType,
+				description: recipeData.description || "Enjoy your generated recipe!",
+				ingredients: Array.isArray(recipeData.ingredients)
+					? recipeData.ingredients
+					: [],
+				instructions: Array.isArray(recipeData.instructions)
+					? recipeData.instructions
+					: [],
 				imageUrl: imageUrl || null, // Use null instead of placeholder
-			cookingTime: cleanValue(recipeData.cookingTime, "30 minutes"),
-			difficulty: cleanValue(recipeData.difficulty, "medium"),
-			servings: cleanValue(recipeData.servings, "4"),
-			tags: recipeData.tags || [],
-			nutrition: recipeData.nutrition || null,
-			aiGenerated: true,
-			isDiscoverable: true, // AI-generated recipes are discoverable in community
-			createdAt: new Date().toISOString(),
+				cookingTime: cleanValue(recipeData.cookingTime, "30 minutes"),
+				difficulty: cleanValue(recipeData.difficulty, "medium"),
+				servings: cleanValue(recipeData.servings, "4"),
+				tags: recipeData.tags || [],
+				nutrition: recipeData.nutrition || null,
+				aiGenerated: true,
+				isDiscoverable: true, // AI-generated recipes are discoverable in community
+				createdAt: new Date().toISOString(),
 			};
-			})
-		);
+		});
 
 		res.json(generatedRecipes);
 	} catch (error) {
@@ -601,111 +625,121 @@ const processRecipeData = async (
 		let finalIngredients = cachedIngredients;
 		let finalInstructions = cachedInstructions;
 		
-		// If either is empty, generate them from the recipe title
+		const imageStartTime = Date.now();
+		// Prepare image search in parallel with ingredient/instruction generation if needed
+		// Use social media image URLs when available (Instagram and YouTube URLs are stable)
+		// Only TikTok URLs expire, so we use Google Image Search for those
+		let imageUrlPromise;
+		if (isYouTube && socialData?.thumbnailUrl) {
+			imageUrlPromise = Promise.resolve(socialData.thumbnailUrl);
+		} else if (isInstagram && socialData?.imageUrl) {
+			imageUrlPromise = Promise.resolve(socialData.imageUrl);
+		} else if (isTikTok) {
+			// TikTok URLs expire quickly, so use Google Image Search
+			imageUrlPromise = searchImage(cachedRecipe.title || "recipe");
+		} else {
+			// For other sources or if no stable URL exists, use Google Image Search
+			imageUrlPromise = searchImage(cachedRecipe.title || "recipe");
+		}
+		
+		// If either is empty, generate them from the recipe title (in parallel with image search)
+		let generatePromise = Promise.resolve({ ingredients: null, instructions: null });
 		if (finalIngredients.length === 0 || finalInstructions.length === 0) {
 			console.log("⚠️ Cached recipe missing details, generating from title...");
 			const generateStartTime = Date.now();
 			
-			try {
-				const generateResponse = await client.chat.completions.create({
-					model: "gpt-5-nano",
-					messages: [
-						{
-							role: "developer",
-							content: "You are an expert chef. Generate a complete recipe based on the recipe title provided. Create realistic ingredients and step-by-step cooking instructions.",
-						},
-						{
-							role: "user",
-							content: `Generate a complete recipe for: ${cachedRecipe.title}\n\nProvide a list of ingredients and step-by-step cooking instructions.`,
-						},
-					],
-					reasoning_effort: "low",
-					response_format: {
-						type: "json_schema",
-						json_schema: {
-							name: "recipe_generation_fallback",
-							strict: true,
-							schema: {
-								type: "object",
-								properties: {
-									ingredients: {
-										type: "array",
-										items: { type: "string" },
-										description: "List of ingredients needed for this recipe",
-										minItems: 3,
-									},
-									instructions: {
-										type: "array",
-										items: { type: "string" },
-										description: "Step-by-step cooking instructions",
-										minItems: 3,
-									},
+			generatePromise = client.chat.completions.create({
+				model: "gpt-5-nano",
+				messages: [
+					{
+						role: "developer",
+						content: "You are an expert chef. Generate a complete recipe based on the recipe title provided. Create realistic ingredients and step-by-step cooking instructions.",
+					},
+					{
+						role: "user",
+						content: `Generate a complete recipe for: ${cachedRecipe.title}\n\nProvide a list of ingredients and step-by-step cooking instructions.`,
+					},
+				],
+				reasoning_effort: "minimal",
+				response_format: {
+					type: "json_schema",
+					json_schema: {
+						name: "recipe_generation_fallback",
+						strict: true,
+						schema: {
+							type: "object",
+							properties: {
+								ingredients: {
+									type: "array",
+									items: { type: "string" },
+									description: "List of ingredients needed for this recipe",
+									minItems: 3,
 								},
-								required: ["ingredients", "instructions"],
-								additionalProperties: false,
+								instructions: {
+									type: "array",
+									items: { type: "string" },
+									description: "Step-by-step cooking instructions",
+									minItems: 3,
+								},
 							},
+							required: ["ingredients", "instructions"],
+							additionalProperties: false,
 						},
 					},
-					max_completion_tokens: 4000,
-				});
-
+				},
+				max_completion_tokens: 4000,
+			}).then((generateResponse) => {
 				const generatedRecipe = JSON.parse(generateResponse.choices[0].message.content);
-				
-				if (finalIngredients.length === 0 && Array.isArray(generatedRecipe.ingredients) && generatedRecipe.ingredients.length > 0) {
-					finalIngredients = generatedRecipe.ingredients;
-					console.log("✅ Generated ingredients from title (cached recipe)");
-				}
-				
-				if (finalInstructions.length === 0 && Array.isArray(generatedRecipe.instructions) && generatedRecipe.instructions.length > 0) {
-					finalInstructions = generatedRecipe.instructions;
-					console.log("✅ Generated instructions from title (cached recipe)");
-				}
-				
 				logPerformance("AI Recipe Generation (fallback from title - cached)", generateStartTime);
-			} catch (error) {
+				return generatedRecipe;
+			}).catch((error) => {
 				console.error("Error generating recipe details from title (cached):", error);
-				// If generation fails, at least ensure we have some default values
-				if (finalIngredients.length === 0) {
-					finalIngredients = ["Ingredients not available"];
-				}
-				if (finalInstructions.length === 0) {
-					finalInstructions = ["Instructions not available"];
-				}
+				return { ingredients: null, instructions: null };
+			});
+		}
+		
+		// Validate image in parallel with generation (if needed)
+		// Validate all URLs including social media URLs as they can expire
+		const validationPromise = imageUrlPromise.then(async (url) => {
+			if (!url || isPlaceholderUrl(url)) {
+				return null;
 			}
-		}
-		
-		const imageStartTime = Date.now();
-		// Use social media image URLs when available (Instagram and YouTube URLs are stable)
-		// Only TikTok URLs expire, so we use Google Image Search for those
-		let imageUrl;
-		if (isYouTube && socialData?.thumbnailUrl) {
-			imageUrl = socialData.thumbnailUrl;
-		} else if (isInstagram && socialData?.imageUrl) {
-			imageUrl = socialData.imageUrl;
-		} else if (isTikTok) {
-			// TikTok URLs expire quickly, so use Google Image Search
-			imageUrl = await searchImage(cachedRecipe.title || "recipe");
-		} else {
-			// For other sources or if no stable URL exists, use Google Image Search
-			imageUrl = await searchImage(cachedRecipe.title || "recipe");
-		}
-		
-		// Filter out placeholder URLs
-		if (isPlaceholderUrl(imageUrl)) {
-			imageUrl = null;
-		}
-		
-		// Validate image URL before returning (cached recipe)
-		if (imageUrl) {
 			console.log(`🖼️  Validating image for "${cachedRecipe.title}"...`);
-			const isValid = await validateImageUrl(imageUrl);
+			const isValid = await validateImageUrl(url);
 			if (!isValid) {
 				console.log(`⚠️ Image validation failed, setting to null`);
-				imageUrl = null;
-			} else {
-				console.log(`✅ Image validated successfully`);
+				return null;
+			}
+			console.log(`✅ Image validated successfully`);
+			return url;
+		});
+
+		// Wait for both image validation and generation (if needed) in parallel
+		const [validatedImageUrl, generatedRecipe] = await Promise.all([validationPromise, generatePromise]);
+		
+		// Update ingredients and instructions from generated recipe if needed
+		if (generatedRecipe && generatedRecipe.ingredients) {
+			if (finalIngredients.length === 0 && Array.isArray(generatedRecipe.ingredients) && generatedRecipe.ingredients.length > 0) {
+				finalIngredients = generatedRecipe.ingredients;
+				console.log("✅ Generated ingredients from title (cached recipe)");
 			}
 		}
+		if (generatedRecipe && generatedRecipe.instructions) {
+			if (finalInstructions.length === 0 && Array.isArray(generatedRecipe.instructions) && generatedRecipe.instructions.length > 0) {
+				finalInstructions = generatedRecipe.instructions;
+				console.log("✅ Generated instructions from title (cached recipe)");
+			}
+		}
+		
+		// Ensure we have default values if generation failed
+		if (finalIngredients.length === 0) {
+			finalIngredients = ["Ingredients not available"];
+		}
+		if (finalInstructions.length === 0) {
+			finalInstructions = ["Instructions not available"];
+		}
+		
+		const imageUrl = validatedImageUrl;
 		
 		logPerformance("Image fetch (from cache hit)", imageStartTime);
 
@@ -766,7 +800,7 @@ IMPORTANT: For ANY missing information, you MUST provide reasonable estimates ba
 				content: processedContent,
 			},
 		],
-		reasoning_effort: "low", // Reduces reasoning time and tokens for faster recipe parsing
+		reasoning_effort: "minimal", // Minimal reasoning for fastest recipe parsing
 		response_format: {
 			type: "json_schema",
 			json_schema: {
@@ -882,112 +916,121 @@ IMPORTANT: For ANY missing information, you MUST provide reasonable estimates ba
 		? parsedRecipe.instructions
 		: [];
 
-	// If either is empty, generate them from the recipe title
+	// Prepare image search and missing details generation in parallel
+	const imageStartTime = Date.now();
+	// Use social media image URLs when available (Instagram and YouTube URLs are stable)
+	// Only TikTok URLs expire, so we use Google Image Search for those
+	let imageUrlPromise;
+	if (isYouTube && socialData?.thumbnailUrl) {
+		imageUrlPromise = Promise.resolve(socialData.thumbnailUrl);
+	} else if (isInstagram && socialData?.imageUrl) {
+		imageUrlPromise = Promise.resolve(socialData.imageUrl);
+	} else if (isTikTok) {
+		// TikTok URLs expire quickly, so use Google Image Search
+		imageUrlPromise = searchImage(parsedRecipe.title || "recipe");
+	} else {
+		// For other sources or if no stable URL exists, use Google Image Search
+		imageUrlPromise = searchImage(parsedRecipe.title || "recipe");
+	}
+
+	// If either is empty, generate them from the recipe title (in parallel with image search)
+	let generatePromise = Promise.resolve({ ingredients: null, instructions: null });
 	if (finalIngredients.length === 0 || finalInstructions.length === 0) {
 		console.log("⚠️ Missing recipe details detected, generating from title...");
 		const generateStartTime = Date.now();
 		
-		try {
-			const generateResponse = await client.chat.completions.create({
-				model: "gpt-5-nano",
-				messages: [
-					{
-						role: "developer",
-						content: "You are an expert chef. Generate a complete recipe based on the recipe title provided. Create realistic ingredients and step-by-step cooking instructions.",
-					},
-					{
-						role: "user",
-						content: `Generate a complete recipe for: ${parsedRecipe.title}\n\nProvide a list of ingredients and step-by-step cooking instructions.`,
-					},
-				],
-				reasoning_effort: "low",
-				response_format: {
-					type: "json_schema",
-					json_schema: {
-						name: "recipe_generation_fallback",
-						strict: true,
-						schema: {
-							type: "object",
-							properties: {
-								ingredients: {
-									type: "array",
-									items: { type: "string" },
-									description: "List of ingredients needed for this recipe",
-									minItems: 3,
-								},
-								instructions: {
-									type: "array",
-									items: { type: "string" },
-									description: "Step-by-step cooking instructions",
-									minItems: 3,
-								},
+		generatePromise = client.chat.completions.create({
+			model: "gpt-5-nano",
+			messages: [
+				{
+					role: "developer",
+					content: "You are an expert chef. Generate a complete recipe based on the recipe title provided. Create realistic ingredients and step-by-step cooking instructions.",
+				},
+				{
+					role: "user",
+					content: `Generate a complete recipe for: ${parsedRecipe.title}\n\nProvide a list of ingredients and step-by-step cooking instructions.`,
+				},
+			],
+			reasoning_effort: "minimal",
+			response_format: {
+				type: "json_schema",
+				json_schema: {
+					name: "recipe_generation_fallback",
+					strict: true,
+					schema: {
+						type: "object",
+						properties: {
+							ingredients: {
+								type: "array",
+								items: { type: "string" },
+								description: "List of ingredients needed for this recipe",
+								minItems: 3,
 							},
-							required: ["ingredients", "instructions"],
-							additionalProperties: false,
+							instructions: {
+								type: "array",
+								items: { type: "string" },
+								description: "Step-by-step cooking instructions",
+								minItems: 3,
+							},
 						},
+						required: ["ingredients", "instructions"],
+						additionalProperties: false,
 					},
 				},
-				max_completion_tokens: 4000,
-			});
-
+			},
+			max_completion_tokens: 4000,
+		}).then((generateResponse) => {
 			const generatedRecipe = JSON.parse(generateResponse.choices[0].message.content);
-			
-			if (finalIngredients.length === 0 && Array.isArray(generatedRecipe.ingredients) && generatedRecipe.ingredients.length > 0) {
-				finalIngredients = generatedRecipe.ingredients;
-				console.log("✅ Generated ingredients from title");
-			}
-			
-			if (finalInstructions.length === 0 && Array.isArray(generatedRecipe.instructions) && generatedRecipe.instructions.length > 0) {
-				finalInstructions = generatedRecipe.instructions;
-				console.log("✅ Generated instructions from title");
-			}
-			
 			logPerformance("AI Recipe Generation (fallback from title)", generateStartTime);
-		} catch (error) {
+			return generatedRecipe;
+		}).catch((error) => {
 			console.error("Error generating recipe details from title:", error);
-			// If generation fails, at least ensure we have some default values
-			if (finalIngredients.length === 0) {
-				finalIngredients = ["Ingredients not available"];
-			}
-			if (finalInstructions.length === 0) {
-				finalInstructions = ["Instructions not available"];
-			}
-		}
+			return { ingredients: null, instructions: null };
+		});
 	}
 
-	// Fetch image
-	const imageStartTime = Date.now();
-	// Use social media image URLs when available (Instagram and YouTube URLs are stable)
-	// Only TikTok URLs expire, so we use Google Image Search for those
-	let imageUrl;
-	if (isYouTube && socialData?.thumbnailUrl) {
-		imageUrl = socialData.thumbnailUrl;
-	} else if (isInstagram && socialData?.imageUrl) {
-		imageUrl = socialData.imageUrl;
-	} else if (isTikTok) {
-		// TikTok URLs expire quickly, so use Google Image Search
-		imageUrl = await searchImage(parsedRecipe.title || "recipe");
-	} else {
-		// For other sources or if no stable URL exists, use Google Image Search
-		imageUrl = await searchImage(parsedRecipe.title || "recipe");
-	}
-	
-	// Filter out placeholder URLs
-	if (isPlaceholderUrl(imageUrl)) {
-		imageUrl = null;
-	}
-	
-	// Validate image URL before returning (new recipe)
-	if (imageUrl) {
+	// Validate image in parallel with generation (if needed)
+	// Validate all URLs including social media URLs as they can expire
+	const validationPromise = imageUrlPromise.then(async (url) => {
+		if (!url || isPlaceholderUrl(url)) {
+			return null;
+		}
 		console.log(`🖼️  Validating image for "${parsedRecipe.title}"...`);
-		const isValid = await validateImageUrl(imageUrl);
+		const isValid = await validateImageUrl(url);
 		if (!isValid) {
 			console.log(`⚠️ Image validation failed, setting to null`);
-			imageUrl = null;
-		} else {
-			console.log(`✅ Image validated successfully`);
+			return null;
+		}
+		console.log(`✅ Image validated successfully`);
+		return url;
+	});
+
+	// Wait for both image validation and generation (if needed) in parallel
+	const [validatedImageUrl, generatedRecipe] = await Promise.all([validationPromise, generatePromise]);
+	
+	// Update ingredients and instructions from generated recipe if needed
+	if (generatedRecipe && generatedRecipe.ingredients) {
+		if (finalIngredients.length === 0 && Array.isArray(generatedRecipe.ingredients) && generatedRecipe.ingredients.length > 0) {
+			finalIngredients = generatedRecipe.ingredients;
+			console.log("✅ Generated ingredients from title");
 		}
 	}
+	if (generatedRecipe && generatedRecipe.instructions) {
+		if (finalInstructions.length === 0 && Array.isArray(generatedRecipe.instructions) && generatedRecipe.instructions.length > 0) {
+			finalInstructions = generatedRecipe.instructions;
+			console.log("✅ Generated instructions from title");
+		}
+	}
+	
+	// Ensure we have default values if generation failed
+	if (finalIngredients.length === 0) {
+		finalIngredients = ["Ingredients not available"];
+	}
+	if (finalInstructions.length === 0) {
+		finalInstructions = ["Instructions not available"];
+	}
+	
+	const imageUrl = validatedImageUrl;
 	
 	logPerformance("Image fetch (after AI parsing)", imageStartTime);
 
