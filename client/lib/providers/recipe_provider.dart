@@ -222,6 +222,7 @@ class RecipeProvider extends ChangeNotifier {
       _importedRecipe = null;
       return null;
     } finally {
+      // CRITICAL: Always reset loading state, even if request fails
       _setLoading(false);
     }
   }
