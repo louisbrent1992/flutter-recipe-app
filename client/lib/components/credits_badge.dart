@@ -115,9 +115,11 @@ class CreditsHeader extends StatelessWidget {
 }
 
 /// Compact single-line pill for showing credits in an app bar action area.
+/// Supports compact mode to minimize size when space is limited.
 class CreditsPill extends StatelessWidget {
   final VoidCallback? onTap;
-  const CreditsPill({super.key, this.onTap});
+  final bool compact;
+  const CreditsPill({super.key, this.onTap, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -135,8 +137,12 @@ class CreditsPill extends StatelessWidget {
           final isDesktop = AppBreakpoints.isDesktop(context);
           final isTablet = AppBreakpoints.isTablet(context);
           
+          // In compact mode, hide labels but always show credit numbers
+          final showLabels = !compact && (isDesktop || isTablet);
+          
+          // Universal padding/margin for consistent spacing across all screens
           return Padding(
-            padding: EdgeInsets.all(isDesktop ? 6.0 : isTablet ? 5.0 : 4.0),
+            padding: EdgeInsets.all(isDesktop ? 4.0 : isTablet ? 3.0 : 2.0),
             child: InkWell(
               borderRadius: BorderRadius.circular(
                 isDesktop ? 20 : isTablet ? 18 : 16,
@@ -144,11 +150,11 @@ class CreditsPill extends StatelessWidget {
               onTap: onTap,
               child: Container(
               padding: EdgeInsets.symmetric(
-                horizontal: isDesktop ? 14 : isTablet ? 12 : 10,
-                vertical: isDesktop ? 8 : isTablet ? 7 : 6,
+                horizontal: compact ? 6 : isDesktop ? 12 : isTablet ? 10 : 8,
+                vertical: compact ? 4 : isDesktop ? 6 : isTablet ? 5 : 4,
               ),
               margin: EdgeInsets.only(
-                right: isDesktop ? 12 : isTablet ? 10 : 8,
+                right: isDesktop ? 8 : isTablet ? 6 : 4,
               ),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface.withValues(
@@ -174,13 +180,15 @@ class CreditsPill extends StatelessWidget {
                 ],
               ),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   if (provider.unlimitedUsage) ...[
                     Icon(
                       Icons.all_inclusive,
-                      size: isDesktop ? 24 : isTablet ? 22 : 18,
+                      size: compact ? 16 : isDesktop ? 24 : isTablet ? 22 : 18,
                       color: Colors.purple,
                     ),
+                    if (showLabels) ...[
                     SizedBox(width: isDesktop ? 8 : isTablet ? 7 : 6),
                     Text(
                       'Unlimited',
@@ -190,13 +198,14 @@ class CreditsPill extends StatelessWidget {
                         fontSize: isDesktop ? 14 : isTablet ? 13 : 12,
                       ),
                     ),
-                    // For unlimited, do not show numeric balances
+                    ],
                   ] else if (provider.trialActive) ...[
                     Icon(
                       Icons.rocket_launch,
-                      size: isDesktop ? 22 : isTablet ? 20 : 16,
+                      size: compact ? 14 : isDesktop ? 22 : isTablet ? 20 : 16,
                       color: Colors.blue,
                     ),
+                    if (showLabels) ...[
                     SizedBox(width: isDesktop ? 6 : isTablet ? 5 : 4),
                     Text(
                       'Trial',
@@ -206,13 +215,15 @@ class CreditsPill extends StatelessWidget {
                         fontSize: isDesktop ? 14 : isTablet ? 13 : 12,
                       ),
                     ),
-                    SizedBox(width: isDesktop ? 10 : isTablet ? 9 : 8),
+                    ],
+                    SizedBox(width: compact ? 6 : isDesktop ? 10 : isTablet ? 9 : 8),
                   ] else if (provider.isPremium) ...[
                     Icon(
                       Icons.star,
-                      size: isDesktop ? 22 : isTablet ? 20 : 16,
+                      size: compact ? 14 : isDesktop ? 22 : isTablet ? 20 : 16,
                       color: Colors.amber,
                     ),
+                    if (showLabels) ...[
                     SizedBox(width: isDesktop ? 6 : isTablet ? 5 : 4),
                     Text(
                       'Premium',
@@ -222,7 +233,16 @@ class CreditsPill extends StatelessWidget {
                         fontSize: isDesktop ? 14 : isTablet ? 13 : 12,
                       ),
                     ),
-                    SizedBox(width: isDesktop ? 10 : isTablet ? 9 : 8),
+                    ],
+                    SizedBox(width: compact ? 6 : isDesktop ? 10 : isTablet ? 9 : 8),
+                  ] else ...[
+                    // Free tier - just show icon in compact mode
+                    if (compact) ...[
+                      Icon(
+                        Icons.diamond_outlined,
+                        size: 14,
+                        color: theme.colorScheme.primary,
+                      ),
                   ] else ...[
                     Container(
                       padding: EdgeInsets.symmetric(
@@ -246,30 +266,31 @@ class CreditsPill extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(width: isDesktop ? 10 : isTablet ? 9 : 8),
+                    ],
+                    SizedBox(width: compact ? 6 : isDesktop ? 10 : isTablet ? 9 : 8),
                   ],
                   if (!provider.unlimitedUsage) ...[
                     Icon(
                       Icons.share,
-                      size: isDesktop ? 22 : isTablet ? 20 : 16,
+                      size: compact ? 14 : isDesktop ? 22 : isTablet ? 20 : 16,
                     ),
-                    SizedBox(width: isDesktop ? 6 : isTablet ? 5 : 4),
+                    SizedBox(width: compact ? 2 : isDesktop ? 6 : isTablet ? 5 : 4),
                     Text(
                       '$imports',
                       style: theme.textTheme.labelMedium?.copyWith(
-                        fontSize: isDesktop ? 16 : isTablet ? 15 : 13,
+                        fontSize: compact ? 11 : isDesktop ? 16 : isTablet ? 15 : 13,
                       ),
                     ),
-                    SizedBox(width: isDesktop ? 10 : isTablet ? 9 : 8),
+                    SizedBox(width: compact ? 6 : isDesktop ? 10 : isTablet ? 9 : 8),
                     Icon(
                       Icons.auto_awesome_rounded,
-                      size: isDesktop ? 22 : isTablet ? 20 : 16,
+                      size: compact ? 14 : isDesktop ? 22 : isTablet ? 20 : 16,
                     ),
-                    SizedBox(width: isDesktop ? 6 : isTablet ? 5 : 4),
+                    SizedBox(width: compact ? 2 : isDesktop ? 6 : isTablet ? 5 : 4),
                     Text(
                       '$gens',
                       style: theme.textTheme.labelMedium?.copyWith(
-                        fontSize: isDesktop ? 15 : isTablet ? 14 : 13,
+                        fontSize: compact ? 11 : isDesktop ? 15 : isTablet ? 14 : 13,
                       ),
                     ),
                   ],

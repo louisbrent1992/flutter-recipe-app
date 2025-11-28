@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -40,6 +41,44 @@ class AuthService with ChangeNotifier {
       _error = null;
       notifyListeners();
     });
+    
+    // Listen for FCM token refresh and update Firestore
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+      if (_user != null) {
+        _updateFcmToken(newToken);
+      }
+    });
+  }
+  
+  /// Updates the FCM token in Firestore for push notifications
+  Future<void> _updateFcmToken([String? token]) async {
+    try {
+      if (_user == null) return;
+      
+      // Get current FCM token if not provided
+      final fcmToken = token ?? await FirebaseMessaging.instance.getToken();
+      if (fcmToken == null) {
+        if (kDebugMode) {
+          debugPrint('⚠️ FCM token is null, skipping update');
+        }
+        return;
+      }
+      
+      // Update token in Firestore
+      await _firestore.collection('users').doc(_user!.uid).update({
+        'fcmToken': fcmToken,
+        'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+      });
+      
+      if (kDebugMode) {
+        debugPrint('✅ FCM token updated for user ${_user!.uid}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Error updating FCM token: $e');
+      }
+      // Don't rethrow - FCM token update failure shouldn't break login flow
+    }
   }
 
   // Helper method to create/update user profile in Firestore
@@ -96,6 +135,9 @@ class AuthService with ChangeNotifier {
           }
         }
       }
+      
+      // Update FCM token for push notifications
+      await _updateFcmToken();
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Error creating/updating user profile: $e');
@@ -495,7 +537,7 @@ class AuthService with ChangeNotifier {
         );
       } else {
         // Mobile platforms don't require ActionCodeSettings
-        await _auth.sendPasswordResetEmail(email: email);
+      await _auth.sendPasswordResetEmail(email: email);
       }
       return true;
     } on FirebaseAuthException catch (e) {

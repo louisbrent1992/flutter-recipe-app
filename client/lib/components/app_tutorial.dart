@@ -7,6 +7,7 @@ import '../services/tutorial_service.dart';
 class TutorialKeys {
   static final GlobalKey homeHero = GlobalKey();
   static final GlobalKey homeYourRecipes = GlobalKey();
+  static final GlobalKey homeCommunity = GlobalKey();
   static final GlobalKey homeDiscover = GlobalKey();
   static final GlobalKey homeCollections = GlobalKey();
   static final GlobalKey homeFeatures = GlobalKey();

@@ -1060,6 +1060,13 @@ IMPORTANT: For ANY missing information, you MUST provide reasonable estimates ba
 			? `YouTube: ${socialData?.channelTitle}`
 			: `${extractSiteName(url).toUpperCase()}`,
 		sourceUrl: url,
+		sourcePlatform: isInstagram
+			? "instagram"
+			: isTikTok
+			? "tiktok"
+			: isYouTube
+			? "youtube"
+			: "web",
 		author:
 			socialData?.username ||
 			socialData?.author?.username ||

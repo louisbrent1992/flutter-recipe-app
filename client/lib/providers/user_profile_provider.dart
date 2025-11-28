@@ -21,6 +21,10 @@ class UserProfileProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  /// Whether to show profile info (name/photo) on community recipes
+  /// Defaults to true if not set
+  bool get showProfileInCommunity => _profile['showProfileInCommunity'] ?? true;
+
   Future<void> loadProfile() async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -229,6 +233,31 @@ class UserProfileProvider with ChangeNotifier {
   }
 
   // Favorites removed: add/remove/isFavorite no longer supported
+
+  /// Toggle whether to show profile info on community recipes
+  Future<void> setShowProfileInCommunity(bool value) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      await _firestore.collection('users').doc(user.uid).update({
+        'showProfileInCommunity': value,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      _profile['showProfileInCommunity'] = value;
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('Error updating community profile visibility: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   void clearError() {
     _error = null;

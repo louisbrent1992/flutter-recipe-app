@@ -324,7 +324,9 @@ class _SettingsScreenState extends State<SettingsScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Test notification triggered! Tap it to test navigation.'),
+            content: Text(
+              'Test notification triggered! Tap it to test navigation.',
+            ),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 3),
@@ -349,7 +351,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   Future<void> _restartTutorial() async {
     try {
       final tutorialService = TutorialService();
-      
+
       // Reset tutorial completion status with manual flag
       await tutorialService.resetTutorial(isManual: true);
 
@@ -362,13 +364,13 @@ class _SettingsScreenState extends State<SettingsScreen>
         WidgetsBinding.instance.addPostFrameCallback((_) {
           // Wait one more frame to ensure all widgets are fully rendered
           WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (navigatorKey.currentContext != null) {
+            if (navigatorKey.currentContext != null) {
               final homeContext = navigatorKey.currentContext!;
               final recipeProvider = Provider.of<RecipeProvider>(
                 homeContext,
                 listen: false,
               );
-              
+
               // Start with navigation drawer menu and credit balance (most important UI elements)
               final List<GlobalKey> tutorialTargets = [
                 TutorialKeys.navDrawerMenu,
@@ -387,7 +389,10 @@ class _SettingsScreenState extends State<SettingsScreen>
               final randomRecipes =
                   recipeProvider.generatedRecipes
                       .where(
-                        (r) => !recipeProvider.userRecipes.any((u) => u.id == r.id),
+                        (r) =>
+                            !recipeProvider.userRecipes.any(
+                              (u) => u.id == r.id,
+                            ),
                       )
                       .take(10)
                       .toList();
@@ -409,7 +414,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 TutorialKeys.bottomNavMyRecipes,
                 TutorialKeys.bottomNavGenerate,
                 TutorialKeys.bottomNavSettings,
-          ]);
+              ]);
 
               // Start tutorial immediately after widgets are built
               startTutorial(homeContext, tutorialTargets);
@@ -992,7 +997,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   left: AppSpacing.responsive(context),
                   right: AppSpacing.responsive(context),
                   top: AppSpacing.responsive(context),
-                  bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
+                  bottom:
+                      AppSpacing.responsive(context) +
+                      30, // Extra space for floating bar
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1096,6 +1103,65 @@ class _SettingsScreenState extends State<SettingsScreen>
                               themeProvider.isDarkMode
                                   ? Theme.of(context).colorScheme.info
                                   : Theme.of(context).colorScheme.warning,
+                        );
+                      },
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
+
+                    // Privacy Section
+                    _buildSectionHeader(
+                      title: 'Privacy',
+                      icon: Icons.privacy_tip_rounded,
+                      colorScheme: colorScheme,
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+
+                    Consumer<UserProfileProvider>(
+                      builder: (context, profileProvider, _) {
+                        return _buildAnimatedSwitchTile(
+                          title: 'Show Profile in Community',
+                          subtitle:
+                              'Display your name and photo on shared recipes',
+                          value: profileProvider.showProfileInCommunity,
+                          onChanged: (value) async {
+                            try {
+                              await profileProvider.setShowProfileInCommunity(
+                                value,
+                              );
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      value
+                                          ? 'Your profile will be shown on community recipes'
+                                          : 'Your profile will be hidden on community recipes',
+                                    ),
+                                    backgroundColor: Colors.green,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error updating setting: $e'),
+                                    backgroundColor: Colors.red,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          icon: Icons.person_outline_rounded,
+                          color: Theme.of(context).colorScheme.primary,
                         );
                       },
                     ),

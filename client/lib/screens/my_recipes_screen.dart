@@ -61,7 +61,9 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
         listen: false,
       );
       _recipesChangedSubscription = recipeProvider.onRecipesChanged.listen((_) {
-        _loadRecipes(forceRefresh: true);
+        // Provider already updates userRecipes optimistically via createUserRecipe/deleteUserRecipe
+        // Just trigger a rebuild to reflect the changes without network fetch
+        if (mounted) setState(() {});
       });
     });
   }

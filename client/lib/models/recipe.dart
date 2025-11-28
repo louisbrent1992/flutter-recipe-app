@@ -26,6 +26,13 @@ class Recipe {
   final bool toEdit;
   final bool aiGenerated;
   final Nutrition? nutrition;
+  final String? sharedByUserId;
+  final String? sharedByDisplayName;
+  final String? sharedByPhotoUrl;
+  final int saveCount;
+  final int likeCount;
+  final int shareCount;
+  final bool isLiked; // Whether the current user has liked this recipe
 
   Recipe({
     this.id = '',
@@ -54,6 +61,13 @@ class Recipe {
     this.toEdit = false,
     this.aiGenerated = false,
     this.nutrition,
+    this.sharedByUserId,
+    this.sharedByDisplayName,
+    this.sharedByPhotoUrl,
+    this.saveCount = 0,
+    this.likeCount = 0,
+    this.shareCount = 0,
+    this.isLiked = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Helper method to parse DateTime from various formats
@@ -171,6 +185,28 @@ class Recipe {
                 Map<String, dynamic>.from(json['nutrition'] as Map),
               )
               : null,
+      sharedByUserId: json['sharedByUserId']?.toString(),
+      sharedByDisplayName: json['sharedByDisplayName']?.toString(),
+      sharedByPhotoUrl: json['sharedByPhotoUrl']?.toString(),
+      saveCount:
+          json['saveCount'] is int
+              ? json['saveCount']
+              : (json['saveCount'] != null
+                  ? int.tryParse(json['saveCount'].toString()) ?? 0
+                  : 0),
+      likeCount:
+          json['likeCount'] is int
+              ? json['likeCount']
+              : (json['likeCount'] != null
+                  ? int.tryParse(json['likeCount'].toString()) ?? 0
+                  : 0),
+      shareCount:
+          json['shareCount'] is int
+              ? json['shareCount']
+              : (json['shareCount'] != null
+                  ? int.tryParse(json['shareCount'].toString()) ?? 0
+                  : 0),
+      isLiked: json['isLiked'] is bool ? json['isLiked'] as bool : false,
     );
   }
 
@@ -201,6 +237,13 @@ class Recipe {
     'toEdit': toEdit,
     'aiGenerated': aiGenerated,
     'nutrition': nutrition?.toJson(),
+    'sharedByUserId': sharedByUserId,
+    'sharedByDisplayName': sharedByDisplayName,
+    'sharedByPhotoUrl': sharedByPhotoUrl,
+    'saveCount': saveCount,
+    'likeCount': likeCount,
+    'shareCount': shareCount,
+    'isLiked': isLiked,
   };
 
   // Create a copy of the recipe with updated values
@@ -230,6 +273,13 @@ class Recipe {
     bool? toEdit,
     bool? aiGenerated,
     Nutrition? nutrition,
+    String? sharedByUserId,
+    String? sharedByDisplayName,
+    String? sharedByPhotoUrl,
+    int? saveCount,
+    int? likeCount,
+    int? shareCount,
+    bool? isLiked,
   }) {
     return Recipe(
       id: id ?? this.id,
@@ -257,6 +307,13 @@ class Recipe {
       toEdit: toEdit ?? this.toEdit,
       aiGenerated: aiGenerated ?? this.aiGenerated,
       nutrition: nutrition ?? this.nutrition,
+      sharedByUserId: sharedByUserId ?? this.sharedByUserId,
+      sharedByDisplayName: sharedByDisplayName ?? this.sharedByDisplayName,
+      sharedByPhotoUrl: sharedByPhotoUrl ?? this.sharedByPhotoUrl,
+      saveCount: saveCount ?? this.saveCount,
+      likeCount: likeCount ?? this.likeCount,
+      shareCount: shareCount ?? this.shareCount,
+      isLiked: isLiked ?? this.isLiked,
     );
   }
 

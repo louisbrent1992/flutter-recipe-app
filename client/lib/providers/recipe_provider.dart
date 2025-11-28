@@ -53,6 +53,13 @@ class RecipeProvider extends ChangeNotifier {
   static const int _sessionCacheSize = 500;
   static const Duration _sessionCacheDuration = Duration(hours: 1);
 
+  // Session-level community cache (fetch once, filter client-side)
+  List<Recipe> _sessionCommunityCache = [];
+  List<Recipe> _communityRecipes =
+      []; // Dedicated list for displayed community recipes
+  DateTime? _communityCacheTime;
+  static const int _communityCacheSize = 200;
+
   // Favorites removed: no favorites cache
 
   // Getters
@@ -61,6 +68,7 @@ class RecipeProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   ApiResponse<Recipe>? get error => _error;
   List<Recipe> get userRecipes => _userRecipes;
+  List<Recipe> get communityRecipes => _communityRecipes;
   int get currentPage => _currentPage;
   int get totalPages => _totalPages;
   bool get hasNextPage => _hasNextPage;
@@ -485,7 +493,12 @@ class RecipeProvider extends ChangeNotifier {
   }
 
   // Create a new user recipe
-  Future<Recipe?> createUserRecipe(Recipe recipe, BuildContext context) async {
+  Future<Recipe?> createUserRecipe(
+    Recipe recipe,
+    BuildContext context, {
+    String? originalRecipeId,
+    bool refreshCollections = true, // Set to false to skip collection refresh
+  }) async {
     // Check for duplicates before attempting to save
     if (isDuplicateRecipe(recipe)) {
       _setError('This recipe already exists in your collection');
@@ -537,9 +550,9 @@ class RecipeProvider extends ChangeNotifier {
       debugPrint('Error saving recipe to local storage: $e');
     }
 
-    // Notify UI immediately
+    // Notify UI immediately (notifyListeners triggers Consumer rebuilds)
+    // Note: emitRecipesChanged is called after server sync to avoid duplicate fetches
     notifyListeners();
-    emitRecipesChanged();
 
     // Show success message
     if (context.mounted) {
@@ -557,7 +570,10 @@ class RecipeProvider extends ChangeNotifier {
     clearError();
 
     try {
-      final response = await RecipeService.createUserRecipe(recipe);
+      final response = await RecipeService.createUserRecipe(
+        recipe,
+        originalRecipeId: originalRecipeId,
+      );
 
       if (context.mounted) {
         // Handle duplicate error from server (409 status code)
@@ -616,8 +632,10 @@ class RecipeProvider extends ChangeNotifier {
             debugPrint('Error saving server recipe to local storage: $e');
           }
 
-          // Force refresh collections to update recently added
+          // Force refresh collections to update recently added (only if requested)
+          if (refreshCollections) {
           await collectionService.getCollections(forceRefresh: true);
+          }
 
           // Sync with Game Center for achievements
           _syncGameCenter();
@@ -731,7 +749,11 @@ class RecipeProvider extends ChangeNotifier {
   }
 
   // Delete a user recipe
-  Future<bool> deleteUserRecipe(String id, BuildContext context) async {
+  Future<bool> deleteUserRecipe(
+    String id,
+    BuildContext context, {
+    bool refreshCollections = true, // Set to false to skip collection refresh
+  }) async {
     _setLoading(true);
     clearError();
 
@@ -759,8 +781,10 @@ class RecipeProvider extends ChangeNotifier {
             debugPrint('Error deleting recipe from local storage: $e');
           }
 
-          // Refresh collections to ensure the deleted recipe is removed from all collections
+          // Refresh collections to ensure the deleted recipe is removed from all collections (only if requested)
+          if (refreshCollections) {
           await collectionService.refreshCollectionsAfterRecipeDeletion(id);
+          }
 
           // Update user recipes total optimistically
           _totalUserRecipes = (_totalUserRecipes - 1).clamp(0, 1 << 31);
@@ -1132,6 +1156,247 @@ class RecipeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Set community recipes from cache (internal helper)
+  void setCommunityRecipesFromCache(List<Recipe> recipes) {
+    _communityRecipes = List<Recipe>.from(recipes);
+    notifyListeners();
+  }
+
+  /// Update the save count for a community recipe
+  /// [recipeId] - The ID of the recipe to update
+  /// [delta] - The amount to change (positive to increment, negative to decrement)
+  void updateCommunityRecipeSaveCount(String recipeId, int delta) {
+    // Update session cache
+    final cacheIndex = _sessionCommunityCache.indexWhere(
+      (r) => r.id == recipeId,
+    );
+    if (cacheIndex != -1) {
+      final currentCount = _sessionCommunityCache[cacheIndex].saveCount;
+      _sessionCommunityCache[cacheIndex] = _sessionCommunityCache[cacheIndex]
+          .copyWith(saveCount: (currentCount + delta).clamp(0, 1 << 30));
+    }
+
+    // Update displayed list
+    final displayIndex = _communityRecipes.indexWhere((r) => r.id == recipeId);
+    if (displayIndex != -1) {
+      final currentCount = _communityRecipes[displayIndex].saveCount;
+      _communityRecipes[displayIndex] = _communityRecipes[displayIndex]
+          .copyWith(saveCount: (currentCount + delta).clamp(0, 1 << 30));
+    }
+
+    notifyListeners();
+  }
+
+  // Fetch session-level community cache (200 recipes, reused for filtering)
+  Future<void> fetchSessionCommunityCache({bool forceRefresh = false}) async {
+    // Check if cache is still valid
+    final hasValidCache =
+        _sessionCommunityCache.isNotEmpty &&
+        _communityCacheTime != null &&
+        DateTime.now().difference(_communityCacheTime!) <
+            _sessionCacheDuration &&
+        !forceRefresh;
+
+    if (hasValidCache) {
+      return;
+    }
+
+    // Try to load from local storage first (future enhancement)
+    bool hasLocalCache = false;
+    // Note: We could add a loadCommunityCache method, but for now we'll just fetch from network
+
+    clearError();
+    if (!hasLocalCache) {
+      _setLoading(true);
+    }
+
+    try {
+      final response = await RecipeService.getCommunityRecipes(
+        limit: _communityCacheSize,
+        random: true,
+      );
+
+      if (response.success && response.data != null) {
+        final data = response.data!;
+        final recipesList = data['recipes'];
+
+        if (recipesList != null && recipesList is List) {
+          _sessionCommunityCache =
+              recipesList
+                  .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
+                  .toList();
+
+          // Use deterministic shuffle based on date
+          final now = DateTime.now();
+          final start = DateTime(now.year, 1, 1);
+          final dayOfYear = now.difference(start).inDays + 1;
+          final seed = now.year * 365 + dayOfYear;
+          _sessionCommunityCache.shuffle(Random(seed));
+
+          // Also populate the display list for home screen carousel
+          _communityRecipes = List<Recipe>.from(_sessionCommunityCache);
+
+          _communityCacheTime = DateTime.now();
+          notifyListeners();
+        }
+      } else {
+        if (!hasLocalCache) {
+          _setError(response.message ?? 'Failed to fetch community recipes');
+        }
+      }
+    } catch (e) {
+      if (!hasLocalCache) {
+        debugPrint('❌ Error fetching community cache: $e');
+        _setError('Failed to load community recipes: $e');
+      }
+    } finally {
+      if (!hasLocalCache) {
+        _setLoading(false);
+      }
+    }
+  }
+
+  // Fetch community recipes (with filtering)
+  Future<void> fetchCommunityRecipes({
+    String? query,
+    String? difficulty,
+    String? tag,
+    int page = 1,
+    int limit = 12,
+    bool forceRefresh = false,
+  }) async {
+    // Ensure session cache is populated
+    await fetchSessionCommunityCache(forceRefresh: forceRefresh);
+
+    // Filter the cached recipes
+    final filtered = getFilteredCommunityRecipes(
+      query: query,
+      difficulty: difficulty,
+      tag: tag,
+      page: page,
+      limit: limit,
+    );
+
+    setCommunityRecipesFromCache(filtered);
+  }
+
+  // Get filtered and paginated community recipes from session cache
+  List<Recipe> getFilteredCommunityRecipes({
+    String? query,
+    String? difficulty,
+    String? tag,
+    int page = 1,
+    int limit = 12,
+  }) {
+    if (_sessionCommunityCache.isEmpty) {
+      if (_generatedRecipes.isNotEmpty) {
+        return _generatedRecipes;
+      }
+      return [];
+    }
+
+    var filtered = List<Recipe>.from(_sessionCommunityCache);
+
+    // Apply difficulty filter
+    if (difficulty != null && difficulty != 'All') {
+      filtered =
+          filtered
+              .where(
+                (r) => r.difficulty.toLowerCase() == difficulty.toLowerCase(),
+              )
+              .toList();
+    }
+
+    // Apply tag filter
+    if (tag != null && tag != 'All') {
+      final tagList =
+          tag
+              .split(',')
+              .map((t) => t.trim().toLowerCase())
+              .where((t) => t.isNotEmpty)
+              .toList();
+
+      if (tagList.isEmpty) {
+        return [];
+      }
+
+      filtered =
+          filtered.where((r) {
+            final recipeTagsLower =
+                r.tags.map((t) => t.trim().toLowerCase()).toList();
+            return tagList.any(
+              (filterTag) => recipeTagsLower.any((recipeTag) {
+                final normalizedRecipe =
+                    recipeTag.replaceAll(RegExp(r'[^\w\s]'), '').trim();
+                final normalizedFilter =
+                    filterTag.replaceAll(RegExp(r'[^\w\s]'), '').trim();
+                if (normalizedRecipe == normalizedFilter) return true;
+                final recipeStem = normalizedRecipe.replaceAll(
+                  RegExp(r's$'),
+                  '',
+                );
+                final filterStem = normalizedFilter.replaceAll(
+                  RegExp(r's$'),
+                  '',
+                );
+                if (recipeStem == filterStem && recipeStem.isNotEmpty) {
+                  return true;
+                }
+                final recipeWords = normalizedRecipe.split(RegExp(r'[\s\-_]+'));
+                final filterWords = normalizedFilter.split(RegExp(r'[\s\-_]+'));
+                if (recipeWords.any((w) => filterWords.contains(w)) ||
+                    filterWords.any((w) => recipeWords.contains(w))) {
+                  return true;
+                }
+                if (normalizedRecipe.contains(normalizedFilter) ||
+                    normalizedFilter.contains(normalizedRecipe)) {
+                  return true;
+                }
+                return false;
+              }),
+            );
+          }).toList();
+    }
+
+    // Apply text search filter
+    if (query != null && query.isNotEmpty) {
+      final queryTerms =
+          query
+              .split(',')
+              .map((t) => t.trim().toLowerCase())
+              .where((t) => t.isNotEmpty)
+              .toList();
+
+      if (queryTerms.isNotEmpty) {
+        filtered =
+            filtered.where((r) {
+              final searchableText =
+                  '${r.title} ${r.description} ${r.tags.join(' ')}'
+                      .toLowerCase();
+              return queryTerms.any((term) => searchableText.contains(term));
+            }).toList();
+      }
+    }
+
+    // Calculate pagination
+    final total = filtered.length;
+    final totalPages = (total / limit).ceil();
+    final startIndex = (page - 1) * limit;
+    final endIndex = (startIndex + limit).clamp(0, total);
+
+    _currentPage = page;
+    _totalPages = totalPages > 0 ? totalPages : 1;
+    _hasNextPage = page < totalPages;
+    _hasPrevPage = page > 1;
+    _totalRecipes = total;
+
+    if (startIndex >= total) {
+      return [];
+    }
+
+    return filtered.sublist(startIndex, endIndex);
+  }
+
   // Search for recipes from external API
   Future<void> searchExternalRecipes({
     String? query,
@@ -1423,6 +1688,76 @@ class RecipeProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Game Center achievement unlock failed: $e');
+    }
+  }
+
+  /// Like or unlike a community recipe
+  Future<bool> toggleRecipeLike(String recipeId, BuildContext context) async {
+    clearError();
+    _setLoading(true);
+
+    try {
+      final response = await RecipeService.toggleRecipeLike(recipeId);
+
+      if (response.success && response.data != null) {
+        final data = response.data!;
+        final liked = data['liked'] as bool? ?? false;
+        final likeCount = data['likeCount'] as int? ?? 0;
+
+        // Update the recipe in community recipes cache
+        final index = _sessionCommunityCache.indexWhere(
+          (r) => r.id == recipeId,
+        );
+        if (index != -1) {
+          _sessionCommunityCache[index] = _sessionCommunityCache[index]
+              .copyWith(isLiked: liked, likeCount: likeCount);
+        }
+
+        // Update displayed community recipes
+        final displayIndex = _communityRecipes.indexWhere(
+          (r) => r.id == recipeId,
+        );
+        if (displayIndex != -1) {
+          _communityRecipes[displayIndex] = _communityRecipes[displayIndex]
+              .copyWith(isLiked: liked, likeCount: likeCount);
+        }
+
+        notifyListeners();
+        emitRecipesChanged();
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(liked ? 'Recipe liked!' : 'Recipe unliked'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+
+        return true;
+      } else {
+        _setError(response.message ?? 'Failed to update like status');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.message ?? 'Failed to update like status'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return false;
+      }
+    } catch (e) {
+      _setError('Failed to update like status: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 

@@ -79,14 +79,14 @@ async function addIsDiscoverableField() {
         const recipe = doc.data();
         const recipeId = doc.id;
 
-        // Skip if isDiscoverable already exists
-        if (recipe.isDiscoverable !== undefined) {
+        // Determine if recipe should be discoverable
+        const isDiscoverable = shouldBeDiscoverable(recipe);
+
+        // Skip if isDiscoverable already exists and matches the desired value
+        if (recipe.isDiscoverable === isDiscoverable) {
           skipped++;
           continue;
         }
-
-        // Determine if recipe should be discoverable
-        const isDiscoverable = shouldBeDiscoverable(recipe);
 
         // Add to batch update
         const recipeRef = recipesRef.doc(recipeId);
@@ -98,13 +98,14 @@ async function addIsDiscoverableField() {
         batchCount++;
         updated++;
 
-        // Log details for first few recipes
-        if (updated <= 5) {
+        // Log details for recipes being updated (especially imported ones)
+        if (updated <= 10 || (recipe.sourcePlatform && updated <= 20)) {
           console.log(`   📝 Recipe "${recipe.title?.substring(0, 40)}..." (${recipeId})`);
           console.log(`      - aiGenerated: ${recipe.aiGenerated || false}`);
           console.log(`      - sourcePlatform: ${recipe.sourcePlatform || 'none'}`);
           console.log(`      - userId: ${recipe.userId ? 'yes' : 'no'}`);
           console.log(`      - isExternal: ${recipe.isExternal || false}`);
+          console.log(`      - Previous isDiscoverable: ${recipe.isDiscoverable}`);
           console.log(`      - Setting isDiscoverable: ${isDiscoverable}\n`);
         }
 

@@ -90,12 +90,16 @@ class _HomeScreenState extends State<HomeScreen>
           recipeProvider.setGeneratedRecipesFromCache(discover);
         });
 
+        // Fetch community recipes for carousel
+        recipeProvider.fetchSessionCommunityCache();
+
         // Ensure first frame shows placeholders even before provider flips loading
         if (mounted) setState(() => _isBooting = false);
       }
     });
 
-    // Listen for cross-screen recipe updates to refresh all sections
+    // Listen for cross-screen recipe updates to trigger UI rebuild
+    // Note: Provider already updates data optimistically, no need for network fetch
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final recipeProvider = Provider.of<RecipeProvider>(
         context,
@@ -103,7 +107,8 @@ class _HomeScreenState extends State<HomeScreen>
       );
       _recipesChangedSubscription = recipeProvider.onRecipesChanged.listen((_) {
         if (mounted) {
-          _refreshAllSections(context);
+          // Just trigger rebuild - provider already has updated data
+          setState(() {});
         }
       });
     });
@@ -136,18 +141,26 @@ class _HomeScreenState extends State<HomeScreen>
         context,
         listen: false,
       );
-      // Start with navigation drawer menu and credit balance (most important UI elements)
+      // Start with home hero section (welcome message)
       final List<GlobalKey> tutorialTargets = [
-        TutorialKeys.navDrawerMenu,
-        TutorialKeys.creditBalance,
+        TutorialKeys.homeHero,
       ];
 
-      // Then add home hero section
-      tutorialTargets.add(TutorialKeys.homeHero);
+      // Then navigation drawer menu and credit balance
+      tutorialTargets.addAll([
+        TutorialKeys.navDrawerMenu,
+        TutorialKeys.creditBalance,
+      ]);
 
       // Only include "Your Recipes" if the user has saved recipes
       if (recipeProvider.userRecipes.isNotEmpty) {
         tutorialTargets.add(TutorialKeys.homeYourRecipes);
+      }
+
+      // Only include "Community" if there are community recipes to show
+      final communityRecipes = recipeProvider.communityRecipes.take(10).toList();
+      if (communityRecipes.isNotEmpty) {
+        tutorialTargets.add(TutorialKeys.homeCommunity);
       }
 
       // Only include "Discover" if there are random recipes to show
@@ -184,24 +197,35 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  // Refresh all home sections at once
-  void _refreshAllSections(BuildContext context) {
+  // Refresh only user data (recipes and collections)
+  void _refreshUserData(BuildContext context) {
     final recipeProvider = context.read<RecipeProvider>();
     final collectionService = context.read<CollectionService>();
 
     // Trigger parallel refreshes (no await needed for button callbacks)
     recipeProvider.loadUserRecipes(limit: 20, forceRefresh: true);
+    
+    // Update cached collections future
+    _collectionsFuture = collectionService.getCollections(forceRefresh: true);
+
+    // Ensure widgets depending on FutureBuilder rebuild
+    if (mounted) setState(() {});
+  }
+
+  // Refresh all home sections at once
+  void _refreshAllSections(BuildContext context) {
+    final recipeProvider = context.read<RecipeProvider>();
+    
+    // Refresh user data
+    _refreshUserData(context);
+    
+    // Refresh discover recipes (random) - only on manual refresh
     recipeProvider.searchExternalRecipes(
       query: '',
       limit: 50,
       forceRefresh: true,
       random: true,
     );
-    // Update cached collections future
-    _collectionsFuture = collectionService.getCollections(forceRefresh: true);
-
-    // Ensure widgets depending on FutureBuilder rebuild
-    setState(() {});
   }
 
   @override
@@ -340,6 +364,61 @@ class _HomeScreenState extends State<HomeScreen>
                                       context,
                                       title: 'Your Recipes',
                                       recipes: saved.take(10).toList(),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                            SizedBox(height: AppSpacing.responsive(context)),
+                            // --- Community Recipes carousel ---
+                            Consumer<DynamicUiProvider>(
+                              builder: (context, dynamicUi, _) {
+                                if (!(dynamicUi.config?.isSectionVisible(
+                                      'communityCarousel',
+                                    ) ??
+                                    true)) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Consumer<RecipeProvider>(
+                                  builder: (context, recipeProvider, _) {
+                                    final community = recipeProvider.communityRecipes
+                                        .take(10)
+                                        .toList();
+                                    // Show loading if loading community recipes or still booting
+                                    if (recipeProvider.isLoading &&
+                                        community.isEmpty) {
+                                      return _buildSectionLoading(
+                                        context,
+                                        title: 'Community',
+                                        height: 180,
+                                      );
+                                    }
+                                    if (_isBooting && community.isEmpty) {
+                                      return _buildSectionLoading(
+                                        context,
+                                        title: 'Community',
+                                        height: 180,
+                                      );
+                                    }
+                                    if (community.isEmpty &&
+                                        recipeProvider.error != null) {
+                                      return _buildSectionMessage(
+                                        context,
+                                        title: 'Community',
+                                        message:
+                                            recipeProvider
+                                                .error!
+                                                .userFriendlyMessage,
+                                        onRetry: () {
+                                          _refreshAllSections(context);
+                                        },
+                                      );
+                                    }
+                                    if (community.isEmpty) return const SizedBox();
+                                    return _buildCommunityCarousel(
+                                      context,
+                                      title: 'Community',
+                                      recipes: community,
                                     );
                                   },
                                 );
@@ -969,6 +1048,12 @@ class _HomeScreenState extends State<HomeScreen>
         Colors.purple,
       ),
       _CategoryItem(
+        'Community',
+        Icons.people_rounded,
+        '/community',
+        const Color(0xFF6C5CE7),
+      ),
+      _CategoryItem(
         'Discover Recipes',
         Icons.explore,
         '/discover',
@@ -1079,6 +1164,263 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Builds a community recipe carousel section with user profile pics on cards.
+  Widget _buildCommunityCarousel(
+    BuildContext context, {
+    required String title,
+    required List<Recipe> recipes,
+  }) {
+    final theme = Theme.of(context);
+
+    return TutorialShowcase(
+      showcaseKey: TutorialKeys.homeCommunity,
+      title: 'Community Recipes 👥',
+      description:
+          'Discover recipes shared by other users. Save your favorites and get inspired by the community!',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, '/community');
+              },
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: AppTypography.responsiveFontSize(
+                          context,
+                          mobile: 20,
+                          tablet: 22,
+                          desktop: 24,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 180,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: recipes.length,
+              separatorBuilder: (_, __) => SizedBox(width: AppSpacing.sm),
+              itemBuilder: (context, index) {
+                final recipe = recipes[index];
+                return _buildCommunityRecipeCard(context, recipe);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds a community recipe card with user profile pic in top right corner.
+  Widget _buildCommunityRecipeCard(BuildContext context, Recipe recipe) {
+    final theme = Theme.of(context);
+    final cardWidth =
+        AppBreakpoints.isDesktop(context)
+            ? 220.0
+            : AppBreakpoints.isTablet(context)
+            ? 180.0
+            : 140.0;
+    
+    // Get user photo URL and display name from recipe
+    final photoUrl = recipe.sharedByPhotoUrl;
+    final displayName = recipe.sharedByDisplayName ?? 'User';
+    
+    return GestureDetector(
+      onLongPressStart: (details) {
+        _showRecipeContextMenu(context, recipe, details.globalPosition);
+      },
+      child: InkWell(
+        onTap:
+            () => Navigator.pushNamed(
+              context,
+              '/recipeDetail',
+              arguments: recipe,
+            ),
+        child: Container(
+          width: cardWidth,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              AppBreakpoints.isDesktop(context) ? 16 : 12,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                offset: Offset(0, AppBreakpoints.isDesktop(context) ? 3 : 2),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(
+              AppBreakpoints.isDesktop(context) ? 16 : 12,
+            ),
+            child: Stack(
+              children: [
+                // Image
+                Positioned.fill(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final devicePixelRatio =
+                          MediaQuery.of(context).devicePixelRatio;
+                      return Image.network(
+                        recipe.imageUrl,
+                        fit: BoxFit.cover,
+                        cacheWidth:
+                            (constraints.maxWidth * devicePixelRatio).round(),
+                        cacheHeight:
+                            (constraints.maxHeight * devicePixelRatio).round(),
+                        filterQuality: FilterQuality.high,
+                        errorBuilder:
+                            (_, __, ___) => Container(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.secondary.withValues(
+                                alpha:
+                                    Theme.of(context).colorScheme.overlayMedium,
+                              ),
+                              child: Icon(
+                                Icons.restaurant,
+                                size: AppSizing.responsiveIconSize(
+                                  context,
+                                  mobile: 40,
+                                  tablet: 48,
+                                  desktop: 56,
+                                ),
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                      );
+                    },
+                  ),
+                ),
+                // User profile pic in top right corner
+                Positioned(
+                  top: AppBreakpoints.isDesktop(context) ? 10 : 8,
+                  right: AppBreakpoints.isDesktop(context) ? 10 : 8,
+                  child: Tooltip(
+                    message: displayName,
+                    child: Container(
+                      width: AppBreakpoints.isDesktop(context) ? 36 : 28,
+                      height: AppBreakpoints.isDesktop(context) ? 36 : 28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: photoUrl != null && photoUrl.isNotEmpty
+                            ? Image.network(
+                                photoUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: theme.colorScheme.primaryContainer,
+                                  child: Icon(
+                                    Icons.person,
+                                    size: AppBreakpoints.isDesktop(context) ? 20 : 16,
+                                    color: theme.colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                color: theme.colorScheme.primaryContainer,
+                                child: Icon(
+                                  Icons.person,
+                                  size: AppBreakpoints.isDesktop(context) ? 20 : 16,
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+                // Gradient overlay bottom
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: AppBreakpoints.isDesktop(context) ? 80 : 60,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.54),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Title
+                Positioned(
+                  left: AppBreakpoints.isDesktop(context) ? 12 : 8,
+                  right: AppBreakpoints.isDesktop(context) ? 12 : 8,
+                  bottom: AppBreakpoints.isDesktop(context) ? 12 : 8,
+                  child: Text(
+                    recipe.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        AppBreakpoints.isDesktop(context)
+                            ? theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  blurRadius: 4,
+                                ),
+                              ],
+                            )
+                            : theme.textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  blurRadius: 4,
+                                ),
+                              ],
+                            ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

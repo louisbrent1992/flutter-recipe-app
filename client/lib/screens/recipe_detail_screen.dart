@@ -10,6 +10,7 @@ import 'package:recipease/screens/recipe_edit_screen.dart';
 import '../models/recipe.dart';
 import '../components/custom_app_bar.dart';
 import '../providers/user_profile_provider.dart';
+import '../providers/auth_provider.dart';
 import '../theme/theme.dart';
 import '../components/smart_recipe_image.dart';
 import '../components/inline_banner_ad.dart';
@@ -41,9 +42,34 @@ class RecipeDetailScreen extends StatefulWidget {
 }
 
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
-  bool _isSaved = false;
   late Recipe _currentRecipe;
   Key _imageKey = UniqueKey();
+
+  bool _checkIfSaved(RecipeProvider provider) {
+    final userRecipes = provider.userRecipes;
+    
+    // Check by ID
+    if (userRecipes.any((r) => r.id == widget.recipe.id)) return true;
+
+    // Check by sourceUrl
+    if (widget.recipe.sourceUrl != null &&
+        widget.recipe.sourceUrl!.isNotEmpty) {
+      if (userRecipes.any((r) => r.sourceUrl == widget.recipe.sourceUrl))
+        return true;
+    }
+    
+    // Check title + description for fallback (matching Discover/Community recipes)
+    final recipeKey =
+        '${widget.recipe.title.toLowerCase()}|${widget.recipe.description.toLowerCase()}';
+    final userRecipeKeys =
+        userRecipes
+            .map(
+              (r) => '${r.title.toLowerCase()}|${r.description.toLowerCase()}',
+            )
+            .toSet();
+    
+    return userRecipeKeys.contains(recipeKey);
+  }
 
   String? _deriveSourceUrl(Recipe recipe) {
     if (recipe.sourceUrl != null && recipe.sourceUrl!.isNotEmpty) {
@@ -133,7 +159,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     super.initState();
     _currentRecipe = widget.recipe;
     _checkFavoriteStatus();
-    _checkSavedStatus();
   }
 
   // Image viewer
@@ -261,14 +286,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     if (widget.recipe.id.isEmpty) return;
     context.read<UserProfileProvider>();
     if (mounted) setState(() {});
-  }
-
-  void _checkSavedStatus() {
-    if (widget.recipe.id.isEmpty) return;
-    final userRecipes = context.read<RecipeProvider>().userRecipes;
-    setState(() {
-      _isSaved = userRecipes.any((recipe) => recipe.id == widget.recipe.id);
-    });
   }
 
   Widget _buildSourceLink() {
@@ -485,7 +502,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       // Show dialog to select collection or create new
       final result = await showDialog<dynamic>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder:
+            (context) => AlertDialog(
           title: const Text('Add to Collection'),
           content: SizedBox(
             width: double.maxFinite,
@@ -524,7 +542,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     itemBuilder: (context, index) {
                       final collection = collections[index];
                       // Skip default collections like "Recently Added"
-                      if (collection.name == 'Recently Added') return const SizedBox.shrink();
+                          if (collection.name == 'Recently Added')
+                            return const SizedBox.shrink();
                       
                       return ListTile(
                         leading: Container(
@@ -540,7 +559,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           ),
                         ),
                         title: Text(collection.name),
-                        subtitle: Text('${collection.recipes.length} recipes'),
+                            subtitle: Text(
+                              '${collection.recipes.length} recipes',
+                            ),
                         onTap: () => Navigator.pop(context, collection),
                       );
                     },
@@ -621,17 +642,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           ),
         );
       } else if (mounted) {
-        SnackBarHelper.showError(
-          context,
-          'Failed to add recipe to collection',
-        );
+        SnackBarHelper.showError(context, 'Failed to add recipe to collection');
       }
     } catch (e) {
       if (mounted) {
-        SnackBarHelper.showError(
-          context,
-          'Error: $e',
-        );
+        SnackBarHelper.showError(context, 'Error: $e');
       }
     }
   }
@@ -665,6 +680,358 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
     // If we can't parse it, return as is
     return cookingTime;
+  }
+
+  /// Build user attribution for community recipes
+  /// Shows the profile photo and display name of the user who shared the recipe
+  Widget _buildUserAttribution(Recipe recipe) {
+    // Only show for community recipes (has sharedByDisplayName or sharedByUserId)
+    final isCommunityRecipe =
+        recipe.sharedByDisplayName != null || recipe.sharedByUserId != null;
+
+    if (!isCommunityRecipe) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+    final displayName = recipe.sharedByDisplayName ?? 'Chef';
+    final photoUrl = recipe.sharedByPhotoUrl;
+
+    return Container(
+      margin: EdgeInsets.only(top: AppSpacing.md),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Profile photo
+          if (photoUrl != null && photoUrl.isNotEmpty)
+            ClipOval(
+              child: Image.network(
+                photoUrl,
+                width: AppSizing.responsiveIconSize(
+                  context,
+                  mobile: 40,
+                  tablet: 44,
+                  desktop: 48,
+                ),
+                height: AppSizing.responsiveIconSize(
+                  context,
+                  mobile: 40,
+                  tablet: 44,
+                  desktop: 48,
+                ),
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: AppSizing.responsiveIconSize(
+                      context,
+                      mobile: 40,
+                      tablet: 44,
+                      desktop: 48,
+                    ),
+                    height: AppSizing.responsiveIconSize(
+                      context,
+                      mobile: 40,
+                      tablet: 44,
+                      desktop: 48,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.person,
+                      size: AppSizing.responsiveIconSize(
+                        context,
+                        mobile: 24,
+                        tablet: 26,
+                        desktop: 28,
+                      ),
+                      color: theme.colorScheme.primary,
+                    ),
+                  );
+                },
+              ),
+            )
+          else
+            Container(
+              width: AppSizing.responsiveIconSize(
+                context,
+                mobile: 40,
+                tablet: 44,
+                desktop: 48,
+              ),
+              height: AppSizing.responsiveIconSize(
+                context,
+                mobile: 40,
+                tablet: 44,
+                desktop: 48,
+              ),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.person,
+                size: AppSizing.responsiveIconSize(
+                  context,
+                  mobile: 24,
+                  tablet: 26,
+                  desktop: 28,
+                ),
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          SizedBox(width: AppSpacing.md),
+          // User info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Shared by',
+                  style: TextStyle(
+                    fontSize: AppTypography.responsiveFontSize(
+                      context,
+                      mobile: 11.0,
+                      tablet: 12.0,
+                      desktop: 13.0,
+                    ),
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  displayName,
+                  style: TextStyle(
+                    fontSize: AppTypography.responsiveFontSize(
+                      context,
+                      mobile: 14.0,
+                      tablet: 15.0,
+                      desktop: 16.0,
+                    ),
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          // Community badge
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.people_rounded,
+                  size: AppSizing.responsiveIconSize(
+                    context,
+                    mobile: 14,
+                    tablet: 16,
+                    desktop: 18,
+                  ),
+                  color: theme.colorScheme.primary,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  'Community',
+                  style: TextStyle(
+                    fontSize: AppTypography.responsiveFontSize(
+                      context,
+                      mobile: 10.0,
+                      tablet: 11.0,
+                      desktop: 12.0,
+                    ),
+                    fontWeight: FontWeight.w500,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build engagement stats for discoverable recipes
+  /// Shows for:
+  /// 1. User's own discoverable recipes (to see their recipe's engagement)
+  /// 2. Community recipes from other users (when viewing from notification or community screen)
+  Widget _buildEngagementStats(Recipe recipe) {
+    final currentUser = context.read<AuthService>().user;
+
+    // Check if this is the user's own recipe
+    final isOwnRecipe = currentUser != null && recipe.userId == currentUser.uid;
+
+    // Check if recipe has any engagement metrics
+    final hasEngagement =
+        recipe.likeCount > 0 || recipe.saveCount > 0 || recipe.shareCount > 0;
+
+    // Check if this is a community recipe (has sharedByDisplayName or sharedByUserId)
+    final isCommunityRecipe =
+        recipe.sharedByDisplayName != null || recipe.sharedByUserId != null;
+
+    // Show engagement stats if:
+    // 1. It's the user's own recipe with engagement, OR
+    // 2. It's a community recipe (from another user) with engagement
+    if (!hasEngagement || (!isOwnRecipe && !isCommunityRecipe)) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+
+    // Different styling for own recipes vs community recipes
+    final containerColor =
+        isOwnRecipe
+            ? theme.colorScheme.primaryContainer.withOpacity(0.3)
+            : theme.colorScheme.surfaceContainerHighest.withOpacity(0.5);
+    final borderColor =
+        isOwnRecipe
+            ? theme.colorScheme.primary.withOpacity(0.2)
+            : theme.colorScheme.outline.withOpacity(0.2);
+
+    return Container(
+      margin: EdgeInsets.only(top: AppSpacing.md, bottom: AppSpacing.sm),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor, width: 1),
+      ),
+      child: Column(
+        children: [
+          // Show "Your Recipe Stats" label for own recipes
+          if (isOwnRecipe) ...[
+            Text(
+              'Your Recipe Stats',
+              style: TextStyle(
+                fontSize: AppTypography.responsiveFontSize(
+                  context,
+                  mobile: 12.0,
+                  tablet: 13.0,
+                  desktop: 14.0,
+                ),
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            SizedBox(height: AppSpacing.sm),
+          ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildStatItem(
+                icon: Icons.favorite_rounded,
+                count: recipe.likeCount,
+                label: 'likes',
+                color: theme.colorScheme.error,
+              ),
+              _buildStatDivider(),
+              _buildStatItem(
+                icon: Icons.bookmark_rounded,
+                count: recipe.saveCount,
+                label: 'saves',
+                color: theme.colorScheme.primary,
+              ),
+              _buildStatDivider(),
+              _buildStatItem(
+                icon: Icons.share_rounded,
+                count: recipe.shareCount,
+                label: 'shares',
+                color: theme.colorScheme.primary,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required IconData icon,
+    required int count,
+    required String label,
+    required Color color,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: AppSizing.responsiveIconSize(
+                context,
+                mobile: 18,
+                tablet: 20,
+                desktop: 22,
+              ),
+              color: color,
+            ),
+            SizedBox(width: AppSpacing.xs),
+            Text(
+              '$count',
+              style: TextStyle(
+                fontSize: AppTypography.responsiveFontSize(
+                  context,
+                  mobile: 16.0,
+                  tablet: 18.0,
+                  desktop: 20.0,
+                ),
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: AppTypography.responsiveFontSize(
+              context,
+              mobile: 11.0,
+              tablet: 12.0,
+              desktop: 13.0,
+            ),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatDivider() {
+    return Container(
+      height: 30,
+      width: 1,
+      color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+    );
   }
 
   @override
@@ -703,48 +1070,42 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 ),
               ),
               onSelected: (action) async {
+                final provider = context.read<RecipeProvider>();
+                final isSaved = _checkIfSaved(provider);
+                
                 switch (action) {
                   case MenuAction.save:
-                    if (_isSaved) break;
-                    final recipeProvider = context.read<RecipeProvider>();
+                    if (isSaved) break;
+                    final recipeProvider = provider;
                     final savedRecipe = await recipeProvider.createUserRecipe(
-                      widget.recipe,
+                      _currentRecipe,
                       context,
                     );
                     if (!context.mounted) break;
                     if (savedRecipe != null) {
-                      setState(() {
-                        _isSaved = true;
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Recipe saved successfully!'),
-                          duration: const Duration(seconds: 4),
-                          action: SnackBarAction(
-                            label: 'View Recipes',
-                            onPressed: () {
-                              if (mounted) {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/myRecipes',
-                                  arguments: savedRecipe,
-                                );
-                              }
-                            },
-                          ),
-                          backgroundColor:
-                              Theme.of(context).colorScheme.success,
+                      // Provider update will trigger rebuild and update isSaved status
+                      SnackBarHelper.showSuccess(
+                        context,
+                        'Recipe saved successfully!',
+                        action: SnackBarAction(
+                          label: 'View Recipes',
+                          textColor: Colors.white,
+                          onPressed: () {
+                            if (mounted) {
+                              Navigator.pushNamed(
+                                context,
+                                '/myRecipes',
+                                arguments: savedRecipe,
+                              );
+                            }
+                          },
                         ),
                       );
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            recipeProvider.error?.message ??
-                                'Failed to save recipe',
-                          ),
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                        ),
+                      SnackBarHelper.showError(
+                        context,
+                        recipeProvider.error?.message ??
+                            'Failed to save recipe',
                       );
                     }
                     break;
@@ -895,26 +1256,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       );
                       if (!context.mounted) break;
                       if (success) {
-                        setState(() {
-                          _isSaved = false;
-                        });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Recipe deleted successfully!'),
-                            backgroundColor:
-                                Theme.of(context).colorScheme.success,
-                          ),
+                        SnackBarHelper.showSuccess(
+                          context,
+                          'Recipe deleted successfully!',
                         );
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              recipeProvider.error?.message ??
-                                  'Failed to delete recipe',
-                            ),
-                            backgroundColor:
-                                Theme.of(context).colorScheme.error,
-                          ),
+                        SnackBarHelper.showError(
+                          context,
+                          recipeProvider.error?.message ??
+                              'Failed to delete recipe',
                         );
                       }
                     }
@@ -922,11 +1272,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 }
               },
               itemBuilder: (context) {
+                final isSaved = _checkIfSaved(context.read<RecipeProvider>());
                 final List<PopupMenuEntry<MenuAction>> items = [];
                 // Only allow replacing image when the recipe is saved by the user
                 // In production (release builds), this is strictly enforced
                 // In debug builds, only allow if saved OR if not a discover recipe
-                final bool canShowReplaceImage = _isSaved;
+                final bool canShowReplaceImage = isSaved;
                 if (canShowReplaceImage) {
                   items.add(
                     PopupMenuItem<MenuAction>(
@@ -945,7 +1296,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     ),
                   );
                 }
-                if (!_isSaved) {
+                if (!isSaved) {
                   items.add(
                     PopupMenuItem<MenuAction>(
                       value: MenuAction.save,
@@ -1010,7 +1361,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     ),
                   ),
                 ]);
-                if (_isSaved) {
+                if (isSaved) {
                   items.add(
                     PopupMenuItem<MenuAction>(
                       value: MenuAction.edit,
@@ -1084,7 +1435,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                               final updated = recipe.copyWith(imageUrl: url);
                               // Avoid surfacing provider-wide errors (e.g., 403)
                               // Only attempt a silent server update if this recipe is saved
-                              if (_isSaved) {
+                              if (_checkIfSaved(
+                                context.read<RecipeProvider>(),
+                              )) {
                                 try {
                                   await RecipeService.updateUserRecipe(updated);
                                 } catch (_) {
@@ -1174,7 +1527,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       left: AppSpacing.responsive(context),
                       right: AppSpacing.responsive(context),
                       top: AppSpacing.responsive(context),
-                      bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
+                      bottom:
+                          AppSpacing.responsive(context) +
+                          60, // Extra space for floating bar
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1286,6 +1641,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             ),
                           ],
                         ),
+
+                        // User attribution for community recipes
+                        _buildUserAttribution(recipe),
+
+                        // Engagement stats for user's own discoverable recipes
+                        _buildEngagementStats(recipe),
 
                         SizedBox(height: AppSpacing.lg),
 

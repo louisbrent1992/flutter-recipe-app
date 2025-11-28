@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:logger/logger.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import '../config/app_config.dart';
 import '../models/api_response.dart';
 
 /// A centralized API client for making HTTP requests with standardized error handling
@@ -71,23 +72,40 @@ class ApiClient {
   }
 
   /// Base URL for API requests
-  /// Uses development server in debug mode or for emulator/simulator, production server for physical devices in release mode
+  /// Priority:
+  /// 1. If ENV=staging is set, use staging URL (for testing on physical devices)
+  /// 2. If ENV=development or kDebugMode, use local development server
+  /// 3. Otherwise, use production URL for physical devices
   Future<String> get baseUrl async {
-    final String productionUrl =
-        'https://recipease-app-server-826154873845.us-west2.run.app/api';
     final String developmentUrl =
         Platform.isAndroid
             ? 'http://10.0.2.2:$port/api'
             : 'http://localhost:$port/api';
 
-    // Always use development URL in debug mode (for testing on emulators)
+    // If explicitly set to staging environment, always use staging URL
+    // This allows testing staging server on physical devices
+    if (AppConfig.isStaging) {
+      _logger.d('Using STAGING API: ${AppConfig.stagingApiUrl}');
+      return AppConfig.stagingApiUrl;
+    }
+
+    // If explicitly set to development, use local server
+    if (AppConfig.isDevelopment) {
+      _logger.d('Using DEVELOPMENT API: $developmentUrl');
+      return developmentUrl;
+    }
+
+    // In debug mode (IDE run), use development URL for emulators
     if (kDebugMode) {
+      _logger.d('Using DEBUG/LOCAL API: $developmentUrl');
       return developmentUrl;
     }
 
     // In release mode, use production URL for physical devices, development for emulators
     final bool isPhysical = await _checkIsPhysicalDevice();
-    return isPhysical ? productionUrl : developmentUrl;
+    final url = isPhysical ? AppConfig.productionApiUrl : developmentUrl;
+    _logger.d('Using ${isPhysical ? "PRODUCTION" : "DEVELOPMENT"} API: $url');
+    return url;
   }
 
   /// Get headers with Firebase authentication token

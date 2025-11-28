@@ -167,10 +167,18 @@ class RecipeService {
   }
 
   /// Create a new user recipe
-  static Future<ApiResponse<Recipe>> createUserRecipe(Recipe recipe) async {
+  static Future<ApiResponse<Recipe>> createUserRecipe(
+    Recipe recipe, {
+    String? originalRecipeId,
+  }) async {
+    final recipeJson = recipe.toJson();
+    if (originalRecipeId != null && originalRecipeId.isNotEmpty) {
+      recipeJson['originalRecipeId'] = originalRecipeId;
+    }
+
     final response = await _api.authenticatedPost<Map<String, dynamic>>(
       'users/recipes',
-      body: recipe.toJson(),
+      body: recipeJson,
     );
 
     if (response.success && response.data != null) {
@@ -339,6 +347,86 @@ class RecipeService {
 
     return ApiResponse.error(
       response.message ?? 'Failed to search recipes',
+      statusCode: response.statusCode,
+    );
+  }
+
+  static Future<ApiResponse<Map<String, dynamic>>> getCommunityRecipes({
+    String? query,
+    String? difficulty,
+    String? tag,
+    int page = 1,
+    int limit = 12,
+    bool random = false,
+  }) async {
+    final Map<String, String> queryParams = {
+      if (query != null && query.isNotEmpty) 'query': query,
+      if (difficulty != null && difficulty != 'All') 'difficulty': difficulty,
+      if (tag != null && tag != 'All') 'tag': tag,
+      'page': page.toString(),
+      'limit': limit.toString(),
+      if (random) 'random': 'true',
+    };
+
+    final response = await _api.authenticatedGet<Map<String, dynamic>>(
+      'community/recipes',
+      queryParams: queryParams,
+    );
+
+    if (response.success && response.data != null) {
+      return ApiResponse.success(response.data!);
+    }
+
+    return ApiResponse.error(
+      response.message ?? 'Failed to fetch community recipes',
+      statusCode: response.statusCode,
+    );
+  }
+
+  /// Like or unlike a community recipe
+  static Future<ApiResponse<Map<String, dynamic>>> toggleRecipeLike(String recipeId) async {
+    final response = await _api.authenticatedPost<Map<String, dynamic>>(
+      'users/recipes/$recipeId/like',
+    );
+
+    if (response.success && response.data != null) {
+      return ApiResponse.success(response.data!);
+    }
+
+    return ApiResponse.error(
+      response.message ?? 'Failed to update like status',
+      statusCode: response.statusCode,
+    );
+  }
+
+  /// Track a share of a community recipe
+  static Future<ApiResponse<Map<String, dynamic>>> trackRecipeShare(String recipeId) async {
+    final response = await _api.authenticatedPost<Map<String, dynamic>>(
+      'users/recipes/$recipeId/share',
+    );
+
+    if (response.success && response.data != null) {
+      return ApiResponse.success(response.data!);
+    }
+
+    return ApiResponse.error(
+      response.message ?? 'Failed to track share',
+      statusCode: response.statusCode,
+    );
+  }
+
+  /// Fetch a single recipe by ID (for notification navigation)
+  static Future<ApiResponse<Recipe>> getRecipeById(String recipeId) async {
+    final response = await _api.authenticatedGet<Map<String, dynamic>>(
+      'users/recipes/$recipeId',
+    );
+
+    if (response.success && response.data != null) {
+      return ApiResponse.success(Recipe.fromJson(response.data!));
+    }
+
+    return ApiResponse.error(
+      response.message ?? 'Failed to fetch recipe',
       statusCode: response.statusCode,
     );
   }

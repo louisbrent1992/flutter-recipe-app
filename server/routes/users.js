@@ -4,6 +4,7 @@ const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const auth = require("../middleware/auth");
 const axios = require("axios");
 const { searchImage } = require("../utils/imageService");
+const { checkAndSendMilestoneNotification } = require("../utils/notifications");
 
 // Get Firestore database instance
 const db = getFirestore();
@@ -167,6 +168,7 @@ router.post("/recipes", auth, async (req, res) => {
 			aiGenerated = false,
 			toEdit = false,
 			nutrition = null,
+			originalRecipeId = null, // ID of the original recipe if saving from community
 		} = req.body;
 
 		if (!title) {
@@ -254,10 +256,75 @@ router.post("/recipes", auth, async (req, res) => {
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 			isFavorite: false,
+			likeCount: 0, // Initialize like count
+			saveCount: 0, // Initialize save count
+			shareCount: 0, // Initialize share count
 			searchableFields,
 		};
 
 		const docRef = await db.collection("recipes").add(newRecipe);
+
+		// If this is a save from a community recipe, track the save and increment saveCount
+		if (originalRecipeId && originalRecipeId !== docRef.id) {
+			try {
+				const originalRecipeRef = db.collection("recipes").doc(originalRecipeId);
+				const originalRecipeDoc = await originalRecipeRef.get();
+
+				if (originalRecipeDoc.exists) {
+					const originalRecipeData = originalRecipeDoc.data();
+					
+					// Only increment saveCount if:
+					// 1. Original recipe is discoverable (community recipe)
+					// 2. Original recipe belongs to a different user
+					// 3. User hasn't already saved this recipe
+					if (originalRecipeData.isDiscoverable && 
+					    originalRecipeData.userId !== userId) {
+						
+						const saveRef = db.collection("recipeSaves").doc(`${originalRecipeId}_${userId}`);
+						const saveDoc = await saveRef.get();
+
+						if (!saveDoc.exists) {
+							// Use a transaction to atomically increment saveCount
+							let newSaveCount = 0;
+							await db.runTransaction(async (transaction) => {
+								const currentRecipe = await transaction.get(originalRecipeRef);
+								if (!currentRecipe.exists) {
+									throw new Error("Original recipe not found");
+								}
+
+								const currentSaveCount = currentRecipe.data().saveCount || 0;
+								newSaveCount = currentSaveCount + 1;
+
+								// Create save document
+								transaction.set(saveRef, {
+									recipeId: originalRecipeId,
+									userId: userId,
+									createdAt: FieldValue.serverTimestamp(),
+								});
+
+								// Increment saveCount
+								transaction.update(originalRecipeRef, {
+									saveCount: newSaveCount,
+									updatedAt: FieldValue.serverTimestamp(),
+								});
+							});
+
+							// Send milestone notification for saves
+							checkAndSendMilestoneNotification(
+								originalRecipeData.userId,
+								originalRecipeId,
+								originalRecipeData.title,
+								'saves',
+								newSaveCount
+							);
+						}
+					}
+				}
+			} catch (error) {
+				// Log error but don't fail the save operation
+				console.error("Error tracking recipe save:", error);
+			}
+		}
 
 		res.status(201).json({
 			id: docRef.id,
@@ -492,6 +559,150 @@ router.delete("/account", auth, async (req, res) => {
 		errorHandler.serverError(
 			res,
 			"We couldn't delete your account data right now. Please try again shortly."
+		);
+	}
+});
+
+// Like or unlike a community recipe
+router.post("/recipes/:id/like", auth, async (req, res) => {
+	try {
+		const userId = req.user.uid;
+		const recipeId = req.params.id;
+
+		// Get the recipe
+		const recipeRef = db.collection("recipes").doc(recipeId);
+		const recipeDoc = await recipeRef.get();
+
+		if (!recipeDoc.exists) {
+			return res.status(404).json({ error: "Recipe not found" });
+		}
+
+		const recipeData = recipeDoc.data();
+
+		// Only allow liking community recipes (isDiscoverable === true, not current user's)
+		if (!recipeData.isDiscoverable || recipeData.userId === userId) {
+			return res.status(403).json({ 
+				error: "You can only like community recipes shared by other users" 
+			});
+		}
+
+		// Check if user already liked this recipe
+		const likeRef = db.collection("recipeLikes").doc(`${recipeId}_${userId}`);
+		const likeDoc = await likeRef.get();
+		const alreadyLiked = likeDoc.exists;
+
+		// Use a transaction to atomically update like count
+		await db.runTransaction(async (transaction) => {
+			const currentRecipe = await transaction.get(recipeRef);
+			if (!currentRecipe.exists) {
+				throw new Error("Recipe not found");
+			}
+
+			const currentLikeCount = currentRecipe.data().likeCount || 0;
+
+			if (alreadyLiked) {
+				// Unlike: remove like document and decrement count
+				transaction.delete(likeRef);
+				transaction.update(recipeRef, {
+					likeCount: Math.max(0, currentLikeCount - 1),
+					updatedAt: FieldValue.serverTimestamp(),
+				});
+			} else {
+				// Like: create like document and increment count
+				transaction.set(likeRef, {
+					recipeId: recipeId,
+					userId: userId,
+					createdAt: FieldValue.serverTimestamp(),
+				});
+				transaction.update(recipeRef, {
+					likeCount: currentLikeCount + 1,
+					updatedAt: FieldValue.serverTimestamp(),
+				});
+			}
+		});
+
+		// Get updated recipe data
+		const updatedRecipeDoc = await recipeRef.get();
+		const updatedRecipe = updatedRecipeDoc.data();
+
+		// Send milestone notification if a new like was added
+		if (!alreadyLiked) {
+			checkAndSendMilestoneNotification(
+				recipeData.userId,
+				recipeId,
+				recipeData.title,
+				'likes',
+				updatedRecipe.likeCount || 0
+			);
+		}
+
+		res.json({
+			success: true,
+			liked: !alreadyLiked,
+			likeCount: updatedRecipe.likeCount || 0,
+		});
+	} catch (error) {
+		console.error("Error toggling like:", error);
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't update the like status right now. Please try again shortly."
+		);
+	}
+});
+
+// Track a share of a community recipe
+router.post("/recipes/:id/share", auth, async (req, res) => {
+	try {
+		const userId = req.user.uid;
+		const recipeId = req.params.id;
+
+		// Get the recipe
+		const recipeRef = db.collection("recipes").doc(recipeId);
+		const recipeDoc = await recipeRef.get();
+
+		if (!recipeDoc.exists) {
+			return res.status(404).json({ error: "Recipe not found" });
+		}
+
+		const recipeData = recipeDoc.data();
+
+		// Only track shares for community recipes (isDiscoverable === true, not current user's)
+		if (!recipeData.isDiscoverable || recipeData.userId === userId) {
+			return res.status(403).json({ 
+				error: "Share tracking is only for community recipes shared by other users" 
+			});
+		}
+
+		// Increment share count (we don't track individual shares, just count)
+		await recipeRef.update({
+			shareCount: FieldValue.increment(1),
+			updatedAt: FieldValue.serverTimestamp(),
+		});
+
+		// Get updated recipe data
+		const updatedRecipeDoc = await recipeRef.get();
+		const updatedRecipe = updatedRecipeDoc.data();
+
+		// Send milestone notification for shares
+		checkAndSendMilestoneNotification(
+			recipeData.userId,
+			recipeId,
+			recipeData.title,
+			'shares',
+			updatedRecipe.shareCount || 0
+		);
+
+		res.json({
+			success: true,
+			shareCount: updatedRecipe.shareCount || 0,
+		});
+	} catch (error) {
+		console.error("Error tracking share:", error);
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't track the share right now. Please try again shortly."
 		);
 	}
 });

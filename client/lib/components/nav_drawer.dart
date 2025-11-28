@@ -7,7 +7,6 @@ import '../theme/theme.dart';
 import '../providers/recipe_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../models/recipe.dart';
-import '../models/recipe_collection.dart';
 import '../services/game_center_service.dart';
 import '../utils/image_utils.dart';
 import 'dart:ui';
@@ -128,22 +127,9 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    // Load user recipes if not already loaded
-    // Ensure we load page 1 to get the total count for accurate stats
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final recipeProvider = Provider.of<RecipeProvider>(
-        context,
-        listen: false,
-      );
-      if (recipeProvider.userRecipes.isEmpty ||
-          recipeProvider.totalRecipes == 0) {
-        recipeProvider.loadUserRecipes(
-          page: 1,
-        ); // Explicitly load page 1 for total count
-        // Favorites removed: no favorites preloading
-      }
-
       // Sync chef ranking with Game Center when drawer opens
+    // Note: User recipes are loaded by HomeScreen, no need to duplicate here
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       _syncChefRankingWithGameCenter();
     });
 
@@ -675,12 +661,14 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               isMobile,
               null,
             ),
-            // Use FutureBuilder to properly handle async collections count
-            FutureBuilder<List<RecipeCollection>>(
-              future: CollectionService().getCollections(),
-              builder: (context, snapshot) {
-                final collectionsCount =
-                    snapshot.hasData ? snapshot.data!.length.toString() : '...';
+            // Use Consumer to get collections count from cached provider
+            Consumer<CollectionService>(
+              builder: (context, collectionService, _) {
+                // Use cached collections if available, otherwise show placeholder
+                final collections = collectionService.cachedCollections;
+                final collectionsCount = collections != null 
+                    ? collections.length.toString() 
+                    : '...';
                 return _buildStatChip(
                   collectionsCount,
                   'Collections',
@@ -1419,6 +1407,13 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                 7,
               ),
               _NavItem(
+                Icons.people_rounded,
+                'Community Recipes',
+                '/community',
+                const Color(0xFF6C5CE7),
+                8,
+              ),
+              _NavItem(
                 Icons.add_box_rounded,
                 'Import Recipe',
                 '/import',
@@ -1442,7 +1437,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               'Settings',
               '/settings',
               colorScheme.outline,
-              8,
+              9,
             ),
           ]),
           SizedBox(height: isMobile ? 12 : 16),

@@ -22,6 +22,10 @@ class CollectionService extends ChangeNotifier {
     RecipeCollection.withName('Recently Added'),
   ];
 
+  /// Get cached collections without triggering a network fetch
+  /// Returns null if no cache is available
+  List<RecipeCollection>? get cachedCollections => _cachedCollections;
+
   // Centralized method to update collections
   Future<List<RecipeCollection>> updateCollections({
     bool forceRefresh = false,
