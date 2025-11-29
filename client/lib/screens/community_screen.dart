@@ -12,6 +12,7 @@ import '../theme/theme.dart';
 import '../components/floating_bottom_bar.dart';
 import '../utils/snackbar_helper.dart';
 import '../components/inline_banner_ad.dart';
+import '../components/offline_banner.dart';
 
 class CommunityScreen extends StatefulWidget {
   final String? initialQuery;
@@ -348,6 +349,8 @@ class _CommunityScreenState extends State<CommunityScreen>
         children: [
           Column(
             children: [
+              // Show offline banner at top when offline
+              const OfflineBanner(),
               // Compact filter bar
               CompactFilterBar(
                 searchController: _searchController,
@@ -405,11 +408,17 @@ class _CommunityScreenState extends State<CommunityScreen>
                     if (recipeProvider.error != null &&
                         displayRecipes.isEmpty &&
                         !recipeProvider.isLoading) {
+                      final isOffline = recipeProvider.error!.isNetworkError;
                       return ErrorDisplay(
                         message: recipeProvider.error!.userFriendlyMessage,
-                        isNetworkError: recipeProvider.error!.isNetworkError,
+                        title: isOffline ? 'You\'re Offline' : 'Couldn\'t Load Recipes',
+                        subtitle: isOffline
+                            ? 'Connect to the internet to browse community recipes'
+                            : 'Something went wrong. Please try again.',
+                        isNetworkError: isOffline,
                         isAuthError: recipeProvider.error!.isAuthError,
                         isFormatError: recipeProvider.error!.isFormatError,
+                        customIcon: isOffline ? Icons.wifi_off_rounded : Icons.cloud_off_rounded,
                         onRetry: () {
                           recipeProvider.clearError();
                           _loadRecipes();

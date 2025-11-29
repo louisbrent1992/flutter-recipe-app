@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class ImageUtils {
-  /// Default profile icon URL
-  static const String defaultProfileIconUrl =
-      'https://res.cloudinary.com/client-images/image/upload/v1763232272/Recipe%20App/Gemini_Generated_Image_rdfwhzrdfwhzrdfw_b7crkt.png';
+  /// Default profile icon - uses local asset for faster loading
+  static const String defaultProfileIconUrl = 'assets/images/chefs_hat.png';
 
   /// Determines if the given path is a network URL
   static bool isNetworkUrl(String path) {
@@ -65,6 +64,47 @@ class ImageUtils {
         return 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&q=80';
       default:
         return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80';
+    }
+  }
+
+  /// Builds a profile image widget that handles both network URLs and local assets
+  static Widget buildProfileImage({
+    required String? imageUrl,
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+    Widget? errorWidget,
+  }) {
+    final url = imageUrl ?? defaultProfileIconUrl;
+    
+    if (isAssetPath(url)) {
+      return Image.asset(
+        url,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) => errorWidget ?? 
+          Container(
+            width: width,
+            height: height,
+            color: Colors.grey[300],
+            child: const Icon(Icons.person, color: Colors.grey),
+          ),
+      );
+    } else {
+      return Image.network(
+        url,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) => errorWidget ??
+          Container(
+            width: width,
+            height: height,
+            color: Colors.grey[300],
+            child: const Icon(Icons.person, color: Colors.grey),
+          ),
+      );
     }
   }
 

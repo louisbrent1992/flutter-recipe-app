@@ -518,16 +518,23 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                       ImageUtils.defaultProfileIconUrl;
                   
                   return ClipOval(
-                    child: CachedNetworkImage(
-                              imageUrl: photoURL,
-                              fit: BoxFit.cover,
-                              placeholder:
-                                  (context, url) =>
-                                      _buildAvatarPlaceholder(isDark, isMobile),
-                              errorWidget:
-                                  (context, url, error) =>
-                                      _buildAvatarPlaceholder(isDark, isMobile),
-                    ),
+                    child: ImageUtils.isAssetPath(photoURL)
+                        ? Image.asset(
+                            photoURL,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                _buildAvatarPlaceholder(isDark, isMobile),
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: photoURL,
+                            fit: BoxFit.cover,
+                            placeholder:
+                                (context, url) =>
+                                    _buildAvatarPlaceholder(isDark, isMobile),
+                            errorWidget:
+                                (context, url, error) =>
+                                    _buildAvatarPlaceholder(isDark, isMobile),
+                          ),
                   );
                 },
               ),

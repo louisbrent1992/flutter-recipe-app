@@ -19,6 +19,7 @@ import '../components/app_tutorial.dart';
 import '../services/tutorial_service.dart';
 import '../components/inline_banner_ad.dart';
 import '../utils/image_utils.dart';
+import '../components/offline_banner.dart';
 
 /// Lightweight model representing a quick-access category on the home screen.
 class _CategoryItem {
@@ -240,6 +241,13 @@ class _HomeScreenState extends State<HomeScreen>
       drawer: const NavDrawer(),
       body: Stack(
         children: [
+          // Show offline banner at top when offline
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: OfflineBanner(),
+          ),
           SafeArea(
             child: Consumer<UserProfileProvider>(
               builder: (context, profile, _) {
@@ -326,13 +334,14 @@ class _HomeScreenState extends State<HomeScreen>
                                       // Show error if failed to load
                                       if (saved.isEmpty &&
                                           recipeProvider.error != null) {
+                                        final isOffline = recipeProvider.error!.isNetworkError;
                                         return _buildSectionMessage(
                                           context,
                                           title: 'Your Recipes',
-                                          message:
-                                              recipeProvider
-                                                  .error!
-                                                  .userFriendlyMessage,
+                                          message: isOffline
+                                              ? 'Unable to load your recipes while offline'
+                                              : 'Couldn\'t load recipes. Tap to retry.',
+                                          leadingIcon: isOffline ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
                                           onRetry: () {
                                             _refreshAllSections(context);
                                           },
@@ -344,6 +353,7 @@ class _HomeScreenState extends State<HomeScreen>
                                           context,
                                           title: 'Your Recipes',
                                           message: 'Start creating or importing recipes to see them here!',
+                                          leadingIcon: Icons.add_circle_outline_rounded,
                                           onRetry: null, // No retry for empty state
                                         );
                                       }
@@ -389,13 +399,14 @@ class _HomeScreenState extends State<HomeScreen>
                                       // Show error if failed to load
                                       if (community.isEmpty &&
                                           recipeProvider.error != null) {
+                                        final isOffline = recipeProvider.error!.isNetworkError;
                                         return _buildSectionMessage(
                                           context,
                                           title: 'Community',
-                                          message:
-                                              recipeProvider
-                                                  .error!
-                                                  .userFriendlyMessage,
+                                          message: isOffline
+                                              ? 'Connect to browse community recipes'
+                                              : 'Couldn\'t load community recipes. Tap to retry.',
+                                          leadingIcon: isOffline ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
                                           onRetry: () {
                                             _refreshAllSections(context);
                                           },
@@ -407,6 +418,7 @@ class _HomeScreenState extends State<HomeScreen>
                                           context,
                                           title: 'Community',
                                           message: 'No community recipes available yet',
+                                          leadingIcon: Icons.people_outline_rounded,
                                           onRetry: () {
                                             _refreshAllSections(context);
                                           },
@@ -460,13 +472,14 @@ class _HomeScreenState extends State<HomeScreen>
                                       // Show error if failed to load
                                       if (random.isEmpty &&
                                           recipeProvider.error != null) {
+                                        final isOffline = recipeProvider.error!.isNetworkError;
                                         return _buildSectionMessage(
                                           context,
                                           title: 'Discover & Try',
-                                          message:
-                                              recipeProvider
-                                                  .error!
-                                                  .userFriendlyMessage,
+                                          message: isOffline
+                                              ? 'Connect to discover new recipes'
+                                              : 'Couldn\'t load recipes. Tap to retry.',
+                                          leadingIcon: isOffline ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
                                           onRetry: () {
                                             _refreshAllSections(context);
                                           },
@@ -478,6 +491,7 @@ class _HomeScreenState extends State<HomeScreen>
                                           context,
                                           title: 'Discover & Try',
                                           message: 'No recipes to discover yet',
+                                          leadingIcon: Icons.explore_outlined,
                                           onRetry: () {
                                             _refreshAllSections(context);
                                           },
@@ -1275,35 +1289,20 @@ class _HomeScreenState extends State<HomeScreen>
                         ],
                       ),
                       child: ClipOval(
-                        child: photoUrl != null && photoUrl.isNotEmpty
-                            ? Image.network(
-                                photoUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Image.network(
-                                  ImageUtils.defaultProfileIconUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    color: theme.colorScheme.primaryContainer,
-                                    child: Icon(
-                                      Icons.person,
-                                      size: AppBreakpoints.isDesktop(context) ? 20 : 16,
-                                      color: theme.colorScheme.onPrimaryContainer,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : Image.network(
-                                ImageUtils.defaultProfileIconUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  color: theme.colorScheme.primaryContainer,
-                                  child: Icon(
-                                    Icons.person,
-                                    size: AppBreakpoints.isDesktop(context) ? 20 : 16,
-                                    color: theme.colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
-                              ),
+                        child: ImageUtils.buildProfileImage(
+                          imageUrl: photoUrl,
+                          width: AppBreakpoints.isDesktop(context) ? 36 : 28,
+                          height: AppBreakpoints.isDesktop(context) ? 36 : 28,
+                          fit: BoxFit.cover,
+                          errorWidget: Container(
+                            color: theme.colorScheme.primaryContainer,
+                            child: Icon(
+                              Icons.person,
+                              size: AppBreakpoints.isDesktop(context) ? 20 : 16,
+                              color: theme.colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -1820,7 +1819,7 @@ Shared from Recipe App
                     ),
                   ),
                   Icon(
-                    Icons.refresh,
+                    Icons.arrow_forward_ios,
                     size: 16,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
