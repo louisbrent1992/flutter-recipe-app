@@ -113,6 +113,33 @@ class AppSpacing {
   }
 }
 
+/// Standardized animation durations and curves for consistent, minimal animations
+class AppAnimations {
+  // Micro-interactions (button feedback, switches, ripples)
+  static const Duration micro = Duration(milliseconds: 100);
+
+  // Fast transitions (fades, scales, color changes)
+  static const Duration fast = Duration(milliseconds: 200);
+
+  // Standard transitions (page elements, containers, lists)
+  static const Duration standard = Duration(milliseconds: 300);
+
+  // Slow transitions (complex layouts, modals)
+  static const Duration slow = Duration(milliseconds: 400);
+
+  // Standard curve for most animations - smooth deceleration
+  static const Curve defaultCurve = Curves.easeOutCubic;
+
+  // Curve for entering/appearing elements
+  static const Curve enterCurve = Curves.easeOut;
+
+  // Curve for exiting/disappearing elements
+  static const Curve exitCurve = Curves.easeIn;
+
+  // Curve for spring-like bounce effects (use sparingly)
+  static const Curve bounceCurve = Curves.easeOutBack;
+}
+
 /// Responsive typography system
 class AppTypography {
   /// Get responsive font size

@@ -41,7 +41,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
 
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 300),
     );
     _animationController.forward();
 

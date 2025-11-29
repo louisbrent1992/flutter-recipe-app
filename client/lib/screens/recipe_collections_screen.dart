@@ -30,7 +30,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 300),
     );
     _animationController.forward();
 

@@ -37,7 +37,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 300),
     );
 
     _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(

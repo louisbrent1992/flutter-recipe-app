@@ -133,21 +133,21 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
       _syncChefRankingWithGameCenter();
     });
 
-    // Main controllers with smoother timing
+    // Main controllers with smooth, balanced timing
     _slideController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 550),
       vsync: this,
     );
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 450),
       vsync: this,
     );
     _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
     _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
 
@@ -155,7 +155,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     _itemControllers = List.generate(
       10,
       (index) => AnimationController(
-        duration: Duration(milliseconds: 600 + (index * 40)),
+        duration: Duration(milliseconds: 400 + (index * 30)),
         vsync: this,
       ),
     );
@@ -183,24 +183,16 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
             )
             .toList();
 
-    // Start animations with natural timing
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        _fadeController.forward();
-        _slideController.forward();
-      }
-    });
-
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        _scaleController.forward();
-        _pulseController.repeat(reverse: true);
-      }
-    });
+    // Start animations immediately for snappy feel
+    _fadeController.forward();
+    _slideController.forward();
+    _scaleController.forward();
+    // Note: pulse animation disabled for minimal experience
+    // _pulseController.repeat(reverse: true);
 
     // Stagger item animations with smooth timing
     for (int i = 0; i < _itemControllers.length; i++) {
-      Future.delayed(Duration(milliseconds: 600 + (i * 120)), () {
+      Future.delayed(Duration(milliseconds: 120 + (i * 60)), () {
         if (mounted) {
           _itemControllers[i].forward();
         }
