@@ -8,6 +8,7 @@ import '../providers/notification_provider.dart';
 import '../providers/subscription_provider.dart';
 import '../theme/theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../components/custom_app_bar.dart';
 import '../services/bulk_image_refresh_service.dart';
@@ -367,9 +368,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               final homeContext = navigatorKey.currentContext!;
 
               // Start with home hero section (welcome message)
-              final List<GlobalKey> tutorialTargets = [
-                TutorialKeys.homeHero,
-              ];
+              final List<GlobalKey> tutorialTargets = [TutorialKeys.homeHero];
 
               // Then navigation drawer menu and credit balance
               tutorialTargets.addAll([
@@ -420,6 +419,74 @@ class _SettingsScreenState extends State<SettingsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error starting tutorial: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _clearAllCache() async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder:
+            (context) => const AlertDialog(
+              content: Row(
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(width: 20),
+                  Text('Clearing cache...'),
+                ],
+              ),
+            ),
+      );
+
+      // Clear CachedNetworkImage cache (downloaded images)
+      await DefaultCacheManager().emptyCache();
+
+      // Clear ImageResolverCache (URL resolution mappings)
+      final resolverCleared = await ImageResolverCache.clearAll();
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Cache cleared! Cleared $resolverCleared image resolutions.',
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog if open
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error clearing cache: $e'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -1480,6 +1547,28 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const Divider(height: 1, thickness: 0.1),
                     SizedBox(height: AppSpacing.md),
 
+                    // Storage & Cache Section
+                    _buildSectionHeader(
+                      title: 'Storage & Cache',
+                      icon: Icons.storage_rounded,
+                      colorScheme: colorScheme,
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+
+                    _buildAnimatedListTile(
+                      title: 'Clear App Cache',
+                      subtitle: 'Free up storage and fix image display issues',
+                      icon: Icons.cleaning_services_rounded,
+                      color: Colors.orange,
+                      onTap: _clearAllCache,
+                    ),
+
+                    SizedBox(height: AppSpacing.xxl),
+
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
+
                     // Links Section
                     _buildSectionHeader(
                       title: 'Account Management',
@@ -1717,7 +1806,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                       child: CircleAvatar(
                         radius: 60,
                         backgroundColor: Colors.grey[200],
-                        backgroundImage: CachedNetworkImageProvider(photoURL),
+                        backgroundImage:
+                            ImageUtils.isAssetPath(photoURL)
+                                ? AssetImage(photoURL) as ImageProvider
+                                : CachedNetworkImageProvider(photoURL),
                       ),
                     ),
                   ),
