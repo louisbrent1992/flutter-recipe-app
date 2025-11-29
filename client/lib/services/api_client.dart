@@ -105,7 +105,7 @@ class ApiClient {
     final bool isPhysical = await _checkIsPhysicalDevice();
     final url = isPhysical ? AppConfig.productionApiUrl : developmentUrl;
     _logger.d('Using ${isPhysical ? "PRODUCTION" : "DEVELOPMENT"} API: $url');
-    return AppConfig.apiUrl;
+    return url;
   }
 
   /// Get headers with Firebase authentication token
