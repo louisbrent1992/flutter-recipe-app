@@ -137,8 +137,8 @@ class CreditsPill extends StatelessWidget {
           final isDesktop = AppBreakpoints.isDesktop(context);
           final isTablet = AppBreakpoints.isTablet(context);
           
-          // In compact mode, hide labels but always show credit numbers
-          final showLabels = !compact && (isDesktop || isTablet);
+          // Show labels on tablet/desktop, or on mobile only if unlimited
+          final showLabels = !compact && (isDesktop || isTablet || provider.unlimitedUsage);
           
           // Universal padding/margin for consistent spacing across all screens
           return Padding(
