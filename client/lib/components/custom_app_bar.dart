@@ -45,17 +45,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTabletOrDesktop = AppBreakpoints.isTablet(context) || AppBreakpoints.isDesktop(context);
-    
+    final isTabletOrDesktop =
+        AppBreakpoints.isTablet(context) || AppBreakpoints.isDesktop(context);
+
     // Show full title on tablet/desktop, short title on mobile
-    final displayTitle = (fullTitle != null && isTabletOrDesktop) ? fullTitle! : title;
-    
-    // Calculate if we need compact mode for credits pill
-    // On mobile (<400px), use compact mode to preserve title space
-    // Between 400-500px, use semi-compact (no labels but show numbers)
-    // Above 500px or on tablet/desktop, use full mode
-    final useCompactCredits = screenWidth < 400 && !isTabletOrDesktop;
+    final displayTitle =
+        (fullTitle != null && isTabletOrDesktop) ? fullTitle! : title;
+
+    // Always show full credits pill - users should see their credit counts
+    const useCompactCredits = false;
 
     // Consistent spacing values for all screens
     final double actionsEndPadding = isTabletOrDesktop ? 8.0 : 4.0;
