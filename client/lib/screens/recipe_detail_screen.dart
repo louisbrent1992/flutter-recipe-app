@@ -684,7 +684,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   /// Build user attribution for community recipes
-  /// Shows the profile photo and display name of the user who shared the recipe
+  /// Shows stacked profile photos and names of users who shared the recipe
   Widget _buildUserAttribution(Recipe recipe) {
     // Only show for community recipes (has sharedByDisplayName or sharedByUserId)
     final isCommunityRecipe =
@@ -695,8 +695,92 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
 
     final theme = Theme.of(context);
-    final displayName = recipe.sharedByDisplayName ?? 'Chef';
-    final photoUrl = recipe.sharedByPhotoUrl;
+    final users = recipe.sharedByUsers;
+    final sharedByCount = recipe.sharedByCount;
+    
+    final iconSize = AppSizing.responsiveIconSize(
+      context,
+      mobile: 40,
+      tablet: 44,
+      desktop: 48,
+    );
+    final smallIconSize = AppSizing.responsiveIconSize(
+      context,
+      mobile: 24,
+      tablet: 26,
+      desktop: 28,
+    );
+
+    // Build stacked avatars (show up to 4 on detail screen)
+    Widget buildStackedAvatars() {
+      if (users.isEmpty) {
+        // Fallback to single user
+        return ClipOval(
+          child: ImageUtils.buildProfileImage(
+            imageUrl: recipe.sharedByPhotoUrl,
+            width: iconSize,
+            height: iconSize,
+            fit: BoxFit.cover,
+            errorWidget: _buildFallbackAvatar(theme, iconSize, smallIconSize),
+          ),
+        );
+      }
+
+      final displayUsers = users.take(4).toList();
+      final overlapOffset = iconSize * 0.65;
+
+      return SizedBox(
+        width: iconSize + (overlapOffset * (displayUsers.length - 1).clamp(0, 3)),
+        height: iconSize,
+        child: Stack(
+          children: [
+            for (int i = 0; i < displayUsers.length; i++)
+              Positioned(
+                left: i * overlapOffset,
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: theme.cardColor,
+                      width: 2,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child: ImageUtils.buildProfileImage(
+                      imageUrl: displayUsers[i].photoUrl,
+                      width: iconSize - 4,
+                      height: iconSize - 4,
+                      fit: BoxFit.cover,
+                      errorWidget: _buildFallbackAvatar(theme, iconSize - 4, smallIconSize - 4),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
+    // Build attribution text
+    String buildAttributionText() {
+      if (users.isEmpty) {
+        return recipe.sharedByDisplayName ?? 'Chef';
+      }
+
+      final names = users
+          .take(2)
+          .map((u) => u.displayName ?? 'Chef')
+          .toList();
+
+      if (sharedByCount <= 1) {
+        return names.first;
+      } else if (sharedByCount == 2) {
+        return '${names.join(' & ')}';
+      } else {
+        final othersCount = sharedByCount - 2;
+        return '${names.join(', ')} and $othersCount other${othersCount > 1 ? 's' : ''}';
+      }
+    }
 
     return Container(
       margin: EdgeInsets.only(top: AppSpacing.md),
@@ -714,53 +798,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       ),
       child: Row(
         children: [
-          // Profile photo - use chef's hat icon as default for community recipes
-          ClipOval(
-            child: ImageUtils.buildProfileImage(
-              imageUrl: photoUrl,
-              width: AppSizing.responsiveIconSize(
-                context,
-                mobile: 40,
-                tablet: 44,
-                desktop: 48,
-              ),
-              height: AppSizing.responsiveIconSize(
-                context,
-                mobile: 40,
-                tablet: 44,
-                desktop: 48,
-              ),
-              fit: BoxFit.cover,
-              errorWidget: Container(
-                width: AppSizing.responsiveIconSize(
-                  context,
-                  mobile: 40,
-                  tablet: 44,
-                  desktop: 48,
-                ),
-                height: AppSizing.responsiveIconSize(
-                  context,
-                  mobile: 40,
-                  tablet: 44,
-                  desktop: 48,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.person,
-                  size: AppSizing.responsiveIconSize(
-                    context,
-                    mobile: 24,
-                    tablet: 26,
-                    desktop: 28,
-                  ),
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ),
-          ),
+          // Stacked profile photos
+          buildStackedAvatars(),
           SizedBox(width: AppSpacing.md),
           // User info
           Expanded(
@@ -768,7 +807,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Shared by',
+                  sharedByCount > 1 ? 'Shared by' : 'Shared by',
                   style: TextStyle(
                     fontSize: AppTypography.responsiveFontSize(
                       context,
@@ -781,7 +820,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  displayName,
+                  buildAttributionText(),
                   style: TextStyle(
                     fontSize: AppTypography.responsiveFontSize(
                       context,
@@ -792,7 +831,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     fontWeight: FontWeight.w600,
                     color: theme.colorScheme.onSurface,
                   ),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -839,6 +878,23 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Build fallback avatar with person icon
+  Widget _buildFallbackAvatar(ThemeData theme, double iconSize, double smallIconSize) {
+    return Container(
+      width: iconSize,
+      height: iconSize,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withOpacity(0.2),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.person,
+        size: smallIconSize,
+        color: theme.colorScheme.primary,
       ),
     );
   }

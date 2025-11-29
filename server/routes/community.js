@@ -249,10 +249,83 @@ router.get("/recipes", auth, async (req, res) => {
 			};
 		});
 
+		// Group duplicate recipes by sourceUrl or title (normalize for comparison)
+		// This reduces duplicates while showing all contributors
+		const groupedRecipes = new Map();
+		
+		for (const recipe of recipesWithAttribution) {
+			// Create a grouping key: prefer sourceUrl, fallback to normalized title
+			let groupKey;
+			if (recipe.sourceUrl && recipe.sourceUrl.trim()) {
+				// Normalize URL: remove trailing slashes, query params, and protocol
+				groupKey = recipe.sourceUrl.trim()
+					.toLowerCase()
+					.replace(/^https?:\/\//, '')
+					.replace(/\/$/, '')
+					.split('?')[0];
+			} else {
+				// Fallback to normalized title for recipes without sourceUrl
+				groupKey = `title:${(recipe.title || '').trim().toLowerCase()}`;
+			}
+			
+			if (!groupedRecipes.has(groupKey)) {
+				// First occurrence - use this recipe as the primary
+				groupedRecipes.set(groupKey, {
+					...recipe,
+					sharedByUsers: [{
+						userId: recipe.sharedByUserId,
+						displayName: recipe.sharedByDisplayName,
+						photoUrl: recipe.sharedByPhotoUrl,
+					}],
+					sharedByCount: 1,
+					// Aggregate stats across duplicates
+					totalLikeCount: recipe.likeCount || 0,
+					totalSaveCount: recipe.saveCount || 0,
+				});
+			} else {
+				// Duplicate found - add user to the list and aggregate stats
+				const existing = groupedRecipes.get(groupKey);
+				
+				// Only add user if not already in the list (prevent same user multiple times)
+				const userExists = existing.sharedByUsers.some(
+					(u) => u.userId === recipe.sharedByUserId
+				);
+				if (!userExists) {
+					existing.sharedByUsers.push({
+						userId: recipe.sharedByUserId,
+						displayName: recipe.sharedByDisplayName,
+						photoUrl: recipe.sharedByPhotoUrl,
+					});
+					existing.sharedByCount = existing.sharedByUsers.length;
+				}
+				
+				// Aggregate stats (use max to avoid double counting)
+				existing.totalLikeCount = Math.max(existing.totalLikeCount, recipe.likeCount || 0);
+				existing.totalSaveCount = Math.max(existing.totalSaveCount, recipe.saveCount || 0);
+				
+				// If current user liked any version, mark as liked
+				if (recipe.isLiked) {
+					existing.isLiked = true;
+				}
+			}
+		}
+		
+		// Convert grouped recipes back to array
+		const deduplicatedRecipes = Array.from(groupedRecipes.values()).map((recipe) => ({
+			...recipe,
+			// Use aggregated stats
+			likeCount: recipe.totalLikeCount,
+			saveCount: recipe.totalSaveCount,
+			// Keep backward compatibility with single user fields (use first user)
+			sharedByUserId: recipe.sharedByUsers[0]?.userId || recipe.sharedByUserId,
+			sharedByDisplayName: recipe.sharedByUsers[0]?.displayName || recipe.sharedByDisplayName,
+			sharedByPhotoUrl: recipe.sharedByUsers[0]?.photoUrl || recipe.sharedByPhotoUrl,
+		}));
+
 		// For random mode with limit=1: use date-based seeding
 		// For other random modes: return all available recipes (don't limit to requested amount)
 		// This ensures we return all available community recipes, not just up to the limit
-		let returnedRecipes = recipesWithAttribution;
+		let returnedRecipes = deduplicatedRecipes;
 		if (isRandom) {
 			if (limit === 1 && recipesWithAttribution.length > 0) {
 				const now = new Date();
@@ -271,7 +344,7 @@ router.get("/recipes", auth, async (req, res) => {
 		const hasPrevPage = page > 1;
 
 		console.log(
-			`Fetched ${recipes.length} community recipes, returning ${returnedRecipes.length} for page ${page} of ${totalPages} (total: ${totalRecipes})`
+			`Fetched ${recipes.length} community recipes, deduplicated to ${deduplicatedRecipes.length}, returning ${returnedRecipes.length} for page ${page} of ${totalPages}`
 		);
 
 		res.json({

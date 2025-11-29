@@ -1,5 +1,32 @@
 import 'package:share_plus/share_plus.dart';
 
+/// Represents a user who shared a recipe in the community
+class SharedByUser {
+  final String? userId;
+  final String? displayName;
+  final String? photoUrl;
+
+  const SharedByUser({
+    this.userId,
+    this.displayName,
+    this.photoUrl,
+  });
+
+  factory SharedByUser.fromJson(Map<String, dynamic> json) {
+    return SharedByUser(
+      userId: json['userId']?.toString(),
+      displayName: json['displayName']?.toString(),
+      photoUrl: json['photoUrl']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'userId': userId,
+    'displayName': displayName,
+    'photoUrl': photoUrl,
+  };
+}
+
 class Recipe {
   final String id;
   final String title;
@@ -29,6 +56,8 @@ class Recipe {
   final String? sharedByUserId;
   final String? sharedByDisplayName;
   final String? sharedByPhotoUrl;
+  final List<SharedByUser> sharedByUsers; // All users who shared this recipe
+  final int sharedByCount; // Total count of users who shared this recipe
   final int saveCount;
   final int likeCount;
   final int shareCount;
@@ -64,6 +93,8 @@ class Recipe {
     this.sharedByUserId,
     this.sharedByDisplayName,
     this.sharedByPhotoUrl,
+    this.sharedByUsers = const [],
+    this.sharedByCount = 0,
     this.saveCount = 0,
     this.likeCount = 0,
     this.shareCount = 0,
@@ -188,6 +219,16 @@ class Recipe {
       sharedByUserId: json['sharedByUserId']?.toString(),
       sharedByDisplayName: json['sharedByDisplayName']?.toString(),
       sharedByPhotoUrl: json['sharedByPhotoUrl']?.toString(),
+      sharedByUsers: json['sharedByUsers'] != null && json['sharedByUsers'] is List
+          ? (json['sharedByUsers'] as List)
+              .map((u) => SharedByUser.fromJson(Map<String, dynamic>.from(u as Map)))
+              .toList()
+          : const [],
+      sharedByCount: json['sharedByCount'] is int
+          ? json['sharedByCount']
+          : (json['sharedByCount'] != null
+              ? int.tryParse(json['sharedByCount'].toString()) ?? 0
+              : 0),
       saveCount:
           json['saveCount'] is int
               ? json['saveCount']
@@ -240,6 +281,8 @@ class Recipe {
     'sharedByUserId': sharedByUserId,
     'sharedByDisplayName': sharedByDisplayName,
     'sharedByPhotoUrl': sharedByPhotoUrl,
+    'sharedByUsers': sharedByUsers.map((u) => u.toJson()).toList(),
+    'sharedByCount': sharedByCount,
     'saveCount': saveCount,
     'likeCount': likeCount,
     'shareCount': shareCount,
@@ -276,6 +319,8 @@ class Recipe {
     String? sharedByUserId,
     String? sharedByDisplayName,
     String? sharedByPhotoUrl,
+    List<SharedByUser>? sharedByUsers,
+    int? sharedByCount,
     int? saveCount,
     int? likeCount,
     int? shareCount,
@@ -310,6 +355,8 @@ class Recipe {
       sharedByUserId: sharedByUserId ?? this.sharedByUserId,
       sharedByDisplayName: sharedByDisplayName ?? this.sharedByDisplayName,
       sharedByPhotoUrl: sharedByPhotoUrl ?? this.sharedByPhotoUrl,
+      sharedByUsers: sharedByUsers ?? this.sharedByUsers,
+      sharedByCount: sharedByCount ?? this.sharedByCount,
       saveCount: saveCount ?? this.saveCount,
       likeCount: likeCount ?? this.likeCount,
       shareCount: shareCount ?? this.shareCount,

@@ -204,15 +204,20 @@ class _CommunityScreenState extends State<CommunityScreen>
     bool isAlreadySaved = userRecipes.any((r) => r.id == recipe.id);
 
     // Check by sourceUrl (most reliable for external recipes)
-    if (!isAlreadySaved && recipe.sourceUrl != null && recipe.sourceUrl!.isNotEmpty) {
+    if (!isAlreadySaved &&
+        recipe.sourceUrl != null &&
+        recipe.sourceUrl!.isNotEmpty) {
       isAlreadySaved = userRecipes.any((r) => r.sourceUrl == recipe.sourceUrl);
     }
 
     // Fallback to title + description
     if (!isAlreadySaved) {
-      final recipeKey = '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
+      final recipeKey =
+          '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
       isAlreadySaved = userRecipes.any(
-        (r) => '${r.title.toLowerCase()}|${r.description.toLowerCase()}' == recipeKey,
+        (r) =>
+            '${r.title.toLowerCase()}|${r.description.toLowerCase()}' ==
+            recipeKey,
       );
     }
 
@@ -222,18 +227,21 @@ class _CommunityScreenState extends State<CommunityScreen>
         (r) => r.id == recipe.id,
         orElse: () => Recipe(),
       );
-      
-      if (userRecipe.id.isEmpty && recipe.sourceUrl != null && recipe.sourceUrl!.isNotEmpty) {
+
+      if (userRecipe.id.isEmpty &&
+          recipe.sourceUrl != null &&
+          recipe.sourceUrl!.isNotEmpty) {
         userRecipe = userRecipes.firstWhere(
           (r) => r.sourceUrl == recipe.sourceUrl,
           orElse: () => Recipe(),
         );
       }
-      
+
       if (userRecipe.id.isEmpty) {
         userRecipe = userRecipes.firstWhere(
-          (r) => r.title.toLowerCase() == recipe.title.toLowerCase() &&
-                 r.description.toLowerCase() == recipe.description.toLowerCase(),
+          (r) =>
+              r.title.toLowerCase() == recipe.title.toLowerCase() &&
+              r.description.toLowerCase() == recipe.description.toLowerCase(),
           orElse: () => Recipe(),
         );
       }
@@ -246,7 +254,7 @@ class _CommunityScreenState extends State<CommunityScreen>
         if (success && mounted) {
           // Update save count via provider method for proper encapsulation
           recipeProvider.updateCommunityRecipeSaveCount(recipe.id, -1);
-          
+
           SnackBarHelper.showWarning(
             context,
             'Recipe removed from your collection!',
@@ -264,7 +272,7 @@ class _CommunityScreenState extends State<CommunityScreen>
       if (savedRecipe != null) {
         // Update save count via provider method for proper encapsulation
         recipeProvider.updateCommunityRecipeSaveCount(recipe.id, 1);
-        
+
         if (mounted) {
           SnackBarHelper.showSuccess(
             context,
@@ -321,22 +329,23 @@ class _CommunityScreenState extends State<CommunityScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            itemBuilder: (context) => [
-              PopupMenuItem<String>(
-                value: 'refresh',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.refresh_rounded,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onSurface,
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem<String>(
+                    value: 'refresh',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.refresh_rounded,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('Refresh Results'),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    const Text('Refresh Results'),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                ],
             onSelected: (value) {
               if (value == 'refresh') {
                 _refreshResults();
@@ -411,14 +420,21 @@ class _CommunityScreenState extends State<CommunityScreen>
                       final isOffline = recipeProvider.error!.isNetworkError;
                       return ErrorDisplay(
                         message: recipeProvider.error!.userFriendlyMessage,
-                        title: isOffline ? 'You\'re Offline' : 'Couldn\'t Load Recipes',
-                        subtitle: isOffline
-                            ? 'Connect to the internet to browse community recipes'
-                            : 'Something went wrong. Please try again.',
+                        title:
+                            isOffline
+                                ? 'You\'re Offline'
+                                : 'Couldn\'t Load Recipes',
+                        subtitle:
+                            isOffline
+                                ? 'Connect to the internet to browse community recipes'
+                                : 'Something went wrong. Please try again.',
                         isNetworkError: isOffline,
                         isAuthError: recipeProvider.error!.isAuthError,
                         isFormatError: recipeProvider.error!.isFormatError,
-                        customIcon: isOffline ? Icons.wifi_off_rounded : Icons.cloud_off_rounded,
+                        customIcon:
+                            isOffline
+                                ? Icons.wifi_off_rounded
+                                : Icons.cloud_off_rounded,
                         onRetry: () {
                           recipeProvider.clearError();
                           _loadRecipes();
@@ -436,38 +452,47 @@ class _CommunityScreenState extends State<CommunityScreen>
                           child: SizedBox(
                             height: MediaQuery.of(context).size.height * 0.7,
                             child: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.people_outline_rounded,
-                                    size: 64,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.5),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'No community recipes found',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.people_outline_rounded,
+                                      size: 64,
                                       color: Theme.of(context)
                                           .colorScheme
-                                          .onSurface
-                                          .withOpacity(0.7),
+                                          .onSurfaceVariant
+                                          .withValues(alpha: 0.6),
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Try adjusting your filters or check back later',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withOpacity(0.5),
+                                    const SizedBox(height: 20),
+                                    Text(
+                                      'No community recipes found',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w600,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Try adjusting your filters or check back later',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant
+                                            .withValues(alpha: 0.7),
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -476,41 +501,55 @@ class _CommunityScreenState extends State<CommunityScreen>
                     }
 
                     if (recipeProvider.isLoading && displayRecipes.isEmpty) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
+                      return const Center(child: CircularProgressIndicator());
                     }
 
-                    return RefreshIndicator(
-                      onRefresh: () async {
-                        await _loadRecipes(forceRefresh: true);
-                      },
-                      child: GridView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(16),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: AppBreakpoints.isDesktop(context)
-                              ? 4
-                              : AppBreakpoints.isTablet(context)
-                              ? 3
-                              : 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 0.75,
-                        ),
-                        itemCount: displayRecipes.length,
-                        itemBuilder: (context, index) {
-                          final recipe = displayRecipes[index];
-                          return RecipeCard(
-                            recipe: recipe,
-                            onSave: () => _handleRecipeAction(recipe),
-                            showUserAttribution: true,
-                            showSaveButton: true,
-                            compactMode: true,
-                            showCookingTime: false,
-                            showServings: false,
-                          );
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        left: AppSpacing.responsive(context),
+                        right: AppSpacing.responsive(context),
+                        top: AppSpacing.responsive(context),
+                        bottom:
+                            AppSpacing.responsive(context) +
+                            30, // Extra space for floating bar
+                      ),
+                      child: RefreshIndicator(
+                        onRefresh: () async {
+                          await _loadRecipes(forceRefresh: true);
                         },
+                        child: GridView.builder(
+                          controller: _scrollController,
+                          padding: EdgeInsets.only(
+                            bottom: 100, // Extra padding for scroll
+                          ),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount:
+                                    AppBreakpoints.isDesktop(context)
+                                        ? 4
+                                        : AppBreakpoints.isTablet(context)
+                                        ? 3
+                                        : 2,
+                                crossAxisSpacing: AppSpacing.responsive(
+                                  context,
+                                ),
+                                mainAxisSpacing: AppSpacing.responsive(context),
+                                childAspectRatio: 0.75,
+                              ),
+                          itemCount: displayRecipes.length,
+                          itemBuilder: (context, index) {
+                            final recipe = displayRecipes[index];
+                            return RecipeCard(
+                              recipe: recipe,
+                              onSave: () => _handleRecipeAction(recipe),
+                              showUserAttribution: true,
+                              showSaveButton: true,
+                              compactMode: true,
+                              showCookingTime: false,
+                              showServings: false,
+                            );
+                          },
+                        ),
                       ),
                     );
                   },
@@ -538,4 +577,3 @@ class _CommunityScreenState extends State<CommunityScreen>
     );
   }
 }
-

@@ -283,6 +283,159 @@ Shared from RecipEase
     }
   }
 
+  /// Builds user attribution row showing contributors (stacked avatars + names)
+  Widget _buildUserAttribution(BuildContext context) {
+    final users = widget.recipe.sharedByUsers;
+    final sharedByCount = widget.recipe.sharedByCount;
+    final iconSize = AppSizing.responsiveIconSize(
+      context,
+      mobile: 20,
+      tablet: 22,
+      desktop: 24,
+    );
+    final smallIconSize = AppSizing.responsiveIconSize(
+      context,
+      mobile: 12,
+      tablet: 14,
+      desktop: 16,
+    );
+
+    // Build stacked avatars (show up to 3)
+    Widget buildStackedAvatars() {
+      // If no sharedByUsers, fallback to single user
+      if (users.isEmpty) {
+        return _buildSingleAvatar(
+          photoUrl: widget.recipe.sharedByPhotoUrl,
+          iconSize: iconSize,
+          smallIconSize: smallIconSize,
+        );
+      }
+
+      final displayUsers = users.take(3).toList();
+      final overlapOffset = iconSize * 0.6;
+
+      return SizedBox(
+        width: iconSize + (overlapOffset * (displayUsers.length - 1).clamp(0, 2)),
+        height: iconSize,
+        child: Stack(
+          children: [
+            for (int i = 0; i < displayUsers.length; i++)
+              Positioned(
+                left: i * overlapOffset,
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Theme.of(context).cardColor,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: _buildSingleAvatar(
+                    photoUrl: displayUsers[i].photoUrl,
+                    iconSize: iconSize - 3, // Slightly smaller to account for border
+                    smallIconSize: smallIconSize - 2,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
+    // Build attribution text
+    String buildAttributionText() {
+      if (users.isEmpty) {
+        return widget.recipe.sharedByDisplayName ?? 'Chef';
+      }
+
+      final names = users
+          .take(2)
+          .map((u) => u.displayName ?? 'Chef')
+          .toList();
+
+      if (sharedByCount <= 1) {
+        return names.first;
+      } else if (sharedByCount == 2) {
+        return names.join(' & ');
+      } else {
+        final othersCount = sharedByCount - 2;
+        return '${names.join(', ')} +$othersCount';
+      }
+    }
+
+    return Row(
+      children: [
+        buildStackedAvatars(),
+        SizedBox(
+          width: AppSpacing.responsive(
+            context,
+            mobile: 4,
+            tablet: 5,
+            desktop: 6,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            buildAttributionText(),
+            style: TextStyle(
+              fontSize: AppTypography.responsiveFontSize(
+                context,
+                mobile: 12.0,
+                tablet: 13.0,
+                desktop: 14.0,
+              ),
+              fontWeight: widget.compactMode ? FontWeight.w500 : FontWeight.normal,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(
+                    widget.compactMode ? 0.9 : 0.7,
+                  ),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Builds a single avatar with photo or fallback icon
+  Widget _buildSingleAvatar({
+    String? photoUrl,
+    required double iconSize,
+    required double smallIconSize,
+  }) {
+    if (photoUrl != null && photoUrl.isNotEmpty) {
+      return ClipOval(
+        child: Image.network(
+          photoUrl,
+          width: iconSize,
+          height: iconSize,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildFallbackAvatar(iconSize, smallIconSize);
+          },
+        ),
+      );
+    }
+    return _buildFallbackAvatar(iconSize, smallIconSize);
+  }
+
+  /// Builds fallback avatar with person icon
+  Widget _buildFallbackAvatar(double iconSize, double smallIconSize) {
+    return Container(
+      width: iconSize,
+      height: iconSize,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.person,
+        size: smallIconSize,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+
   Widget _buildActionButton({
     required IconData icon,
     required VoidCallback onTap,
@@ -1496,131 +1649,7 @@ Shared from RecipEase
                               desktop: widget.compactMode ? 10 : 8,
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              if (widget.recipe.sharedByPhotoUrl != null &&
-                                  widget.recipe.sharedByPhotoUrl!.isNotEmpty)
-                                ClipOval(
-                                  child: Image.network(
-                                    widget.recipe.sharedByPhotoUrl!,
-                                    // Universal icon size for recipe card details (16/18/20)
-                                    width: AppSizing.responsiveIconSize(
-                                      context,
-                                      mobile: 20,
-                                      tablet: 22,
-                                      desktop: 24,
-                                    ),
-                                    height: AppSizing.responsiveIconSize(
-                                      context,
-                                      mobile: 20,
-                                      tablet: 22,
-                                      desktop: 24,
-                                    ),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        width: AppSizing.responsiveIconSize(
-                                          context,
-                                          mobile: 20,
-                                          tablet: 22,
-                                          desktop: 24,
-                                        ),
-                                        height: AppSizing.responsiveIconSize(
-                                          context,
-                                          mobile: 20,
-                                          tablet: 22,
-                                          desktop: 24,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withOpacity(0.2),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.person,
-                                          size: AppSizing.responsiveIconSize(
-                                            context,
-                                            mobile: 12,
-                                            tablet: 14,
-                                            desktop: 16,
-                                          ),
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.primary,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                )
-                              else
-                                Container(
-                                  width: AppSizing.responsiveIconSize(
-                                    context,
-                                    mobile: 20,
-                                    tablet: 22,
-                                    desktop: 24,
-                                  ),
-                                  height: AppSizing.responsiveIconSize(
-                                    context,
-                                    mobile: 20,
-                                    tablet: 22,
-                                    desktop: 24,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary.withOpacity(0.2),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.person,
-                                    size: AppSizing.responsiveIconSize(
-                                      context,
-                                      mobile: 12,
-                                      tablet: 14,
-                                      desktop: 16,
-                                    ),
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                  ),
-                                ),
-                              SizedBox(
-                                width: AppSpacing.responsive(
-                                  context,
-                                  mobile: 4,
-                                  tablet: 5,
-                                  desktop: 6,
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  widget.recipe.sharedByDisplayName ?? 'Chef',
-                                  style: TextStyle(
-                                    fontSize: AppTypography.responsiveFontSize(
-                                      context,
-                                      mobile: 12.0,
-                                      tablet: 13.0,
-                                      desktop: 14.0,
-                                    ),
-                                    fontWeight:
-                                        widget.compactMode
-                                            ? FontWeight.w500
-                                            : FontWeight.normal,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withOpacity(
-                                      widget.compactMode ? 0.9 : 0.7,
-                                    ),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
+                          child: _buildUserAttribution(context),
                         ),
                       // Spacer to push metrics to bottom in compact mode
                       if (widget.compactMode && widget.showUserAttribution)
