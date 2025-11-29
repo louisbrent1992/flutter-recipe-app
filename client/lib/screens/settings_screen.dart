@@ -20,7 +20,6 @@ import '../services/debug_settings.dart';
 import '../services/tutorial_service.dart';
 import '../components/app_tutorial.dart';
 import '../main.dart' show navigatorKey;
-import '../providers/recipe_provider.dart';
 import '../components/inline_banner_ad.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -366,40 +365,24 @@ class _SettingsScreenState extends State<SettingsScreen>
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (navigatorKey.currentContext != null) {
               final homeContext = navigatorKey.currentContext!;
-              final recipeProvider = Provider.of<RecipeProvider>(
-                homeContext,
-                listen: false,
-              );
 
-              // Start with navigation drawer menu and credit balance (most important UI elements)
+              // Start with home hero section (welcome message)
               final List<GlobalKey> tutorialTargets = [
-                TutorialKeys.navDrawerMenu,
-                TutorialKeys.creditBalance,
+                TutorialKeys.homeHero,
               ];
 
-              // Then add home hero section
-              tutorialTargets.add(TutorialKeys.homeHero);
+              // Then navigation drawer menu and credit balance
+              tutorialTargets.addAll([
+                TutorialKeys.navDrawerMenu,
+                TutorialKeys.creditBalance,
+              ]);
 
-              // Only include "Your Recipes" if the user has saved recipes
-              if (recipeProvider.userRecipes.isNotEmpty) {
-                tutorialTargets.add(TutorialKeys.homeYourRecipes);
-              }
-
-              // Only include "Discover" if there are random recipes to show
-              final randomRecipes =
-                  recipeProvider.generatedRecipes
-                      .where(
-                        (r) =>
-                            !recipeProvider.userRecipes.any(
-                              (u) => u.id == r.id,
-                            ),
-                      )
-                      .take(10)
-                      .toList();
-
-              if (randomRecipes.isNotEmpty) {
-                tutorialTargets.add(TutorialKeys.homeDiscover);
-              }
+              // Always include Your Recipes, Community, Discover
+              tutorialTargets.addAll([
+                TutorialKeys.homeYourRecipes,
+                TutorialKeys.homeCommunity,
+                TutorialKeys.homeDiscover,
+              ]);
 
               // Collections are always shown (even if empty state), so safe to include
               tutorialTargets.add(TutorialKeys.homeCollections);
