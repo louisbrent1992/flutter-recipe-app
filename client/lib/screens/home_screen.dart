@@ -336,9 +336,13 @@ class _HomeScreenState extends State<HomeScreen>
                                         return _buildSectionMessage(
                                           context,
                                           title: 'Your Recipes',
-                                          message: 'Start creating or importing recipes to see them here!',
-                                          leadingIcon: Icons.add_circle_outline_rounded,
-                                          onRetry: null, // No retry for empty state
+                                          message: 'No recipes yet. Add your first recipe to get started!',
+                                          leadingIcon: Icons.restaurant_menu_rounded,
+                                          onRetry: null,
+                                          secondaryActionLabel: 'Add a Recipe',
+                                          secondaryAction: () {
+                                            Navigator.pushNamed(context, '/import');
+                                          },
                                         );
                                       }
                                       return _buildRecipeCarousel(
@@ -1632,7 +1636,7 @@ Shared from Recipe App
                       _refreshAllSections(context);
                     },
                     includeTitle: false,
-                    leadingIcon: null,
+                    leadingIcon: Icons.collections_bookmark_rounded,
                     height: 220,
                   );
                 }
@@ -1646,7 +1650,7 @@ Shared from Recipe App
                       _refreshAllSections(context);
                     },
                     includeTitle: false,
-                    leadingIcon: null,
+                    leadingIcon: Icons.collections_bookmark_rounded,
                     secondaryActionLabel: 'Add a Recipe',
                     secondaryAction: () {
                       Navigator.pushNamed(context, '/import');
@@ -1663,7 +1667,7 @@ Shared from Recipe App
                         'No collections yet. Add your first recipe to see it here.',
                     onRetry: null,
                     includeTitle: false,
-                    leadingIcon: null,
+                    leadingIcon: Icons.collections_bookmark_rounded,
                     secondaryActionLabel: 'Add a Recipe',
                     secondaryAction: () {
                       Navigator.pushNamed(context, '/import');
