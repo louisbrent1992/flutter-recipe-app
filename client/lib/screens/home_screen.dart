@@ -18,6 +18,7 @@ import 'package:showcaseview/showcaseview.dart';
 import '../components/app_tutorial.dart';
 import '../services/tutorial_service.dart';
 import '../components/inline_banner_ad.dart';
+import '../utils/image_utils.dart';
 
 /// Lightweight model representing a quick-access category on the home screen.
 class _CategoryItem {
@@ -1278,6 +1279,22 @@ class _HomeScreenState extends State<HomeScreen>
                             ? Image.network(
                                 photoUrl,
                                 fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Image.network(
+                                  ImageUtils.defaultProfileIconUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: theme.colorScheme.primaryContainer,
+                                    child: Icon(
+                                      Icons.person,
+                                      size: AppBreakpoints.isDesktop(context) ? 20 : 16,
+                                      color: theme.colorScheme.onPrimaryContainer,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Image.network(
+                                ImageUtils.defaultProfileIconUrl,
+                                fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => Container(
                                   color: theme.colorScheme.primaryContainer,
                                   child: Icon(
@@ -1285,14 +1302,6 @@ class _HomeScreenState extends State<HomeScreen>
                                     size: AppBreakpoints.isDesktop(context) ? 20 : 16,
                                     color: theme.colorScheme.onPrimaryContainer,
                                   ),
-                                ),
-                              )
-                            : Container(
-                                color: theme.colorScheme.primaryContainer,
-                                child: Icon(
-                                  Icons.person,
-                                  size: AppBreakpoints.isDesktop(context) ? 20 : 16,
-                                  color: theme.colorScheme.onPrimaryContainer,
                                 ),
                               ),
                       ),

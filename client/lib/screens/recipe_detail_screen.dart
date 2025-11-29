@@ -20,6 +20,7 @@ import '../services/image_replacement_service.dart';
 import '../services/collection_service.dart';
 import '../models/recipe_collection.dart';
 import '../utils/snackbar_helper.dart';
+import '../utils/image_utils.dart';
 
 // Overflow menu actions for the recipe details screen
 enum MenuAction {
@@ -713,26 +714,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       ),
       child: Row(
         children: [
-          // Profile photo
-          if (photoUrl != null && photoUrl.isNotEmpty)
-            ClipOval(
-              child: Image.network(
-                photoUrl,
-                width: AppSizing.responsiveIconSize(
-                  context,
-                  mobile: 40,
-                  tablet: 44,
-                  desktop: 48,
-                ),
-                height: AppSizing.responsiveIconSize(
-                  context,
-                  mobile: 40,
-                  tablet: 44,
-                  desktop: 48,
-                ),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
+          // Profile photo - use chef's hat icon as default for community recipes
+          ClipOval(
+            child: photoUrl != null && photoUrl.isNotEmpty
+                ? Image.network(
+                    photoUrl,
                     width: AppSizing.responsiveIconSize(
                       context,
                       mobile: 40,
@@ -745,53 +731,103 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       tablet: 44,
                       desktop: 48,
                     ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.2),
-                      shape: BoxShape.circle,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Image.network(
+                        ImageUtils.defaultProfileIconUrl,
+                        width: AppSizing.responsiveIconSize(
+                          context,
+                          mobile: 40,
+                          tablet: 44,
+                          desktop: 48,
+                        ),
+                        height: AppSizing.responsiveIconSize(
+                          context,
+                          mobile: 40,
+                          tablet: 44,
+                          desktop: 48,
+                        ),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: AppSizing.responsiveIconSize(
+                              context,
+                              mobile: 40,
+                              tablet: 44,
+                              desktop: 48,
+                            ),
+                            height: AppSizing.responsiveIconSize(
+                              context,
+                              mobile: 40,
+                              tablet: 44,
+                              desktop: 48,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.person,
+                              size: AppSizing.responsiveIconSize(
+                                context,
+                                mobile: 24,
+                                tablet: 26,
+                                desktop: 28,
+                              ),
+                              color: theme.colorScheme.primary,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  )
+                : Image.network(
+                    ImageUtils.defaultProfileIconUrl,
+                    width: AppSizing.responsiveIconSize(
+                      context,
+                      mobile: 40,
+                      tablet: 44,
+                      desktop: 48,
                     ),
-                    child: Icon(
-                      Icons.person,
-                      size: AppSizing.responsiveIconSize(
-                        context,
-                        mobile: 24,
-                        tablet: 26,
-                        desktop: 28,
-                      ),
-                      color: theme.colorScheme.primary,
+                    height: AppSizing.responsiveIconSize(
+                      context,
+                      mobile: 40,
+                      tablet: 44,
+                      desktop: 48,
                     ),
-                  );
-                },
-              ),
-            )
-          else
-            Container(
-              width: AppSizing.responsiveIconSize(
-                context,
-                mobile: 40,
-                tablet: 44,
-                desktop: 48,
-              ),
-              height: AppSizing.responsiveIconSize(
-                context,
-                mobile: 40,
-                tablet: 44,
-                desktop: 48,
-              ),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.person,
-                size: AppSizing.responsiveIconSize(
-                  context,
-                  mobile: 24,
-                  tablet: 26,
-                  desktop: 28,
-                ),
-                color: theme.colorScheme.primary,
-              ),
-            ),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: AppSizing.responsiveIconSize(
+                          context,
+                          mobile: 40,
+                          tablet: 44,
+                          desktop: 48,
+                        ),
+                        height: AppSizing.responsiveIconSize(
+                          context,
+                          mobile: 40,
+                          tablet: 44,
+                          desktop: 48,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.person,
+                          size: AppSizing.responsiveIconSize(
+                            context,
+                            mobile: 24,
+                            tablet: 26,
+                            desktop: 28,
+                          ),
+                          color: theme.colorScheme.primary,
+                        ),
+                      );
+                    },
+                  ),
+          ),
           SizedBox(width: AppSpacing.md),
           // User info
           Expanded(
