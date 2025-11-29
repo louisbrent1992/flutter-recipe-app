@@ -2211,7 +2211,7 @@ Shared from Recipe App
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(16),
+            customBorder: const CircleBorder(),
             onTap: () => _scaffoldKey.currentState?.openDrawer(),
             child: Container(
               width: AppSizing.responsiveIconSize(
@@ -2227,7 +2227,7 @@ Shared from Recipe App
                 desktop: 44,
               ),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                shape: BoxShape.circle,
                 color: Theme.of(context).colorScheme.surface.withValues(
                   alpha: Theme.of(context).colorScheme.alphaHigh,
                 ),
