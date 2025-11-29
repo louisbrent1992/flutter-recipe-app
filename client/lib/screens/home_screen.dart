@@ -331,23 +331,7 @@ class _HomeScreenState extends State<HomeScreen>
                                           height: 180,
                                         );
                                       }
-                                      // Show error if failed to load
-                                      if (saved.isEmpty &&
-                                          recipeProvider.error != null) {
-                                        final isOffline = recipeProvider.error!.isNetworkError;
-                                        return _buildSectionMessage(
-                                          context,
-                                          title: 'Your Recipes',
-                                          message: isOffline
-                                              ? 'Unable to load your recipes while offline'
-                                              : 'Couldn\'t load recipes. Tap to retry.',
-                                          leadingIcon: isOffline ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
-                                          onRetry: () {
-                                            _refreshAllSections(context);
-                                          },
-                                        );
-                                      }
-                                      // Show empty state if no recipes
+                                      // Show empty state if no recipes (no network error - recipes are stored locally)
                                       if (saved.isEmpty) {
                                         return _buildSectionMessage(
                                           context,
