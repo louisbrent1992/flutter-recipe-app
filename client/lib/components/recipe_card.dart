@@ -1662,9 +1662,16 @@ Shared from RecipEase
                         ),
                         child: _buildUserAttribution(context),
                       ),
-                    // Spacer to push metrics to bottom in compact mode
+                    // Spacing before metrics in compact mode (replaces Spacer which caused unbounded height issues)
                     if (widget.compactMode && widget.showUserAttribution)
-                      const Spacer(),
+                      SizedBox(
+                        height: AppSpacing.responsive(
+                          context,
+                          mobile: 8,
+                          tablet: 10,
+                          desktop: 12,
+                        ),
+                      ),
                     // Engagement metrics for community recipes (compact mode)
                     if (widget.compactMode && widget.showUserAttribution)
                       Row(

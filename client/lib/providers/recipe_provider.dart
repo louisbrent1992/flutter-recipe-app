@@ -278,11 +278,25 @@ class RecipeProvider extends ChangeNotifier {
           hasLocalData = true;
           // Show cached data immediately (even on refresh)
           _userRecipes = localRecipes;
-          _totalRecipes = localRecipes.length;
-          _totalUserRecipes = localRecipes.length;
-          _totalPages = (localRecipes.length / limit).ceil();
+          
+          // Load saved pagination metadata for accurate page counts
+          final paginationMeta = await localStorage.loadUserRecipesPagination();
+          final savedTotalRecipes = paginationMeta['totalRecipes'] ?? 0;
+          final savedTotalPages = paginationMeta['totalPages'] ?? 1;
+          
+          // Use saved pagination if available, otherwise calculate from local data
+          if (savedTotalRecipes > 0 && savedTotalPages > 1) {
+            _totalRecipes = savedTotalRecipes;
+            _totalUserRecipes = savedTotalRecipes;
+            _totalPages = savedTotalPages;
+            _hasNextPage = savedTotalPages > 1;
+          } else {
+            _totalRecipes = localRecipes.length;
+            _totalUserRecipes = localRecipes.length;
+            _totalPages = (localRecipes.length / limit).ceil();
+            _hasNextPage = localRecipes.length > limit;
+          }
           _currentPage = 1;
-          _hasNextPage = localRecipes.length > limit;
           _hasPrevPage = false;
           notifyListeners();
 
@@ -361,16 +375,6 @@ class RecipeProvider extends ChangeNotifier {
 
         _userRecipes = List<Recipe>.from(recipesList as List<Recipe>);
 
-        // Save to local storage (for page 1, save all recipes)
-        if (page == 1) {
-          try {
-            final localStorage = LocalStorageService();
-            await localStorage.saveUserRecipes(_userRecipes);
-          } catch (e) {
-            debugPrint('Error saving to local storage: $e');
-          }
-        }
-
         // Cache the page data with limit-aware key
         _userRecipesCache[cacheKey] = List<Recipe>.unmodifiable(_userRecipes);
 
@@ -427,6 +431,20 @@ class RecipeProvider extends ChangeNotifier {
             'hasPrevPage': _hasPrevPage,
             'total': _totalRecipes,
           };
+        }
+
+        // Save to local storage (for page 1, save recipes with pagination metadata)
+        if (page == 1) {
+          try {
+            final localStorage = LocalStorageService();
+            await localStorage.saveUserRecipes(
+              _userRecipes,
+              totalRecipes: _totalRecipes,
+              totalPages: _totalPages,
+            );
+          } catch (e) {
+            debugPrint('Error saving to local storage: $e');
+          }
         }
 
         notifyListeners();

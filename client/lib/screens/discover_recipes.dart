@@ -779,6 +779,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                 isLoading: recipeProvider.isLoading,
                 onPreviousPage: _goToPreviousPage,
                 onNextPage: _goToNextPage,
+                onGoToPage: _goToPage,
               );
             },
           ),

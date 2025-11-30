@@ -570,6 +570,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                 isLoading: recipeProvider.isLoading,
                 onPreviousPage: _goToPreviousPage,
                 onNextPage: _goToNextPage,
+                onGoToPage: _goToPage,
               );
             },
           ),

@@ -51,12 +51,12 @@ class LocalStorageService {
   // ==================== User Recipes ====================
 
   /// Save user recipes to local storage
-  Future<void> saveUserRecipes(List<Recipe> recipes) async {
+  Future<void> saveUserRecipes(List<Recipe> recipes, {int? totalRecipes, int? totalPages}) async {
     try {
       final box = _userRecipesBoxInstance;
       if (box == null) {
         await initialize();
-        return saveUserRecipes(recipes);
+        return saveUserRecipes(recipes, totalRecipes: totalRecipes, totalPages: totalPages);
       }
 
       // Convert recipes to JSON
@@ -65,16 +65,48 @@ class LocalStorageService {
       // Save recipes
       await box.put('recipes', recipesJson);
       
+      // Save pagination metadata if provided
+      if (totalRecipes != null) {
+        await box.put('totalRecipes', totalRecipes);
+      }
+      if (totalPages != null) {
+        await box.put('totalPages', totalPages);
+      }
+      
       // Save metadata (timestamp)
       await _saveMetadata('user_recipes_timestamp', DateTime.now().toIso8601String());
       
       if (kDebugMode) {
-        debugPrint('💾 Saved ${recipes.length} user recipes to local storage');
+        debugPrint('💾 Saved ${recipes.length} user recipes to local storage (total: $totalRecipes, pages: $totalPages)');
       }
     } catch (e) {
       if (kDebugMode) {
         debugPrint('❌ Error saving user recipes: $e');
       }
+    }
+  }
+
+  /// Load user recipes pagination metadata
+  Future<Map<String, int>> loadUserRecipesPagination() async {
+    try {
+      final box = _userRecipesBoxInstance;
+      if (box == null) {
+        await initialize();
+        return loadUserRecipesPagination();
+      }
+
+      final totalRecipes = box.get('totalRecipes') as int?;
+      final totalPages = box.get('totalPages') as int?;
+
+      return {
+        'totalRecipes': totalRecipes ?? 0,
+        'totalPages': totalPages ?? 1,
+      };
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error loading user recipes pagination: $e');
+      }
+      return {'totalRecipes': 0, 'totalPages': 1};
     }
   }
 
