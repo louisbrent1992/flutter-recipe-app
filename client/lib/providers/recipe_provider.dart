@@ -1176,6 +1176,17 @@ class RecipeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Set session discover cache from a list (used by RandomRecipeScreen)
+  /// This populates the in-memory cache without triggering a network fetch
+  void setDiscoverCacheFromList(List<Recipe> recipes) {
+    if (recipes.isEmpty) return;
+    
+    _sessionDiscoverCache = List<Recipe>.from(recipes);
+    _sessionDiscoverCacheOriginalOrder = List<Recipe>.from(recipes);
+    _sessionCacheTime = DateTime.now();
+    notifyListeners();
+  }
+
   // Legacy alias for backward compatibility
   void setGeneratedRecipesFromCache(List<Recipe> recipes) {
     setDiscoverRecipesFromCache(recipes);
