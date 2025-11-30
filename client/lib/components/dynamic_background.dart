@@ -52,19 +52,8 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
         final DynamicBackgroundConfig? bg = dyn.config?.globalBackground;
         if (bg == null) return const SizedBox.shrink();
 
-        // If app is in dark mode, use the app's existing dark background color
-        // to maintain contrast and readability unless a dark-specific setting exists.
-        // This fulfills the requirement to keep dark mode background consistent
-        // with the current theme when dynamic config has no dark option.
         final theme = Theme.of(context);
-        if (theme.brightness == Brightness.dark) {
-          // Recommended lighter dark blue for dark mode backdrop
-          const Color fallbackDarkBlue = Color(0xFF1E2A44);
-          return Positioned.fill(
-            child: IgnorePointer(child: Container(color: fallbackDarkBlue)),
-          );
-        }
-
+        final isDarkMode = theme.brightness == Brightness.dark;
         final double overlayOpacity = (bg.opacity ?? 1.0).clamp(0.0, 1.0);
 
         return Positioned.fill(
@@ -83,6 +72,8 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
                           bg.imageUrl!,
                           fit: BoxFit.cover,
                           alignment: Alignment.center,
+                          color: isDarkMode ? Colors.black.withValues(alpha: 0.3) : null,
+                          colorBlendMode: isDarkMode ? BlendMode.darken : null,
                         ),
                       );
                     },
@@ -91,12 +82,18 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
                   AnimatedBuilder(
                     animation: _controller,
                     builder: (context, _) {
-                      final colors =
+                      var colors =
                           bg.colors
                               .map(_parseColor)
                               .whereType<Color>()
                               .toList();
                       if (colors.length < 2) return const SizedBox.shrink();
+                      
+                      // Darken colors for dark mode
+                      if (isDarkMode) {
+                        colors = colors.map((c) => _darkenColor(c, 0.6)).toList();
+                      }
+                      
                       return Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -125,11 +122,27 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
                   Container(
                     color: Colors.black.withValues(alpha: 1.0 - overlayOpacity),
                   ),
+                  
+                // Additional darkening overlay for dark mode images
+                if (bg.hasImage && isDarkMode)
+                  Container(
+                    color: Colors.black.withValues(alpha: 0.4),
+                  ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+  
+  /// Darken a color by a given factor (0.0 = black, 1.0 = original)
+  Color _darkenColor(Color color, double factor) {
+    return Color.fromARGB(
+      (color.a * 255.0).round() & 0xff,
+      ((color.r * 255.0).round() * factor).round() & 0xff,
+      ((color.g * 255.0).round() * factor).round() & 0xff,
+      ((color.b * 255.0).round() * factor).round() & 0xff,
     );
   }
 
