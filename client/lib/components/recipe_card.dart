@@ -385,7 +385,7 @@ Shared from RecipEase
               ),
               fontWeight:
                   widget.compactMode ? FontWeight.w500 : FontWeight.normal,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 
                 widget.compactMode ? 0.9 : 0.7,
               ),
             ),
@@ -425,7 +425,7 @@ Shared from RecipEase
       width: iconSize,
       height: iconSize,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
         shape: BoxShape.circle,
       ),
       child: Icon(
@@ -522,7 +522,7 @@ Shared from RecipEase
         tablet: 13.0,
         desktop: 14.0,
       ),
-      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
     );
 
     return Container(
@@ -546,7 +546,7 @@ Shared from RecipEase
                   size: iconSize,
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 SizedBox(width: AppSpacing.xs),
                 Text(
@@ -566,7 +566,7 @@ Shared from RecipEase
                   size: iconSize,
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 SizedBox(width: AppSpacing.xs),
                 Text(
@@ -583,7 +583,7 @@ Shared from RecipEase
               Icon(
                 Icons.restaurant_menu_rounded,
                 size: iconSize,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               SizedBox(width: AppSpacing.xs),
               Text(
@@ -864,9 +864,9 @@ Shared from RecipEase
                         itemBuilder: (context, index) {
                           final collection = collections[index];
                           // Skip default collections like "Recently Added"
-                          if (collection.name == 'Recently Added')
+                          if (collection.name == 'Recently Added') {
                             return const SizedBox.shrink();
-
+                          }
                           return ListTile(
                             leading: Container(
                               padding: const EdgeInsets.all(8),
@@ -1097,8 +1097,9 @@ Shared from RecipEase
     // Check by sourceUrl
     if (widget.recipe.sourceUrl != null &&
         widget.recipe.sourceUrl!.isNotEmpty) {
-      if (userRecipes.any((r) => r.sourceUrl == widget.recipe.sourceUrl))
+      if (userRecipes.any((r) => r.sourceUrl == widget.recipe.sourceUrl)) {
         return true;
+      }
     }
 
     // Check by title + description
@@ -1702,7 +1703,7 @@ Shared from RecipEase
                                           ? Theme.of(context).colorScheme.error
                                           : Theme.of(
                                             context,
-                                          ).colorScheme.error.withOpacity(0.7),
+                                          ).colorScheme.error.withValues(alpha: 0.7),
                                 ),
                                 SizedBox(
                                   width: AppSpacing.responsive(
@@ -1723,7 +1724,7 @@ Shared from RecipEase
                                     ),
                                     color: Theme.of(
                                       context,
-                                    ).colorScheme.onSurface.withOpacity(0.7),
+                                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                                   ),
                                 ),
                               ],
@@ -1767,7 +1768,7 @@ Shared from RecipEase
                                           : Theme.of(context)
                                               .colorScheme
                                               .primary
-                                              .withOpacity(0.7),
+                                              .withValues(alpha: 0.7),
                                 ),
                                 SizedBox(
                                   width: AppSpacing.responsive(
@@ -1788,7 +1789,7 @@ Shared from RecipEase
                                     ),
                                     color: Theme.of(
                                       context,
-                                    ).colorScheme.onSurface.withOpacity(0.7),
+                                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                                   ),
                                 ),
                               ],
@@ -1823,7 +1824,7 @@ Shared from RecipEase
                                   ),
                                   color: Theme.of(
                                     context,
-                                  ).colorScheme.primary.withOpacity(0.7),
+                                  ).colorScheme.primary.withValues(alpha: 0.7),
                                 ),
                                 SizedBox(
                                   width: AppSpacing.responsive(
@@ -1844,7 +1845,7 @@ Shared from RecipEase
                                     ),
                                     color: Theme.of(
                                       context,
-                                    ).colorScheme.onSurface.withOpacity(0.7),
+                                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                                   ),
                                 ),
                               ],

@@ -1178,12 +1178,13 @@ class _SettingsScreenState extends State<SettingsScreen>
                               'Display your name and photo on shared recipes',
                           value: profileProvider.showProfileInCommunity,
                           onChanged: (value) async {
+                            final messenger = ScaffoldMessenger.of(context);
                             try {
                               await profileProvider.setShowProfileInCommunity(
                                 value,
                               );
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                messenger.showSnackBar(
                                   SnackBar(
                                     content: Text(
                                       value
@@ -1200,7 +1201,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                               }
                             } catch (e) {
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                messenger.showSnackBar(
                                   SnackBar(
                                     content: Text('Error updating setting: $e'),
                                     backgroundColor: Colors.red,

@@ -56,8 +56,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     // Check by sourceUrl
     if (widget.recipe.sourceUrl != null &&
         widget.recipe.sourceUrl!.isNotEmpty) {
-      if (userRecipes.any((r) => r.sourceUrl == widget.recipe.sourceUrl))
+      if (userRecipes.any((r) => r.sourceUrl == widget.recipe.sourceUrl)) {
         return true;
+      }
     }
     
     // Check title + description for fallback (matching Discover/Community recipes)
@@ -549,9 +550,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     itemBuilder: (context, index) {
                       final collection = collections[index];
                       // Skip default collections like "Recently Added"
-                          if (collection.name == 'Recently Added')
-                            return const SizedBox.shrink();
-                      
+                      if (collection.name == 'Recently Added') {
+                        return const SizedBox.shrink();
+                      }
                       return ListTile(
                         leading: Container(
                           padding: const EdgeInsets.all(8),
@@ -781,7 +782,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       if (sharedByCount <= 1) {
         return names.first;
       } else if (sharedByCount == 2) {
-        return '${names.join(' & ')}';
+        return names.join(' & ');
       } else {
         final othersCount = sharedByCount - 2;
         return '${names.join(', ')} and $othersCount other${othersCount > 1 ? 's' : ''}';
@@ -795,10 +796,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -821,7 +822,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       tablet: 12.0,
                       desktop: 13.0,
                     ),
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 SizedBox(height: 2),
@@ -850,7 +851,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               vertical: AppSpacing.xs,
             ),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -894,7 +895,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       width: iconSize,
       height: iconSize,
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.2),
+        color: theme.colorScheme.primary.withValues(alpha: 0.2),
         shape: BoxShape.circle,
       ),
       child: Icon(
@@ -935,12 +936,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     // Different styling for own recipes vs community recipes
     final containerColor =
         isOwnRecipe
-            ? theme.colorScheme.primaryContainer.withOpacity(0.3)
-            : theme.colorScheme.surfaceContainerHighest.withOpacity(0.5);
+            ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
+            : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5);
     final borderColor =
         isOwnRecipe
-            ? theme.colorScheme.primary.withOpacity(0.2)
-            : theme.colorScheme.outline.withOpacity(0.2);
+            ? theme.colorScheme.primary.withValues(alpha: 0.2)
+            : theme.colorScheme.outline.withValues(alpha: 0.2);
 
     return Container(
       margin: EdgeInsets.only(top: AppSpacing.md, bottom: AppSpacing.sm),
@@ -1050,7 +1051,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               tablet: 12.0,
               desktop: 13.0,
             ),
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -1061,7 +1062,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     return Container(
       height: 30,
       width: 1,
-      color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
     );
   }
 
@@ -2261,8 +2262,8 @@ Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
 
   if (result == null) return;
 
-  final String? candidateUrl = result['imageUrl'] as String?;
-  final String? oldUrl = recipe.imageUrl;
+  final candidateUrl = result['imageUrl'] as String?;
+  final oldUrl = recipe.imageUrl;
 
   if (candidateUrl == null || !context.mounted) return;
 
@@ -2439,7 +2440,7 @@ class _ImageReplaceSheetContentState extends State<_ImageReplaceSheetContent> {
             'Finding new images...',
                       style: TextStyle(
                         fontSize: AppDialog.responsiveContentSize(context),
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
