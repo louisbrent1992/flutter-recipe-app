@@ -49,7 +49,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   bool _checkIfSaved(RecipeProvider provider) {
     final userRecipes = provider.userRecipes;
-    
+
     // Check by ID
     if (userRecipes.any((r) => r.id == widget.recipe.id)) return true;
 
@@ -60,7 +60,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         return true;
       }
     }
-    
+
     // Check title + description for fallback (matching Discover/Community recipes)
     final recipeKey =
         '${widget.recipe.title.toLowerCase()}|${widget.recipe.description.toLowerCase()}';
@@ -70,7 +70,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               (r) => '${r.title.toLowerCase()}|${r.description.toLowerCase()}',
             )
             .toSet();
-    
+
     return userRecipeKeys.contains(recipeKey);
   }
 
@@ -155,7 +155,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       _currentRecipe = _currentRecipe.copyWith(imageUrl: newUrl);
       _imageKey = UniqueKey(); // Force SmartRecipeImage to rebuild completely
     });
-    
+
     // Also update the recipe in the provider so other screens reflect the change
     final provider = context.read<RecipeProvider>();
     provider.updateRecipeImageLocally(_currentRecipe.id, newUrl);
@@ -492,13 +492,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   Future<void> _showAddToCollectionDialog() async {
     final collectionService = CollectionService();
-    
+
     try {
       // Fetch all collections
       final collections = await collectionService.getCollections();
-      
+
       if (!mounted) return;
-      
+
       if (collections.isEmpty) {
         SnackBarHelper.showWarning(
           context,
@@ -506,99 +506,99 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         );
         return;
       }
-      
+
       // Show dialog to select collection or create new
       final result = await showDialog<dynamic>(
         context: context,
         builder:
             (context) => AlertDialog(
-          title: const Text('Add to Collection'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Create new collection button
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.add_rounded,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 20,
-                    ),
-                  ),
-                  title: Text(
-                    'Create New Collection',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onTap: () => Navigator.pop(context, 'create_new'),
-                ),
-                const Divider(),
-                // Existing collections list
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: collections.length,
-                    itemBuilder: (context, index) {
-                      final collection = collections[index];
-                      // Skip default collections like "Recently Added"
-                      if (collection.name == 'Recently Added') {
-                        return const SizedBox.shrink();
-                      }
-                      return ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: collection.color.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            collection.icon,
-                            color: collection.color,
-                            size: 20,
-                          ),
+              title: const Text('Add to Collection'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Create new collection button
+                    ListTile(
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        title: Text(collection.name),
+                        child: Icon(
+                          Icons.add_rounded,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        'Create New Collection',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onTap: () => Navigator.pop(context, 'create_new'),
+                    ),
+                    const Divider(),
+                    // Existing collections list
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: collections.length,
+                        itemBuilder: (context, index) {
+                          final collection = collections[index];
+                          // Skip default collections like "Recently Added"
+                          if (collection.name == 'Recently Added') {
+                            return const SizedBox.shrink();
+                          }
+                          return ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: collection.color.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                collection.icon,
+                                color: collection.color,
+                                size: 20,
+                              ),
+                            ),
+                            title: Text(collection.name),
                             subtitle: Text(
                               '${collection.recipes.length} recipes',
                             ),
-                        onTap: () => Navigator.pop(context, collection),
-                      );
-                    },
-                  ),
+                            onTap: () => Navigator.pop(context, collection),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
                 ),
               ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-          ],
-        ),
       );
-      
+
       if (result == null || !mounted) return;
-      
+
       // Handle create new collection
       if (result == 'create_new') {
         // Navigate to collections screen to create new collection
         Navigator.pushNamed(context, '/collections');
         return;
       }
-      
+
       // Handle existing collection selection
       final selectedCollection = result as RecipeCollection;
-      
+
       // Show loading indicator immediately
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -621,18 +621,18 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           ),
         );
       }
-      
+
       // Add recipe to collection
       final success = await collectionService.addRecipeToCollection(
         selectedCollection.id,
         _currentRecipe,
       );
-      
+
       // Clear loading snackbar
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
       }
-      
+
       if (success && mounted) {
         SnackBarHelper.showSuccess(
           context,
@@ -704,7 +704,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     final theme = Theme.of(context);
     final users = recipe.sharedByUsers;
     final sharedByCount = recipe.sharedByCount;
-    
+
     final iconSize = AppSizing.responsiveIconSize(
       context,
       mobile: 40,
@@ -737,7 +737,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       final overlapOffset = iconSize * 0.65;
 
       return SizedBox(
-        width: iconSize + (overlapOffset * (displayUsers.length - 1).clamp(0, 3)),
+        width:
+            iconSize + (overlapOffset * (displayUsers.length - 1).clamp(0, 3)),
         height: iconSize,
         child: Stack(
           children: [
@@ -747,10 +748,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: theme.cardColor,
-                      width: 2,
-                    ),
+                    border: Border.all(color: theme.cardColor, width: 2),
                   ),
                   child: ClipOval(
                     child: ImageUtils.buildProfileImage(
@@ -758,7 +756,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       width: iconSize - 4,
                       height: iconSize - 4,
                       fit: BoxFit.cover,
-                      errorWidget: _buildFallbackAvatar(theme, iconSize - 4, smallIconSize - 4),
+                      errorWidget: _buildFallbackAvatar(
+                        theme,
+                        iconSize - 4,
+                        smallIconSize - 4,
+                      ),
                     ),
                   ),
                 ),
@@ -774,10 +776,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         return recipe.sharedByDisplayName ?? 'Chef';
       }
 
-      final names = users
-          .take(2)
-          .map((u) => u.displayName ?? 'Chef')
-          .toList();
+      final names = users.take(2).map((u) => u.displayName ?? 'Chef').toList();
 
       if (sharedByCount <= 1) {
         return names.first;
@@ -890,7 +889,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   /// Build fallback avatar with person icon
-  Widget _buildFallbackAvatar(ThemeData theme, double iconSize, double smallIconSize) {
+  Widget _buildFallbackAvatar(
+    ThemeData theme,
+    double iconSize,
+    double smallIconSize,
+  ) {
     return Container(
       width: iconSize,
       height: iconSize,
@@ -1051,7 +1054,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               tablet: 12.0,
               desktop: 13.0,
             ),
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -1104,28 +1109,32 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               onSelected: (action) async {
                 final provider = context.read<RecipeProvider>();
                 final isSaved = _checkIfSaved(provider);
-                
+
                 switch (action) {
                   case MenuAction.save:
                     if (isSaved) break;
                     final recipeProvider = provider;
-                    
+
                     // Check if this is a discover/community recipe (different userId)
                     final currentUser = context.read<AuthService>().user;
-                    final isDiscoverRecipe = currentUser != null && 
-                        _currentRecipe.userId != currentUser.uid && 
+                    final isDiscoverRecipe =
+                        currentUser != null &&
+                        _currentRecipe.userId != currentUser.uid &&
                         _currentRecipe.id.isNotEmpty;
-                    
+
                     // Pass originalRecipeId for save count tracking
-                    final originalRecipeId = isDiscoverRecipe ? _currentRecipe.id : null;
-                    
+                    final originalRecipeId =
+                        isDiscoverRecipe ? _currentRecipe.id : null;
+
                     // Create a copy of the recipe with empty ID to ensure a new document is created
                     // This prevents overwriting the original discover recipe
                     final recipeToSave = _currentRecipe.copyWith(
                       id: '', // Clear ID to create new document
-                      userId: currentUser?.uid, // Will be set by server, but clear locally
+                      userId:
+                          currentUser
+                              ?.uid, // Will be set by server, but clear locally
                     );
-                    
+
                     final savedRecipe = await recipeProvider.createUserRecipe(
                       recipeToSave,
                       context,
@@ -1137,7 +1146,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       setState(() {
                         _currentRecipe = savedRecipe;
                       });
-                      
+
                       // Provider update will trigger rebuild and update isSaved status
                       SnackBarHelper.showSuccess(
                         context,
@@ -2221,15 +2230,16 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
   // Check if this recipe belongs to the current user
   final currentUser = context.read<AuthService>().user;
-  final isUserOwnedRecipe = currentUser != null && recipe.userId == currentUser.uid;
-  
+  final isUserOwnedRecipe =
+      currentUser != null && recipe.userId == currentUser.uid;
+
   // Check if this is a discover recipe (no userId or different userId)
   final isDiscover = !isUserOwnedRecipe && recipe.id.isNotEmpty;
-  
+
   // Check if debug features are enabled (requires both debug mode AND setting enabled)
   final debugSettings = DebugSettings();
   final debugFeaturesEnabled = debugSettings.isDebugEnabled;
-  
+
   // Gate discover - only allow replacing images on user-owned recipes
   // Unless debug features are explicitly enabled in settings
   if (isDiscover && !debugFeaturesEnabled) {
@@ -2245,7 +2255,7 @@ Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
   }
 
   final theme = Theme.of(context);
-  
+
   // Use stateful bottom sheet for better UX
   final result = await showModalBottomSheet<Map<String, dynamic>>(
     context: context,
@@ -2310,11 +2320,12 @@ Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
 /// Handles loading states, image selection, and preview all in one place
 class _ImageReplaceSheetContent extends StatefulWidget {
   final Recipe recipe;
-  
+
   const _ImageReplaceSheetContent({required this.recipe});
-  
+
   @override
-  State<_ImageReplaceSheetContent> createState() => _ImageReplaceSheetContentState();
+  State<_ImageReplaceSheetContent> createState() =>
+      _ImageReplaceSheetContentState();
 }
 
 class _ImageReplaceSheetContentState extends State<_ImageReplaceSheetContent> {
@@ -2326,18 +2337,18 @@ class _ImageReplaceSheetContentState extends State<_ImageReplaceSheetContent> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
-      return SafeArea(
-        child: Center(
-          child: Container(
-            constraints: BoxConstraints(
-              maxWidth: AppDialog.responsiveMaxWidth(context),
-            ),
-            child: Padding(
-              padding: AppDialog.responsivePadding(context),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+
+    return SafeArea(
+      child: Center(
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: AppDialog.responsiveMaxWidth(context),
+          ),
+          child: Padding(
+            padding: AppDialog.responsivePadding(context),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 // Show image suggestions if available
                 if (_suggestedImages.isNotEmpty) ...[
                   _buildImageSelectionGrid(),
@@ -2356,23 +2367,23 @@ class _ImageReplaceSheetContentState extends State<_ImageReplaceSheetContent> {
                     icon: Icons.link_rounded,
                     title: 'Paste image URL',
                     onTap: _pasteUrl,
-                      ),
+                  ),
                   _buildOptionTile(
                     icon: Icons.auto_awesome_rounded,
                     title: 'Regenerate suggestion',
                     onTap: _regenerateSuggestion,
                   ),
                 ],
-                
+
                 // Show error message if any
                 if (_errorMessage != null) ...[
                   const SizedBox(height: 12),
                   Text(
                     _errorMessage!,
-                      style: TextStyle(
+                    style: TextStyle(
                       color: theme.colorScheme.error,
                       fontSize: 13,
-                      ),
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -2390,33 +2401,33 @@ class _ImageReplaceSheetContentState extends State<_ImageReplaceSheetContent> {
     required VoidCallback onTap,
   }) {
     return ListTile(
-                    leading: Icon(
+      leading: Icon(
         icon,
-                      size: AppSizing.responsiveIconSize(
-                        context,
-                        mobile: 24,
-                        tablet: 28,
-                        desktop: 32,
-                      ),
-                    ),
-                    title: Text(
+        size: AppSizing.responsiveIconSize(
+          context,
+          mobile: 24,
+          tablet: 28,
+          desktop: 32,
+        ),
+      ),
+      title: Text(
         title,
-                      style: TextStyle(
-                        fontSize: AppDialog.responsiveContentSize(context),
-                      ),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-        horizontal: AppBreakpoints.isDesktop(context)
-                              ? 20
-            : AppBreakpoints.isTablet(context)
-                              ? 18
-                              : 16,
-        vertical: AppBreakpoints.isDesktop(context)
-                              ? 12
-            : AppBreakpoints.isTablet(context)
-                              ? 10
-                              : 8,
-                    ),
+        style: TextStyle(fontSize: AppDialog.responsiveContentSize(context)),
+      ),
+      contentPadding: EdgeInsets.symmetric(
+        horizontal:
+            AppBreakpoints.isDesktop(context)
+                ? 20
+                : AppBreakpoints.isTablet(context)
+                ? 18
+                : 16,
+        vertical:
+            AppBreakpoints.isDesktop(context)
+                ? 12
+                : AppBreakpoints.isTablet(context)
+                ? 10
+                : 8,
+      ),
       onTap: onTap,
     );
   }
@@ -2433,14 +2444,16 @@ class _ImageReplaceSheetContentState extends State<_ImageReplaceSheetContent> {
             child: CircularProgressIndicator(
               strokeWidth: 3,
               color: Theme.of(context).colorScheme.primary,
-                    ),
+            ),
           ),
           const SizedBox(height: 16),
           Text(
             'Finding new images...',
-                      style: TextStyle(
-                        fontSize: AppDialog.responsiveContentSize(context),
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            style: TextStyle(
+              fontSize: AppDialog.responsiveContentSize(context),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -2470,7 +2483,7 @@ class _ImageReplaceSheetContentState extends State<_ImageReplaceSheetContent> {
             itemBuilder: (context, index) {
               final imageUrl = _suggestedImages[index];
               final isSelected = _selectedImage == imageUrl;
-              
+
               return GestureDetector(
                 onTap: () => setState(() => _selectedImage = imageUrl),
                 child: AnimatedContainer(
@@ -2479,9 +2492,10 @@ class _ImageReplaceSheetContentState extends State<_ImageReplaceSheetContent> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Colors.transparent,
+                      color:
+                          isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.transparent,
                       width: 3,
                     ),
                   ),
@@ -2498,20 +2512,29 @@ class _ImageReplaceSheetContentState extends State<_ImageReplaceSheetContent> {
                             return Center(
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                value: loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-        ),
-      );
-    },
-                          errorBuilder: (_, __, ___) => Container(
-                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            child: Icon(
-                              Icons.broken_image_rounded,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                              ),
+                            );
+                          },
+                          errorBuilder:
+                              (_, __, ___) => Container(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainerHighest,
+                                child: Icon(
+                                  Icons.broken_image_rounded,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
                         ),
                         if (isSelected)
                           Positioned(
@@ -2556,9 +2579,10 @@ class _ImageReplaceSheetContentState extends State<_ImageReplaceSheetContent> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: _selectedImage != null
-            ? () => Navigator.pop(context, {'imageUrl': _selectedImage})
-            : null,
+        onPressed:
+            _selectedImage != null
+                ? () => Navigator.pop(context, {'imageUrl': _selectedImage})
+                : null,
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
@@ -2573,46 +2597,49 @@ class _ImageReplaceSheetContentState extends State<_ImageReplaceSheetContent> {
   Future<void> _pickFromDevice() async {
     final imageUrl = await ImageReplacementService.pickFromDeviceAndUpload(
       widget.recipe,
-      );
+    );
     if (imageUrl != null && mounted) {
       Navigator.pop(context, {'imageUrl': imageUrl});
     }
   }
 
   Future<void> _pasteUrl() async {
-      final controller = TextEditingController();
-      final ok = await showDialog<bool>(
-        context: context,
-      builder: (ctx) => AlertDialog(
-              title: const Text('Paste image URL'),
-              content: TextField(
-                controller: controller,
-                decoration: const InputDecoration(
-                  hintText: 'https://example.com/image.jpg',
-                ),
+    final controller = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Paste image URL'),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                hintText: 'https://example.com/image.jpg',
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Validate'),
-                ),
-              ],
             ),
-      );
-    
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Validate'),
+              ),
+            ],
+          ),
+    );
+
     if (ok != true || !mounted) return;
-    
-        final url = controller.text.trim();
-        if (await ImageReplacementService.validateImageUrl(url)) {
+
+    final url = controller.text.trim();
+    if (await ImageReplacementService.validateImageUrl(url)) {
       if (mounted) Navigator.pop(context, {'imageUrl': url});
-        } else {
-      setState(() => _errorMessage = 'That link doesn\'t point to a valid image.');
-          }
-        }
+    } else {
+      setState(
+        () => _errorMessage = 'That link doesn\'t point to a valid image.',
+      );
+    }
+  }
 
   Future<void> _regenerateSuggestion() async {
     setState(() {

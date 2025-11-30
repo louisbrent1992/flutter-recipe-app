@@ -142,7 +142,7 @@ class CreditsPill extends StatelessWidget {
           
           // Universal padding/margin for consistent spacing across all screens
           return Padding(
-            padding: EdgeInsets.all(isDesktop ? 4.0 : isTablet ? 3.0 : 2.0),
+            padding: const EdgeInsets.all(2.0),
             child: InkWell(
               borderRadius: BorderRadius.circular(
                 isDesktop ? 20 : isTablet ? 18 : 16,
@@ -153,8 +153,8 @@ class CreditsPill extends StatelessWidget {
                 horizontal: compact ? 6 : isDesktop ? 12 : isTablet ? 10 : 8,
                 vertical: compact ? 4 : isDesktop ? 6 : isTablet ? 5 : 4,
               ),
-              margin: EdgeInsets.only(
-                right: isDesktop ? 8 : isTablet ? 6 : 4,
+              margin: const EdgeInsets.only(
+                right: 8.0,
               ),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface.withValues(
