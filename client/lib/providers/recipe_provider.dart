@@ -16,8 +16,10 @@ class RecipeProvider extends ChangeNotifier {
       StreamController<void>.broadcast();
   Stream<void> get onRecipesChanged => _recipesChangedController.stream;
 
-  // AI generated recipes
-  List<Recipe> _generatedRecipes = [];
+  // AI generated recipes (from Generate screen - separate from discover)
+  List<Recipe> _aiGeneratedRecipes = [];
+  // Discover recipes (for Discover screen and home carousel)
+  List<Recipe> _discoverRecipes = [];
   Recipe? _importedRecipe;
   bool _isLoading = false;
   ApiResponse<Recipe>? _error;
@@ -38,10 +40,10 @@ class RecipeProvider extends ChangeNotifier {
   final Map<String, Map<String, dynamic>> _userPaginationCache =
       {}; // key: "page_limit"
 
-  // Cache generated/external search results by a composite key and page
+  // Cache discover/external search results by a composite key and page
   // key format: query=<q>|difficulty=<d>|tag=<t>|limit=<l>
-  final Map<String, Map<int, List<Recipe>>> _generatedRecipesCache = {};
-  final Map<String, Map<int, Map<String, dynamic>>> _generatedPaginationCache =
+  final Map<String, Map<int, List<Recipe>>> _discoverRecipesCache = {};
+  final Map<String, Map<int, Map<String, dynamic>>> _discoverPaginationCache =
       {};
 
   // Session-level discover cache (fetch once, filter client-side)
@@ -63,7 +65,10 @@ class RecipeProvider extends ChangeNotifier {
   // Favorites removed: no favorites cache
 
   // Getters
-  List<Recipe> get generatedRecipes => _generatedRecipes;
+  List<Recipe> get aiGeneratedRecipes => _aiGeneratedRecipes;
+  List<Recipe> get discoverRecipes => _discoverRecipes;
+  // Legacy getter - now points to discover recipes for backward compatibility
+  List<Recipe> get generatedRecipes => _discoverRecipes;
   Recipe? get importedRecipe => _importedRecipe;
   bool get isLoading => _isLoading;
   ApiResponse<Recipe>? get error => _error;
@@ -124,21 +129,25 @@ class RecipeProvider extends ChangeNotifier {
       debugPrint(
         '🟡 [Provider] RecipeService.generateRecipes returned: success=${response.success}',
       );
+      debugPrint('🟡 [Provider] Response data: ${response.data}');
+      debugPrint('🟡 [Provider] Response data count: ${response.data?.length}');
 
       if (response.success && response.data != null) {
-        _generatedRecipes = response.data ?? [];
+        _aiGeneratedRecipes = response.data ?? [];
+        debugPrint('🟡 [Provider] Stored ${_aiGeneratedRecipes.length} recipes in _aiGeneratedRecipes');
 
         // Unlock first generation achievement
         _unlockFirstGenerationAchievement();
 
         notifyListeners();
       } else {
+        debugPrint('🟡 [Provider] No recipes to store, success=${response.success}, data=${response.data}');
         _setError(response.message ?? 'Failed to generate recipes');
-        _generatedRecipes = [];
+        _aiGeneratedRecipes = [];
       }
     } catch (e) {
       _setError(e.toString());
-      _generatedRecipes = [];
+      _aiGeneratedRecipes = [];
     } finally {
       _setLoading(false);
     }
@@ -566,7 +575,8 @@ class RecipeProvider extends ChangeNotifier {
     }
 
     // Try server sync in background (non-blocking)
-    _setLoading(true);
+    // NOTE: Don't use _setLoading here - this is an optimistic operation
+    // The UI is already updated, we don't want to show loading indicators
     clearError();
 
     try {
@@ -701,9 +711,9 @@ class RecipeProvider extends ChangeNotifier {
         );
       }
       return optimisticRecipe;
-    } finally {
-      _setLoading(false);
     }
+    // NOTE: No finally block with _setLoading(false) - this is an optimistic operation
+    // The UI was updated immediately, no loading state was set
   }
 
   // Update an existing user recipe
@@ -754,9 +764,34 @@ class RecipeProvider extends ChangeNotifier {
     BuildContext context, {
     bool refreshCollections = true, // Set to false to skip collection refresh
   }) async {
-    _setLoading(true);
+    // NOTE: Don't use _setLoading here - this is an optimistic operation
     clearError();
 
+    // OPTIMISTIC UPDATE: Remove from UI immediately
+    _userRecipes.removeWhere((recipe) => recipe.id == id);
+    _aiGeneratedRecipes.removeWhere((recipe) => recipe.id == id);
+    _discoverRecipes.removeWhere((recipe) => recipe.id == id);
+
+    // Clear imported recipe if it matches
+    if (_importedRecipe?.id == id) {
+      _importedRecipe = null;
+    }
+
+    // Update user recipes total optimistically
+    _totalUserRecipes = (_totalUserRecipes - 1).clamp(0, 1 << 31);
+
+    // Remove from local storage immediately
+    try {
+      final localStorage = LocalStorageService();
+      await localStorage.deleteUserRecipe(id);
+    } catch (e) {
+      debugPrint('Error deleting recipe from local storage: $e');
+    }
+
+    // Notify UI immediately
+    notifyListeners();
+
+    // Try server sync in background (non-blocking)
     try {
       final response = await RecipeService.deleteUserRecipe(id);
 
@@ -764,45 +799,26 @@ class RecipeProvider extends ChangeNotifier {
         final collectionService = context.read<CollectionService>();
 
         if (response.success) {
-          // Remove from all local lists
-          _userRecipes.removeWhere((recipe) => recipe.id == id);
-          _generatedRecipes.removeWhere((recipe) => recipe.id == id);
-
-          // Clear imported recipe if it matches
-          if (_importedRecipe?.id == id) {
-            _importedRecipe = null;
-          }
-
-          // Remove from local storage
-          try {
-            final localStorage = LocalStorageService();
-            await localStorage.deleteUserRecipe(id);
-          } catch (e) {
-            debugPrint('Error deleting recipe from local storage: $e');
-          }
-
           // Refresh collections to ensure the deleted recipe is removed from all collections (only if requested)
           if (refreshCollections) {
-          await collectionService.refreshCollectionsAfterRecipeDeletion(id);
+            await collectionService.refreshCollectionsAfterRecipeDeletion(id);
           }
 
-          // Update user recipes total optimistically
-          _totalUserRecipes = (_totalUserRecipes - 1).clamp(0, 1 << 31);
-          notifyListeners();
           emitRecipesChanged();
           return true;
         } else {
-          _setError(response.message ?? 'Failed to delete recipe');
-          return false;
+          // Server failed - but we already removed locally
+          // In a production app, you might want to restore the recipe
+          debugPrint('⚠️ Server delete failed, but recipe removed locally: ${response.message}');
+          return true; // Return true since local delete succeeded
         }
       }
     } catch (e) {
-      _setError(e.toString());
-      return false;
-    } finally {
-      _setLoading(false);
+      // Network error - but we already removed locally
+      debugPrint('⚠️ Network error during delete, but recipe removed locally: $e');
+      return true; // Return true since local delete succeeded
     }
-    return false;
+    return true;
   }
 
   // Favorites removed: toggleFavorite no longer supported
@@ -969,13 +985,13 @@ class RecipeProvider extends ChangeNotifier {
     int page = 1,
     int limit = 12,
   }) {
-    // If session cache is empty, try to preserve current generated recipes
+    // If session cache is empty, try to preserve current discover recipes
     // This prevents clearing the list when cache is temporarily unavailable
     if (_sessionDiscoverCache.isEmpty) {
-      // If we have generated recipes already displayed, return them to preserve UI
+      // If we have discover recipes already displayed, return them to preserve UI
       // This can happen during cache refresh or when offline
-      if (_generatedRecipes.isNotEmpty) {
-        return _generatedRecipes;
+      if (_discoverRecipes.isNotEmpty) {
+        return _discoverRecipes;
       }
       return [];
     }
@@ -1150,15 +1166,56 @@ class RecipeProvider extends ChangeNotifier {
     return cacheToUse[dailyIndex];
   }
 
-  // Set generated recipes from cache (internal helper)
-  void setGeneratedRecipesFromCache(List<Recipe> recipes) {
-    _generatedRecipes = recipes;
+  // Set discover recipes from cache (internal helper)
+  void setDiscoverRecipesFromCache(List<Recipe> recipes) {
+    _discoverRecipes = recipes;
     notifyListeners();
+  }
+
+  // Legacy alias for backward compatibility
+  void setGeneratedRecipesFromCache(List<Recipe> recipes) {
+    setDiscoverRecipesFromCache(recipes);
   }
 
   // Set community recipes from cache (internal helper)
   void setCommunityRecipesFromCache(List<Recipe> recipes) {
     _communityRecipes = List<Recipe>.from(recipes);
+    notifyListeners();
+  }
+
+  /// Update a recipe's image URL locally (for instant UI updates)
+  /// This updates the in-memory state without making a server request
+  void updateRecipeImageLocally(String recipeId, String newImageUrl) {
+    if (recipeId.isEmpty) return;
+    
+    // Update in user recipes list
+    final userIndex = _userRecipes.indexWhere((r) => r.id == recipeId);
+    if (userIndex != -1) {
+      _userRecipes[userIndex] = _userRecipes[userIndex].copyWith(imageUrl: newImageUrl);
+    }
+    
+    // Update in user recipes cache
+    _userRecipesCache.forEach((key, recipes) {
+      final index = recipes.indexWhere((r) => r.id == recipeId);
+      if (index != -1) {
+        final updatedList = List<Recipe>.from(recipes);
+        updatedList[index] = recipes[index].copyWith(imageUrl: newImageUrl);
+        _userRecipesCache[key] = List<Recipe>.unmodifiable(updatedList);
+      }
+    });
+    
+    // Update in session community cache if present
+    final communityIndex = _sessionCommunityCache.indexWhere((r) => r.id == recipeId);
+    if (communityIndex != -1) {
+      _sessionCommunityCache[communityIndex] = _sessionCommunityCache[communityIndex].copyWith(imageUrl: newImageUrl);
+    }
+    
+    // Update in displayed community recipes
+    final displayIndex = _communityRecipes.indexWhere((r) => r.id == recipeId);
+    if (displayIndex != -1) {
+      _communityRecipes[displayIndex] = _communityRecipes[displayIndex].copyWith(imageUrl: newImageUrl);
+    }
+    
     notifyListeners();
   }
 
@@ -1201,11 +1258,25 @@ class RecipeProvider extends ChangeNotifier {
       return;
     }
 
-    // Try to load from local storage first (future enhancement)
+    // OFFLINE-FIRST: Load from local storage first (even on forceRefresh)
     bool hasLocalCache = false;
-    // Note: We could add a loadCommunityCache method, but for now we'll just fetch from network
+    try {
+      final localStorage = LocalStorageService();
+      final localCache = await localStorage.loadCommunityCache();
+      if (localCache.isNotEmpty) {
+        hasLocalCache = true;
+        _sessionCommunityCache = localCache;
+        _communityRecipes = List<Recipe>.from(localCache);
+        _communityCacheTime = DateTime.now();
+        notifyListeners();
+        // Continue to network fetch in background
+      }
+    } catch (e) {
+      debugPrint('Error loading community cache from local storage: $e');
+    }
 
     clearError();
+    // Only set loading if we don't have local cache (to avoid hiding cached data)
     if (!hasLocalCache) {
       _setLoading(true);
     }
@@ -1237,19 +1308,41 @@ class RecipeProvider extends ChangeNotifier {
           _communityRecipes = List<Recipe>.from(_sessionCommunityCache);
 
           _communityCacheTime = DateTime.now();
+
+          // Save to local storage for offline access
+          try {
+            final localStorage = LocalStorageService();
+            await localStorage.saveCommunityCache(_sessionCommunityCache);
+          } catch (e) {
+            debugPrint('Error saving community cache to local storage: $e');
+          }
+
           notifyListeners();
         }
       } else {
+        // Only set error if we don't have local cache
         if (!hasLocalCache) {
           _setError(response.message ?? 'Failed to fetch community recipes');
+        } else {
+          debugPrint(
+            '⚠️ Network sync failed, using cached community recipes: ${response.message}',
+          );
+          // Ensure we notify listeners to show the cached data
+          notifyListeners();
         }
       }
     } catch (e) {
+      // Only set error if we don't have local cache
       if (!hasLocalCache) {
         debugPrint('❌ Error fetching community cache: $e');
         _setError('Failed to load community recipes: $e');
+      } else {
+        debugPrint('⚠️ Network sync failed, using cached community recipes: $e');
+        // Ensure we notify listeners to show the cached data
+        notifyListeners();
       }
     } finally {
+      // Only set loading to false if we set it to true
       if (!hasLocalCache) {
         _setLoading(false);
       }
@@ -1289,8 +1382,9 @@ class RecipeProvider extends ChangeNotifier {
     int limit = 12,
   }) {
     if (_sessionCommunityCache.isEmpty) {
-      if (_generatedRecipes.isNotEmpty) {
-        return _generatedRecipes;
+      // If we have community recipes already displayed, return them to preserve UI
+      if (_communityRecipes.isNotEmpty) {
+        return _communityRecipes;
       }
       return [];
     }
@@ -1419,24 +1513,24 @@ class RecipeProvider extends ChangeNotifier {
     );
 
     // Preserve current recipes to avoid clearing discover screen
-    // The discover screen uses _generatedRecipes, so we shouldn't clear it
+    // The discover screen uses _discoverRecipes, so we shouldn't clear it
     // unless we're explicitly refreshing for this specific search
-    final currentRecipes = List<Recipe>.from(_generatedRecipes);
+    final currentRecipes = List<Recipe>.from(_discoverRecipes);
 
     // Serve from cache if available
     if (!forceRefresh &&
-        _generatedRecipesCache[cacheKey] != null &&
-        _generatedRecipesCache[cacheKey]![page] != null) {
-      _generatedRecipes = List<Recipe>.from(
-        _generatedRecipesCache[cacheKey]![page]!,
+        _discoverRecipesCache[cacheKey] != null &&
+        _discoverRecipesCache[cacheKey]![page] != null) {
+      _discoverRecipes = List<Recipe>.from(
+        _discoverRecipesCache[cacheKey]![page]!,
       );
-      final pagination = _generatedPaginationCache[cacheKey]?[page];
+      final pagination = _discoverPaginationCache[cacheKey]?[page];
       if (pagination != null) {
         _currentPage = pagination['page'] ?? page;
         _totalPages = pagination['totalPages'] ?? _totalPages;
         _hasNextPage = pagination['hasNextPage'] ?? _hasNextPage;
         _hasPrevPage = pagination['hasPrevPage'] ?? _hasPrevPage;
-        _totalRecipes = pagination['total'] ?? _generatedRecipes.length;
+        _totalRecipes = pagination['total'] ?? _discoverRecipes.length;
       }
       notifyListeners();
       return;
@@ -1460,13 +1554,13 @@ class RecipeProvider extends ChangeNotifier {
         // Safely handle recipes array with null checking
         final recipesList = data['recipes'];
         if (recipesList == null) {
-          _generatedRecipes = [];
+          _discoverRecipes = [];
           _setError('Unable to load recipes. Please try again.');
           return;
         }
 
         if (recipesList is! List) {
-          _generatedRecipes = [];
+          _discoverRecipes = [];
           _setError('Unable to load recipes. Please try again.');
           return;
         }
@@ -1476,15 +1570,15 @@ class RecipeProvider extends ChangeNotifier {
                 .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
                 .toList();
 
-        // Store both the generated recipes and the original set
-        _generatedRecipes = recipes;
+        // Store the discover recipes
+        _discoverRecipes = recipes;
 
         // Cache the page results
-        _generatedRecipesCache.putIfAbsent(
+        _discoverRecipesCache.putIfAbsent(
           cacheKey,
           () => <int, List<Recipe>>{},
         );
-        _generatedRecipesCache[cacheKey]![page] = List<Recipe>.unmodifiable(
+        _discoverRecipesCache[cacheKey]![page] = List<Recipe>.unmodifiable(
           recipes,
         );
 
@@ -1542,11 +1636,11 @@ class RecipeProvider extends ChangeNotifier {
             _hasPrevPage = false;
           }
 
-          _generatedPaginationCache.putIfAbsent(
+          _discoverPaginationCache.putIfAbsent(
             cacheKey,
             () => <int, Map<String, dynamic>>{},
           );
-          _generatedPaginationCache[cacheKey]![page] = {
+          _discoverPaginationCache[cacheKey]![page] = {
             'page': _currentPage,
             'totalPages': _totalPages,
             'hasNextPage': _hasNextPage,
@@ -1571,11 +1665,11 @@ class RecipeProvider extends ChangeNotifier {
           _hasPrevPage = page > 1;
           _totalRecipes = recipes.length;
 
-          _generatedPaginationCache.putIfAbsent(
+          _discoverPaginationCache.putIfAbsent(
             cacheKey,
             () => <int, Map<String, dynamic>>{},
           );
-          _generatedPaginationCache[cacheKey]![page] = {
+          _discoverPaginationCache[cacheKey]![page] = {
             'page': _currentPage,
             'totalPages': _totalPages,
             'hasNextPage': _hasNextPage,
@@ -1587,20 +1681,20 @@ class RecipeProvider extends ChangeNotifier {
         notifyListeners();
       } else {
         _setError(response.message ?? 'Failed to search recipes');
-        // Don't clear _generatedRecipes on error - preserve current recipes
+        // Don't clear _discoverRecipes on error - preserve current recipes
         // This prevents clearing the discover screen when home screen refresh fails
         // Only clear if we had no recipes to begin with
         if (currentRecipes.isEmpty) {
-          _generatedRecipes = [];
+          _discoverRecipes = [];
         }
       }
     } catch (e) {
       _setError(e.toString());
-      // Don't clear _generatedRecipes on error - preserve current recipes
+      // Don't clear _discoverRecipes on error - preserve current recipes
       // This prevents clearing the discover screen when home screen refresh fails
       // Only clear if we had no recipes to begin with
       if (currentRecipes.isEmpty) {
-        _generatedRecipes = [];
+        _discoverRecipes = [];
       }
     } finally {
       _setLoading(false);

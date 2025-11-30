@@ -13,16 +13,19 @@ class LocalStorageService {
   static const String _userRecipesBox = 'user_recipes';
   static const String _collectionsBox = 'collections';
   static const String _discoverCacheBox = 'discover_cache';
+  static const String _communityCacheBox = 'community_cache';
   static const String _metadataBox = 'storage_metadata';
 
   // Cache expiration durations
   static const Duration _recipesCacheDuration = Duration(days: 7);
   static const Duration _collectionsCacheDuration = Duration(days: 7);
   static const Duration _discoverCacheDuration = Duration(hours: 1);
+  static const Duration _communityCacheDuration = Duration(hours: 1);
 
   Box? _userRecipesBoxInstance;
   Box? _collectionsBoxInstance;
   Box? _discoverCacheBoxInstance;
+  Box? _communityCacheBoxInstance;
   Box? _metadataBoxInstance;
 
   /// Initialize all Hive boxes
@@ -31,6 +34,7 @@ class LocalStorageService {
       _userRecipesBoxInstance = await Hive.openBox(_userRecipesBox);
       _collectionsBoxInstance = await Hive.openBox(_collectionsBox);
       _discoverCacheBoxInstance = await Hive.openBox(_discoverCacheBox);
+      _communityCacheBoxInstance = await Hive.openBox(_communityCacheBox);
       _metadataBoxInstance = await Hive.openBox(_metadataBox);
       
       if (kDebugMode) {
@@ -354,6 +358,109 @@ class LocalStorageService {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('❌ Error clearing discover cache: $e');
+      }
+    }
+  }
+
+  // ==================== Community Cache ====================
+
+  /// Save community cache to local storage
+  Future<void> saveCommunityCache(List<Recipe> recipes) async {
+    try {
+      final box = _communityCacheBoxInstance;
+      if (box == null) {
+        await initialize();
+        return saveCommunityCache(recipes);
+      }
+
+      // Convert recipes to JSON
+      final recipesJson = recipes.map((r) => r.toJson()).toList();
+      
+      // Save cache
+      await box.put('cache', recipesJson);
+      
+      // Save metadata (timestamp)
+      await _saveMetadata('community_cache_timestamp', DateTime.now().toIso8601String());
+      
+      if (kDebugMode) {
+        debugPrint('💾 Saved ${recipes.length} recipes to community cache');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error saving community cache: $e');
+      }
+    }
+  }
+
+  /// Load community cache from local storage
+  Future<List<Recipe>> loadCommunityCache() async {
+    try {
+      final box = _communityCacheBoxInstance;
+      if (box == null) {
+        await initialize();
+        return loadCommunityCache();
+      }
+
+      // Check if cache is expired
+      final timestamp = await _getMetadata('community_cache_timestamp');
+      if (timestamp != null) {
+        final cacheTime = DateTime.parse(timestamp);
+        if (DateTime.now().difference(cacheTime) > _communityCacheDuration) {
+          if (kDebugMode) {
+            debugPrint('⏰ Community cache expired');
+          }
+          return [];
+        }
+      }
+
+      final recipesJson = box.get('cache') as List?;
+      if (recipesJson == null) {
+        return [];
+      }
+
+      // Convert dynamic maps to Map<String, dynamic> to avoid type casting errors
+      final recipes = recipesJson
+          .map((json) {
+            // Handle Hive's _Map<dynamic, dynamic> type
+            if (json is Map) {
+              final Map<String, dynamic> converted = {};
+              json.forEach((key, value) {
+                converted[key.toString()] = value;
+              });
+              return Recipe.fromJson(converted);
+            }
+            return Recipe.fromJson(json as Map<String, dynamic>);
+          })
+          .toList();
+
+      if (kDebugMode) {
+        debugPrint('📦 Loaded ${recipes.length} recipes from community cache');
+      }
+
+      return recipes;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error loading community cache: $e');
+      }
+      return [];
+    }
+  }
+
+  /// Clear community cache
+  Future<void> clearCommunityCache() async {
+    try {
+      final box = _communityCacheBoxInstance;
+      if (box == null) return;
+      
+      await box.clear();
+      await _metadataBoxInstance?.delete('community_cache_timestamp');
+      
+      if (kDebugMode) {
+        debugPrint('🗑️ Cleared community cache');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error clearing community cache: $e');
       }
     }
   }

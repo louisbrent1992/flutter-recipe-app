@@ -5,8 +5,8 @@ import '../components/recipe_card.dart';
 import '../components/custom_app_bar.dart';
 import '../models/recipe.dart';
 import '../components/error_display.dart';
-import '../services/recipe_service.dart';
 import '../theme/theme.dart';
+import '../utils/snackbar_helper.dart';
 
 class GeneratedRecipesScreen extends StatefulWidget {
   const GeneratedRecipesScreen({super.key});
@@ -27,74 +27,159 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
 
   void _loadSavedRecipes() {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    for (var recipe in recipeProvider.userRecipes) {
+    final userRecipes = recipeProvider.userRecipes;
+
+    // Mark saved recipes by ID
+    for (var recipe in userRecipes) {
       _savedRecipes[recipe.id] = true;
     }
+
+    // Also check AI generated recipes and mark them if they match saved ones
+    for (var aiRecipe in recipeProvider.aiGeneratedRecipes) {
+      if (_isRecipeSaved(aiRecipe, userRecipes)) {
+        _savedRecipes[aiRecipe.id] = true;
+      }
+    }
+  }
+
+  /// Check if a recipe is already saved using multiple matching strategies
+  bool _isRecipeSaved(Recipe recipe, List<Recipe> userRecipes) {
+    // Check by ID
+    if (userRecipes.any((r) => r.id == recipe.id)) {
+      return true;
+    }
+
+    // Check by sourceUrl
+    if (recipe.sourceUrl != null && recipe.sourceUrl!.isNotEmpty) {
+      if (userRecipes.any((r) => r.sourceUrl == recipe.sourceUrl)) {
+        return true;
+      }
+    }
+
+    // Check by title + description
+    final recipeKey =
+        '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
+    return userRecipes.any(
+      (r) =>
+          '${r.title.toLowerCase()}|${r.description.toLowerCase()}' ==
+          recipeKey,
+    );
   }
 
   Future<void> _handleRecipeAction(Recipe recipe) async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    final isCurrentlySaved = _savedRecipes[recipe.id] ?? false;
+    final userRecipes = recipeProvider.userRecipes;
 
-    if (isCurrentlySaved) {
-      // Remove from collection
-      setState(() {
-        _savedRecipes[recipe.id] = false;
-      });
-      await recipeProvider.deleteUserRecipe(recipe.id, context);
-      if (mounted) {
-        final scaffoldContext = context;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Recipe removed from your collection'),
-            backgroundColor: Theme.of(context).colorScheme.warning,
-            action: SnackBarAction(
-              label: 'Go to My Recipes',
-              onPressed: () {
-                Navigator.of(
-                  scaffoldContext,
-                  rootNavigator: false,
-                ).pushNamed('/myRecipes');
-              },
-            ),
-          ),
+    // Check if recipe is already saved using consistent logic
+    bool isAlreadySaved = userRecipes.any((r) => r.id == recipe.id);
+
+    // Check by sourceUrl (most reliable for external recipes)
+    if (!isAlreadySaved &&
+        recipe.sourceUrl != null &&
+        recipe.sourceUrl!.isNotEmpty) {
+      isAlreadySaved = userRecipes.any((r) => r.sourceUrl == recipe.sourceUrl);
+    }
+
+    // Fallback to title + description
+    if (!isAlreadySaved) {
+      final recipeKey =
+          '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
+      isAlreadySaved = userRecipes.any(
+        (r) =>
+            '${r.title.toLowerCase()}|${r.description.toLowerCase()}' ==
+            recipeKey,
+      );
+    }
+
+    if (isAlreadySaved) {
+      // Find the saved recipe to delete
+      Recipe? userRecipe = userRecipes.firstWhere(
+        (r) => r.id == recipe.id,
+        orElse: () => Recipe(),
+      );
+
+      if (userRecipe.id.isEmpty &&
+          recipe.sourceUrl != null &&
+          recipe.sourceUrl!.isNotEmpty) {
+        userRecipe = userRecipes.firstWhere(
+          (r) => r.sourceUrl == recipe.sourceUrl,
+          orElse: () => Recipe(),
         );
       }
+
+      if (userRecipe.id.isEmpty) {
+        userRecipe = userRecipes.firstWhere(
+          (r) =>
+              r.title.toLowerCase() == recipe.title.toLowerCase() &&
+              r.description.toLowerCase() == recipe.description.toLowerCase(),
+          orElse: () => Recipe(),
+        );
+      }
+
+      if (userRecipe.id.isNotEmpty) {
+        // Remove from collection
+        setState(() {
+          _savedRecipes[recipe.id] = false;
+        });
+        final success = await recipeProvider.deleteUserRecipe(
+          userRecipe.id,
+          context,
+          refreshCollections: false,
+        );
+        if (success && mounted) {
+          SnackBarHelper.showWarning(
+            context,
+            'Recipe removed from your collection!',
+          );
+        }
+      }
     } else {
-      setState(() {
-        _savedRecipes[recipe.id] = true;
-      });
-      // Save to collection using standard recipe creation
-      final response = await RecipeService.createUserRecipe(recipe);
-      if (mounted) {
-        if (response.success && response.data != null) {
-          final scaffoldContext = context;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Recipe saved to your collection!'),
-              backgroundColor: Theme.of(context).colorScheme.success,
-              action: SnackBarAction(
-                label: 'Go to My Recipes',
-                onPressed: () {
-                  Navigator.of(
-                    scaffoldContext,
-                    rootNavigator: false,
-                  ).pushNamed('/myRecipes');
-                },
-              ),
+      // Save to collection using RecipeProvider (handles duplicates, local storage, etc.)
+      final savedRecipe = await recipeProvider.createUserRecipe(
+        recipe,
+        context,
+        refreshCollections: false,
+      );
+
+      if (savedRecipe != null) {
+        setState(() {
+          _savedRecipes[recipe.id] = true;
+          // Also track the new ID if it changed
+          if (savedRecipe.id != recipe.id) {
+            _savedRecipes[savedRecipe.id] = true;
+          }
+        });
+
+        if (mounted) {
+          SnackBarHelper.showSuccess(
+            context,
+            'Recipe saved to your collection!',
+            action: SnackBarAction(
+              label: 'Go to My Recipes',
+              textColor: Colors.white,
+              onPressed: () {
+                if (mounted) {
+                  Navigator.pushNamed(context, '/myRecipes');
+                }
+              },
             ),
           );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response.message ?? 'Failed to save recipe'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-          // Revert the saved state if save failed
-          setState(() {
-            _savedRecipes[recipe.id] = false;
-          });
+        }
+      } else {
+        // Provider handles showing error messages including duplicate detection
+        // with "View Recipe" action, so we just need to handle UI state
+        if (mounted) {
+          if (recipeProvider.error != null) {
+            final errorMessage =
+                recipeProvider.error!.message ?? 'Failed to save recipe';
+            final isDuplicate = errorMessage.contains('already exists');
+
+            if (!isDuplicate) {
+              // Only show error if not a duplicate (duplicate shows its own snackbar)
+              SnackBarHelper.showError(context, errorMessage);
+            }
+            recipeProvider.clearError();
+          }
         }
       }
     }
@@ -111,11 +196,13 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
         children: [
           Consumer<RecipeProvider>(
             builder: (context, recipeProvider, _) {
-              if (recipeProvider.isLoading) {
+              // Only show loading spinner if we have no recipes to display
+              // This prevents flash during background save/delete operations
+              if (recipeProvider.isLoading && recipeProvider.aiGeneratedRecipes.isEmpty) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (recipeProvider.error != null) {
+              if (recipeProvider.error != null && recipeProvider.aiGeneratedRecipes.isEmpty) {
                 return ErrorDisplay(
                   message: recipeProvider.error!.userFriendlyMessage,
                   isNetworkError: recipeProvider.error!.isNetworkError,
@@ -128,7 +215,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
                 );
               }
 
-              if (recipeProvider.generatedRecipes.isEmpty) {
+              if (recipeProvider.aiGeneratedRecipes.isEmpty) {
                 return const Center(child: Text('No generated recipes yet'));
               }
 
@@ -143,7 +230,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(height: AppSpacing.sm),
-                    ...recipeProvider.generatedRecipes.map(
+                    ...recipeProvider.aiGeneratedRecipes.map(
                       (recipe) => RecipeCard(
                         recipe: recipe,
                         showSaveButton: !(_savedRecipes[recipe.id] ?? false),

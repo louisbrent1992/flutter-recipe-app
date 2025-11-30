@@ -13,6 +13,7 @@ import '../components/floating_bottom_bar.dart';
 import '../utils/snackbar_helper.dart';
 import '../components/inline_banner_ad.dart';
 import '../components/offline_banner.dart';
+import '../components/pull_to_refresh_hint.dart'; // Provides RefreshIndicatorWithHint
 
 class CommunityScreen extends StatefulWidget {
   final String? initialQuery;
@@ -443,7 +444,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                     }
 
                     if (!recipeProvider.isLoading && displayRecipes.isEmpty) {
-                      return RefreshIndicator(
+                      return RefreshIndicatorWithHint(
                         onRefresh: () async {
                           await _loadRecipes(forceRefresh: true);
                         },
@@ -513,7 +514,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                             AppSpacing.responsive(context) +
                             30, // Extra space for floating bar
                       ),
-                      child: RefreshIndicator(
+                      child: RefreshIndicatorWithHint(
                         onRefresh: () async {
                           await _loadRecipes(forceRefresh: true);
                         },

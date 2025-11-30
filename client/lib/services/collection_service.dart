@@ -484,15 +484,57 @@ class CollectionService extends ChangeNotifier {
       await getCollections(updateSpecialCollections: false);
       final targetCollectionId = collectionId;
 
-      final response = await _api.authenticatedDelete(
-        'collections/$targetCollectionId/recipes/$recipeId',
-      );
+      // OPTIMISTIC UPDATE: Remove from local cache first (works offline)
+      if (_cachedCollections != null) {
+        final collectionIndex = _cachedCollections!.indexWhere(
+          (c) => c.id == targetCollectionId,
+        );
+        if (collectionIndex != -1) {
+          final collection = _cachedCollections![collectionIndex];
+          // Remove recipe from collection
+          if (collection.recipes.any((r) => r.id == recipeId)) {
+            final updatedCollection = collection.removeRecipe(recipeId);
+            _cachedCollections![collectionIndex] = updatedCollection;
 
-      if (response.success) {
-        // Update collections after removing a recipe
-        await updateCollections(forceRefresh: true);
+            // Save to local storage immediately
+            try {
+              final localStorage = LocalStorageService();
+              await localStorage.saveCollections(_cachedCollections!);
+            } catch (e) {
+              logger.e('Error saving collections to local storage: $e');
+            }
+
+            // Notify listeners immediately
+            notifyListeners();
+          }
+        }
       }
-      return response.success;
+
+      // Try server sync in background (non-blocking)
+      try {
+        final response = await _api.authenticatedDelete(
+          'collections/$targetCollectionId/recipes/$recipeId',
+        );
+
+        if (response.success) {
+          // Server sync succeeded - refresh from server to get latest state
+          await updateCollections(
+            forceRefresh: true,
+            updateSpecialCollections: false,
+          );
+          return true;
+        } else {
+          // Server failed but local update already done
+          logger.w(
+            'Server sync failed, but recipe removed locally: ${response.message}',
+          );
+          return true; // Return true because local update succeeded
+        }
+      } catch (e) {
+        // Network error - local update already done
+        logger.w('Network error, but recipe removed locally: $e');
+        return true; // Return true because local update succeeded
+      }
     } catch (e) {
       logger.e('Error removing recipe from collection: $e');
       return false;

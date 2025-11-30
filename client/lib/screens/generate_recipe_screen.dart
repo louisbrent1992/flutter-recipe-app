@@ -134,13 +134,16 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
         cuisineType: _cuisineType,
       );
       debugPrint('🔵 [Generate] generateRecipes completed');
+      debugPrint(
+        '🔵 [Generate] AI Generated recipes count: ${recipeProvider.aiGeneratedRecipes.length}',
+      );
 
       // Close loading dialog
       if (context.mounted) {
         LoadingDialogHelper.dismiss(context);
       }
 
-      if (context.mounted && recipeProvider.generatedRecipes.isNotEmpty) {
+      if (context.mounted && recipeProvider.aiGeneratedRecipes.isNotEmpty) {
         // Always deduct one generation credit after successful generation
         // Only deduct if user doesn't have unlimited usage or active trial
         await subscriptionProvider.useCredits(

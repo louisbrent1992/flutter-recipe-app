@@ -13,6 +13,7 @@ import '../providers/recipe_provider.dart';
 import '../models/recipe.dart';
 import '../theme/theme.dart';
 import '../components/inline_banner_ad.dart';
+import '../components/pull_to_refresh_hint.dart';
 
 class MyRecipesScreen extends StatefulWidget {
   const MyRecipesScreen({super.key});
@@ -284,7 +285,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
 
                     if (!recipeProvider.isLoading && filteredRecipes.isEmpty) {
                       final colorScheme = Theme.of(context).colorScheme;
-                      return RefreshIndicator(
+                      return RefreshIndicatorWithHint(
                         onRefresh: () => _loadRecipes(forceRefresh: true),
                         child: SingleChildScrollView(
                           physics: const AlwaysScrollableScrollPhysics(),
@@ -319,12 +320,12 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                                       allRecipes.isEmpty
                                           ? 'Add your first recipe to get started'
                                           : 'Try adjusting your search or filters',
-                                      style: TextStyle(
+                                        style: TextStyle(
                                         fontSize: 15,
                                         color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                                      ),
+                                              ),
                                       textAlign: TextAlign.center,
-                                    ),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -349,7 +350,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                           Expanded(
                             child: Stack(
                               children: [
-                                RefreshIndicator(
+                                RefreshIndicatorWithHint(
                                   onRefresh:
                                       () => _loadRecipes(forceRefresh: true),
                                   child:

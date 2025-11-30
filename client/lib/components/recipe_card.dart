@@ -166,8 +166,8 @@ class _RecipeCardState extends State<RecipeCard> {
       final renderBox = context.findRenderObject() as RenderBox?;
       final origin =
           renderBox != null
-          ? renderBox.localToGlobal(Offset.zero) & renderBox.size
-          : const Rect.fromLTWH(0, 0, 1, 1);
+              ? renderBox.localToGlobal(Offset.zero) & renderBox.size
+              : const Rect.fromLTWH(0, 0, 1, 1);
 
       final String shareText = '''
 ${widget.recipe.title}
@@ -315,7 +315,8 @@ Shared from RecipEase
       final overlapOffset = iconSize * 0.6;
 
       return SizedBox(
-        width: iconSize + (overlapOffset * (displayUsers.length - 1).clamp(0, 2)),
+        width:
+            iconSize + (overlapOffset * (displayUsers.length - 1).clamp(0, 2)),
         height: iconSize,
         child: Stack(
           children: [
@@ -332,7 +333,8 @@ Shared from RecipEase
                   ),
                   child: _buildSingleAvatar(
                     photoUrl: displayUsers[i].photoUrl,
-                    iconSize: iconSize - 3, // Slightly smaller to account for border
+                    iconSize:
+                        iconSize - 3, // Slightly smaller to account for border
                     smallIconSize: smallIconSize - 2,
                   ),
                 ),
@@ -348,10 +350,7 @@ Shared from RecipEase
         return widget.recipe.sharedByDisplayName ?? 'Chef';
       }
 
-      final names = users
-          .take(2)
-          .map((u) => u.displayName ?? 'Chef')
-          .toList();
+      final names = users.take(2).map((u) => u.displayName ?? 'Chef').toList();
 
       if (sharedByCount <= 1) {
         return names.first;
@@ -384,10 +383,11 @@ Shared from RecipEase
                 tablet: 13.0,
                 desktop: 14.0,
               ),
-              fontWeight: widget.compactMode ? FontWeight.w500 : FontWeight.normal,
+              fontWeight:
+                  widget.compactMode ? FontWeight.w500 : FontWeight.normal,
               color: Theme.of(context).colorScheme.onSurface.withOpacity(
-                    widget.compactMode ? 0.9 : 0.7,
-                  ),
+                widget.compactMode ? 0.9 : 0.7,
+              ),
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -528,7 +528,7 @@ Shared from RecipEase
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(top: AppBreakpoints.isDesktop(context) ? 6 : 4),
-        child: Wrap(
+      child: Wrap(
         spacing: AppSpacing.responsive(
           context,
           mobile: 16,
@@ -536,65 +536,65 @@ Shared from RecipEase
           desktop: 12,
         ),
         runSpacing: AppBreakpoints.isDesktop(context) ? 4 : 4,
-          children: [
-            if (widget.showCookingTime)
-              Row(
-              mainAxisSize: MainAxisSize.max,
-                children: [
-                  Icon(
-                    Icons.timer_rounded,
-                  size: iconSize,
-                  color: Theme.of(
-                      context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                  SizedBox(width: AppSpacing.xs),
-                Text(
-                      _formatCookingTime(widget.recipe.cookingTime),
-                  style: textStyle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            if (widget.showServings)
-              Row(
-              mainAxisSize: MainAxisSize.max,
-                children: [
-                  Icon(
-                    Icons.people,
-                  size: iconSize,
-                  color: Theme.of(
-                      context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                  SizedBox(width: AppSpacing.xs),
-                Text(
-                  _formatServings(widget.recipe.servings),
-                  style: textStyle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+        children: [
+          if (widget.showCookingTime)
             Row(
-            mainAxisSize: MainAxisSize.max,
+              mainAxisSize: MainAxisSize.max,
               children: [
                 Icon(
-                  Icons.restaurant_menu_rounded,
-                size: iconSize,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  Icons.timer_rounded,
+                  size: iconSize,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
                 ),
                 SizedBox(width: AppSpacing.xs),
-              Text(
-                    widget.recipe.difficulty,
-                style: textStyle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                Text(
+                  _formatCookingTime(widget.recipe.cookingTime),
+                  style: textStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-          ],
+          if (widget.showServings)
+            Row(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Icon(
+                  Icons.people,
+                  size: iconSize,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                ),
+                SizedBox(width: AppSpacing.xs),
+                Text(
+                  _formatServings(widget.recipe.servings),
+                  style: textStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          Row(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Icon(
+                Icons.restaurant_menu_rounded,
+                size: iconSize,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              SizedBox(width: AppSpacing.xs),
+              Text(
+                widget.recipe.difficulty,
+                style: textStyle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -734,49 +734,49 @@ Shared from RecipEase
 
   Future<RecipeCollection?> _showCreateCollectionDialog() async {
     final TextEditingController nameController = TextEditingController();
-    
+
     final name = await showDialog<String>(
       context: context,
       builder:
           (context) => AlertDialog(
-        title: const Text('Create Collection'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'Collection Name',
-            hintText: 'Enter collection name',
+            title: const Text('Create Collection'),
+            content: TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Collection Name',
+                hintText: 'Enter collection name',
+              ),
+              autofocus: true,
+              onSubmitted: (value) {
+                if (value.trim().isNotEmpty) {
+                  Navigator.pop(context, value.trim());
+                }
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final value = nameController.text.trim();
+                  if (value.isNotEmpty) {
+                    Navigator.pop(context, value);
+                  }
+                },
+                child: const Text('Create'),
+              ),
+            ],
           ),
-          autofocus: true,
-          onSubmitted: (value) {
-            if (value.trim().isNotEmpty) {
-              Navigator.pop(context, value.trim());
-            }
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final value = nameController.text.trim();
-              if (value.isNotEmpty) {
-                Navigator.pop(context, value);
-              }
-            },
-            child: const Text('Create'),
-          ),
-        ],
-      ),
     );
-    
+
     if (name == null || name.isEmpty || !mounted) return null;
-    
+
     try {
       final collectionService = CollectionService();
       final newCollection = await collectionService.createCollection(name);
-      
+
       if (newCollection != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -800,19 +800,19 @@ Shared from RecipEase
         );
       }
     }
-    
+
     return null;
   }
 
   Future<void> _showAddToCollectionDialog() async {
     final collectionService = CollectionService();
-    
+
     try {
       // Fetch all collections
       final collections = await collectionService.getCollections();
-      
+
       if (!mounted) return;
-      
+
       if (collections.isEmpty) {
         SnackBarHelper.showWarning(
           context,
@@ -820,89 +820,89 @@ Shared from RecipEase
         );
         return;
       }
-      
+
       // Show dialog to select collection or create new
       final result = await showDialog<dynamic>(
         context: context,
         builder:
             (context) => AlertDialog(
-          title: const Text('Add to Collection'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Create new collection button
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(8),
+              title: const Text('Add to Collection'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Create new collection button
+                    ListTile(
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.add_rounded,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        'Create New Collection',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onTap: () => Navigator.pop(context, 'create_new'),
                     ),
-                    child: Icon(
-                      Icons.add_rounded,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 20,
-                    ),
-                  ),
-                  title: Text(
-                    'Create New Collection',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onTap: () => Navigator.pop(context, 'create_new'),
-                ),
-                const Divider(),
-                // Existing collections list
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: collections.length,
-                    itemBuilder: (context, index) {
-                      final collection = collections[index];
-                      // Skip default collections like "Recently Added"
+                    const Divider(),
+                    // Existing collections list
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: collections.length,
+                        itemBuilder: (context, index) {
+                          final collection = collections[index];
+                          // Skip default collections like "Recently Added"
                           if (collection.name == 'Recently Added')
                             return const SizedBox.shrink();
-                      
-                      return ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: collection.color.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            collection.icon,
-                            color: collection.color,
-                            size: 20,
-                          ),
-                        ),
-                        title: Text(collection.name),
+
+                          return ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: collection.color.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                collection.icon,
+                                color: collection.color,
+                                size: 20,
+                              ),
+                            ),
+                            title: Text(collection.name),
                             subtitle: Text(
                               '${collection.recipes.length} recipes',
                             ),
-                        onTap: () => Navigator.pop(context, collection),
-                      );
-                    },
-                  ),
+                            onTap: () => Navigator.pop(context, collection),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
                 ),
               ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-          ],
-        ),
       );
-      
+
       if (result == null || !mounted) return;
-      
+
       // Handle create new collection
       if (result == 'create_new') {
         final newCollection = await _showCreateCollectionDialog();
@@ -927,22 +927,22 @@ Shared from RecipEase
               duration: const Duration(seconds: 2),
             ),
           );
-          
+
           // Wait a moment for server to fully process the collection creation
           await Future.delayed(const Duration(milliseconds: 500));
-          
+
           // Add recipe to the newly created collection
           // Note: addRecipeToCollection already calls updateCollections, so no need to call it here
           final success = await collectionService.addRecipeToCollection(
             newCollection.id,
             widget.recipe,
           );
-          
+
           // Clear loading snackbar
           if (mounted) {
             ScaffoldMessenger.of(context).clearSnackBars();
           }
-          
+
           if (success && mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -994,10 +994,10 @@ Shared from RecipEase
         }
         return;
       }
-      
+
       // Handle existing collection selection
       final selectedCollection = result as RecipeCollection;
-      
+
       // Show loading indicator immediately
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1020,32 +1020,32 @@ Shared from RecipEase
           ),
         );
       }
-      
+
       // Add recipe to collection
       final success = await collectionService.addRecipeToCollection(
         selectedCollection.id,
         widget.recipe,
       );
-      
+
       // Clear loading snackbar
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
       }
-      
+
       if (success && mounted) {
         SnackBarHelper.showSuccess(
           context,
           'Added to "${selectedCollection.name}"',
-            action: SnackBarAction(
-              label: 'View',
-              textColor: Colors.white,
-              onPressed: () {
-                Navigator.pushNamed(
-                  context,
-                  '/collectionDetail',
-                  arguments: selectedCollection,
-                );
-              },
+          action: SnackBarAction(
+            label: 'View',
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                '/collectionDetail',
+                arguments: selectedCollection,
+              );
+            },
           ),
         );
       } else if (mounted) {
@@ -1085,9 +1085,10 @@ Shared from RecipEase
     }
   }
 
-  bool _isRecipeSaved() {
-    // Use listen: true so this widget rebuilds when userRecipes change
-    final recipeProvider = Provider.of<RecipeProvider>(context, listen: true);
+  bool _isRecipeSaved({bool listen = true}) {
+    // Use listen: true when called from build() so widget rebuilds when userRecipes change
+    // Use listen: false when called from event handlers (context menus, etc.)
+    final recipeProvider = Provider.of<RecipeProvider>(context, listen: listen);
     final userRecipes = recipeProvider.userRecipes;
 
     // Check by ID
@@ -1154,6 +1155,9 @@ Shared from RecipEase
     final isCommunityRecipe =
         widget.showUserAttribution && widget.recipe.sharedByDisplayName != null;
 
+    // Check saved state once with listen: false for event handler context
+    final isSaved = _isRecipeSaved(listen: false);
+
     showMenu(
       context: context,
       position: RelativeRect.fromRect(
@@ -1189,15 +1193,23 @@ Shared from RecipEase
             child: Row(
               children: [
                 Icon(
-                  Icons.bookmark_add_rounded,
+                  isSaved
+                      ? Icons.remove_circle_outline_rounded
+                      : Icons.bookmark_add_rounded,
                   size: 20,
-                  color: Theme.of(context).colorScheme.primary,
+                  color:
+                      isSaved
+                          ? Colors.orange
+                          : Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Save Recipe',
+                  isSaved ? 'Remove from Collection' : 'Save Recipe',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
+                    color:
+                        isSaved
+                            ? Colors.orange
+                            : Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1391,463 +1403,455 @@ Shared from RecipEase
         _showRecipeContextMenu(details.globalPosition);
       },
       child: Card(
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(
-          AppBreakpoints.isMobile(context) ? 12 : 16,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            AppBreakpoints.isMobile(context) ? 12 : 16,
+          ),
         ),
-      ),
-      elevation: AppElevation.responsive(context),
-      child: InkWell(
-        onTap: () {
-          Navigator.pushNamed(
-            context,
-            '/recipeDetail',
-            arguments: widget.recipe,
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Recipe image
-            Stack(
-              children: [
-                AspectRatio(
-                  aspectRatio: widget.aspectRatio ?? 3 / 2,
-                  child: Container(
-                    padding: EdgeInsets.all(AppSpacing.xs),
-                    child: SmartRecipeImage(
-                      key: ValueKey(
-                        'smart-img-${widget.recipe.id.isNotEmpty ? widget.recipe.id : widget.recipe.title.toLowerCase()}',
-                      ),
-                      recipeTitle: widget.recipe.title,
-                      primaryImageUrl:
-                          ImageUtils.isValidImageUrl(widget.recipe.imageUrl)
-                              ? widget.recipe.imageUrl
-                              : null,
-                      fallbackStaticUrl: ImageUtils.getDefaultRecipeImage(
-                        widget.recipe.cuisineType,
-                      ),
-                      fit: BoxFit.cover,
+        elevation: AppElevation.responsive(context),
+        child: InkWell(
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              '/recipeDetail',
+              arguments: widget.recipe,
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Recipe image
+              Stack(
+                children: [
+                  AspectRatio(
+                    aspectRatio: widget.aspectRatio ?? 3 / 2,
+                    child: Container(
+                      padding: EdgeInsets.all(AppSpacing.xs),
+                      child: SmartRecipeImage(
+                        key: ValueKey(
+                          'smart-img-${widget.recipe.id.isNotEmpty ? widget.recipe.id : widget.recipe.title.toLowerCase()}',
+                        ),
+                        recipeTitle: widget.recipe.title,
+                        primaryImageUrl:
+                            ImageUtils.isValidImageUrl(widget.recipe.imageUrl)
+                                ? widget.recipe.imageUrl
+                                : null,
+                        fallbackStaticUrl: ImageUtils.getDefaultRecipeImage(
+                          widget.recipe.cuisineType,
+                        ),
+                        fit: BoxFit.cover,
 
-                      onRefreshStart: () {
-                        // no-op in card for now
-                      },
-                      onRefreshed: (newUrl) async {
-                        if (newUrl == null || newUrl.isEmpty) return;
-                        if (newUrl == widget.recipe.imageUrl) return;
-                        final updated = widget.recipe.copyWith(
-                          imageUrl: newUrl,
-                        );
-                        if (widget.onRecipeUpdated != null) {
-                          widget.onRecipeUpdated!(updated);
-                        }
-                        try {
-                          final profile = context.read<RecipeProvider>();
-                          if (widget.showRemoveButton) {
-                            final userRecipe = profile.userRecipes.firstWhere(
-                              (r) =>
-                                  r.id == widget.recipe.id ||
-                                  (r.title.toLowerCase() ==
-                                          widget.recipe.title.toLowerCase() &&
-                                      r.description.toLowerCase() ==
-                                          widget.recipe.description
-                                              .toLowerCase()),
-                              orElse: () => Recipe(),
-                            );
-                            if (userRecipe.id.isNotEmpty) {
-                              await profile.updateUserRecipe(
-                                userRecipe.copyWith(imageUrl: newUrl),
-                              );
-                            }
+                        onRefreshStart: () {
+                          // no-op in card for now
+                        },
+                        onRefreshed: (newUrl) async {
+                          if (newUrl == null || newUrl.isEmpty) return;
+                          if (newUrl == widget.recipe.imageUrl) return;
+                          final updated = widget.recipe.copyWith(
+                            imageUrl: newUrl,
+                          );
+                          if (widget.onRecipeUpdated != null) {
+                            widget.onRecipeUpdated!(updated);
                           }
-                        } catch (_) {}
-                        // Only update discover recipes when debug features are enabled
+                          try {
+                            final profile = context.read<RecipeProvider>();
+                            if (widget.showRemoveButton) {
+                              final userRecipe = profile.userRecipes.firstWhere(
+                                (r) =>
+                                    r.id == widget.recipe.id ||
+                                    (r.title.toLowerCase() ==
+                                            widget.recipe.title.toLowerCase() &&
+                                        r.description.toLowerCase() ==
+                                            widget.recipe.description
+                                                .toLowerCase()),
+                                orElse: () => Recipe(),
+                              );
+                              if (userRecipe.id.isNotEmpty) {
+                                await profile.updateUserRecipe(
+                                  userRecipe.copyWith(imageUrl: newUrl),
+                                );
+                              }
+                            }
+                          } catch (_) {}
+                          // Only update discover recipes when debug features are enabled
                           if (_debugSettings.shouldShowDebugFeature() &&
                               widget.recipe.id.isNotEmpty) {
-                          try {
-                            await RecipeService.updateDiscoverRecipeImage(
-                              recipeId: widget.recipe.id,
-                              imageUrl: newUrl,
-                            );
-                          } catch (_) {}
-                        }
-                      },
-                      onResolvedUrl: (url) async {
-                        if (url.isEmpty || url == widget.recipe.imageUrl) {
-                          return;
-                        }
-                        final updated = widget.recipe.copyWith(imageUrl: url);
-                        if (widget.onRecipeUpdated != null) {
-                          widget.onRecipeUpdated!(updated);
-                        }
-
-                        // Persist change appropriately depending on context
-                        // 1) If this card represents a saved user recipe, update the user recipe
-                        //    Use the actual user recipe id when possible to avoid 403s
-                        try {
-                          final profile = context.read<RecipeProvider>();
-                          if (widget.showRemoveButton) {
-                            // Attempt to find the matching user recipe id
-                            final userRecipe = profile.userRecipes.firstWhere(
-                              (r) =>
-                                  r.id == widget.recipe.id ||
-                                  (r.title.toLowerCase() ==
-                                          widget.recipe.title.toLowerCase() &&
-                                      r.description.toLowerCase() ==
-                                          widget.recipe.description
-                                              .toLowerCase()),
-                              orElse: () => Recipe(),
-                            );
-                            if (userRecipe.id.isNotEmpty) {
-                              await profile.updateUserRecipe(
-                                userRecipe.copyWith(imageUrl: url),
+                            try {
+                              await RecipeService.updateDiscoverRecipeImage(
+                                recipeId: widget.recipe.id,
+                                imageUrl: newUrl,
                               );
-                            }
+                            } catch (_) {}
                           }
-                        } catch (_) {
-                          // Swallow errors here to avoid surfacing a global error overlay
-                        }
+                        },
+                        onResolvedUrl: (url) async {
+                          if (url.isEmpty || url == widget.recipe.imageUrl) {
+                            return;
+                          }
+                          final updated = widget.recipe.copyWith(imageUrl: url);
+                          if (widget.onRecipeUpdated != null) {
+                            widget.onRecipeUpdated!(updated);
+                          }
 
-                        // 2) Update the discover record only when debug features enabled and if URL has changed
+                          // Persist change appropriately depending on context
+                          // 1) If this card represents a saved user recipe, update the user recipe
+                          //    Use the actual user recipe id when possible to avoid 403s
+                          try {
+                            final profile = context.read<RecipeProvider>();
+                            if (widget.showRemoveButton) {
+                              // Attempt to find the matching user recipe id
+                              final userRecipe = profile.userRecipes.firstWhere(
+                                (r) =>
+                                    r.id == widget.recipe.id ||
+                                    (r.title.toLowerCase() ==
+                                            widget.recipe.title.toLowerCase() &&
+                                        r.description.toLowerCase() ==
+                                            widget.recipe.description
+                                                .toLowerCase()),
+                                orElse: () => Recipe(),
+                              );
+                              if (userRecipe.id.isNotEmpty) {
+                                await profile.updateUserRecipe(
+                                  userRecipe.copyWith(imageUrl: url),
+                                );
+                              }
+                            }
+                          } catch (_) {
+                            // Swallow errors here to avoid surfacing a global error overlay
+                          }
+
+                          // 2) Update the discover record only when debug features enabled and if URL has changed
                           if (_debugSettings.shouldShowDebugFeature() &&
                               widget.recipe.id.isNotEmpty &&
                               url != widget.recipe.imageUrl) {
-                          try {
-                            await RecipeService.updateDiscoverRecipeImage(
-                              recipeId: widget.recipe.id,
-                              imageUrl: url,
-                            );
-                          } catch (_) {
-                            // Ignore discover update failures silently in UI
+                            try {
+                              await RecipeService.updateDiscoverRecipeImage(
+                                recipeId: widget.recipe.id,
+                                imageUrl: url,
+                              );
+                            } catch (_) {
+                              // Ignore discover update failures silently in UI
+                            }
                           }
-                        }
-                      },
-                      placeholder: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                      errorWidget: Container(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        child: Icon(
-                          Icons.restaurant,
-                          size: AppSizing.responsiveIconSize(
-                            context,
-                            mobile: 40,
-                            tablet: 48,
-                            desktop: 56,
-                          ),
-                          color: theme.colorScheme.primary,
+                        },
+                        placeholder: const Center(
+                          child: CircularProgressIndicator(),
                         ),
+                        errorWidget: Container(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            Icons.restaurant,
+                            size: AppSizing.responsiveIconSize(
+                              context,
+                              mobile: 40,
+                              tablet: 48,
+                              desktop: 56,
+                            ),
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        cacheKey:
+                            widget.recipe.id.isNotEmpty
+                                ? 'discover-${widget.recipe.id}'
+                                : 'discover-${widget.recipe.title.toLowerCase()}-${widget.recipe.description.toLowerCase()}',
                       ),
-                      cacheKey:
-                          widget.recipe.id.isNotEmpty
-                              ? 'discover-${widget.recipe.id}'
-                              : 'discover-${widget.recipe.title.toLowerCase()}-${widget.recipe.description.toLowerCase()}',
                     ),
                   ),
-                ),
-                // Action buttons overlay (edit & refresh only in context menu)
-                Positioned(
-                  top: 8,
-                  right: 6,
-                  child: Row(
-                    children: [
-                      if (widget.showShareButton)
-                        _buildActionButton(
-                          icon: Icons.share_rounded,
-                          onTap: _shareRecipe,
-                          tooltip: 'Share recipe',
-                          isLoading: _isShareLoading,
-                        ),
-                      if (widget.showShareButton &&
-                          (widget.showRemoveButton || widget.showSaveButton))
-                        SizedBox(width: AppSpacing.xs),
-                      if (widget.showRemoveButton)
-                        _buildActionButton(
-                          icon: Icons.remove_circle_outline,
-                          onTap: widget.onRemove ?? _deleteRecipe,
-                          tooltip: 'Remove recipe',
-                        ),
-                      if (widget.showRemoveButton && widget.showSaveButton)
-                        SizedBox(width: AppSpacing.xs),
-                      if (widget.showSaveButton && widget.onSave != null)
-                        _buildActionButton(
+                  // Action buttons overlay (edit & refresh only in context menu)
+                  Positioned(
+                    top: 8,
+                    right: 6,
+                    child: Row(
+                      children: [
+                        if (widget.showShareButton)
+                          _buildActionButton(
+                            icon: Icons.share_rounded,
+                            onTap: _shareRecipe,
+                            tooltip: 'Share recipe',
+                            isLoading: _isShareLoading,
+                          ),
+                        if (widget.showShareButton &&
+                            (widget.showRemoveButton || widget.showSaveButton))
+                          SizedBox(width: AppSpacing.xs),
+                        if (widget.showRemoveButton)
+                          _buildActionButton(
+                            icon: Icons.remove_circle_outline,
+                            onTap: widget.onRemove ?? _deleteRecipe,
+                            tooltip: 'Remove recipe',
+                          ),
+                        if (widget.showRemoveButton && widget.showSaveButton)
+                          SizedBox(width: AppSpacing.xs),
+                        if (widget.showSaveButton && widget.onSave != null)
+                          _buildActionButton(
                             icon:
                                 _isRecipeSaved()
                                     ? Icons.remove_circle_outline_rounded
                                     : Icons.bookmark_add_rounded,
-                          onTap: widget.onSave!,
+                            onTap: widget.onSave!,
                             tooltip:
                                 _isRecipeSaved()
                                     ? 'Remove recipe'
                                     : 'Save recipe',
                             iconColor: _isRecipeSaved() ? Colors.orange : null,
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            // Recipe details
-              Expanded(
-                child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.responsive(
-                  context,
-                      mobile: widget.compactMode ? 12 : 16,
-                      tablet: widget.compactMode ? 14 : 16,
-                      desktop: widget.compactMode ? 16 : 20,
-                ),
-                AppSpacing.responsive(
-                  context,
-                      mobile: widget.compactMode ? 12 : 16,
-                      tablet: widget.compactMode ? 12 : 14,
-                      desktop: widget.compactMode ? 14 : 16,
-                ),
-                AppSpacing.responsive(
-                  context,
-                      mobile: widget.compactMode ? 12 : 16,
-                      tablet: widget.compactMode ? 14 : 16,
-                      desktop: widget.compactMode ? 16 : 20,
-                ),
-                AppSpacing.responsive(
-                  context,
-                      mobile: widget.compactMode ? 12 : 14,
-                      tablet: widget.compactMode ? 12 : 14,
-                      desktop: widget.compactMode ? 14 : 16,
-                ),
-              ),
-              child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.recipe.title,
-                    style: TextStyle(
-                      fontSize: AppTypography.responsiveHeadingSize(
-                        context,
-                            mobile: widget.compactMode ? 15.0 : 16.0,
-                            tablet: widget.compactMode ? 18.0 : 19.0,
-                            desktop: widget.compactMode ? 20.0 : 22.0,
-                      ),
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    maxLines: AppBreakpoints.isMobile(context) ? 1 : 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                      // User attribution for community recipes (prominent in compact mode)
-                      // Show for all community recipes, with fallback to "Chef" if no display name
-                      if (widget.showUserAttribution)
-                        Padding(
-                          padding: EdgeInsets.only(
-                            top: AppSpacing.responsive(
-                              context,
-                              mobile: widget.compactMode ? 6 : 4,
-                              tablet: widget.compactMode ? 8 : 6,
-                              desktop: widget.compactMode ? 10 : 8,
-                            ),
                           ),
-                          child: _buildUserAttribution(context),
-                        ),
-                      // Spacer to push metrics to bottom in compact mode
-                      if (widget.compactMode && widget.showUserAttribution)
-                        const Spacer(),
-                      // Engagement metrics for community recipes (compact mode)
-                      if (widget.compactMode && widget.showUserAttribution)
-                        Row(
-                          children: [
-                            // Likes count (tappable in compact mode)
-                            GestureDetector(
-                              onTap: () {
-                                if (widget.showUserAttribution) {
-                                  _toggleLike();
-                                }
-                              },
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    widget.recipe.isLiked
-                                        ? Icons.favorite_rounded
-                                        : Icons.favorite_outline_rounded,
-                                    // Universal icon size (20/22/24) matching profile photo
-                                    size: AppSizing.responsiveIconSize(
-                                      context,
-                                      mobile: 20,
-                                      tablet: 22,
-                                      desktop: 24,
-                                    ),
-                                    color:
-                                        widget.recipe.isLiked
-                                            ? Theme.of(
-                                              context,
-                                            ).colorScheme.error
-                                            : Theme.of(context)
-                                                .colorScheme
-                                                .error
-                                                .withOpacity(0.7),
-                                  ),
-                                  SizedBox(
-                                    width: AppSpacing.responsive(
-                                      context,
-                                      mobile: 4,
-                                      tablet: 5,
-                                      desktop: 6,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${widget.recipe.likeCount > 0 ? widget.recipe.likeCount : 0}',
-                                    style: TextStyle(
-                                      fontSize:
-                                          AppTypography.responsiveFontSize(
-                                            context,
-                                            mobile: 12.0,
-                                            tablet: 13.0,
-                                            desktop: 14.0,
-                                          ),
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface.withOpacity(0.7),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(
-                              width: AppSpacing.responsive(
-                                context,
-                                mobile: 12,
-                                tablet: 14,
-                                desktop: 16,
-                              ),
-                            ),
-                            // Save count (tappable in compact mode for community recipes)
-                            GestureDetector(
-                              onTap: () {
-                                if (widget.showUserAttribution &&
-                                    widget.onSave != null) {
-                                  widget.onSave!();
-                                }
-                              },
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    _isRecipeSaved()
-                                        ? Icons.bookmark_rounded
-                                        : Icons.bookmark_outline_rounded,
-                                    // Universal icon size (20/22/24) matching profile photo
-                                    size: AppSizing.responsiveIconSize(
-                                      context,
-                                      mobile: 20,
-                                      tablet: 22,
-                                      desktop: 24,
-                                    ),
-                                    color:
-                                        _isRecipeSaved()
-                                            ? Theme.of(
-                                              context,
-                                            ).colorScheme.primary
-                                            : Theme.of(context)
-                                                .colorScheme
-                                                .primary
-                                                .withOpacity(0.7),
-                                  ),
-                                  SizedBox(
-                                    width: AppSpacing.responsive(
-                                      context,
-                                      mobile: 4,
-                                      tablet: 5,
-                                      desktop: 6,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${widget.recipe.saveCount > 0 ? widget.recipe.saveCount : 0}',
-                                    style: TextStyle(
-                                      fontSize:
-                                          AppTypography.responsiveFontSize(
-                                            context,
-                                            mobile: 12.0,
-                                            tablet: 13.0,
-                                            desktop: 14.0,
-                                          ),
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface.withOpacity(0.7),
-                                    ),
-                                  ),
+                      ],
+                    ),
+                  ),
                 ],
-                              ),
-                            ),
-                            SizedBox(
-                              width: AppSpacing.responsive(
-                                context,
-                                mobile: 12,
-                                tablet: 14,
-                                desktop: 16,
-                              ),
-                            ),
-                            // Share count (tappable to share recipe)
-                            GestureDetector(
-                              onTap: () {
-                                if (widget.showUserAttribution) {
-                                  _shareRecipe();
-                                }
-                              },
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.share_rounded,
-                                    // Universal icon size (20/22/24) matching profile photo
-                                    size: AppSizing.responsiveIconSize(
+              ),
+
+              // Recipe details
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.responsive(
+                    context,
+                    mobile: widget.compactMode ? 12 : 16,
+                    tablet: widget.compactMode ? 14 : 16,
+                    desktop: widget.compactMode ? 16 : 20,
+                  ),
+                  AppSpacing.responsive(
+                    context,
+                    mobile: widget.compactMode ? 12 : 16,
+                    tablet: widget.compactMode ? 12 : 14,
+                    desktop: widget.compactMode ? 14 : 16,
+                  ),
+                  AppSpacing.responsive(
+                    context,
+                    mobile: widget.compactMode ? 12 : 16,
+                    tablet: widget.compactMode ? 14 : 16,
+                    desktop: widget.compactMode ? 16 : 20,
+                  ),
+                  AppSpacing.responsive(
+                    context,
+                    mobile: widget.compactMode ? 12 : 14,
+                    tablet: widget.compactMode ? 12 : 14,
+                    desktop: widget.compactMode ? 14 : 16,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.recipe.title,
+                      style: TextStyle(
+                        fontSize: AppTypography.responsiveHeadingSize(
+                          context,
+                          mobile: widget.compactMode ? 15.0 : 16.0,
+                          tablet: widget.compactMode ? 18.0 : 19.0,
+                          desktop: widget.compactMode ? 20.0 : 22.0,
+                        ),
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      maxLines: AppBreakpoints.isMobile(context) ? 1 : 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    // User attribution for community recipes (prominent in compact mode)
+                    // Show for all community recipes, with fallback to "Chef" if no display name
+                    if (widget.showUserAttribution)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          top: AppSpacing.responsive(
+                            context,
+                            mobile: widget.compactMode ? 6 : 4,
+                            tablet: widget.compactMode ? 8 : 6,
+                            desktop: widget.compactMode ? 10 : 8,
+                          ),
+                        ),
+                        child: _buildUserAttribution(context),
+                      ),
+                    // Spacer to push metrics to bottom in compact mode
+                    if (widget.compactMode && widget.showUserAttribution)
+                      const Spacer(),
+                    // Engagement metrics for community recipes (compact mode)
+                    if (widget.compactMode && widget.showUserAttribution)
+                      Row(
+                        children: [
+                          // Likes count (tappable in compact mode)
+                          GestureDetector(
+                            onTap: () {
+                              if (widget.showUserAttribution) {
+                                _toggleLike();
+                              }
+                            },
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  widget.recipe.isLiked
+                                      ? Icons.favorite_rounded
+                                      : Icons.favorite_outline_rounded,
+                                  // Universal icon size (20/22/24) matching profile photo
+                                  size: AppSizing.responsiveIconSize(
+                                    context,
+                                    mobile: 20,
+                                    tablet: 22,
+                                    desktop: 24,
+                                  ),
+                                  color:
+                                      widget.recipe.isLiked
+                                          ? Theme.of(context).colorScheme.error
+                                          : Theme.of(
+                                            context,
+                                          ).colorScheme.error.withOpacity(0.7),
+                                ),
+                                SizedBox(
+                                  width: AppSpacing.responsive(
+                                    context,
+                                    mobile: 4,
+                                    tablet: 5,
+                                    desktop: 6,
+                                  ),
+                                ),
+                                Text(
+                                  '${widget.recipe.likeCount > 0 ? widget.recipe.likeCount : 0}',
+                                  style: TextStyle(
+                                    fontSize: AppTypography.responsiveFontSize(
                                       context,
-                                      mobile: 20,
-                                      tablet: 22,
-                                      desktop: 24,
+                                      mobile: 12.0,
+                                      tablet: 13.0,
+                                      desktop: 14.0,
                                     ),
                                     color: Theme.of(
                                       context,
-                                    ).colorScheme.primary.withOpacity(0.7),
+                                    ).colorScheme.onSurface.withOpacity(0.7),
                                   ),
-                                  SizedBox(
-                                    width: AppSpacing.responsive(
-                                      context,
-                                      mobile: 4,
-                                      tablet: 5,
-                                      desktop: 6,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${widget.recipe.shareCount > 0 ? widget.recipe.shareCount : 0}',
-                                    style: TextStyle(
-                                      fontSize:
-                                          AppTypography.responsiveFontSize(
-                                            context,
-                                            mobile: 12.0,
-                                            tablet: 13.0,
-                                            desktop: 14.0,
-                                          ),
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface.withOpacity(0.7),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      // Only show recipe info (cooking time, servings) if not in compact mode
-                      if (!widget.compactMode) _buildRecipeInfo(),
-                    ],
-                  ),
+                          ),
+                          SizedBox(
+                            width: AppSpacing.responsive(
+                              context,
+                              mobile: 12,
+                              tablet: 14,
+                              desktop: 16,
+                            ),
+                          ),
+                          // Save count (tappable in compact mode for community recipes)
+                          GestureDetector(
+                            onTap: () {
+                              if (widget.showUserAttribution &&
+                                  widget.onSave != null) {
+                                widget.onSave!();
+                              }
+                            },
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _isRecipeSaved()
+                                      ? Icons.bookmark_rounded
+                                      : Icons.bookmark_outline_rounded,
+                                  // Universal icon size (20/22/24) matching profile photo
+                                  size: AppSizing.responsiveIconSize(
+                                    context,
+                                    mobile: 20,
+                                    tablet: 22,
+                                    desktop: 24,
+                                  ),
+                                  color:
+                                      _isRecipeSaved()
+                                          ? Theme.of(
+                                            context,
+                                          ).colorScheme.primary
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.7),
+                                ),
+                                SizedBox(
+                                  width: AppSpacing.responsive(
+                                    context,
+                                    mobile: 4,
+                                    tablet: 5,
+                                    desktop: 6,
+                                  ),
+                                ),
+                                Text(
+                                  '${widget.recipe.saveCount > 0 ? widget.recipe.saveCount : 0}',
+                                  style: TextStyle(
+                                    fontSize: AppTypography.responsiveFontSize(
+                                      context,
+                                      mobile: 12.0,
+                                      tablet: 13.0,
+                                      desktop: 14.0,
+                                    ),
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(
+                            width: AppSpacing.responsive(
+                              context,
+                              mobile: 12,
+                              tablet: 14,
+                              desktop: 16,
+                            ),
+                          ),
+                          // Share count (tappable to share recipe)
+                          GestureDetector(
+                            onTap: () {
+                              if (widget.showUserAttribution) {
+                                _shareRecipe();
+                              }
+                            },
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.share_rounded,
+                                  // Universal icon size (20/22/24) matching profile photo
+                                  size: AppSizing.responsiveIconSize(
+                                    context,
+                                    mobile: 20,
+                                    tablet: 22,
+                                    desktop: 24,
+                                  ),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withOpacity(0.7),
+                                ),
+                                SizedBox(
+                                  width: AppSpacing.responsive(
+                                    context,
+                                    mobile: 4,
+                                    tablet: 5,
+                                    desktop: 6,
+                                  ),
+                                ),
+                                Text(
+                                  '${widget.recipe.shareCount > 0 ? widget.recipe.shareCount : 0}',
+                                  style: TextStyle(
+                                    fontSize: AppTypography.responsiveFontSize(
+                                      context,
+                                      mobile: 12.0,
+                                      tablet: 13.0,
+                                      desktop: 14.0,
+                                    ),
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    // Only show recipe info (cooking time, servings) if not in compact mode
+                    if (!widget.compactMode) _buildRecipeInfo(),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );

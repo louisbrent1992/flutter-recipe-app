@@ -7,6 +7,7 @@ import 'package:recipease/models/recipe.dart';
 import 'package:recipease/services/collection_service.dart';
 import '../theme/theme.dart';
 import '../components/inline_banner_ad.dart';
+import '../components/pull_to_refresh_hint.dart';
 
 class RecipeCollectionScreen extends StatefulWidget {
   const RecipeCollectionScreen({super.key});
@@ -471,7 +472,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
             // Main content
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : RefreshIndicator(
+                : RefreshIndicatorWithHint(
                   onRefresh: () => _loadCollections(forceRefresh: true),
                   child: SingleChildScrollView(
                     controller: _scrollController,

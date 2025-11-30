@@ -7,6 +7,7 @@ import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/services/collection_service.dart';
 import 'package:recipease/components/html_description.dart';
+import '../components/pull_to_refresh_hint.dart';
 
 class AddRecipesToCollectionScreen extends StatefulWidget {
   final RecipeCollection collection;
@@ -206,7 +207,7 @@ class _AddRecipesToCollectionScreenState
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
+              : RefreshIndicatorWithHint(
                 onRefresh: _loadRecipes,
                 child: Stack(
                   children: [

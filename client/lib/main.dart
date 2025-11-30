@@ -101,26 +101,10 @@ void main() async {
   // Initialize timezone database for scheduled notifications (optional)
   tz.initializeTimeZones();
   try {
-    final dynamic tzValue = await FlutterTimezone.getLocalTimezone();
-    String resolvedTz;
-    if (tzValue is String) {
-      resolvedTz = tzValue;
-    } else {
-      // Try common field names on TimezoneInfo; fall back to toString()
-      try {
-        // ignore: avoid_dynamic_calls
-        resolvedTz =
-            (tzValue.name as String?) ??
-            // ignore: avoid_dynamic_calls
-            (tzValue.ianaName as String?) ??
-            // ignore: avoid_dynamic_calls
-            (tzValue.timezone as String?) ??
-            tzValue.toString();
-      } catch (_) {
-        resolvedTz = tzValue.toString();
-      }
-    }
-    tz.setLocalLocation(tz.getLocation(resolvedTz));
+    final tzInfo = await FlutterTimezone.getLocalTimezone();
+    // FlutterTimezone 5.x returns TimezoneInfo with 'identifier' property (IANA timezone)
+    final String timezoneName = tzInfo.identifier;
+    tz.setLocalLocation(tz.getLocation(timezoneName));
   } catch (_) {
     // Fallback: keep default tz.local
   }
@@ -371,17 +355,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         if (notif != null) {
           // Build args from message data
           final Map<String, dynamic> args = {};
-          
+
           // Handle recipe milestone notifications
           if (message.data['recipeId'] != null) {
             args['recipeId'] = message.data['recipeId'];
           }
           // Handle query-based notifications (discover, etc.)
           if (message.data['query'] != null || message.data['tag'] != null) {
-            args['query'] = (message.data['query'] as String?) ??
-                (message.data['tag'] as String?) ?? '';
+            args['query'] =
+                (message.data['query'] as String?) ??
+                (message.data['tag'] as String?) ??
+                '';
           }
-          
+
           final payload = jsonEncode({
             'route': (message.data['route'] as String?) ?? '/home',
             'args': args,
@@ -502,14 +488,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       }
 
       // Handle recipe detail navigation - need to fetch recipe first
-      if (route == '/recipeDetail' && args != null && args['recipeId'] != null) {
+      if (route == '/recipeDetail' &&
+          args != null &&
+          args['recipeId'] != null) {
         final recipeId = args['recipeId'] as String;
         try {
           final response = await RecipeService.getRecipeById(recipeId);
           if (response.success && response.data != null) {
             navigatorState.pushNamed('/recipeDetail', arguments: response.data);
           } else {
-            debugPrint('Failed to fetch recipe for notification: ${response.message}');
+            debugPrint(
+              'Failed to fetch recipe for notification: ${response.message}',
+            );
             // Fallback to home if recipe not found
             navigatorState.pushNamed('/home');
           }

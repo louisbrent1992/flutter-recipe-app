@@ -18,6 +18,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/image_replacement_service.dart';
 import '../services/collection_service.dart';
+import '../services/debug_settings.dart';
 import '../models/recipe_collection.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/image_utils.dart';
@@ -151,8 +152,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   void applyImageReplacement(String newUrl) {
     setState(() {
       _currentRecipe = _currentRecipe.copyWith(imageUrl: newUrl);
-      _imageKey = UniqueKey();
+      _imageKey = UniqueKey(); // Force SmartRecipeImage to rebuild completely
     });
+    
+    // Also update the recipe in the provider so other screens reflect the change
+    final provider = context.read<RecipeProvider>();
+    provider.updateRecipeImageLocally(_currentRecipe.id, newUrl);
+    provider.emitRecipesChanged();
   }
 
   @override
@@ -1102,12 +1108,35 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   case MenuAction.save:
                     if (isSaved) break;
                     final recipeProvider = provider;
+                    
+                    // Check if this is a discover/community recipe (different userId)
+                    final currentUser = context.read<AuthService>().user;
+                    final isDiscoverRecipe = currentUser != null && 
+                        _currentRecipe.userId != currentUser.uid && 
+                        _currentRecipe.id.isNotEmpty;
+                    
+                    // Pass originalRecipeId for save count tracking
+                    final originalRecipeId = isDiscoverRecipe ? _currentRecipe.id : null;
+                    
+                    // Create a copy of the recipe with empty ID to ensure a new document is created
+                    // This prevents overwriting the original discover recipe
+                    final recipeToSave = _currentRecipe.copyWith(
+                      id: '', // Clear ID to create new document
+                      userId: currentUser?.uid, // Will be set by server, but clear locally
+                    );
+                    
                     final savedRecipe = await recipeProvider.createUserRecipe(
-                      _currentRecipe,
+                      recipeToSave,
                       context,
+                      originalRecipeId: originalRecipeId,
                     );
                     if (!context.mounted) break;
                     if (savedRecipe != null) {
+                      // Update _currentRecipe to the saved version (with new ID)
+                      setState(() {
+                        _currentRecipe = savedRecipe;
+                      });
+                      
                       // Provider update will trigger rebuild and update isSaved status
                       SnackBarHelper.showSuccess(
                         context,
@@ -2189,13 +2218,24 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 }
 
 Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
-  final isDiscover = recipe.id.isNotEmpty && (recipe.sourceUrl == null);
-  // Gate discover in release
-  if (isDiscover && !kDebugMode) {
+  // Check if this recipe belongs to the current user
+  final currentUser = context.read<AuthService>().user;
+  final isUserOwnedRecipe = currentUser != null && recipe.userId == currentUser.uid;
+  
+  // Check if this is a discover recipe (no userId or different userId)
+  final isDiscover = !isUserOwnedRecipe && recipe.id.isNotEmpty;
+  
+  // Check if debug features are enabled (requires both debug mode AND setting enabled)
+  final debugSettings = DebugSettings();
+  final debugFeaturesEnabled = debugSettings.isDebugEnabled;
+  
+  // Gate discover - only allow replacing images on user-owned recipes
+  // Unless debug features are explicitly enabled in settings
+  if (isDiscover && !debugFeaturesEnabled) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text(
-          'Image replacement is not available for discover recipes.',
+          'Image replacement is not available for discover recipes. Save the recipe first.',
         ),
         behavior: SnackBarBehavior.floating,
       ),
@@ -2204,16 +2244,88 @@ Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
   }
 
   final theme = Theme.of(context);
-  final choice = await showModalBottomSheet<String>(
+  
+  // Use stateful bottom sheet for better UX
+  final result = await showModalBottomSheet<Map<String, dynamic>>(
     context: context,
     showDragHandle: true,
     backgroundColor: theme.colorScheme.surface,
+    isScrollControlled: true, // Allow for dynamic height
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(
         top: Radius.circular(AppDialog.responsiveBorderRadius(context)),
       ),
     ),
-    builder: (ctx) {
+    builder: (ctx) => _ImageReplaceSheetContent(recipe: recipe),
+  );
+
+  if (result == null) return;
+
+  final String? candidateUrl = result['imageUrl'] as String?;
+  final String? oldUrl = recipe.imageUrl;
+
+  if (candidateUrl == null || !context.mounted) return;
+
+  // Persist and refresh (using isUserOwnedRecipe from earlier in the function)
+  final saved = await ImageReplacementService.persistRecipeImage(
+    recipe: recipe,
+    newImageUrl: candidateUrl,
+    saveFn: (updated) async {
+      try {
+        if (isUserOwnedRecipe) {
+          // User's own recipe - update via user endpoint
+          final resp = await RecipeService.updateUserRecipe(updated);
+          return resp.success ? resp.data : null;
+        } else if (debugFeaturesEnabled && updated.id.isNotEmpty) {
+          // Debug features enabled: allow updating discover items directly
+          final resp = await RecipeService.updateDiscoverRecipeImage(
+            recipeId: updated.id,
+            imageUrl: candidateUrl,
+          );
+          return resp.success ? updated : null;
+        }
+      } catch (_) {}
+      return updated; // Optimistic for transient contexts
+    },
+  );
+
+  await ImageReplacementService.bustCaches(recipe, oldUrl: oldUrl);
+
+  if (saved && context.mounted) {
+    // Force UI to show new image immediately
+    final state = context.findAncestorStateOfType<_RecipeDetailScreenState>();
+    state?.applyImageReplacement(candidateUrl);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Image replaced successfully.')),
+    );
+  } else if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not update image right now.')),
+    );
+  }
+}
+
+/// Stateful bottom sheet content for image replacement
+/// Handles loading states, image selection, and preview all in one place
+class _ImageReplaceSheetContent extends StatefulWidget {
+  final Recipe recipe;
+  
+  const _ImageReplaceSheetContent({required this.recipe});
+  
+  @override
+  State<_ImageReplaceSheetContent> createState() => _ImageReplaceSheetContentState();
+}
+
+class _ImageReplaceSheetContentState extends State<_ImageReplaceSheetContent> {
+  bool _isLoading = false;
+  List<String> _suggestedImages = [];
+  String? _selectedImage;
+  String? _errorMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
       return SafeArea(
         child: Center(
           child: Container(
@@ -2225,127 +2337,252 @@ Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  ListTile(
-                    leading: Icon(
-                      Icons.photo_library_rounded,
-                      size: AppSizing.responsiveIconSize(
-                        context,
-                        mobile: 24,
-                        tablet: 28,
-                        desktop: 32,
-                      ),
-                    ),
-                    title: Text(
-                      'Choose from device',
-                      style: TextStyle(
-                        fontSize: AppDialog.responsiveContentSize(context),
-                      ),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal:
-                          AppBreakpoints.isDesktop(ctx)
-                              ? 20
-                              : AppBreakpoints.isTablet(ctx)
-                              ? 18
-                              : 16,
-                      vertical:
-                          AppBreakpoints.isDesktop(ctx)
-                              ? 12
-                              : AppBreakpoints.isTablet(ctx)
-                              ? 10
-                              : 8,
-                    ),
-                    onTap: () => Navigator.pop(ctx, 'device'),
+                // Show image suggestions if available
+                if (_suggestedImages.isNotEmpty) ...[
+                  _buildImageSelectionGrid(),
+                  const SizedBox(height: 16),
+                  _buildConfirmButton(),
+                ] else if (_isLoading) ...[
+                  _buildLoadingState(),
+                ] else ...[
+                  // Show main options
+                  _buildOptionTile(
+                    icon: Icons.photo_library_rounded,
+                    title: 'Choose from device',
+                    onTap: _pickFromDevice,
                   ),
-                  ListTile(
-                    leading: Icon(
-                      Icons.link_rounded,
-                      size: AppSizing.responsiveIconSize(
-                        context,
-                        mobile: 24,
-                        tablet: 28,
-                        desktop: 32,
+                  _buildOptionTile(
+                    icon: Icons.link_rounded,
+                    title: 'Paste image URL',
+                    onTap: _pasteUrl,
                       ),
-                    ),
-                    title: Text(
-                      'Paste image URL',
-                      style: TextStyle(
-                        fontSize: AppDialog.responsiveContentSize(context),
-                      ),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal:
-                          AppBreakpoints.isDesktop(ctx)
-                              ? 20
-                              : AppBreakpoints.isTablet(ctx)
-                              ? 18
-                              : 16,
-                      vertical:
-                          AppBreakpoints.isDesktop(ctx)
-                              ? 12
-                              : AppBreakpoints.isTablet(ctx)
-                              ? 10
-                              : 8,
-                    ),
-                    onTap: () => Navigator.pop(ctx, 'url'),
-                  ),
-                  ListTile(
-                    leading: Icon(
-                      Icons.auto_awesome_rounded,
-                      size: AppSizing.responsiveIconSize(
-                        context,
-                        mobile: 24,
-                        tablet: 28,
-                        desktop: 32,
-                      ),
-                    ),
-                    title: Text(
-                      'Regenerate suggestion',
-                      style: TextStyle(
-                        fontSize: AppDialog.responsiveContentSize(context),
-                      ),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal:
-                          AppBreakpoints.isDesktop(ctx)
-                              ? 20
-                              : AppBreakpoints.isTablet(ctx)
-                              ? 18
-                              : 16,
-                      vertical:
-                          AppBreakpoints.isDesktop(ctx)
-                              ? 12
-                              : AppBreakpoints.isTablet(ctx)
-                              ? 10
-                              : 8,
-                    ),
-                    onTap: () => Navigator.pop(ctx, 'regen'),
+                  _buildOptionTile(
+                    icon: Icons.auto_awesome_rounded,
+                    title: 'Regenerate suggestion',
+                    onTap: _regenerateSuggestion,
                   ),
                 ],
-              ),
+                
+                // Show error message if any
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _errorMessage!,
+                      style: TextStyle(
+                      color: theme.colorScheme.error,
+                      fontSize: 13,
+                      ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildOptionTile({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+                    leading: Icon(
+        icon,
+                      size: AppSizing.responsiveIconSize(
+                        context,
+                        mobile: 24,
+                        tablet: 28,
+                        desktop: 32,
+                      ),
+                    ),
+                    title: Text(
+        title,
+                      style: TextStyle(
+                        fontSize: AppDialog.responsiveContentSize(context),
+                      ),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+        horizontal: AppBreakpoints.isDesktop(context)
+                              ? 20
+            : AppBreakpoints.isTablet(context)
+                              ? 18
+                              : 16,
+        vertical: AppBreakpoints.isDesktop(context)
+                              ? 12
+            : AppBreakpoints.isTablet(context)
+                              ? 10
+                              : 8,
+                    ),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 32,
+            height: 32,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              color: Theme.of(context).colorScheme.primary,
+                    ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Finding new images...',
+                      style: TextStyle(
+                        fontSize: AppDialog.responsiveContentSize(context),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageSelectionGrid() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Select an image',
+          style: TextStyle(
+            fontSize: AppDialog.responsiveTitleSize(context),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 120,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _suggestedImages.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final imageUrl = _suggestedImages[index];
+              final isSelected = _selectedImage == imageUrl;
+              
+              return GestureDetector(
+                onTap: () => setState(() => _selectedImage = imageUrl),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 120,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Colors.transparent,
+                      width: 3,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(9),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+        ),
       );
     },
-  );
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            child: Icon(
+                              Icons.broken_image_rounded,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        if (isSelected)
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.check,
+                                size: 16,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Retry button
+        TextButton.icon(
+          onPressed: _regenerateSuggestion,
+          icon: const Icon(Icons.refresh_rounded, size: 18),
+          label: const Text('Try different images'),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+        ),
+      ],
+    );
+  }
 
-  if (choice == null) return;
+  Widget _buildConfirmButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _selectedImage != null
+            ? () => Navigator.pop(context, {'imageUrl': _selectedImage})
+            : null,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: const Text('Use this image'),
+      ),
+    );
+  }
 
-  String? candidateUrl;
-  String? oldUrl = recipe.imageUrl;
-
-  if (context.mounted) {
-    if (choice == 'device') {
-      candidateUrl = await ImageReplacementService.pickFromDeviceAndUpload(
-        recipe,
+  Future<void> _pickFromDevice() async {
+    final imageUrl = await ImageReplacementService.pickFromDeviceAndUpload(
+      widget.recipe,
       );
-    } else if (choice == 'url') {
+    if (imageUrl != null && mounted) {
+      Navigator.pop(context, {'imageUrl': imageUrl});
+    }
+  }
+
+  Future<void> _pasteUrl() async {
       final controller = TextEditingController();
       final ok = await showDialog<bool>(
         context: context,
-        builder:
-            (ctx) => AlertDialog(
+      builder: (ctx) => AlertDialog(
               title: const Text('Paste image URL'),
               content: TextField(
                 controller: controller,
@@ -2365,92 +2602,53 @@ Future<void> _showReplaceImageSheet(BuildContext context, Recipe recipe) async {
               ],
             ),
       );
-      if (ok == true) {
+    
+    if (ok != true || !mounted) return;
+    
         final url = controller.text.trim();
         if (await ImageReplacementService.validateImageUrl(url)) {
-          candidateUrl = url;
+      if (mounted) Navigator.pop(context, {'imageUrl': url});
         } else {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('That link doesn\'t point to a valid image.'),
-              ),
-            );
+      setState(() => _errorMessage = 'That link doesn\'t point to a valid image.');
           }
         }
+
+  Future<void> _regenerateSuggestion() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _suggestedImages = [];
+      _selectedImage = null;
+    });
+
+    try {
+      // Use the optimized endpoint that returns multiple validated images
+      final images = await ImageReplacementService.getMultipleSuggestions(
+        widget.recipe.title,
+        count: 4,
+      );
+
+      if (!mounted) return;
+
+      if (images.isEmpty) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Could not find suitable images. Please try again.';
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+          _suggestedImages = images;
+          _selectedImage = images.first; // Pre-select first image
+        });
       }
-    } else if (choice == 'regen') {
-      candidateUrl = await ImageReplacementService.searchSuggestion(
-        recipe.title,
-        starts: const [4, 7, 10, 13, 16],
-      );
-    }
-  }
-  if (candidateUrl == null) return;
-  if (context.mounted) {
-    // Preview dialog
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Replace image?'),
-            content: SizedBox(
-              width: 300,
-              child: Image.network(candidateUrl!, fit: BoxFit.contain),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Replace'),
-              ),
-            ],
-          ),
-    );
-
-    if (confirm != true) return;
-
-    // Persist and refresh
-    final saved = await ImageReplacementService.persistRecipeImage(
-      recipe: recipe,
-      newImageUrl: candidateUrl,
-      saveFn: (updated) async {
-        try {
-          // Debug: allow updating discover items directly
-          if (kDebugMode && updated.id.isNotEmpty) {
-            final resp = await RecipeService.updateDiscoverRecipeImage(
-              recipeId: updated.id,
-              imageUrl: candidateUrl!,
-            );
-            return resp.success ? updated : null;
-          }
-          // Production: only user-saved recipes via user endpoint
-          final resp = await RecipeService.updateUserRecipe(updated);
-          return resp.success ? resp.data : null;
-        } catch (_) {}
-        return updated; // Optimistic for transient contexts
-      },
-    );
-
-    await ImageReplacementService.bustCaches(recipe, oldUrl: oldUrl);
-
-    if (saved && context.mounted) {
-      // Force UI to show new image immediately
-      if (context.mounted) {
-        final state =
-            context.findAncestorStateOfType<_RecipeDetailScreenState>();
-        state?.applyImageReplacement(candidateUrl);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'An error occurred. Please try again.';
+        });
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Image replaced successfully.')),
-      );
-    } else if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not update image right now.')),
-      );
     }
   }
 }

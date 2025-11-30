@@ -48,19 +48,24 @@ class RecipeService {
     );
     
     debugPrint('🟠 [RecipeService] API response received: success=${response.success}');
+    debugPrint('🟠 [RecipeService] Response data type: ${response.data?.runtimeType}');
+    debugPrint('🟠 [RecipeService] Response data: ${response.data}');
 
     if (response.success && response.data != null) {
       final data = response.data;
+      debugPrint('🟠 [RecipeService] Data is List: ${data is List}');
       if (data is! List) {
         return ApiResponse.error(
           'Invalid response format: expected list of recipes',
         );
       }
 
+      debugPrint('🟠 [RecipeService] Parsing ${data.length} recipes');
       final recipes =
           data
               .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
               .toList();
+      debugPrint('🟠 [RecipeService] Parsed ${recipes.length} recipes successfully');
       return ApiResponse.success(recipes);
     }
 

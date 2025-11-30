@@ -33,53 +33,53 @@ class ErrorDisplay extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Error Icon
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Error Icon
             Icon(
               customIcon ?? _getErrorIcon(),
               size: 64,
               color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
             ),
             const SizedBox(height: 20),
-            // Error Title
-            Text(
+          // Error Title
+          Text(
               title ?? _getErrorTitle(),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurfaceVariant,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
             // Error Subtitle/Message - shorter, friendlier
-            Text(
+          Text(
               subtitle ?? _getShortMessage(),
               style: TextStyle(
                 fontSize: 15,
                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
               ),
-              textAlign: TextAlign.center,
-            ),
+            textAlign: TextAlign.center,
+          ),
             // Retry Button or Custom Action (if provided)
             if (onRetry != null || actionButton != null) ...[
               const SizedBox(height: 24),
               actionButton ?? TextButton.icon(
-                onPressed: onRetry,
+              onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded, size: 20),
-                label: const Text('Try Again'),
+              label: const Text('Try Again'),
                 style: TextButton.styleFrom(
                   foregroundColor: colorScheme.primary,
-                  padding: const EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                     horizontal: 20,
-                    vertical: 12,
-                  ),
+                  vertical: 12,
                 ),
               ),
-            ],
+            ),
           ],
+        ],
         ),
       ),
     );

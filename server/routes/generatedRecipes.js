@@ -72,6 +72,7 @@ const { getTikTokVideoFromUrl } = require("../utils/tiktokAPI");
 const { getYouTubeVideoFromUrl } = require("../utils/youtubeAPI");
 const { 
 	searchImage, 
+	searchMultipleImages,
 	validateImageUrl, 
 	isPlaceholderUrl,
 	clearCache: clearImageCache,
@@ -1487,6 +1488,46 @@ router.get("/search-image", async (req, res) => {
 		}
 	} catch (error) {
 		console.error("Error searching for image:", error);
+		const errorHandler = require("../utils/errorHandler");
+		errorHandler.serverError(
+			res,
+			"We couldn't search for images right now. Please try again in a moment."
+		);
+	}
+});
+
+// GET /ai/recipes/search-images - Search for multiple validated images at once
+// This is more efficient than multiple single-image requests
+router.get("/search-images", async (req, res) => {
+	try {
+		const { query, count } = req.query;
+		
+		if (!query) {
+			return res.status(400).json({
+				error: true,
+				message: "Query parameter is required"
+			});
+		}
+
+		const countParam = count ? Math.min(parseInt(count), 5) : 3; // Max 5 images
+		const startOffsets = [1, 4, 7, 10]; // Try different positions for variety
+
+		console.log(`🔍 Searching for ${countParam} images for: ${query}`);
+		const startTime = Date.now();
+
+		const images = await searchMultipleImages(query, countParam, startOffsets);
+		
+		const elapsed = Date.now() - startTime;
+		console.log(`✅ Found ${images.length} validated images in ${elapsed}ms`);
+
+		res.json({
+			images: images,
+			count: images.length,
+			query: query,
+			elapsed: elapsed
+		});
+	} catch (error) {
+		console.error("Error searching for images:", error);
 		const errorHandler = require("../utils/errorHandler");
 		errorHandler.serverError(
 			res,

@@ -14,6 +14,7 @@ import '../components/floating_bottom_bar.dart';
 import '../utils/snackbar_helper.dart';
 import '../components/inline_banner_ad.dart';
 import '../components/offline_banner.dart';
+import '../components/pull_to_refresh_hint.dart'; // Provides RefreshIndicatorWithHint
 
 class DiscoverRecipesScreen extends StatefulWidget {
   final String? initialQuery;
@@ -307,10 +308,14 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
         }
       }
     } else {
+      // Pass the original recipe ID to track save count on the original recipe
+      final originalRecipeId = recipe.id.isNotEmpty ? recipe.id : null;
+
       // Save to collection using RecipeProvider
       final savedRecipe = await recipeProvider.createUserRecipe(
         recipe,
         context,
+        originalRecipeId: originalRecipeId,
         refreshCollections: false,
       );
       if (savedRecipe != null) {
@@ -510,7 +515,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
 
                     // Friendly empty state: show when not loading and no results
                     if (!recipeProvider.isLoading && displayRecipes.isEmpty) {
-                      return RefreshIndicator(
+                      return RefreshIndicatorWithHint(
                         onRefresh: () async {
                           await _loadRecipes(forceRefresh: true);
                         },
@@ -610,7 +615,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                           Expanded(
                             child: Stack(
                               children: [
-                                RefreshIndicator(
+                                RefreshIndicatorWithHint(
                                   onRefresh: () async {
                                     await _loadRecipes(forceRefresh: true);
                                   },

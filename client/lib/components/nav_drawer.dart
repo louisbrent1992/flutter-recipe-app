@@ -184,9 +184,9 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
             .toList();
 
     // Start animations immediately for snappy feel
-    _fadeController.forward();
-    _slideController.forward();
-    _scaleController.forward();
+        _fadeController.forward();
+        _slideController.forward();
+        _scaleController.forward();
     // Note: pulse animation disabled for minimal experience
     // _pulseController.repeat(reverse: true);
 
@@ -518,15 +518,15 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                                 _buildAvatarPlaceholder(isDark, isMobile),
                           )
                         : CachedNetworkImage(
-                            imageUrl: photoURL,
-                            fit: BoxFit.cover,
-                            placeholder:
-                                (context, url) =>
-                                    _buildAvatarPlaceholder(isDark, isMobile),
-                            errorWidget:
-                                (context, url, error) =>
-                                    _buildAvatarPlaceholder(isDark, isMobile),
-                          ),
+                              imageUrl: photoURL,
+                              fit: BoxFit.cover,
+                              placeholder:
+                                  (context, url) =>
+                                      _buildAvatarPlaceholder(isDark, isMobile),
+                              errorWidget:
+                                  (context, url, error) =>
+                                      _buildAvatarPlaceholder(isDark, isMobile),
+                    ),
                   );
                 },
               ),

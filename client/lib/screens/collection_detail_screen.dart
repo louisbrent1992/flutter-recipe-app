@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import '../theme/theme.dart';
+import '../components/pull_to_refresh_hint.dart';
 
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
@@ -498,7 +499,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
           // Main content
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
+              : RefreshIndicatorWithHint(
                 onRefresh: _refreshCollection,
                 child: CustomScrollView(
                   controller: _scrollController,

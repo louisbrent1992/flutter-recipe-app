@@ -69,8 +69,8 @@ const app = express();
 const port = process.env.PORT || 8080;
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(cors());
 
 // Timeout middleware removed to prevent conflicts with long-running operations

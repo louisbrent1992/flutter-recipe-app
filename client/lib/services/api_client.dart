@@ -415,19 +415,23 @@ class ApiClient {
     http.Response response, {
     T Function(Map<String, dynamic>)? fromJson,
   }) {
-    // debug logging removed
-
     try {
       // Parse the response body
       final dynamic jsonData = json.decode(response.body);
+      debugPrint('🔵 [ApiClient] _handleResponse: statusCode=${response.statusCode}');
+      debugPrint('🔵 [ApiClient] _handleResponse: jsonData type=${jsonData.runtimeType}');
+      debugPrint('🔵 [ApiClient] _handleResponse: T=$T');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (jsonData is Map<String, dynamic>) {
+          debugPrint('🔵 [ApiClient] _handleResponse: Using fromJson path');
           return ApiResponse<T>.fromJson(jsonData, fromJson: fromJson);
-        } else if (T == List) {
-          // Handle list responses
+        } else if (jsonData is List) {
+          // Handle list responses (works for List<dynamic> and other list types)
+          debugPrint('🔵 [ApiClient] _handleResponse: Using list path, list length=${jsonData.length}');
           return ApiResponse<T>.success(jsonData as T);
         } else {
+          debugPrint('🔵 [ApiClient] _handleResponse: Using else path');
           return ApiResponse<T>.success(jsonData as T);
         }
       } else {
