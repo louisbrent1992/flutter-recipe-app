@@ -204,36 +204,46 @@ class _SmartRecipeImageState extends State<SmartRecipeImage>
         borderRadius:
             widget.borderRadius ??
             BorderRadius.circular(AppBreakpoints.isMobile(context) ? 8 : 12),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            CachedNetworkImage(
-              imageUrl: url,
-              width: widget.width,
-              height: widget.height,
-              fit: widget.fit,
-              memCacheWidth: widget.width != null
-                  ? (widget.width! * MediaQuery.of(context).devicePixelRatio)
-                      .round()
-                  : null,
-              memCacheHeight: widget.height != null
-                  ? (widget.height! * MediaQuery.of(context).devicePixelRatio)
-                      .round()
-                  : null,
-              fadeInDuration: const Duration(milliseconds: 150),
-              fadeOutDuration: const Duration(milliseconds: 100),
-              placeholder: (context, u) => placeholder,
-              errorWidget: (context, u, err) {
-                // If primary image fails to load, try Google fallback
-                if (u == widget.primaryImageUrl && _resolvedUrl == widget.primaryImageUrl) {
-                  // Only trigger fallback if we haven't already tried it
-                  if (!_isRefreshing) {
-                    scheduleMicrotask(() => _tryGoogleFallback());
-                  }
-                }
-                return error;
-              },
-            ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
+            // Calculate cache size based on actual render size for optimal quality
+            final cacheWidth = widget.width != null
+                ? (widget.width! * devicePixelRatio).round()
+                : constraints.maxWidth.isFinite
+                    ? (constraints.maxWidth * devicePixelRatio).round()
+                    : null;
+            final cacheHeight = widget.height != null
+                ? (widget.height! * devicePixelRatio).round()
+                : constraints.maxHeight.isFinite
+                    ? (constraints.maxHeight * devicePixelRatio).round()
+                    : null;
+
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                CachedNetworkImage(
+                  imageUrl: url,
+                  width: widget.width,
+                  height: widget.height,
+                  fit: widget.fit,
+                  memCacheWidth: cacheWidth,
+                  memCacheHeight: cacheHeight,
+                  fadeInDuration: const Duration(milliseconds: 150),
+                  fadeOutDuration: const Duration(milliseconds: 100),
+                  placeholder: (context, u) => placeholder,
+                  errorWidget: (context, u, err) {
+                    // If primary image fails to load, try Google fallback
+                    if (u == widget.primaryImageUrl &&
+                        _resolvedUrl == widget.primaryImageUrl) {
+                      // Only trigger fallback if we haven't already tried it
+                      if (!_isRefreshing) {
+                        scheduleMicrotask(() => _tryGoogleFallback());
+                      }
+                    }
+                    return error;
+                  },
+                ),
             if (widget.showRefreshButton)
               Positioned(
                 top: 6,
@@ -274,7 +284,9 @@ class _SmartRecipeImageState extends State<SmartRecipeImage>
                   ),
                 ),
               ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );

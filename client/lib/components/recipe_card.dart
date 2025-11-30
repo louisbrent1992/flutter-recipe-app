@@ -1427,9 +1427,7 @@ Shared from RecipEase
                 children: [
                   AspectRatio(
                     aspectRatio: widget.aspectRatio ?? 3 / 2,
-                    child: Container(
-                      padding: EdgeInsets.all(AppSpacing.xs),
-                      child: SmartRecipeImage(
+                    child: SmartRecipeImage(
                         key: ValueKey(
                           'smart-img-${widget.recipe.id.isNotEmpty ? widget.recipe.id : widget.recipe.title.toLowerCase()}',
                         ),
@@ -1552,11 +1550,10 @@ Shared from RecipEase
                             color: theme.colorScheme.primary,
                           ),
                         ),
-                        cacheKey:
-                            widget.recipe.id.isNotEmpty
-                                ? 'discover-${widget.recipe.id}'
-                                : 'discover-${widget.recipe.title.toLowerCase()}-${widget.recipe.description.toLowerCase()}',
-                      ),
+                      cacheKey:
+                          widget.recipe.id.isNotEmpty
+                              ? 'discover-${widget.recipe.id}'
+                              : 'discover-${widget.recipe.title.toLowerCase()}-${widget.recipe.description.toLowerCase()}',
                     ),
                   ),
                   // Action buttons overlay (edit & refresh only in context menu)
