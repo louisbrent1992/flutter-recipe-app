@@ -17,6 +17,12 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
   late final Animation<double> _scaleAnim;
   late final Animation<Alignment> _beginAlign;
   late final Animation<Alignment> _endAlign;
+  
+  // Dark blue gradient colors for dark mode animation
+  static const List<Color> _darkModeGradientColors = [
+    Color(0xFF1E2A44), // Deep dark blue
+    Color(0xFF2D3A5C), // Slightly lighter dark blue
+  ];
 
   @override
   void initState() {
@@ -78,21 +84,19 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
                       );
                     },
                   )
-                else if (bg.hasGradient)
+                else if (bg.hasGradient || isDarkMode)
                   AnimatedBuilder(
                     animation: _controller,
                     builder: (context, _) {
-                      var colors =
-                          bg.colors
+                      // Use dark blue gradient colors for dark mode
+                      final List<Color> colors = isDarkMode
+                          ? _darkModeGradientColors
+                          : bg.colors
                               .map(_parseColor)
                               .whereType<Color>()
                               .toList();
-                      if (colors.length < 2) return const SizedBox.shrink();
                       
-                      // Darken colors for dark mode
-                      if (isDarkMode) {
-                        colors = colors.map((c) => _darkenColor(c, 0.6)).toList();
-                      }
+                      if (colors.length < 2) return const SizedBox.shrink();
                       
                       return Container(
                         decoration: BoxDecoration(
@@ -133,16 +137,6 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
           ),
         );
       },
-    );
-  }
-  
-  /// Darken a color by a given factor (0.0 = black, 1.0 = original)
-  Color _darkenColor(Color color, double factor) {
-    return Color.fromARGB(
-      (color.a * 255.0).round() & 0xff,
-      ((color.r * 255.0).round() * factor).round() & 0xff,
-      ((color.g * 255.0).round() * factor).round() & 0xff,
-      ((color.b * 255.0).round() * factor).round() & 0xff,
     );
   }
 
