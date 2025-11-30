@@ -1400,7 +1400,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.5,
+            ),
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: theme.colorScheme.outline.withValues(alpha: 0.2),
@@ -1413,7 +1415,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
               Icon(
                 Icons.open_in_new_rounded,
                 size: 12,
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.7,
+                ),
               ),
               const SizedBox(width: 6),
               Text(

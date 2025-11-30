@@ -28,7 +28,6 @@ class RecipeService {
     String? cuisineType,
     bool random = false,
   }) async {
-    debugPrint('🟠 [RecipeService] generateRecipes called');
     final Map<String, dynamic> payload = {
       if (ingredients != null && ingredients.isNotEmpty)
         'ingredients': ingredients,
@@ -38,34 +37,24 @@ class RecipeService {
         'cuisineType': cuisineType,
       'random': random,
     };
-    
-    debugPrint('🟠 [RecipeService] Payload: $payload');
-    debugPrint('🟠 [RecipeService] Calling API: ai/recipes/generate');
 
     final response = await _api.publicPost<List<dynamic>>(
       'ai/recipes/generate',
       body: payload,
     );
-    
-    debugPrint('🟠 [RecipeService] API response received: success=${response.success}');
-    debugPrint('🟠 [RecipeService] Response data type: ${response.data?.runtimeType}');
-    debugPrint('🟠 [RecipeService] Response data: ${response.data}');
 
     if (response.success && response.data != null) {
       final data = response.data;
-      debugPrint('🟠 [RecipeService] Data is List: ${data is List}');
       if (data is! List) {
         return ApiResponse.error(
           'Invalid response format: expected list of recipes',
         );
       }
 
-      debugPrint('🟠 [RecipeService] Parsing ${data.length} recipes');
       final recipes =
           data
               .map((item) => Recipe.fromJson(item as Map<String, dynamic>))
               .toList();
-      debugPrint('🟠 [RecipeService] Parsed ${recipes.length} recipes successfully');
       return ApiResponse.success(recipes);
     }
 
@@ -77,15 +66,10 @@ class RecipeService {
 
   /// Import recipe from social media URL
   static Future<ApiResponse<Recipe>> importRecipeFromUrl(String url) async {
-    debugPrint('🟠 [RecipeService] importRecipeFromUrl called with: $url');
-    debugPrint('🟠 [RecipeService] Calling API: ai/recipes/import');
-    
     final response = await _api.publicPost<Map<String, dynamic>>(
       'ai/recipes/import',
       body: {'url': url},
     );
-    
-    debugPrint('🟠 [RecipeService] API response received: success=${response.success}');
 
     if (response.success && response.data != null) {
       final fromCache = response.data!['fromCache'] as bool? ?? false;

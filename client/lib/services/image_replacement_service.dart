@@ -107,8 +107,8 @@ class ImageReplacementService {
       if (oldUrl != null && oldUrl.isNotEmpty) {
         await CachedNetworkImage.evictFromCache(oldUrl);
       }
-    } catch (e) {
-      print('Error busting caches: $e');
+    } catch (_) {
+      // Silent failure - cache busting is not critical
     }
   }
 }

@@ -223,14 +223,9 @@ class ApiClient {
     T Function(Map<String, dynamic>)? fromJson,
   }) async {
     try {
-      final url = await baseUrl;
-      debugPrint('🔴 [ApiClient] publicPost to: $url/$endpoint');
-      debugPrint('🔴 [ApiClient] Body: $body');
       final response = await _post(endpoint, _standardHeaders, body);
-      debugPrint('🔴 [ApiClient] Response status: ${response.statusCode}');
       return _handleResponse<T>(response, fromJson: fromJson);
     } catch (e) {
-      debugPrint('🔴 [ApiClient] Error in publicPost: $e');
       return _handleError<T>(e, 'POST $endpoint');
     }
   }
@@ -418,20 +413,14 @@ class ApiClient {
     try {
       // Parse the response body
       final dynamic jsonData = json.decode(response.body);
-      debugPrint('🔵 [ApiClient] _handleResponse: statusCode=${response.statusCode}');
-      debugPrint('🔵 [ApiClient] _handleResponse: jsonData type=${jsonData.runtimeType}');
-      debugPrint('🔵 [ApiClient] _handleResponse: T=$T');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (jsonData is Map<String, dynamic>) {
-          debugPrint('🔵 [ApiClient] _handleResponse: Using fromJson path');
           return ApiResponse<T>.fromJson(jsonData, fromJson: fromJson);
         } else if (jsonData is List) {
           // Handle list responses (works for List<dynamic> and other list types)
-          debugPrint('🔵 [ApiClient] _handleResponse: Using list path, list length=${jsonData.length}');
           return ApiResponse<T>.success(jsonData as T);
         } else {
-          debugPrint('🔵 [ApiClient] _handleResponse: Using else path');
           return ApiResponse<T>.success(jsonData as T);
         }
       } else {

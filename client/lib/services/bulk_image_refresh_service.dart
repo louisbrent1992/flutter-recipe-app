@@ -22,7 +22,7 @@ class BulkImageRefreshService {
       );
     } catch (e) {
       if (kDebugMode) {
-        print('Error finding replacement image for "$recipeTitle": $e');
+        debugPrint('Error finding replacement image for "$recipeTitle": $e');
       }
       return null;
     }
@@ -64,7 +64,7 @@ class BulkImageRefreshService {
 
         if (isBroken) {
           if (kDebugMode) {
-            print('Found broken image for recipe: ${recipe.title}');
+            debugPrint('Found broken image for recipe: ${recipe.title}');
           }
 
           // Try to find a replacement image
@@ -80,16 +80,16 @@ class BulkImageRefreshService {
             if (result.success) {
               totalFixed++;
               if (kDebugMode) {
-                print('Successfully updated image for recipe: ${recipe.title}');
+                debugPrint('Successfully updated image for recipe: ${recipe.title}');
               }
             } else {
               if (kDebugMode) {
-                print('Failed to save updated recipe: ${recipe.title}');
+                debugPrint('Failed to save updated recipe: ${recipe.title}');
               }
             }
           } else {
             if (kDebugMode) {
-              print(
+              debugPrint(
                 'Could not find replacement image for recipe: ${recipe.title}',
               );
             }
@@ -97,7 +97,7 @@ class BulkImageRefreshService {
         }
       } catch (e) {
         if (kDebugMode) {
-          print('Error processing recipe "${recipe.title}": $e');
+          debugPrint('Error processing recipe "${recipe.title}": $e');
         }
         // Continue with the next recipe even if one fails
         continue;
@@ -141,14 +141,14 @@ class BulkImageRefreshService {
         }
       } catch (e) {
         if (kDebugMode) {
-          print('Error fetching user recipes page $currentPage: $e');
+          debugPrint('Error fetching user recipes page $currentPage: $e');
         }
         hasMore = false;
       }
     }
 
     if (kDebugMode) {
-      print(
+      debugPrint(
         'Retrieved ${allRecipes.length} total user recipes for bulk refresh',
       );
     }

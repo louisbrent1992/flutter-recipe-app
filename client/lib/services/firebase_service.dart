@@ -68,9 +68,7 @@ class FirebaseService {
     // Create default collections for new user
     try {
       await _collectionService.createDefaultCollections();
-      print('Default collections created for new user: ${result.user!.uid}');
-    } catch (e) {
-      print('Error creating default collections: $e');
+    } catch (_) {
       // Don't fail the registration if collections creation fails
     }
 
