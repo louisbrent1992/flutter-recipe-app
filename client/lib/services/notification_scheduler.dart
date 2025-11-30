@@ -114,7 +114,7 @@ class NotificationScheduler {
         await _scheduleWeekly(
           id: id,
           weekday: DateTime.sunday,
-          hour: 17,
+          hour: 9, // 9:00 AM - Morning meal prep planning
           minute: 0,
           title: 'Meal Prep Sunday 🍱',
           body: 'Plan your week with batch-friendly recipes.',
@@ -130,7 +130,7 @@ class NotificationScheduler {
         await _scheduleWeekly(
           id: id,
           weekday: DateTime.friday,
-          hour: 12,
+          hour: 17, // 5:00 PM - Weekend cooking inspiration
           minute: 0,
           title: 'Holliday Favorites 🎄',
           body: 'New festive recipes just dropped.',
@@ -146,7 +146,7 @@ class NotificationScheduler {
         await _scheduleWeekly(
           id: id,
           weekday: DateTime.tuesday,
-          hour: 18,
+          hour: 17, // 5:00 PM - Right before dinner time
           minute: 0,
           title: '20-Minute Dinners ⏱️',
           body: 'Fast, tasty, and minimal cleanup.',
@@ -162,7 +162,7 @@ class NotificationScheduler {
         await _scheduleWeekly(
           id: id,
           weekday: DateTime.wednesday,
-          hour: 18,
+          hour: 17, // 5:00 PM - Mid-week budget check
           minute: 0,
           title: 'Save on Groceries 💸',
           body: 'Delicious meals under \$10.',
@@ -178,7 +178,7 @@ class NotificationScheduler {
         await _scheduleWeekly(
           id: id,
           weekday: DateTime.monday,
-          hour: 12,
+          hour: 9, // 9:00 AM - Start week with healthy choices
           minute: 0,
           title: 'Keto Spotlight 🥑',
           body: 'Popular low-carb recipes this week.',
