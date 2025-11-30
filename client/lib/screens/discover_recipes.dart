@@ -13,6 +13,8 @@ import '../theme/theme.dart';
 import '../components/floating_bottom_bar.dart';
 import '../utils/snackbar_helper.dart';
 import '../components/inline_banner_ad.dart';
+import '../components/offline_banner.dart';
+import '../components/pull_to_refresh_hint.dart'; // Provides RefreshIndicatorWithHint
 
 class DiscoverRecipesScreen extends StatefulWidget {
   final String? initialQuery;
@@ -251,51 +253,70 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
 
   Future<void> _handleRecipeAction(Recipe recipe) async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
+    final userRecipes = recipeProvider.userRecipes;
 
-    // Check if recipe is already saved
-    final userRecipeIds = recipeProvider.userRecipes.map((r) => r.id).toSet();
-    final userRecipeKeys =
-        recipeProvider.userRecipes
-            .map(
-              (r) => '${r.title.toLowerCase()}|${r.description.toLowerCase()}',
-            )
-            .toSet();
+    // Check if recipe is already saved (matches RecipeCard._isRecipeSaved logic)
+    bool isAlreadySaved = userRecipes.any((r) => r.id == recipe.id);
 
-    final recipeKey =
-        '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
-    final isAlreadySaved =
-        userRecipeIds.contains(recipe.id) || userRecipeKeys.contains(recipeKey);
+    // Check by sourceUrl (most reliable for external recipes)
+    if (!isAlreadySaved && recipe.sourceUrl != null && recipe.sourceUrl!.isNotEmpty) {
+      isAlreadySaved = userRecipes.any((r) => r.sourceUrl == recipe.sourceUrl);
+    }
+
+    // Fallback to title + description
+    if (!isAlreadySaved) {
+      final recipeKey = '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
+      isAlreadySaved = userRecipes.any(
+        (r) => '${r.title.toLowerCase()}|${r.description.toLowerCase()}' == recipeKey,
+      );
+    }
 
     if (isAlreadySaved) {
-      // Remove from collection - find the actual user recipe ID
-      Recipe? userRecipe = recipeProvider.userRecipes.firstWhere(
-        (r) =>
-            r.id == recipe.id ||
-            (r.title.toLowerCase() == recipe.title.toLowerCase() &&
-                r.description.toLowerCase() ==
-                    recipe.description.toLowerCase()),
-        orElse: () => Recipe(), // Return empty recipe if not found
+      // Find the saved recipe using the same logic
+      Recipe? userRecipe = userRecipes.firstWhere(
+        (r) => r.id == recipe.id,
+        orElse: () => Recipe(),
       );
+      
+      if (userRecipe.id.isEmpty && recipe.sourceUrl != null && recipe.sourceUrl!.isNotEmpty) {
+        userRecipe = userRecipes.firstWhere(
+          (r) => r.sourceUrl == recipe.sourceUrl,
+          orElse: () => Recipe(),
+        );
+      }
+      
+      if (userRecipe.id.isEmpty) {
+        userRecipe = userRecipes.firstWhere(
+          (r) => r.title.toLowerCase() == recipe.title.toLowerCase() &&
+                 r.description.toLowerCase() == recipe.description.toLowerCase(),
+          orElse: () => Recipe(),
+      );
+      }
 
       if (userRecipe.id.isNotEmpty) {
+        // Skip collection refresh to avoid unnecessary fetches
         final success = await recipeProvider.deleteUserRecipe(
           userRecipe.id,
           context,
+          refreshCollections: false,
         );
         if (success && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Recipe removed from your collection!'),
-              backgroundColor: Colors.orange,
-            ),
+          SnackBarHelper.showWarning(
+            context,
+            'Recipe removed from your collection!',
           );
         }
       }
     } else {
+      // Pass the original recipe ID to track save count on the original recipe
+      final originalRecipeId = recipe.id.isNotEmpty ? recipe.id : null;
+
       // Save to collection using RecipeProvider
       final savedRecipe = await recipeProvider.createUserRecipe(
         recipe,
         context,
+        originalRecipeId: originalRecipeId,
+        refreshCollections: false,
       );
       if (savedRecipe != null) {
         if (mounted) {
@@ -304,6 +325,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
             'Recipe saved to your collection!',
             action: SnackBarAction(
               label: 'Go to My Recipes',
+              textColor: Colors.white,
               onPressed: () {
                 if (mounted) {
                   Navigator.pushNamed(context, '/myRecipes');
@@ -314,7 +336,6 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
         }
       } else {
         if (mounted) {
-          // Check if it's a duplicate error or other error
           if (recipeProvider.error != null) {
             final errorMessage =
                 recipeProvider.error!.message ?? 'Failed to save recipe';
@@ -402,6 +423,8 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
         children: [
           Column(
             children: [
+              // Show offline banner at top when offline
+              const OfflineBanner(),
               // Compact filter bar
               CompactFilterBar(
                 searchController: _searchController,
@@ -472,11 +495,17 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                     if (recipeProvider.error != null &&
                         displayRecipes.isEmpty &&
                         !recipeProvider.isLoading) {
+                      final isOffline = recipeProvider.error!.isNetworkError;
                       return ErrorDisplay(
                         message: recipeProvider.error!.userFriendlyMessage,
-                        isNetworkError: recipeProvider.error!.isNetworkError,
+                        title: isOffline ? 'You\'re Offline' : 'Couldn\'t Load Recipes',
+                        subtitle: isOffline
+                            ? 'Connect to the internet to discover new recipes'
+                            : 'Something went wrong. Please try again.',
+                        isNetworkError: isOffline,
                         isAuthError: recipeProvider.error!.isAuthError,
                         isFormatError: recipeProvider.error!.isFormatError,
+                        customIcon: isOffline ? Icons.wifi_off_rounded : Icons.cloud_off_rounded,
                         onRetry: () {
                           recipeProvider.clearError();
                           _loadRecipes();
@@ -486,7 +515,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
 
                     // Friendly empty state: show when not loading and no results
                     if (!recipeProvider.isLoading && displayRecipes.isEmpty) {
-                      return RefreshIndicator(
+                      return RefreshIndicatorWithHint(
                         onRefresh: () async {
                           await _loadRecipes(forceRefresh: true);
                         },
@@ -586,7 +615,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                           Expanded(
                             child: Stack(
                               children: [
-                                RefreshIndicator(
+                                RefreshIndicatorWithHint(
                                   onRefresh: () async {
                                     await _loadRecipes(forceRefresh: true);
                                   },
@@ -611,7 +640,6 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                         showRemoveButton:
                                             false, // Saved recipes are filtered out
                                         showRefreshButton: false,
-                                        showDeleteButton: false,
                                         onSave:
                                             () => _handleRecipeAction(recipe),
                                       );
@@ -751,6 +779,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                 isLoading: recipeProvider.isLoading,
                 onPreviousPage: _goToPreviousPage,
                 onNextPage: _goToNextPage,
+                onGoToPage: _goToPage,
               );
             },
           ),

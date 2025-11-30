@@ -7,7 +7,6 @@ import '../theme/theme.dart';
 import '../providers/recipe_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../models/recipe.dart';
-import '../models/recipe_collection.dart';
 import '../services/game_center_service.dart';
 import '../utils/image_utils.dart';
 import 'dart:ui';
@@ -128,40 +127,27 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    // Load user recipes if not already loaded
-    // Ensure we load page 1 to get the total count for accurate stats
+    // Sync chef ranking with Game Center when drawer opens
+    // Note: User recipes are loaded by HomeScreen, no need to duplicate here
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final recipeProvider = Provider.of<RecipeProvider>(
-        context,
-        listen: false,
-      );
-      if (recipeProvider.userRecipes.isEmpty ||
-          recipeProvider.totalRecipes == 0) {
-        recipeProvider.loadUserRecipes(
-          page: 1,
-        ); // Explicitly load page 1 for total count
-        // Favorites removed: no favorites preloading
-      }
-
-      // Sync chef ranking with Game Center when drawer opens
       _syncChefRankingWithGameCenter();
     });
 
-    // Main controllers with smoother timing
+    // Main controllers with smooth, balanced timing
     _slideController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 750),
       vsync: this,
     );
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 650),
       vsync: this,
     );
     _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 700),
       vsync: this,
     );
     _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 700),
       vsync: this,
     );
 
@@ -169,7 +155,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     _itemControllers = List.generate(
       10,
       (index) => AnimationController(
-        duration: Duration(milliseconds: 600 + (index * 40)),
+        duration: Duration(milliseconds: 550 + (index * 40)),
         vsync: this,
       ),
     );
@@ -197,24 +183,16 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
             )
             .toList();
 
-    // Start animations with natural timing
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        _fadeController.forward();
-        _slideController.forward();
-      }
-    });
-
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        _scaleController.forward();
-        _pulseController.repeat(reverse: true);
-      }
-    });
+    // Start animations immediately for snappy feel
+    _fadeController.forward();
+    _slideController.forward();
+    _scaleController.forward();
+    // Note: pulse animation disabled for minimal experience
+    // _pulseController.repeat(reverse: true);
 
     // Stagger item animations with smooth timing
     for (int i = 0; i < _itemControllers.length; i++) {
-      Future.delayed(Duration(milliseconds: 600 + (i * 120)), () {
+      Future.delayed(Duration(milliseconds: 150 + (i * 80)), () {
         if (mounted) {
           _itemControllers[i].forward();
         }
@@ -530,9 +508,18 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                       profileProvider.profile['photoURL'] as String? ??
                       user?.photoURL ??
                       ImageUtils.defaultProfileIconUrl;
-                  
+
                   return ClipOval(
-                    child: CachedNetworkImage(
+                    child:
+                        ImageUtils.isAssetPath(photoURL)
+                            ? Image.asset(
+                              photoURL,
+                              fit: BoxFit.cover,
+                              errorBuilder:
+                                  (context, error, stackTrace) =>
+                                      _buildAvatarPlaceholder(isDark, isMobile),
+                            )
+                            : CachedNetworkImage(
                               imageUrl: photoURL,
                               fit: BoxFit.cover,
                               placeholder:
@@ -541,7 +528,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                               errorWidget:
                                   (context, url, error) =>
                                       _buildAvatarPlaceholder(isDark, isMobile),
-                    ),
+                            ),
                   );
                 },
               ),
@@ -675,12 +662,13 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               isMobile,
               null,
             ),
-            // Use FutureBuilder to properly handle async collections count
-            FutureBuilder<List<RecipeCollection>>(
-              future: CollectionService().getCollections(),
-              builder: (context, snapshot) {
+            // Use Consumer to get collections count from cached provider
+            Consumer<CollectionService>(
+              builder: (context, collectionService, _) {
+                // Use cached collections if available, otherwise show placeholder
+                final collections = collectionService.cachedCollections;
                 final collectionsCount =
-                    snapshot.hasData ? snapshot.data!.length.toString() : '...';
+                    collections != null ? collections.length.toString() : '...';
                 return _buildStatChip(
                   collectionsCount,
                   'Collections',
@@ -1367,7 +1355,6 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     }
   }
 
-
   Widget _buildNavigationContent(
     BuildContext context,
     ColorScheme colorScheme,
@@ -1419,6 +1406,13 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                 7,
               ),
               _NavItem(
+                Icons.people_rounded,
+                'Community Recipes',
+                '/community',
+                const Color(0xFF6C5CE7),
+                8,
+              ),
+              _NavItem(
                 Icons.add_box_rounded,
                 'Import Recipe',
                 '/import',
@@ -1442,7 +1436,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               'Settings',
               '/settings',
               colorScheme.outline,
-              8,
+              9,
             ),
           ]),
           SizedBox(height: isMobile ? 12 : 16),

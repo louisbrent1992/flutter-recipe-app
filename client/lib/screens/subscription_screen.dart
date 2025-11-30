@@ -348,7 +348,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             left: AppSpacing.responsive(context),
             right: AppSpacing.responsive(context),
             top: AppSpacing.responsive(context),
-            bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
+            bottom:
+                AppSpacing.responsive(context) +
+                30, // Extra space for floating bar
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -467,7 +469,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             left: AppSpacing.responsive(context),
             right: AppSpacing.responsive(context),
             top: AppSpacing.responsive(context),
-            bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
+            bottom:
+                AppSpacing.responsive(context) +
+                30, // Extra space for floating bar
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -551,7 +555,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             left: AppSpacing.responsive(context),
             right: AppSpacing.responsive(context),
             top: AppSpacing.responsive(context),
-            bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
+            bottom:
+                AppSpacing.responsive(context) +
+                30, // Extra space for floating bar
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1380,19 +1386,50 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   }
 
   Widget _buildTextLink(BuildContext context, String text, String url) {
-    return InkWell(
-      onTap: () async {
-        final uri = Uri.parse(url);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
-      },
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-          decoration: TextDecoration.underline,
-          fontWeight: FontWeight.w500,
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          final uri = Uri.parse(url);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        },
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.5,
+            ),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.2),
+              width: 0.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.open_in_new_rounded,
+                size: 12,
+                color: theme.colorScheme.onSurfaceVariant.withValues(
+                  alpha: 0.7,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                text,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

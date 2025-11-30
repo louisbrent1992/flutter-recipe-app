@@ -1,5 +1,32 @@
 import 'package:share_plus/share_plus.dart';
 
+/// Represents a user who shared a recipe in the community
+class SharedByUser {
+  final String? userId;
+  final String? displayName;
+  final String? photoUrl;
+
+  const SharedByUser({
+    this.userId,
+    this.displayName,
+    this.photoUrl,
+  });
+
+  factory SharedByUser.fromJson(Map<String, dynamic> json) {
+    return SharedByUser(
+      userId: json['userId']?.toString(),
+      displayName: json['displayName']?.toString(),
+      photoUrl: json['photoUrl']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'userId': userId,
+    'displayName': displayName,
+    'photoUrl': photoUrl,
+  };
+}
+
 class Recipe {
   final String id;
   final String title;
@@ -26,6 +53,15 @@ class Recipe {
   final bool toEdit;
   final bool aiGenerated;
   final Nutrition? nutrition;
+  final String? sharedByUserId;
+  final String? sharedByDisplayName;
+  final String? sharedByPhotoUrl;
+  final List<SharedByUser> sharedByUsers; // All users who shared this recipe
+  final int sharedByCount; // Total count of users who shared this recipe
+  final int saveCount;
+  final int likeCount;
+  final int shareCount;
+  final bool isLiked; // Whether the current user has liked this recipe
 
   Recipe({
     this.id = '',
@@ -54,6 +90,15 @@ class Recipe {
     this.toEdit = false,
     this.aiGenerated = false,
     this.nutrition,
+    this.sharedByUserId,
+    this.sharedByDisplayName,
+    this.sharedByPhotoUrl,
+    this.sharedByUsers = const [],
+    this.sharedByCount = 0,
+    this.saveCount = 0,
+    this.likeCount = 0,
+    this.shareCount = 0,
+    this.isLiked = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Helper method to parse DateTime from various formats
@@ -171,6 +216,38 @@ class Recipe {
                 Map<String, dynamic>.from(json['nutrition'] as Map),
               )
               : null,
+      sharedByUserId: json['sharedByUserId']?.toString(),
+      sharedByDisplayName: json['sharedByDisplayName']?.toString(),
+      sharedByPhotoUrl: json['sharedByPhotoUrl']?.toString(),
+      sharedByUsers: json['sharedByUsers'] != null && json['sharedByUsers'] is List
+          ? (json['sharedByUsers'] as List)
+              .map((u) => SharedByUser.fromJson(Map<String, dynamic>.from(u as Map)))
+              .toList()
+          : const [],
+      sharedByCount: json['sharedByCount'] is int
+          ? json['sharedByCount']
+          : (json['sharedByCount'] != null
+              ? int.tryParse(json['sharedByCount'].toString()) ?? 0
+              : 0),
+      saveCount:
+          json['saveCount'] is int
+              ? json['saveCount']
+              : (json['saveCount'] != null
+                  ? int.tryParse(json['saveCount'].toString()) ?? 0
+                  : 0),
+      likeCount:
+          json['likeCount'] is int
+              ? json['likeCount']
+              : (json['likeCount'] != null
+                  ? int.tryParse(json['likeCount'].toString()) ?? 0
+                  : 0),
+      shareCount:
+          json['shareCount'] is int
+              ? json['shareCount']
+              : (json['shareCount'] != null
+                  ? int.tryParse(json['shareCount'].toString()) ?? 0
+                  : 0),
+      isLiked: json['isLiked'] is bool ? json['isLiked'] as bool : false,
     );
   }
 
@@ -201,6 +278,15 @@ class Recipe {
     'toEdit': toEdit,
     'aiGenerated': aiGenerated,
     'nutrition': nutrition?.toJson(),
+    'sharedByUserId': sharedByUserId,
+    'sharedByDisplayName': sharedByDisplayName,
+    'sharedByPhotoUrl': sharedByPhotoUrl,
+    'sharedByUsers': sharedByUsers.map((u) => u.toJson()).toList(),
+    'sharedByCount': sharedByCount,
+    'saveCount': saveCount,
+    'likeCount': likeCount,
+    'shareCount': shareCount,
+    'isLiked': isLiked,
   };
 
   // Create a copy of the recipe with updated values
@@ -230,6 +316,15 @@ class Recipe {
     bool? toEdit,
     bool? aiGenerated,
     Nutrition? nutrition,
+    String? sharedByUserId,
+    String? sharedByDisplayName,
+    String? sharedByPhotoUrl,
+    List<SharedByUser>? sharedByUsers,
+    int? sharedByCount,
+    int? saveCount,
+    int? likeCount,
+    int? shareCount,
+    bool? isLiked,
   }) {
     return Recipe(
       id: id ?? this.id,
@@ -257,6 +352,15 @@ class Recipe {
       toEdit: toEdit ?? this.toEdit,
       aiGenerated: aiGenerated ?? this.aiGenerated,
       nutrition: nutrition ?? this.nutrition,
+      sharedByUserId: sharedByUserId ?? this.sharedByUserId,
+      sharedByDisplayName: sharedByDisplayName ?? this.sharedByDisplayName,
+      sharedByPhotoUrl: sharedByPhotoUrl ?? this.sharedByPhotoUrl,
+      sharedByUsers: sharedByUsers ?? this.sharedByUsers,
+      sharedByCount: sharedByCount ?? this.sharedByCount,
+      saveCount: saveCount ?? this.saveCount,
+      likeCount: likeCount ?? this.likeCount,
+      shareCount: shareCount ?? this.shareCount,
+      isLiked: isLiked ?? this.isLiked,
     );
   }
 

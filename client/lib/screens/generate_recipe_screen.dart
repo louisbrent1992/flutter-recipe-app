@@ -37,7 +37,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 300),
     );
 
     _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -119,28 +119,22 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
 
     try {
       // Show loading dialog
-      debugPrint('🔵 [Generate] About to show loading dialog');
       if (context.mounted) {
         LoadingDialogHelper.show(context, message: 'Generating Recipes');
-        debugPrint('🔵 [Generate] Loading dialog shown');
       }
 
-      debugPrint(
-        '🔵 [Generate] Calling generateRecipes with ${_ingredients.length} ingredients',
-      );
       await recipeProvider.generateRecipes(
         ingredients: _ingredients,
         dietaryRestrictions: _dietaryRestrictions,
         cuisineType: _cuisineType,
       );
-      debugPrint('🔵 [Generate] generateRecipes completed');
 
       // Close loading dialog
       if (context.mounted) {
         LoadingDialogHelper.dismiss(context);
       }
 
-      if (context.mounted && recipeProvider.generatedRecipes.isNotEmpty) {
+      if (context.mounted && recipeProvider.aiGeneratedRecipes.isNotEmpty) {
         // Always deduct one generation credit after successful generation
         // Only deduct if user doesn't have unlimited usage or active trial
         await subscriptionProvider.useCredits(

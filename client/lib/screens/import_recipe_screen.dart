@@ -36,7 +36,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 300),
     );
 
     _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -186,16 +186,12 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
 
     try {
       // Show loading dialog
-      debugPrint('🟢 [Import] About to show loading dialog');
       if (context.mounted) {
         LoadingDialogHelper.show(context, message: 'Importing Recipe');
-        debugPrint('🟢 [Import] Loading dialog shown');
       }
 
       if (context.mounted) {
-        debugPrint('🟢 [Import] Calling importRecipeFromUrl with URL: $url');
         final result = await recipeProvider.importRecipeFromUrl(url, context);
-        debugPrint('🟢 [Import] importRecipeFromUrl completed');
 
         // Close loading dialog
         if (context.mounted) {

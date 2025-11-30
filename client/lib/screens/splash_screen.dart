@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../config/app_config.dart';
+import '../services/recipe_service.dart';
 import '../main.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -30,20 +31,20 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 800),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
       ),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.2, 0.8, curve: Curves.elasticOut),
+        curve: const Interval(0.0, 0.8, curve: Curves.easeOutCubic),
       ),
     );
 
@@ -86,7 +87,7 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  void _navigateToNextScreen() {
+  Future<void> _navigateToNextScreen() async {
     final authService = Provider.of<AuthService>(context, listen: false);
 
     // Check if there's a pending shared URL from cold start
@@ -98,7 +99,10 @@ class _SplashScreenState extends State<SplashScreen>
     if (pendingUrl != null) {
       // If we have a shared URL, navigate directly to import screen
       Navigator.pushReplacementNamed(context, '/import', arguments: pendingUrl);
-    } else if (pendingNotification != null) {
+      return;
+    }
+    
+    if (pendingNotification != null) {
       // If we have a notification, navigate to the notification route
       try {
         final obj = jsonDecode(pendingNotification) as Map<String, dynamic>;
@@ -106,7 +110,30 @@ class _SplashScreenState extends State<SplashScreen>
         final args = obj['args'] as Map<String, dynamic>?;
 
         if (route != null && route.isNotEmpty) {
-          // Convert args to Map<String, String> if needed
+          // Special handling for recipeDetail - need to fetch recipe first
+          if (route == '/recipeDetail' && args != null && args['recipeId'] != null) {
+            final recipeId = args['recipeId'] as String;
+            try {
+              final response = await RecipeService.getRecipeById(recipeId);
+              if (response.success && response.data != null && mounted) {
+                Navigator.pushReplacementNamed(
+                  context,
+                  '/recipeDetail',
+                  arguments: response.data,
+                );
+                return;
+              }
+            } catch (e) {
+              debugPrint('Error fetching recipe from notification: $e');
+            }
+            // Fallback to home if recipe fetch fails
+            if (mounted) {
+              Navigator.pushReplacementNamed(context, '/home');
+            }
+            return;
+          }
+
+          // Convert args to Map<String, String> if needed for other routes
           Map<String, String>? stringArgs;
           if (args != null && args.isNotEmpty) {
             stringArgs = args.map(
@@ -122,6 +149,7 @@ class _SplashScreenState extends State<SplashScreen>
           return;
         }
       } catch (e) {
+        debugPrint('Error parsing notification payload: $e');
         // Fall through to default navigation
       }
     }

@@ -12,6 +12,7 @@ class FloatingBottomBar extends StatelessWidget {
   final bool? isLoading;
   final VoidCallback? onPreviousPage;
   final VoidCallback? onNextPage;
+  final void Function(int page)? onGoToPage; // New: direct page navigation
 
   const FloatingBottomBar({
     super.key,
@@ -23,6 +24,7 @@ class FloatingBottomBar extends StatelessWidget {
     this.isLoading,
     this.onPreviousPage,
     this.onNextPage,
+    this.onGoToPage,
   });
 
   void _handleNavigation(BuildContext context, int index) {
@@ -308,30 +310,51 @@ class FloatingBottomBar extends StatelessWidget {
 
   Widget _buildCompactPagination(BuildContext context) {
     final theme = Theme.of(context);
+    final current = currentPage ?? 1;
+    final total = totalPages ?? 1;
+    final canGoPrev = (hasPreviousPage ?? false) && !(isLoading ?? false);
+    final canGoNext = (hasNextPage ?? false) && !(isLoading ?? false);
+    final canJumpBack10 = current > 1 && !(isLoading ?? false);
+    final canJumpForward10 = current < total && !(isLoading ?? false);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        // Jump back 10 pages button (<<)
+        if (total > 10) ...[
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: IconButton(
+              onPressed: canJumpBack10 && onGoToPage != null
+                  ? () => onGoToPage!((current - 10).clamp(1, total))
+                  : null,
+              icon: Icon(
+                Icons.keyboard_double_arrow_left,
+                size: 16,
+                color: canJumpBack10
+                    ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8)
+                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+              ),
+              tooltip: 'Back 10 pages',
+              padding: EdgeInsets.zero,
+              splashRadius: 12,
+            ),
+          ),
+        ],
+
         // Previous button
         SizedBox(
           width: 24,
           height: 24,
           child: IconButton(
-            onPressed:
-                (hasPreviousPage ?? false) && !(isLoading ?? false)
-                    ? onPreviousPage
-                    : null,
+            onPressed: canGoPrev ? onPreviousPage : null,
             icon: Icon(
               Icons.chevron_left,
               size: 16,
-              color:
-                  (hasPreviousPage ?? false) && !(isLoading ?? false)
-                      ? theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.8,
-                      )
-                      : theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.3,
-                      ),
+              color: canGoPrev
+                  ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8)
+                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
             ),
             tooltip: 'Previous',
             padding: EdgeInsets.zero,
@@ -341,53 +364,47 @@ class FloatingBottomBar extends StatelessWidget {
 
         const SizedBox(width: 4),
 
-        // Current page indicator
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withValues(
-              alpha: Theme.of(context).colorScheme.overlayMedium,
-            ),
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withValues(
-                alpha: Theme.of(context).colorScheme.overlayHeavy,
+        // Tappable page indicator - opens "Go to page" dialog
+        GestureDetector(
+          onTap: total > 1 && onGoToPage != null && !(isLoading ?? false)
+              ? () => _showGoToPageDialog(context, current, total)
+              : null,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(
+                alpha: theme.colorScheme.overlayMedium,
               ),
-              width: 0.5,
-            ),
-          ),
-          child: Text(
-            '${currentPage ?? 1}',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w600,
-              fontSize: 10,
-            ),
-          ),
-        ),
-
-        // Page separator
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Text(
-            '/',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(
-                alpha: Theme.of(context).colorScheme.alphaMedium,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: theme.colorScheme.primary.withValues(
+                  alpha: theme.colorScheme.overlayHeavy,
+                ),
+                width: 0.5,
               ),
-              fontSize: 10,
             ),
-          ),
-        ),
-
-        // Total pages
-        Text(
-          '${totalPages ?? 1}',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(
-              alpha: Theme.of(context).colorScheme.alphaHigh,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$current',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 10,
+                  ),
+                ),
+                Text(
+                  ' / $total',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: theme.colorScheme.alphaHigh,
+                    ),
+                    fontSize: 10,
+                  ),
+                ),
+              ],
             ),
-            fontSize: 10,
           ),
         ),
 
@@ -398,27 +415,42 @@ class FloatingBottomBar extends StatelessWidget {
           width: 24,
           height: 24,
           child: IconButton(
-            onPressed:
-                (hasNextPage ?? false) && !(isLoading ?? false)
-                    ? onNextPage
-                    : null,
+            onPressed: canGoNext ? onNextPage : null,
             icon: Icon(
               Icons.chevron_right,
               size: 16,
-              color:
-                  (hasNextPage ?? false) && !(isLoading ?? false)
-                      ? theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.8,
-                      )
-                      : theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: 0.3,
-                      ),
+              color: canGoNext
+                  ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8)
+                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
             ),
             tooltip: 'Next',
             padding: EdgeInsets.zero,
             splashRadius: 12,
           ),
         ),
+
+        // Jump forward 10 pages button (>>)
+        if (total > 10) ...[
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: IconButton(
+              onPressed: canJumpForward10 && onGoToPage != null
+                  ? () => onGoToPage!((current + 10).clamp(1, total))
+                  : null,
+              icon: Icon(
+                Icons.keyboard_double_arrow_right,
+                size: 16,
+                color: canJumpForward10
+                    ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8)
+                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+              ),
+              tooltip: 'Forward 10 pages',
+              padding: EdgeInsets.zero,
+              splashRadius: 12,
+            ),
+          ),
+        ],
 
         // Loading indicator
         if (isLoading ?? false) ...[
@@ -428,13 +460,79 @@ class FloatingBottomBar extends StatelessWidget {
             width: 12,
             child: CircularProgressIndicator(
               strokeWidth: 1,
-              color: Theme.of(context).colorScheme.primary.withValues(
-                alpha: Theme.of(context).colorScheme.alphaMedium,
+              color: theme.colorScheme.primary.withValues(
+                alpha: theme.colorScheme.alphaMedium,
               ),
             ),
           ),
         ],
       ],
+    );
+  }
+
+  void _showGoToPageDialog(BuildContext context, int currentPage, int totalPages) {
+    final controller = TextEditingController(text: currentPage.toString());
+    final theme = Theme.of(context);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Go to Page',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'Page number',
+                hintText: '1 - $totalPages',
+                border: const OutlineInputBorder(),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+              onSubmitted: (value) {
+                final page = int.tryParse(value);
+                if (page != null && page >= 1 && page <= totalPages) {
+                  Navigator.pop(context);
+                  onGoToPage?.call(page);
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Enter a page between 1 and $totalPages',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final page = int.tryParse(controller.text);
+              if (page != null && page >= 1 && page <= totalPages) {
+                Navigator.pop(context);
+                onGoToPage?.call(page);
+              }
+            },
+            child: const Text('Go'),
+          ),
+        ],
+      ),
     );
   }
 

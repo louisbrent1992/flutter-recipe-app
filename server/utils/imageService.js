@@ -221,6 +221,84 @@ async function searchImage(query, start = 1, useCache = true) {
 }
 
 /**
+ * Search for multiple images and validate them in parallel
+ * Returns an array of validated image URLs for client selection
+ * @param {string} query - Search query
+ * @param {number} count - Number of validated images to return
+ * @param {number[]} startOffsets - Starting indices to try (for variety)
+ * @returns {Promise<string[]>} - Array of validated image URLs
+ */
+async function searchMultipleImages(query, count = 3, startOffsets = [1, 4, 7]) {
+  if (!query || typeof query !== 'string') {
+    console.log('No query provided for image search');
+    return [];
+  }
+
+  if (!GOOGLE_API_KEY || !GOOGLE_CX) {
+    console.error('Google Custom Search API not configured');
+    return [];
+  }
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const validatedUrls = [];
+
+  // Fetch images from multiple start positions in parallel
+  const searchPromises = startOffsets.map(async (start) => {
+    try {
+      const response = await axios.get(GOOGLE_SEARCH_URL, {
+        params: {
+          key: GOOGLE_API_KEY,
+          cx: GOOGLE_CX,
+          q: normalizedQuery,
+          searchType: 'image',
+          num: 5, // Get 5 results per offset
+          safe: 'active',
+          start: start,
+        },
+        timeout: 10000,
+      });
+
+      if (!response.data.items || response.data.items.length === 0) {
+        return [];
+      }
+
+      // Return all non-placeholder URLs
+      return response.data.items
+        .filter(item => item.link && !isPlaceholderUrl(item.link))
+        .map(item => item.link);
+    } catch (error) {
+      console.error(`Image search error for start=${start}:`, error.message);
+      return [];
+    }
+  });
+
+  // Wait for all searches to complete
+  const searchResults = await Promise.all(searchPromises);
+  
+  // Flatten results and deduplicate
+  const allUrls = [...new Set(searchResults.flat())];
+  
+  if (allUrls.length === 0) {
+    return [];
+  }
+
+  // Validate URLs in parallel (up to 10 at a time for performance)
+  const validationPromises = allUrls.slice(0, 15).map(async (url) => {
+    const isValid = await validateImageUrl(url);
+    return isValid ? url : null;
+  });
+
+  const validationResults = await Promise.all(validationPromises);
+  
+  // Filter out nulls and return up to requested count
+  const validated = validationResults.filter(url => url !== null);
+  
+  console.log(`Found ${validated.length} validated images out of ${allUrls.length} candidates`);
+  
+  return validated.slice(0, count);
+}
+
+/**
  * Get a default recipe image based on cuisine type
  */
 function getDefaultImage(cuisineType) {
@@ -256,6 +334,7 @@ function getCacheStats() {
 
 module.exports = {
   searchImage,
+  searchMultipleImages,
   validateImageUrl,
   isPlaceholderUrl,
   getDefaultImage,

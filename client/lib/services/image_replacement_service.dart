@@ -53,21 +53,32 @@ class ImageReplacementService {
   }
 
   /// Try server-backed search for an image from recipe title.
-  /// Attempts multiple start offsets for variety.
-  static Future<String?> searchSuggestion(
-    String title, {
-    List<int> starts = const [1, 4, 7, 10],
-  }) async {
-    for (final s in starts) {
-      final url = await GoogleImageService.fetchImageForQuery(
+  /// Uses optimized endpoint that returns multiple validated images in one request.
+  static Future<String?> searchSuggestion(String title) async {
+    // Use the optimized endpoint that returns multiple validated images at once
+    // Server handles validation, reducing network round trips
+    final images = await GoogleImageService.fetchMultipleImages(
         '$title recipe',
-        start: s,
+      count: 3,
       );
-      if (url != null && await validateImageUrl(url)) {
-        return url;
+    
+    if (images.isNotEmpty) {
+      return images.first;
       }
-    }
+    
     return null;
+  }
+
+  /// Get multiple image suggestions for a recipe title.
+  /// Useful for letting users choose from multiple options.
+  static Future<List<String>> getMultipleSuggestions(
+    String title, {
+    int count = 3,
+  }) async {
+    return await GoogleImageService.fetchMultipleImages(
+      '$title recipe',
+      count: count,
+    );
   }
 
   /// Persist the image URL to the recipe (client model update is handled by caller).
@@ -96,8 +107,8 @@ class ImageReplacementService {
       if (oldUrl != null && oldUrl.isNotEmpty) {
         await CachedNetworkImage.evictFromCache(oldUrl);
       }
-    } catch (e) {
-      print('Error busting caches: $e');
+    } catch (_) {
+      // Silent failure - cache busting is not critical
     }
   }
 }

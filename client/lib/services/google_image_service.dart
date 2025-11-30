@@ -5,6 +5,7 @@ import '../utils/image_validation_utils.dart';
 class GoogleImageService {
   static final ApiClient _api = ApiClient();
 
+  /// Fetch a single image for a query (legacy method)
   static Future<String?> fetchImageForQuery(String query, {int? start}) async {
     if (query.trim().isEmpty) {
       return null;
@@ -32,6 +33,36 @@ class GoogleImageService {
       return null;
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Fetch multiple validated images in a single request (optimized)
+  /// Server validates all images before returning, reducing network round trips
+  static Future<List<String>> fetchMultipleImages(String query, {int count = 3}) async {
+    if (query.trim().isEmpty) {
+      return [];
+    }
+
+    final params = <String, String>{
+      'query': query.trim(),
+      'count': count.toString(),
+    };
+
+    try {
+      final response = await _api.publicGet<Map<String, dynamic>>(
+        'ai/recipes/search-images',
+        queryParams: params,
+      );
+
+      if (response.success && response.data != null) {
+        final images = response.data!['images'];
+        if (images != null && images is List) {
+          return images.cast<String>().where((url) => url.isNotEmpty).toList();
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
     }
   }
 }

@@ -7,6 +7,7 @@ import '../services/tutorial_service.dart';
 class TutorialKeys {
   static final GlobalKey homeHero = GlobalKey();
   static final GlobalKey homeYourRecipes = GlobalKey();
+  static final GlobalKey homeCommunity = GlobalKey();
   static final GlobalKey homeDiscover = GlobalKey();
   static final GlobalKey homeCollections = GlobalKey();
   static final GlobalKey homeFeatures = GlobalKey();
@@ -61,7 +62,7 @@ class _AppTutorialState extends State<AppTutorial> {
         }
       },
       enableAutoScroll: true,
-      scrollDuration: const Duration(milliseconds: 600),
+      scrollDuration: const Duration(milliseconds: 300),
     );
   }
 
@@ -154,8 +155,8 @@ class TutorialShowcase extends StatelessWidget {
         vertical: 16,
       ),
       tooltipBorderRadius: BorderRadius.circular(16),
-      // Animation settings
-      movingAnimationDuration: const Duration(milliseconds: 400),
+      // Animation settings - minimal for smooth experience
+      movingAnimationDuration: const Duration(milliseconds: 200),
       disableMovingAnimation: false,
       child: child,
     );

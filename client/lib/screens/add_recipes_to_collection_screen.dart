@@ -7,6 +7,7 @@ import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/providers/recipe_provider.dart';
 import 'package:recipease/services/collection_service.dart';
 import 'package:recipease/components/html_description.dart';
+import '../components/pull_to_refresh_hint.dart';
 
 class AddRecipesToCollectionScreen extends StatefulWidget {
   final RecipeCollection collection;
@@ -130,24 +131,15 @@ class _AddRecipesToCollectionScreenState
       return;
     }
 
-    print(
-      "Adding ${_selectedRecipes.length} recipes to collection ${_collection.id}",
-    );
     setState(() => _isLoading = true);
 
-    bool success = true;
     try {
       // Add each selected recipe to the collection
       for (final recipe in _selectedRecipes) {
-        print("Adding recipe: ${recipe.id} - ${recipe.title}");
-        final result = await collectionService.addRecipeToCollection(
+        await collectionService.addRecipeToCollection(
           _collection.id,
           recipe,
         );
-        if (!result) {
-          print("Failed to add recipe: ${recipe.id}");
-          success = false;
-        }
       }
 
       if (mounted) {
@@ -161,11 +153,9 @@ class _AddRecipesToCollectionScreenState
         );
 
         // Return true to indicate recipes were added (even if some failed)
-        print("Returning to previous screen with result: $success");
         Navigator.pop(context, true);
       }
     } catch (e) {
-      print("Error adding recipes: $e");
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -206,7 +196,7 @@ class _AddRecipesToCollectionScreenState
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
+              : RefreshIndicatorWithHint(
                 onRefresh: _loadRecipes,
                 child: Stack(
                   children: [

@@ -8,6 +8,7 @@ import '../providers/notification_provider.dart';
 import '../providers/subscription_provider.dart';
 import '../theme/theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../components/custom_app_bar.dart';
 import '../services/bulk_image_refresh_service.dart';
@@ -20,7 +21,6 @@ import '../services/debug_settings.dart';
 import '../services/tutorial_service.dart';
 import '../components/app_tutorial.dart';
 import '../main.dart' show navigatorKey;
-import '../providers/recipe_provider.dart';
 import '../components/inline_banner_ad.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -324,7 +324,9 @@ class _SettingsScreenState extends State<SettingsScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Test notification triggered! Tap it to test navigation.'),
+            content: Text(
+              'Test notification triggered! Tap it to test navigation.',
+            ),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 3),
@@ -349,7 +351,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   Future<void> _restartTutorial() async {
     try {
       final tutorialService = TutorialService();
-      
+
       // Reset tutorial completion status with manual flag
       await tutorialService.resetTutorial(isManual: true);
 
@@ -362,39 +364,24 @@ class _SettingsScreenState extends State<SettingsScreen>
         WidgetsBinding.instance.addPostFrameCallback((_) {
           // Wait one more frame to ensure all widgets are fully rendered
           WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (navigatorKey.currentContext != null) {
+            if (navigatorKey.currentContext != null) {
               final homeContext = navigatorKey.currentContext!;
-              final recipeProvider = Provider.of<RecipeProvider>(
-                homeContext,
-                listen: false,
-              );
-              
-              // Start with navigation drawer menu and credit balance (most important UI elements)
-              final List<GlobalKey> tutorialTargets = [
+
+              // Start with home hero section (welcome message)
+              final List<GlobalKey> tutorialTargets = [TutorialKeys.homeHero];
+
+              // Then navigation drawer menu and credit balance
+              tutorialTargets.addAll([
                 TutorialKeys.navDrawerMenu,
                 TutorialKeys.creditBalance,
-              ];
+              ]);
 
-              // Then add home hero section
-              tutorialTargets.add(TutorialKeys.homeHero);
-
-              // Only include "Your Recipes" if the user has saved recipes
-              if (recipeProvider.userRecipes.isNotEmpty) {
-                tutorialTargets.add(TutorialKeys.homeYourRecipes);
-              }
-
-              // Only include "Discover" if there are random recipes to show
-              final randomRecipes =
-                  recipeProvider.generatedRecipes
-                      .where(
-                        (r) => !recipeProvider.userRecipes.any((u) => u.id == r.id),
-                      )
-                      .take(10)
-                      .toList();
-
-              if (randomRecipes.isNotEmpty) {
-                tutorialTargets.add(TutorialKeys.homeDiscover);
-              }
+              // Always include Your Recipes, Community, Discover
+              tutorialTargets.addAll([
+                TutorialKeys.homeYourRecipes,
+                TutorialKeys.homeCommunity,
+                TutorialKeys.homeDiscover,
+              ]);
 
               // Collections are always shown (even if empty state), so safe to include
               tutorialTargets.add(TutorialKeys.homeCollections);
@@ -409,7 +396,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 TutorialKeys.bottomNavMyRecipes,
                 TutorialKeys.bottomNavGenerate,
                 TutorialKeys.bottomNavSettings,
-          ]);
+              ]);
 
               // Start tutorial immediately after widgets are built
               startTutorial(homeContext, tutorialTargets);
@@ -432,6 +419,74 @@ class _SettingsScreenState extends State<SettingsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error starting tutorial: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _clearAllCache() async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder:
+            (context) => const AlertDialog(
+              content: Row(
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(width: 20),
+                  Text('Clearing cache...'),
+                ],
+              ),
+            ),
+      );
+
+      // Clear CachedNetworkImage cache (downloaded images)
+      await DefaultCacheManager().emptyCache();
+
+      // Clear ImageResolverCache (URL resolution mappings)
+      final resolverCleared = await ImageResolverCache.clearAll();
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Cache cleared! Cleared $resolverCleared image resolutions.',
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog if open
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error clearing cache: $e'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -992,7 +1047,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   left: AppSpacing.responsive(context),
                   right: AppSpacing.responsive(context),
                   top: AppSpacing.responsive(context),
-                  bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
+                  bottom:
+                      AppSpacing.responsive(context) +
+                      30, // Extra space for floating bar
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1096,6 +1153,66 @@ class _SettingsScreenState extends State<SettingsScreen>
                               themeProvider.isDarkMode
                                   ? Theme.of(context).colorScheme.info
                                   : Theme.of(context).colorScheme.warning,
+                        );
+                      },
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
+
+                    // Privacy Section
+                    _buildSectionHeader(
+                      title: 'Privacy',
+                      icon: Icons.privacy_tip_rounded,
+                      colorScheme: colorScheme,
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+
+                    Consumer<UserProfileProvider>(
+                      builder: (context, profileProvider, _) {
+                        return _buildAnimatedSwitchTile(
+                          title: 'Show Profile in Community',
+                          subtitle:
+                              'Display your name and photo on shared recipes',
+                          value: profileProvider.showProfileInCommunity,
+                          onChanged: (value) async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            try {
+                              await profileProvider.setShowProfileInCommunity(
+                                value,
+                              );
+                              if (mounted) {
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      value
+                                          ? 'Your profile will be shown on community recipes'
+                                          : 'Your profile will be hidden on community recipes',
+                                    ),
+                                    backgroundColor: Colors.green,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error updating setting: $e'),
+                                    backgroundColor: Colors.red,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          icon: Icons.person_outline_rounded,
+                          color: Theme.of(context).colorScheme.primary,
                         );
                       },
                     ),
@@ -1431,6 +1548,28 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const Divider(height: 1, thickness: 0.1),
                     SizedBox(height: AppSpacing.md),
 
+                    // Storage & Cache Section
+                    _buildSectionHeader(
+                      title: 'Storage & Cache',
+                      icon: Icons.storage_rounded,
+                      colorScheme: colorScheme,
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+
+                    _buildAnimatedListTile(
+                      title: 'Clear App Cache',
+                      subtitle: 'Free up storage and fix image display issues',
+                      icon: Icons.cleaning_services_rounded,
+                      color: Colors.orange,
+                      onTap: _clearAllCache,
+                    ),
+
+                    SizedBox(height: AppSpacing.xxl),
+
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
+
                     // Links Section
                     _buildSectionHeader(
                       title: 'Account Management',
@@ -1668,7 +1807,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                       child: CircleAvatar(
                         radius: 60,
                         backgroundColor: Colors.grey[200],
-                        backgroundImage: CachedNetworkImageProvider(photoURL),
+                        backgroundImage:
+                            ImageUtils.isAssetPath(photoURL)
+                                ? AssetImage(photoURL) as ImageProvider
+                                : CachedNetworkImageProvider(photoURL),
                       ),
                     ),
                   ),

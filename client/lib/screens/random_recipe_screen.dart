@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/recipe.dart';
 import '../providers/recipe_provider.dart';
+import '../services/local_storage_service.dart';
+import '../services/recipe_service.dart';
 import '../theme/theme.dart';
 
 /// A screen that fetches a random recipe and navigates to its detail page.
 /// Used for daily inspiration notifications to show a specific recipe.
+/// 
+/// Optimized for fast navigation:
+/// 1. Check in-memory cache (instant)
+/// 2. Check local Hive storage (fast I/O)
+/// 3. Fetch single random recipe from API (fast, only 1 recipe)
+/// 4. Trigger full discover cache refresh in background (non-blocking)
 class RandomRecipeScreen extends StatefulWidget {
   const RandomRecipeScreen({super.key});
 
@@ -29,12 +38,10 @@ class _RandomRecipeScreenState extends State<RandomRecipeScreen> {
         listen: false,
       );
 
-      // First, try to get a daily random recipe from discover cache if available
-      // This avoids making a backend call if the discover cache is already populated
+      // STEP 1: Try in-memory cache first (instant - no I/O)
       final cachedRecipe = recipeProvider.getDailyRandomRecipeFromCache();
       if (cachedRecipe != null) {
         if (!mounted) return;
-        // Navigate directly to recipe detail screen using cached recipe
         Navigator.pushReplacementNamed(
           context,
           '/recipeDetail',
@@ -43,57 +50,69 @@ class _RandomRecipeScreenState extends State<RandomRecipeScreen> {
         return;
       }
 
-      // If discover cache is not available, ensure it's populated first
-      // This will use local cache if available, or fetch from backend
-      await recipeProvider.fetchSessionDiscoverCache(forceRefresh: false);
-
-      // Try again from discover cache after fetching
-      final recipeFromCache = recipeProvider.getDailyRandomRecipeFromCache();
-      if (recipeFromCache != null) {
-        if (!mounted) return;
-        Navigator.pushReplacementNamed(
-          context,
-          '/recipeDetail',
-          arguments: recipeFromCache,
-        );
-        return;
+      // STEP 2: Try local Hive storage directly (fast I/O, ~50-100ms)
+      // This bypasses the full fetchSessionDiscoverCache which waits for network
+      final localStorage = LocalStorageService();
+      final localCache = await localStorage.loadDiscoverCache();
+      
+      if (localCache.isNotEmpty) {
+        // Get daily random recipe from local cache using same algorithm
+        final dailyRecipe = _getDailyRandomFromList(localCache);
+        if (dailyRecipe != null && mounted) {
+          // Populate provider cache in background (non-blocking)
+          recipeProvider.setDiscoverCacheFromList(localCache);
+          
+          Navigator.pushReplacementNamed(
+            context,
+            '/recipeDetail',
+            arguments: dailyRecipe,
+          );
+          return;
+        }
       }
 
-      // Fallback: Fetch a random recipe directly from backend (limit 1, random=true)
-      // This happens if discover cache fetch failed or returned empty
-      await recipeProvider.searchExternalRecipes(
-        query: '',
-        tag: '',
-        page: 1,
+      // STEP 3: Fetch single random recipe from API (fast - only 1 recipe)
+      // This is much faster than fetching 500 recipes
+      if (!mounted) return;
+      
+      final response = await RecipeService.searchExternalRecipes(
         limit: 1,
         random: true,
-        forceRefresh: true,
       );
 
       if (!mounted) return;
 
-      // Get the first recipe from the results
-      final recipes = recipeProvider.generatedRecipes;
-      if (recipes.isNotEmpty) {
-        final randomRecipe = recipes.first;
-        // Navigate to recipe detail screen
-        Navigator.pushReplacementNamed(
-          context,
-          '/recipeDetail',
-          arguments: randomRecipe,
-        );
-      } else {
-        // If no recipe found, navigate to discover screen
-        if (mounted) {
+      if (response.success && response.data != null) {
+        final data = response.data!;
+        final recipesList = data['recipes'];
+        
+        if (recipesList != null && recipesList is List && recipesList.isNotEmpty) {
+          final recipe = Recipe.fromJson(recipesList.first as Map<String, dynamic>);
+          
+          // Trigger full discover cache refresh in background (non-blocking)
+          // This prepares the cache for next time without blocking navigation
+          recipeProvider.fetchSessionDiscoverCache(forceRefresh: false);
+          
           Navigator.pushReplacementNamed(
             context,
-            '/discover',
-            arguments: {'random': 'true'},
+            '/recipeDetail',
+            arguments: recipe,
           );
+          return;
         }
+      }
+
+      // STEP 4: Fallback - navigate to discover screen
+      if (mounted) {
+        Navigator.pushReplacementNamed(
+          context,
+          '/discover',
+          arguments: {'random': 'true'},
+        );
       }
     } catch (e) {
       // On error, navigate to discover screen as fallback
+      debugPrint('Error in random recipe navigation: $e');
       if (mounted) {
         Navigator.pushReplacementNamed(
           context,
@@ -102,6 +121,19 @@ class _RandomRecipeScreenState extends State<RandomRecipeScreen> {
         );
       }
     }
+  }
+
+  /// Get daily random recipe from a list using deterministic selection
+  /// Same algorithm as RecipeProvider.getDailyRandomRecipeFromCache()
+  Recipe? _getDailyRandomFromList(List<Recipe> recipes) {
+    if (recipes.isEmpty) return null;
+    
+    final now = DateTime.now();
+    final start = DateTime(now.year, 1, 1);
+    final dayOfYear = now.difference(start).inDays + 1;
+    final dailyIndex = (now.year * 365 + dayOfYear) % recipes.length;
+    
+    return recipes[dailyIndex];
   }
 
   @override

@@ -13,6 +13,7 @@ import '../providers/recipe_provider.dart';
 import '../models/recipe.dart';
 import '../theme/theme.dart';
 import '../components/inline_banner_ad.dart';
+import '../components/pull_to_refresh_hint.dart';
 
 class MyRecipesScreen extends StatefulWidget {
   const MyRecipesScreen({super.key});
@@ -61,7 +62,9 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
         listen: false,
       );
       _recipesChangedSubscription = recipeProvider.onRecipesChanged.listen((_) {
-        _loadRecipes(forceRefresh: true);
+        // Provider already updates userRecipes optimistically via createUserRecipe/deleteUserRecipe
+        // Just trigger a rebuild to reflect the changes without network fetch
+        if (mounted) setState(() {});
       });
     });
   }
@@ -281,7 +284,8 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                     });
 
                     if (!recipeProvider.isLoading && filteredRecipes.isEmpty) {
-                      return RefreshIndicator(
+                      final colorScheme = Theme.of(context).colorScheme;
+                      return RefreshIndicatorWithHint(
                         onRefresh: () => _loadRecipes(forceRefresh: true),
                         child: SingleChildScrollView(
                           physics: const AlwaysScrollableScrollPhysics(),
@@ -289,68 +293,38 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                             height: MediaQuery.of(context).size.height * 0.7,
                             child: Center(
                               child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.responsive(context),
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 32),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
                                       allRecipes.isEmpty
                                           ? Icons.restaurant_menu_rounded
-                                          : Icons.search_off,
-                                      size: AppSizing.responsiveIconSize(
-                                        context,
-                                        mobile: 64,
-                                        tablet: 80,
-                                        desktop: 96,
-                                      ),
-                                      color: Colors.grey,
+                                          : Icons.search_off_rounded,
+                                      size: 64,
+                                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                                     ),
-                                    SizedBox(
-                                      height: AppSpacing.responsive(
-                                        context,
-                                        mobile: 16,
-                                        tablet: 20,
-                                        desktop: 24,
-                                      ),
-                                    ),
+                                    const SizedBox(height: 20),
                                     Text(
                                       allRecipes.isEmpty
-                                          ? 'No recipes found'
+                                          ? 'No recipes yet'
                                           : 'No matching recipes',
                                       style: TextStyle(
-                                        fontSize:
-                                            AppTypography.responsiveHeadingSize(
-                                              context,
-                                              mobile: 18,
-                                              tablet: 22,
-                                              desktop: 26,
-                                            ),
-                                        color: Colors.grey,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurfaceVariant,
                                       ),
                                     ),
-                                    SizedBox(
-                                      height: AppSpacing.responsive(
-                                        context,
-                                        mobile: 8,
-                                        tablet: 10,
-                                        desktop: 12,
-                                      ),
-                                    ),
-                                    if (allRecipes.isEmpty)
-                                      Text(
-                                        'Add your first recipe to get started',
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      allRecipes.isEmpty
+                                          ? 'Add your first recipe to get started'
+                                          : 'Try adjusting your search or filters',
                                         style: TextStyle(
-                                          fontSize:
-                                              AppTypography.responsiveCaptionSize(
-                                                context,
-                                                mobile: 14,
-                                                tablet: 16,
-                                                desktop: 18,
+                                        fontSize: 15,
+                                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                                               ),
-                                          color: Colors.grey.shade600,
-                                        ),
+                                      textAlign: TextAlign.center,
                                       ),
                                   ],
                                 ),
@@ -376,7 +350,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                           Expanded(
                             child: Stack(
                               children: [
-                                RefreshIndicator(
+                                RefreshIndicatorWithHint(
                                   onRefresh:
                                       () => _loadRecipes(forceRefresh: true),
                                   child:
@@ -522,6 +496,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                 isLoading: recipeProvider.isLoading,
                 onPreviousPage: _goToPreviousPage,
                 onNextPage: _goToNextPage,
+                onGoToPage: _goToPage,
               );
             },
           ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:recipease/components/custom_app_bar.dart';
 import '../theme/theme.dart';
+import '../components/pull_to_refresh_hint.dart';
 
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
@@ -41,7 +42,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
 
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 300),
     );
     _animationController.forward();
 
@@ -89,7 +90,6 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
   }
 
   Future<void> _refreshCollection() async {
-    print("Refreshing collection: ${_collection.id}");
     setState(() => _isLoading = true);
     try {
       // Try getCollection which will use cached/local storage first (works offline)
@@ -97,18 +97,13 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
       final updatedCollection = await _collectionService.getCollection(
         _collection.id,
       );
-      print("Updated collection: ${updatedCollection?.recipes.length} recipes");
       if (updatedCollection != null && mounted) {
         setState(() {
           _collection = updatedCollection;
           _filteredRecipes = _collection.recipes;
           _filterRecipes(_searchQuery);
         });
-        print(
-          "Collection updated in state: ${_collection.recipes.length} recipes",
-        );
       } else {
-        print("Failed to get updated collection - using current state");
         // If getCollection fails, at least update filtered recipes from current collection
         setState(() {
           _filteredRecipes = _collection.recipes;
@@ -116,7 +111,6 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
         });
       }
     } catch (e) {
-      print("Error refreshing collection: $e");
       // On error, just update filtered recipes from current collection
       setState(() {
         _filteredRecipes = _collection.recipes;
@@ -498,7 +492,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
           // Main content
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
+              : RefreshIndicatorWithHint(
                 onRefresh: _refreshCollection,
                 child: CustomScrollView(
                   controller: _scrollController,

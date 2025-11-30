@@ -6,6 +6,7 @@ import 'package:recipease/components/persistent_banner_layout.dart';
 import 'package:recipease/firebase_options.dart';
 import 'package:recipease/screens/my_recipes_screen.dart';
 import 'package:recipease/screens/discover_recipes.dart';
+import 'package:recipease/screens/community_screen.dart';
 import 'package:recipease/screens/generate_recipe_screen.dart';
 import 'package:recipease/screens/home_screen.dart';
 import 'package:recipease/screens/recipe_edit_screen.dart';
@@ -32,6 +33,7 @@ import 'package:recipease/components/dynamic_background.dart';
 import 'package:recipease/models/recipe.dart';
 import 'package:recipease/models/recipe_collection.dart';
 import 'package:recipease/services/collection_service.dart';
+import 'package:recipease/services/recipe_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:recipease/services/permission_service.dart';
@@ -99,26 +101,10 @@ void main() async {
   // Initialize timezone database for scheduled notifications (optional)
   tz.initializeTimeZones();
   try {
-    final dynamic tzValue = await FlutterTimezone.getLocalTimezone();
-    String resolvedTz;
-    if (tzValue is String) {
-      resolvedTz = tzValue;
-    } else {
-      // Try common field names on TimezoneInfo; fall back to toString()
-      try {
-        // ignore: avoid_dynamic_calls
-        resolvedTz =
-            (tzValue.name as String?) ??
-            // ignore: avoid_dynamic_calls
-            (tzValue.ianaName as String?) ??
-            // ignore: avoid_dynamic_calls
-            (tzValue.timezone as String?) ??
-            tzValue.toString();
-      } catch (_) {
-        resolvedTz = tzValue.toString();
-      }
-    }
-    tz.setLocalLocation(tz.getLocation(resolvedTz));
+    final tzInfo = await FlutterTimezone.getLocalTimezone();
+    // FlutterTimezone 5.x returns TimezoneInfo with 'identifier' property (IANA timezone)
+    final String timezoneName = tzInfo.identifier;
+    tz.setLocalLocation(tz.getLocation(timezoneName));
   } catch (_) {
     // Fallback: keep default tz.local
   }
@@ -367,14 +353,24 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       FirebaseMessaging.onMessage.listen((message) {
         final notif = message.notification;
         if (notif != null) {
+          // Build args from message data
+          final Map<String, dynamic> args = {};
+
+          // Handle recipe milestone notifications
+          if (message.data['recipeId'] != null) {
+            args['recipeId'] = message.data['recipeId'];
+          }
+          // Handle query-based notifications (discover, etc.)
+          if (message.data['query'] != null || message.data['tag'] != null) {
+            args['query'] =
+                (message.data['query'] as String?) ??
+                (message.data['tag'] as String?) ??
+                '';
+          }
+
           final payload = jsonEncode({
             'route': (message.data['route'] as String?) ?? '/home',
-            'args': {
-              'query':
-                  (message.data['query'] as String?) ??
-                  (message.data['tag'] as String?) ??
-                  '',
-            },
+            'args': args,
           });
 
           _localNotifications.show(
@@ -484,19 +480,42 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   // Perform the actual navigation
-  void _performNavigation(String route, Map<String, dynamic>? args) {
+  void _performNavigation(String route, Map<String, dynamic>? args) async {
     try {
+      final navigatorState = navigatorKey.currentState;
+      if (navigatorState == null) {
+        return;
+      }
+
+      // Handle recipe detail navigation - need to fetch recipe first
+      if (route == '/recipeDetail' &&
+          args != null &&
+          args['recipeId'] != null) {
+        final recipeId = args['recipeId'] as String;
+        try {
+          final response = await RecipeService.getRecipeById(recipeId);
+          if (response.success && response.data != null) {
+            navigatorState.pushNamed('/recipeDetail', arguments: response.data);
+          } else {
+            debugPrint(
+              'Failed to fetch recipe for notification: ${response.message}',
+            );
+            // Fallback to home if recipe not found
+            navigatorState.pushNamed('/home');
+          }
+        } catch (e) {
+          debugPrint('Error fetching recipe for notification: $e');
+          navigatorState.pushNamed('/home');
+        }
+        return;
+      }
+
       // For routes that expect Map<String, String>, convert args
       Map<String, String>? stringArgs;
       if (args != null && args.isNotEmpty) {
         stringArgs = args.map(
           (key, value) => MapEntry(key, value?.toString() ?? ''),
         );
-      }
-
-      final navigatorState = navigatorKey.currentState;
-      if (navigatorState == null) {
-        return;
       }
 
       navigatorState.pushNamed(route, arguments: stringArgs ?? args);
@@ -780,6 +799,34 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
                 return PersistentBannerLayout(
                   child: DiscoverRecipesScreen(
+                    initialQuery: initialQuery,
+                    initialDifficulty: initialDifficulty,
+                    initialTag: initialTag,
+                    displayQuery: displayQuery,
+                  ),
+                );
+              },
+              '/community': (context) {
+                final args = ModalRoute.of(context)?.settings.arguments;
+                String? initialQuery;
+                String? initialDifficulty;
+                String? initialTag;
+                String? displayQuery;
+
+                if (args is Map) {
+                  try {
+                    initialQuery =
+                        (args['query'] as String?) ?? (args['tag'] as String?);
+                    initialDifficulty = args['difficulty'] as String?;
+                    displayQuery = args['displayQuery'] as String?;
+                    initialTag = null;
+                  } catch (_) {
+                    // ignore malformed args
+                  }
+                }
+
+                return PersistentBannerLayout(
+                  child: CommunityScreen(
                     initialQuery: initialQuery,
                     initialDifficulty: initialDifficulty,
                     initialTag: initialTag,

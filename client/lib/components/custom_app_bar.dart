@@ -45,16 +45,23 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isTabletOrDesktop =
+        AppBreakpoints.isTablet(context) || AppBreakpoints.isDesktop(context);
+
     // Show full title on tablet/desktop, short title on mobile
     final displayTitle =
-        (fullTitle != null &&
-                (AppBreakpoints.isTablet(context) ||
-                    AppBreakpoints.isDesktop(context)))
-            ? fullTitle!
-            : title;
+        (fullTitle != null && isTabletOrDesktop) ? fullTitle! : title;
+
+    // Always show full credits pill - users should see their credit counts
+    const useCompactCredits = false;
+
+    // Consistent spacing values for all screens
+    final double actionsEndPadding = isTabletOrDesktop ? 8.0 : 4.0;
 
     return AppBar(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      // Use NavigationToolbar.kMiddleSpacing (16.0) for consistent title spacing
+      titleSpacing: NavigationToolbar.kMiddleSpacing,
       title:
           useLogo
               ? Image.asset(
@@ -80,6 +87,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
       centerTitle: centerTitle,
       automaticallyImplyLeading: automaticallyImplyLeading,
@@ -97,13 +105,16 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         if (showCreditsPill)
           Padding(
-            padding: const EdgeInsets.only(left: 4.0),
+            padding: const EdgeInsets.only(left: 8.0),
             child: CreditsPill(
+              compact: useCompactCredits,
               onTap: () => Navigator.pushNamed(context, '/subscription'),
             ),
           ),
         if (floatingButtons != null) ...floatingButtons!,
         if (actions != null) ...actions!,
+        // Consistent end padding for actions
+        SizedBox(width: actionsEndPadding),
       ],
       iconTheme: IconThemeData(
         color: foregroundColor ?? theme.colorScheme.onSurface,

@@ -18,6 +18,8 @@ import 'package:showcaseview/showcaseview.dart';
 import '../components/app_tutorial.dart';
 import '../services/tutorial_service.dart';
 import '../components/inline_banner_ad.dart';
+import '../utils/image_utils.dart';
+import '../components/offline_banner.dart';
 
 /// Lightweight model representing a quick-access category on the home screen.
 class _CategoryItem {
@@ -43,9 +45,8 @@ class _HomeScreenState extends State<HomeScreen>
   final String username =
       FirebaseAuth.instance.currentUser?.displayName ?? 'User';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  // Fallback hero image URL (used if dynamic UI doesn't provide one)
-  static const String _defaultHeroImageUrl =
-      'https://res.cloudinary.com/client-images/image/upload/v1763258640/Recipe%20App/Gemini_Generated_Image_1isjyd1isjyd1isj_jv1rvc.png';
+  // Local hero image asset for faster loading
+  static const String _localHeroImageAsset = 'assets/images/home_hero.png';
   bool _isBooting = true;
   StreamSubscription<void>? _recipesChangedSubscription;
   Future<List<RecipeCollection>>?
@@ -56,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen>
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 300),
     );
     _animationController.forward();
 
@@ -90,12 +91,16 @@ class _HomeScreenState extends State<HomeScreen>
           recipeProvider.setGeneratedRecipesFromCache(discover);
         });
 
+        // Fetch community recipes for carousel
+        recipeProvider.fetchSessionCommunityCache();
+
         // Ensure first frame shows placeholders even before provider flips loading
         if (mounted) setState(() => _isBooting = false);
       }
     });
 
-    // Listen for cross-screen recipe updates to refresh all sections
+    // Listen for cross-screen recipe updates to trigger UI rebuild
+    // Note: Provider already updates data optimistically, no need for network fetch
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final recipeProvider = Provider.of<RecipeProvider>(
         context,
@@ -103,7 +108,8 @@ class _HomeScreenState extends State<HomeScreen>
       );
       _recipesChangedSubscription = recipeProvider.onRecipesChanged.listen((_) {
         if (mounted) {
-          _refreshAllSections(context);
+          // Just trigger rebuild - provider already has updated data
+          setState(() {});
         }
       });
     });
@@ -132,36 +138,25 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _startTutorial() {
     try {
-      final recipeProvider = Provider.of<RecipeProvider>(
-        context,
-        listen: false,
-      );
-      // Start with navigation drawer menu and credit balance (most important UI elements)
+      // Start with home hero section (welcome message)
       final List<GlobalKey> tutorialTargets = [
-        TutorialKeys.navDrawerMenu,
-        TutorialKeys.creditBalance,
+        TutorialKeys.homeHero,
       ];
 
-      // Then add home hero section
-      tutorialTargets.add(TutorialKeys.homeHero);
+      // Then navigation drawer menu and credit balance
+      tutorialTargets.addAll([
+        TutorialKeys.navDrawerMenu,
+        TutorialKeys.creditBalance,
+      ]);
 
-      // Only include "Your Recipes" if the user has saved recipes
-      if (recipeProvider.userRecipes.isNotEmpty) {
+      // Always include "Your Recipes" - TutorialShowcase is always rendered at parent level
         tutorialTargets.add(TutorialKeys.homeYourRecipes);
-      }
 
-      // Only include "Discover" if there are random recipes to show
-      final randomRecipes =
-          recipeProvider.generatedRecipes
-              .where(
-                (r) => !recipeProvider.userRecipes.any((u) => u.id == r.id),
-              )
-              .take(10)
-              .toList();
+      // Always include "Community" - TutorialShowcase is always rendered at parent level
+      tutorialTargets.add(TutorialKeys.homeCommunity);
 
-      if (randomRecipes.isNotEmpty) {
+      // Always include "Discover" section
         tutorialTargets.add(TutorialKeys.homeDiscover);
-      }
 
       // Collections are always shown (even if empty state), so safe to include
       tutorialTargets.add(TutorialKeys.homeCollections);
@@ -184,24 +179,35 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  // Refresh all home sections at once
-  void _refreshAllSections(BuildContext context) {
+  // Refresh only user data (recipes and collections)
+  void _refreshUserData(BuildContext context) {
     final recipeProvider = context.read<RecipeProvider>();
     final collectionService = context.read<CollectionService>();
 
     // Trigger parallel refreshes (no await needed for button callbacks)
     recipeProvider.loadUserRecipes(limit: 20, forceRefresh: true);
+    
+    // Update cached collections future
+    _collectionsFuture = collectionService.getCollections(forceRefresh: true);
+
+    // Ensure widgets depending on FutureBuilder rebuild
+    if (mounted) setState(() {});
+  }
+
+  // Refresh all home sections at once
+  void _refreshAllSections(BuildContext context) {
+    final recipeProvider = context.read<RecipeProvider>();
+    
+    // Refresh user data
+    _refreshUserData(context);
+    
+    // Refresh discover recipes (random) - only on manual refresh
     recipeProvider.searchExternalRecipes(
       query: '',
       limit: 50,
       forceRefresh: true,
       random: true,
     );
-    // Update cached collections future
-    _collectionsFuture = collectionService.getCollections(forceRefresh: true);
-
-    // Ensure widgets depending on FutureBuilder rebuild
-    setState(() {});
   }
 
   @override
@@ -235,6 +241,13 @@ class _HomeScreenState extends State<HomeScreen>
       drawer: const NavDrawer(),
       body: Stack(
         children: [
+          // Show offline banner at top when offline
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: OfflineBanner(),
+          ),
           SafeArea(
             child: Consumer<UserProfileProvider>(
               builder: (context, profile, _) {
@@ -294,7 +307,12 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                             _buildHeroSection(context),
                             // --- Your Recipes carousel ---
-                            Consumer<DynamicUiProvider>(
+                            // Wrap with TutorialShowcase at this level so GlobalKey is always attached
+                            TutorialShowcase(
+                              showcaseKey: TutorialKeys.homeYourRecipes,
+                              title: 'Your Digital Cookbook 📚',
+                              description: 'All your saved, created, and imported recipes in one place. Available offline!',
+                              child: Consumer<DynamicUiProvider>(
                               builder: (context, dynamicUi, _) {
                                 if (!(dynamicUi.config?.isSectionVisible(
                                       'yourRecipesCarousel',
@@ -305,49 +323,114 @@ class _HomeScreenState extends State<HomeScreen>
                                 return Consumer<RecipeProvider>(
                                   builder: (context, recipeProvider, _) {
                                     final saved = recipeProvider.userRecipes;
-                                    // Show loading if loading user recipes or still booting
-                                    if (recipeProvider.isLoading &&
-                                        saved.isEmpty) {
+                                      // Show loading if still booting or loading
+                                      if (_isBooting || recipeProvider.isLoading) {
                                       return _buildSectionLoading(
                                         context,
                                         title: 'Your Recipes',
                                         height: 180,
                                       );
                                     }
-                                    if (_isBooting && saved.isEmpty) {
-                                      return _buildSectionLoading(
+                                      // Show empty state if no recipes (no network error - recipes are stored locally)
+                                      if (saved.isEmpty) {
+                                        return _buildSectionMessage(
                                         context,
                                         title: 'Your Recipes',
+                                          message: 'No recipes yet. Add your first recipe to get started!',
+                                          leadingIcon: Icons.restaurant_menu_rounded,
+                                          onRetry: null,
+                                          secondaryActionLabel: 'Add a Recipe',
+                                          secondaryAction: () {
+                                            Navigator.pushNamed(context, '/import');
+                                          },
+                                        );
+                                      }
+                                      return _buildRecipeCarousel(
+                                        context,
+                                        title: 'Your Recipes',
+                                        recipes: saved.take(10).toList(),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                            SizedBox(height: AppSpacing.responsive(context)),
+                            // --- Community Recipes carousel ---
+                            // Wrap with TutorialShowcase at this level so GlobalKey is always attached
+                            TutorialShowcase(
+                              showcaseKey: TutorialKeys.homeCommunity,
+                              title: 'Community Recipes 👥',
+                              description:
+                                  'Discover recipes shared by other users. Save your favorites and get inspired by the community!',
+                              child: Consumer<DynamicUiProvider>(
+                                builder: (context, dynamicUi, _) {
+                                  if (!(dynamicUi.config?.isSectionVisible(
+                                        'communityCarousel',
+                                      ) ??
+                                      true)) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Consumer<RecipeProvider>(
+                                    builder: (context, recipeProvider, _) {
+                                      final community = recipeProvider.communityRecipes
+                                          .take(10)
+                                          .toList();
+                                      // Show loading if still booting or loading
+                                      if (_isBooting || recipeProvider.isLoading) {
+                                        return _buildSectionLoading(
+                                          context,
+                                          title: 'Community',
                                         height: 180,
                                       );
                                     }
-                                    if (saved.isEmpty &&
+                                      // Show error if failed to load
+                                      if (community.isEmpty &&
                                         recipeProvider.error != null) {
+                                        final isOffline = recipeProvider.error!.isNetworkError;
                                       return _buildSectionMessage(
                                         context,
-                                        title: 'Your Recipes',
-                                        message:
-                                            recipeProvider
-                                                .error!
-                                                .userFriendlyMessage,
+                                          title: 'Community',
+                                          message: isOffline
+                                              ? 'Connect to browse community recipes'
+                                              : 'Couldn\'t load community recipes. Tap to retry.',
+                                          leadingIcon: isOffline ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
                                         onRetry: () {
                                           _refreshAllSections(context);
                                         },
                                       );
                                     }
-                                    if (saved.isEmpty) return const SizedBox();
-                                    return _buildRecipeCarousel(
+                                      // Show empty state if no community recipes available
+                                      if (community.isEmpty) {
+                                        return _buildSectionMessage(
                                       context,
-                                      title: 'Your Recipes',
-                                      recipes: saved.take(10).toList(),
+                                          title: 'Community',
+                                          message: 'No community recipes available yet',
+                                          leadingIcon: Icons.people_outline_rounded,
+                                          onRetry: () {
+                                            _refreshAllSections(context);
+                                          },
+                                        );
+                                      }
+                                      return _buildCommunityCarousel(
+                                        context,
+                                        title: 'Community',
+                                        recipes: community,
                                     );
                                   },
                                 );
                               },
+                              ),
                             ),
                             SizedBox(height: AppSpacing.responsive(context)),
                             // --- Discover & Try carousel ---
-                            Consumer<DynamicUiProvider>(
+                            // Wrap with TutorialShowcase at this level so GlobalKey is always attached
+                            TutorialShowcase(
+                              showcaseKey: TutorialKeys.homeDiscover,
+                              title: 'Explore & Inspire 🔍',
+                              description:
+                                  'Discover new recipes to try! Browse trending dishes and find your next favorite meal.',
+                              child: Consumer<DynamicUiProvider>(
                               builder: (context, dynamicUi, _) {
                                 if (!(dynamicUi.config?.isSectionVisible(
                                       'discoverCarousel',
@@ -366,37 +449,42 @@ class _HomeScreenState extends State<HomeScreen>
                                             )
                                             .take(10)
                                             .toList();
-                                    // Show loading if loading discover recipes or still booting
-                                    if (recipeProvider.isLoading &&
-                                        random.isEmpty) {
+                                      // Show loading if still booting or loading
+                                      if (_isBooting || recipeProvider.isLoading) {
                                       return _buildSectionLoading(
                                         context,
                                         title: 'Discover & Try',
                                         height: 180,
                                       );
                                     }
-                                    if (_isBooting && random.isEmpty) {
-                                      return _buildSectionLoading(
+                                      // Show error if failed to load
+                                      if (random.isEmpty &&
+                                          recipeProvider.error != null) {
+                                        final isOffline = recipeProvider.error!.isNetworkError;
+                                        return _buildSectionMessage(
                                         context,
                                         title: 'Discover & Try',
-                                        height: 180,
+                                          message: isOffline
+                                              ? 'Connect to discover new recipes'
+                                              : 'Couldn\'t load recipes. Tap to retry.',
+                                          leadingIcon: isOffline ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
+                                          onRetry: () {
+                                            _refreshAllSections(context);
+                                          },
                                       );
                                     }
-                                    if (random.isEmpty &&
-                                        recipeProvider.error != null) {
+                                      // Show empty state if no discover recipes available
+                                      if (random.isEmpty) {
                                       return _buildSectionMessage(
                                         context,
                                         title: 'Discover & Try',
-                                        message:
-                                            recipeProvider
-                                                .error!
-                                                .userFriendlyMessage,
+                                          message: 'No recipes to discover yet',
+                                          leadingIcon: Icons.explore_outlined,
                                         onRetry: () {
                                           _refreshAllSections(context);
                                         },
                                       );
                                     }
-                                    if (random.isEmpty) return const SizedBox();
                                     return _buildRecipeCarousel(
                                       context,
                                       title: 'Discover & Try',
@@ -405,6 +493,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   },
                                 );
                               },
+                              ),
                             ),
                             SizedBox(height: AppSpacing.responsive(context)),
                             // --- Collections carousel ---
@@ -499,13 +588,28 @@ class _HomeScreenState extends State<HomeScreen>
 
                     return Consumer<DynamicUiProvider>(
                       builder: (context, dynamicUi, _) {
-                        // Get hero image from dynamic UI config, fallback to default
-                        final heroImageUrl =
-                            dynamicUi.config?.heroImageUrl ??
-                            _defaultHeroImageUrl;
+                        // Check if dynamic UI config provides a custom hero image
+                        final customHero = dynamicUi.config?.heroImageUrl;
+                        
+                        // Determine image source: use custom if provided, otherwise default local asset
+                        final heroImage = (customHero != null && customHero.isNotEmpty)
+                            ? customHero
+                            : _localHeroImageAsset;
+                        
+                        // Check if it's a local asset (starts with 'assets/') or network URL
+                        final isLocalAsset = heroImage.startsWith('assets/');
 
+                        if (isLocalAsset) {
+                          return Image.asset(
+                            heroImage,
+                            fit: BoxFit.cover,
+                            filterQuality: FilterQuality.high,
+                          );
+                        }
+
+                        // Network image with fallback to default local asset
                         return Image.network(
-                          heroImageUrl,
+                          heroImage,
                           fit: BoxFit.cover,
                           cacheWidth:
                               (constraints.maxWidth * devicePixelRatio).round(),
@@ -514,73 +618,11 @@ class _HomeScreenState extends State<HomeScreen>
                                   .round(),
                           filterQuality: FilterQuality.high,
                           errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.bottomLeft,
-                                  end: Alignment.topRight,
-                                  colors: [
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.primary.withValues(
-                                      alpha:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.alphaMedium,
-                                    ),
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.primary.withValues(
-                                      alpha:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.alphaHigh,
-                                    ),
-                                    Theme.of(context).colorScheme.primary,
-                                  ],
-                                ),
-                              ),
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimary,
-                                      size: 48,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Failed to load image',
-                                      style: TextStyle(
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.onPrimary,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Please check the image file',
-                                      style: TextStyle(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onPrimary.withValues(
-                                          alpha:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.alphaHigh,
-                                        ),
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            // Fallback to local asset on network error
+                            return Image.asset(
+                              _localHeroImageAsset,
+                              fit: BoxFit.cover,
+                              filterQuality: FilterQuality.high,
                             );
                           },
                         );
@@ -969,6 +1011,12 @@ class _HomeScreenState extends State<HomeScreen>
         Colors.purple,
       ),
       _CategoryItem(
+        'Community',
+        Icons.people_rounded,
+        '/community',
+        const Color(0xFF6C5CE7),
+      ),
+      _CategoryItem(
         'Discover Recipes',
         Icons.explore,
         '/discover',
@@ -997,34 +1045,16 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   /// Builds a recipe carousel section with a horizontal list of recipe cards.
+  /// Note: TutorialShowcase wrappers are applied at parent level in build()
   Widget _buildRecipeCarousel(
     BuildContext context, {
     required String title,
     required List<Recipe> recipes,
   }) {
     final theme = Theme.of(context);
+    final isYourRecipes = title.contains('Your Recipes');
 
-    // Determine which showcase key to use based on title
-    final showcaseKey =
-        title.contains('Your Recipes')
-            ? TutorialKeys.homeYourRecipes
-            : TutorialKeys.homeDiscover;
-
-    final showcaseTitle =
-        title.contains('Your Recipes')
-            ? 'Your Digital Cookbook 📚'
-            : 'Explore & Inspire 🔍';
-
-    final showcaseDescription =
-        title.contains('Your Recipes')
-            ? 'All your saved, created, and imported recipes in one place. Available offline!'
-            : 'Find trending recipes, filter by diet (Keto, Vegan), and discover new favorites.';
-
-    return TutorialShowcase(
-      showcaseKey: showcaseKey,
-      title: showcaseTitle,
-      description: showcaseDescription,
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
@@ -1032,7 +1062,7 @@ class _HomeScreenState extends State<HomeScreen>
             child: GestureDetector(
               onTap: () {
                 // Navigate based on the title
-                if (title.contains('Your Recipes')) {
+              if (isYourRecipes) {
                   Navigator.pushNamed(context, '/myRecipes');
                 } else if (title.contains('Discover')) {
                   Navigator.pushNamed(context, '/discover');
@@ -1079,6 +1109,250 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
         ],
+    );
+  }
+
+  /// Builds a community recipe carousel section with user profile pics on cards.
+  /// Note: TutorialShowcase wrapper is applied at the parent level in build()
+  Widget _buildCommunityCarousel(
+    BuildContext context, {
+    required String title,
+    required List<Recipe> recipes,
+  }) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(context, '/community');
+            },
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: AppTypography.responsiveFontSize(
+                        context,
+                        mobile: 20,
+                        tablet: 22,
+                        desktop: 24,
+                      ),
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 180,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: recipes.length,
+            separatorBuilder: (_, __) => SizedBox(width: AppSpacing.sm),
+            itemBuilder: (context, index) {
+              final recipe = recipes[index];
+              return _buildCommunityRecipeCard(context, recipe);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Builds a community recipe card with user profile pic in top right corner.
+  Widget _buildCommunityRecipeCard(BuildContext context, Recipe recipe) {
+    final theme = Theme.of(context);
+    final cardWidth =
+        AppBreakpoints.isDesktop(context)
+            ? 220.0
+            : AppBreakpoints.isTablet(context)
+            ? 180.0
+            : 140.0;
+    
+    // Get user photo URL and display name from recipe
+    final photoUrl = recipe.sharedByPhotoUrl;
+    final displayName = recipe.sharedByDisplayName ?? 'User';
+    
+    return GestureDetector(
+      onLongPressStart: (details) {
+        _showRecipeContextMenu(context, recipe, details.globalPosition);
+      },
+      child: InkWell(
+        onTap:
+            () => Navigator.pushNamed(
+              context,
+              '/recipeDetail',
+              arguments: recipe,
+            ),
+        child: Container(
+          width: cardWidth,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              AppBreakpoints.isDesktop(context) ? 16 : 12,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: AppBreakpoints.isDesktop(context) ? 6 : 4,
+                offset: Offset(0, AppBreakpoints.isDesktop(context) ? 3 : 2),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(
+              AppBreakpoints.isDesktop(context) ? 16 : 12,
+            ),
+            child: Stack(
+              children: [
+                // Image
+                Positioned.fill(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final devicePixelRatio =
+                          MediaQuery.of(context).devicePixelRatio;
+                      return Image.network(
+                        recipe.imageUrl,
+                        fit: BoxFit.cover,
+                        cacheWidth:
+                            (constraints.maxWidth * devicePixelRatio).round(),
+                        cacheHeight:
+                            (constraints.maxHeight * devicePixelRatio).round(),
+                        filterQuality: FilterQuality.high,
+                        errorBuilder:
+                            (_, __, ___) => Container(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.secondary.withValues(
+                                alpha:
+                                    Theme.of(context).colorScheme.overlayMedium,
+                              ),
+                              child: Icon(
+                                Icons.restaurant,
+                                size: AppSizing.responsiveIconSize(
+                                  context,
+                                  mobile: 40,
+                                  tablet: 48,
+                                  desktop: 56,
+                                ),
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                      );
+                    },
+                  ),
+                ),
+                // User profile pic in top right corner
+                Positioned(
+                  top: AppBreakpoints.isDesktop(context) ? 10 : 8,
+                  right: AppBreakpoints.isDesktop(context) ? 10 : 8,
+                  child: Tooltip(
+                    message: displayName,
+                    child: Container(
+                      width: AppBreakpoints.isDesktop(context) ? 36 : 28,
+                      height: AppBreakpoints.isDesktop(context) ? 36 : 28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: ImageUtils.buildProfileImage(
+                          imageUrl: photoUrl,
+                          width: AppBreakpoints.isDesktop(context) ? 36 : 28,
+                          height: AppBreakpoints.isDesktop(context) ? 36 : 28,
+                          fit: BoxFit.cover,
+                          errorWidget: Container(
+                            color: theme.colorScheme.primaryContainer,
+                            child: Icon(
+                              Icons.person,
+                              size: AppBreakpoints.isDesktop(context) ? 20 : 16,
+                              color: theme.colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // Gradient overlay bottom
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: AppBreakpoints.isDesktop(context) ? 80 : 60,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.54),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Title
+                Positioned(
+                  left: AppBreakpoints.isDesktop(context) ? 12 : 8,
+                  right: AppBreakpoints.isDesktop(context) ? 12 : 8,
+                  bottom: AppBreakpoints.isDesktop(context) ? 12 : 8,
+                  child: Text(
+                    recipe.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        AppBreakpoints.isDesktop(context)
+                            ? theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  blurRadius: 4,
+                                ),
+                              ],
+                            )
+                            : theme.textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  blurRadius: 4,
+                                ),
+                              ],
+                            ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1362,7 +1636,7 @@ Shared from Recipe App
                       _refreshAllSections(context);
                     },
                     includeTitle: false,
-                    leadingIcon: null,
+                    leadingIcon: Icons.collections_bookmark_rounded,
                     height: 220,
                   );
                 }
@@ -1376,7 +1650,7 @@ Shared from Recipe App
                       _refreshAllSections(context);
                     },
                     includeTitle: false,
-                    leadingIcon: null,
+                    leadingIcon: Icons.collections_bookmark_rounded,
                     secondaryActionLabel: 'Add a Recipe',
                     secondaryAction: () {
                       Navigator.pushNamed(context, '/import');
@@ -1393,7 +1667,7 @@ Shared from Recipe App
                         'No collections yet. Add your first recipe to see it here.',
                     onRetry: null,
                     includeTitle: false,
-                    leadingIcon: null,
+                    leadingIcon: Icons.collections_bookmark_rounded,
                     secondaryActionLabel: 'Add a Recipe',
                     secondaryAction: () {
                       Navigator.pushNamed(context, '/import');
@@ -1533,7 +1807,7 @@ Shared from Recipe App
                     ),
                   ),
                   Icon(
-                    Icons.refresh,
+                    Icons.arrow_forward_ios,
                     size: 16,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
@@ -1933,7 +2207,7 @@ Shared from Recipe App
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(16),
+            customBorder: const CircleBorder(),
             onTap: () => _scaffoldKey.currentState?.openDrawer(),
             child: Container(
               width: AppSizing.responsiveIconSize(
@@ -1949,7 +2223,7 @@ Shared from Recipe App
                 desktop: 44,
               ),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                shape: BoxShape.circle,
                 color: Theme.of(context).colorScheme.surface.withValues(
                   alpha: Theme.of(context).colorScheme.alphaHigh,
                 ),

@@ -58,6 +58,7 @@ const cacheMiddleware = (duration = CACHE_TTL) => {
 // Import routes
 const aiRoutes = require("./routes/generatedRecipes");
 const discoverRoutes = require("./routes/discover");
+const communityRoutes = require("./routes/community");
 const userRoutes = require("./routes/users");
 const authRoutes = require("./middleware/auth");
 const collectionRoutes = require("./routes/collections");
@@ -68,8 +69,8 @@ const app = express();
 const port = process.env.PORT || 8080;
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(cors());
 
 // Timeout middleware removed to prevent conflicts with long-running operations
@@ -91,6 +92,7 @@ if (process.env.NODE_ENV !== "production") {
 // API Routes with clean naming structure
 app.use("/api/ai/recipes", aiRoutes);
 app.use("/api/discover", cacheMiddleware(2 * 60 * 1000), discoverRoutes); // Cache discover routes for 2 minutes
+app.use("/api/community", cacheMiddleware(2 * 60 * 1000), communityRoutes); // Cache community routes for 2 minutes
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/collections", collectionRoutes);
@@ -110,6 +112,15 @@ app.get("/data-deletion", (req, res) => {
 // Health check endpoint
 app.get("/health", (req, res) => {
 	res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// Environment info endpoint (useful for debugging which server you're connected to)
+app.get("/api/env", (req, res) => {
+	res.json({
+		environment: process.env.NODE_ENV || "development",
+		version: process.env.npm_package_version || "1.0.0",
+		timestamp: new Date().toISOString(),
+	});
 });
 
 // 404 handler for undefined routes
@@ -318,6 +329,9 @@ cron.schedule("0 2 * * 1", async () => {
 
 // Start server
 app.listen(port, () => {
+	const env = process.env.NODE_ENV || "development";
+	const envEmoji = env === "production" ? "🟢" : env === "staging" ? "🟡" : "🔵";
+	console.log(`${envEmoji} Environment: ${env.toUpperCase()}`);
 	console.log(`🚀 Server running on port ${port}`);
 	console.log(`🔗 API available at http://localhost:${port}/api`);
 });
