@@ -95,12 +95,6 @@ class ApiClient {
       return developmentUrl;
     }
 
-    // In debug mode (IDE run), use development URL for emulators
-    if (kDebugMode) {
-      _logger.d('Using DEBUG/LOCAL API: $developmentUrl');
-      return developmentUrl;
-    }
-
     // In release mode, use production URL for physical devices, development for emulators
     final bool isPhysical = await _checkIsPhysicalDevice();
     final url = isPhysical ? AppConfig.productionApiUrl : developmentUrl;
