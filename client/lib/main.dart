@@ -757,7 +757,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                               ),
                               child: Stack(
                                 children: [
-                                  const DynamicGlobalBackground(),
+                                  const Positioned.fill(
+                                    child: RepaintBoundary(
+                                      child: DynamicGlobalBackground(),
+                                    ),
+                                  ),
                                   if (child != null) child,
                                 ],
                               ),
