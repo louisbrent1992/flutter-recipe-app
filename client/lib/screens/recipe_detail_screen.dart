@@ -22,6 +22,7 @@ import '../services/debug_settings.dart';
 import '../models/recipe_collection.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/image_utils.dart';
+import '../utils/name_utils.dart';
 
 // Overflow menu actions for the recipe details screen
 enum MenuAction {
@@ -773,10 +774,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     // Build attribution text
     String buildAttributionText() {
       if (users.isEmpty) {
-        return recipe.sharedByDisplayName ?? 'Chef';
+        return formatCommunityUserName(recipe.sharedByDisplayName);
       }
 
-      final names = users.take(2).map((u) => u.displayName ?? 'Chef').toList();
+      final names = users.take(2).map((u) => formatCommunityUserName(u.displayName)).toList();
 
       if (sharedByCount <= 1) {
         return names.first;

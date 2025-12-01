@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../services/recipe_service.dart';
 import '../theme/theme.dart';
 import '../utils/image_utils.dart';
+import '../utils/name_utils.dart';
 // import 'expandable_image.dart';
 import 'smart_recipe_image.dart';
 import '../services/google_image_service.dart';
@@ -347,10 +348,10 @@ Shared from RecipEase
     // Build attribution text
     String buildAttributionText() {
       if (users.isEmpty) {
-        return widget.recipe.sharedByDisplayName ?? 'Chef';
+        return formatCommunityUserName(widget.recipe.sharedByDisplayName);
       }
 
-      final names = users.take(2).map((u) => u.displayName ?? 'Chef').toList();
+      final names = users.take(2).map((u) => formatCommunityUserName(u.displayName)).toList();
 
       if (sharedByCount <= 1) {
         return names.first;
