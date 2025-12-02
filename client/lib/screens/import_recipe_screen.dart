@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -607,38 +608,30 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                         ),
                                       ],
                                     ),
-                                    child: TextField(
+                                    child: CupertinoTextField(
                                       controller: _urlController,
                                       maxLines: null,
-                                      decoration: InputDecoration(
-                                        hintText:
-                                            'Paste recipe URL here\nSupported: AllRecipes, Instagram, TikTok, YouTube, Food Network, BBC Food, and more',
-                                        hintStyle: TextStyle(
-                                          color: colorScheme.onSurface
-                                              .withValues(alpha: 0.5),
-                                          fontSize:
-                                              AppTypography.responsiveFontSize(
-                                                context,
-                                              ),
-                                          height: 1.4,
-                                        ),
-                                        hintMaxLines: 3,
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppBreakpoints.isMobile(context)
-                                                ? 12
-                                                : 16,
-                                          ),
-                                          borderSide: BorderSide.none,
-                                        ),
-                                        filled: true,
-                                        fillColor:
+                                      placeholder:
+                                          'Paste recipe URL here\nSupported: AllRecipes, Instagram, TikTok, YouTube, Food Network, BBC Food, and more',
+                                      placeholderStyle: TextStyle(
+                                        color: colorScheme.onSurface
+                                            .withValues(alpha: 0.5),
+                                        fontSize:
+                                            AppTypography.responsiveFontSize(
+                                              context,
+                                            ),
+                                        height: 1.4,
+                                      ),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: AppSpacing.lg,
+                                        horizontal: AppSpacing.md,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
                                             theme.brightness == Brightness.dark
                                                 ? colorScheme
                                                     .surfaceContainerHighest
-                                                    .withAlpha(
-                                                      128,
-                                                    ) // Using surfaceContainerHighest as fallback
+                                                    .withAlpha(128)
                                                 : Theme.of(context)
                                                     .colorScheme
                                                     .surface
@@ -648,7 +641,20 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                                               .colorScheme
                                                               .alphaVeryHigh,
                                                     ),
-                                        prefixIcon: Icon(
+                                        borderRadius: BorderRadius.circular(
+                                          AppBreakpoints.isMobile(context)
+                                              ? 12
+                                              : 16,
+                                        ),
+                                        border: Border.all(
+                                          color: colorScheme.outline
+                                              .withAlpha(26),
+                                          width: 1.0,
+                                        ),
+                                      ),
+                                      prefix: Padding(
+                                        padding: const EdgeInsets.only(left: 12),
+                                        child: Icon(
                                           Icons.link_rounded,
                                           color: colorScheme.primary,
                                           size: AppSizing.responsiveIconSize(
@@ -658,10 +664,16 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                             desktop: 24,
                                           ),
                                         ),
-                                        suffixIcon:
-                                            _urlController.text.isNotEmpty
-                                                ? IconButton(
-                                                  icon: Icon(
+                                      ),
+                                      suffix:
+                                          _urlController.text.isNotEmpty
+                                              ? Padding(
+                                                padding: const EdgeInsets.only(right: 8),
+                                                child: GestureDetector(
+                                                  onTap: () => setState(
+                                                    () => _urlController.clear(),
+                                                  ),
+                                                  child: Icon(
                                                     Icons.clear,
                                                     size:
                                                         AppSizing.responsiveIconSize(
@@ -670,46 +682,11 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                                           tablet: 22,
                                                           desktop: 24,
                                                         ),
+                                                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                                                   ),
-                                                  onPressed:
-                                                      () => setState(
-                                                        () =>
-                                                            _urlController
-                                                                .clear(),
-                                                      ),
-                                                )
-                                                : null,
-                                        contentPadding: EdgeInsets.symmetric(
-                                          vertical: AppSpacing.lg,
-                                          horizontal: AppSpacing.md,
-                                        ),
-                                        floatingLabelBehavior:
-                                            FloatingLabelBehavior.never,
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppBreakpoints.isMobile(context)
-                                                ? 12
-                                                : 16,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: colorScheme.outline
-                                                .withAlpha(26), // 0.1 alpha
-                                            width: 1.0,
-                                          ),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppBreakpoints.isMobile(context)
-                                                ? 12
-                                                : 16,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: colorScheme.primary
-                                                .withAlpha(128), // 0.5 alpha
-                                            width: 2.0,
-                                          ),
-                                        ),
-                                      ),
+                                                ),
+                                              )
+                                              : null,
                                       onSubmitted:
                                           (url) => _importRecipe(context, url),
                                       onChanged: (value) => setState(() {}),

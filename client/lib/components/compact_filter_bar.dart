@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/theme.dart';
 
@@ -78,21 +79,22 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                         width: 0.5,
                       ),
                     ),
-                    child: TextField(
+                    child: CupertinoTextField(
                       controller: widget.searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search recipes… e.g. chicken, broccoli, keto',
-                        hintStyle: TextStyle(
-                          fontSize: AppBreakpoints.isDesktop(context)
-                              ? 16
-                              : AppBreakpoints.isTablet(context)
-                                  ? 15
-                                  : 14,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                        ),
-                        prefixIcon: Icon(
+                      placeholder: 'Search recipes… e.g. chicken, broccoli, keto',
+                      placeholderStyle: TextStyle(
+                        fontSize: AppBreakpoints.isDesktop(context)
+                            ? 16
+                            : AppBreakpoints.isTablet(context)
+                                ? 15
+                                : 14,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      ),
+                      prefix: Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: Icon(
                           Icons.search,
                           size: AppBreakpoints.isDesktop(context)
                               ? 24
@@ -103,11 +105,11 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                             context,
                           ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                         ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: AppBreakpoints.isDesktop(context) ? 20 : 16,
-                          vertical: AppBreakpoints.isDesktop(context) ? 12 : 8,
-                        ),
+                      ),
+                      decoration: const BoxDecoration(),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppBreakpoints.isDesktop(context) ? 8 : 4,
+                        vertical: AppBreakpoints.isDesktop(context) ? 12 : 8,
                       ),
                       style: TextStyle(
                         fontSize: AppBreakpoints.isDesktop(context)
@@ -115,6 +117,7 @@ class _CompactFilterBarState extends State<CompactFilterBar> {
                             : AppBreakpoints.isTablet(context)
                                 ? 15
                                 : 14,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       onChanged: widget.onSearchChanged,
                     ),

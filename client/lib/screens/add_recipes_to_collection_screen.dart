@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
@@ -205,46 +206,41 @@ class _AddRecipesToCollectionScreenState
                         // Search field
                         Padding(
                           padding: const EdgeInsets.all(16.0),
-                          child: TextField(
+                          child: CupertinoTextField(
                             controller: _searchController,
                             onChanged: _filterRecipes,
-                            decoration: InputDecoration(
-                              hintText: 'Search recipes...',
-                              prefixIcon: const Icon(Icons.search),
-                              suffixIcon:
-                                  _searchQuery.isNotEmpty
-                                      ? IconButton(
-                                        icon: const Icon(Icons.clear),
-                                        onPressed: () {
+                            placeholder: 'Search recipes...',
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: colorScheme.outline.withValues(alpha: 0.2),
+                              ),
+                            ),
+                            style: TextStyle(
+                              color: colorScheme.onSurface,
+                            ),
+                            placeholderStyle: TextStyle(
+                              color: colorScheme.onSurface.withValues(alpha: 0.5),
+                            ),
+                            prefix: Padding(
+                              padding: const EdgeInsets.only(left: 12),
+                              child: Icon(Icons.search, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                            ),
+                            suffix:
+                                _searchQuery.isNotEmpty
+                                    ? Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: GestureDetector(
+                                        onTap: () {
                                           _searchController.clear();
                                           _filterRecipes('');
                                         },
-                                      )
-                                      : null,
-                              filled: true,
-                              fillColor: colorScheme.surface,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: colorScheme.outline.withValues(
-                                    alpha: 0.2,
-                                  ),
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: colorScheme.primary.withValues(
-                                    alpha: 0.5,
-                                  ),
-                                  width: 2,
-                                ),
-                              ),
-                            ),
+                                        child: Icon(Icons.clear, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                                      ),
+                                    )
+                                    : null,
                           ),
                         ),
 

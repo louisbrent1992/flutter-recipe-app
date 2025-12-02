@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/providers/auth_provider.dart';
@@ -70,14 +71,23 @@ class _SettingsScreenState extends State<SettingsScreen>
     return null;
   }
 
-  // Get provider icon
-  IconData? _getProviderIcon(User? user) {
+  // Get provider icon widget
+  Widget? _getProviderIconWidget(User? user, {double size = 20}) {
     if (user == null) return null;
 
     final providers = user.providerData.map((info) => info.providerId).toList();
 
-    if (providers.contains('google.com')) return Icons.g_mobiledata_rounded;
-    if (providers.contains('apple.com')) return Icons.apple_rounded;
+    if (providers.contains('google.com')) {
+      return Image.network(
+        'https://www.google.com/favicon.ico',
+        height: size,
+        width: size,
+        errorBuilder: (_, __, ___) => Icon(Icons.g_mobiledata, size: size),
+      );
+    }
+    if (providers.contains('apple.com')) {
+      return Icon(Icons.apple_rounded, size: size);
+    }
     return null;
   }
 
@@ -1118,10 +1128,18 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 _isOAuthUser(user)
                                     ? (_getProviderName(user) ?? 'Provider')
                                     : 'Email',
-                            providerIcon:
+                            providerIconWidget:
                                 _isOAuthUser(user)
-                                    ? _getProviderIcon(user)
-                                    : Icons.email_rounded,
+                                    ? _getProviderIconWidget(
+                                      user,
+                                      size: AppSizing.responsiveIconSize(
+                                        context,
+                                        mobile: 20,
+                                        tablet: 22,
+                                        desktop: 24,
+                                      ),
+                                    )
+                                    : null,
                           ),
                         ],
                       ),
@@ -1949,39 +1967,47 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           AnimatedSize(
             duration: const Duration(milliseconds: 200),
-            child: TextField(
-              controller: controller,
-              enabled: true,
-              style: TextStyle(
-                fontSize: AppTypography.responsiveFontSize(context),
-                fontWeight: FontWeight.normal,
-              ),
-              decoration: InputDecoration(
-                hintText: hint,
-                prefixIcon: Icon(icon),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(
-                    AppBreakpoints.isMobile(context) ? 8 : 12,
-                  ),
-                  borderSide: const BorderSide(),
-                ),
-                filled: false,
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(
-                    AppBreakpoints.isMobile(context) ? 8 : 12,
-                  ),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                contentPadding: AppSpacing.allResponsive(context),
-              ),
+            child: GestureDetector(
               onTap: () {
                 if (!_isEditing) {
                   setState(() => _isEditing = true);
                   _animationController.forward();
                 }
               },
+              child: CupertinoTextField(
+                controller: controller,
+                enabled: true,
+                style: TextStyle(
+                  fontSize: AppTypography.responsiveFontSize(context),
+                  fontWeight: FontWeight.normal,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                placeholder: hint,
+                placeholderStyle: TextStyle(
+                  fontSize: AppTypography.responsiveFontSize(context),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+                prefix: Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: Icon(
+                    icon,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+                padding: AppSpacing.allResponsive(context),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  borderRadius: BorderRadius.circular(
+                    AppBreakpoints.isMobile(context) ? 8 : 12,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -1992,11 +2018,17 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget _buildReadOnlyEmailField({
     required String email,
     required String providerName,
-    IconData? providerIcon,
+    Widget? providerIconWidget,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isOAuth = _isOAuthUser(user);
+    final iconSize = AppSizing.responsiveIconSize(
+      context,
+      mobile: 20,
+      tablet: 22,
+      desktop: 24,
+    );
 
     return Container(
       margin: EdgeInsets.only(top: AppSpacing.md),
@@ -2027,19 +2059,12 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
             child: Row(
               children: [
-                Icon(
-                  providerIcon ?? Icons.email_rounded,
-                  color:
-                      isOAuth
-                          ? colorScheme.primary
-                          : colorScheme.onSurfaceVariant,
-                  size: AppSizing.responsiveIconSize(
-                    context,
-                    mobile: 20,
-                    tablet: 22,
-                    desktop: 24,
-                  ),
-                ),
+                providerIconWidget ??
+                    Icon(
+                      Icons.email_rounded,
+                      color: colorScheme.onSurfaceVariant,
+                      size: iconSize,
+                    ),
                 SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Column(

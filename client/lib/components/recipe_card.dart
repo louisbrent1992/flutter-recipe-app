@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:recipease/providers/recipe_provider.dart';
@@ -735,19 +736,31 @@ Shared from RecipEase
 
   Future<RecipeCollection?> _showCreateCollectionDialog() async {
     final TextEditingController nameController = TextEditingController();
+    final theme = Theme.of(context);
 
     final name = await showDialog<String>(
       context: context,
       builder:
           (context) => AlertDialog(
             title: const Text('Create Collection'),
-            content: TextField(
+            content: CupertinoTextField(
               controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Collection Name',
-                hintText: 'Enter collection name',
-              ),
+              placeholder: 'Enter collection name',
               autofocus: true,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                ),
+              ),
+              style: TextStyle(
+                color: theme.colorScheme.onSurface,
+              ),
+              placeholderStyle: TextStyle(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
               onSubmitted: (value) {
                 if (value.trim().isNotEmpty) {
                   Navigator.pop(context, value.trim());

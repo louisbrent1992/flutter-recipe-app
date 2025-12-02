@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
@@ -89,6 +90,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
 
   void _showAddCategoryDialog() {
     _categoryNameController.clear();
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder:
@@ -96,15 +98,26 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
             title: const Text('Name Your Collection'),
             elevation: AppElevation.dialog,
             content: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
+                CupertinoTextField(
                   controller: _categoryNameController,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter category name',
-                    labelText: 'Category Name',
-                  ),
+                  placeholder: 'Enter category name',
                   autofocus: true,
                   textCapitalization: TextCapitalization.words,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: theme.colorScheme.outline,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  placeholderStyle: TextStyle(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
                 ),
               ],
             ),
@@ -1008,6 +1021,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     final TextEditingController nameController = TextEditingController(
       text: collection.name,
     );
+    final theme = Theme.of(context);
 
     final result = await showDialog<Map<String, dynamic>?>(
       context: context,
@@ -1017,13 +1031,23 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
+                CupertinoTextField(
                   controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Collection Name',
-                    hintText: 'Enter collection name',
-                  ),
+                  placeholder: 'Enter collection name',
                   autofocus: true,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: theme.colorScheme.outline,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  placeholderStyle: TextStyle(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
                 ),
               ],
             ),

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
@@ -2606,15 +2607,28 @@ class _ImageReplaceSheetContentState extends State<_ImageReplaceSheetContent> {
 
   Future<void> _pasteUrl() async {
     final controller = TextEditingController();
+    final theme = Theme.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder:
           (ctx) => AlertDialog(
             title: const Text('Paste image URL'),
-            content: TextField(
+            content: CupertinoTextField(
               controller: controller,
-              decoration: const InputDecoration(
-                hintText: 'https://example.com/image.jpg',
+              placeholder: 'https://example.com/image.jpg',
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                ),
+              ),
+              style: TextStyle(
+                color: theme.colorScheme.onSurface,
+              ),
+              placeholderStyle: TextStyle(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
             actions: [
