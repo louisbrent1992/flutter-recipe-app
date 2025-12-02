@@ -474,7 +474,9 @@ class _SettingsScreenState extends State<SettingsScreen>
       if (mounted) {
         // Clear the entire navigation stack to prevent background widgets from keeping
         // listeners active or throwing errors (like ShowcaseView)
-        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/login', (route) => false);
       }
     } catch (e) {
       if (mounted) {
@@ -1138,53 +1140,53 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                     SizedBox(height: AppSpacing.md),
 
-                    Consumer<UserProfileProvider>(
-                      builder: (context, profileProvider, _) {
-                        return _buildAnimatedSwitchTile(
-                          title: 'Show Profile in Community',
-                          subtitle:
-                              'Display your name and photo on shared recipes',
-                          value: profileProvider.showProfileInCommunity,
-                          onChanged: (value) async {
-                            final messenger = ScaffoldMessenger.of(context);
-                            try {
-                              await profileProvider.setShowProfileInCommunity(
-                                value,
-                              );
-                              if (mounted) {
-                                messenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      value
-                                          ? 'Your profile will be shown on community recipes'
-                                          : 'Your profile will be hidden on community recipes',
-                                    ),
-                                    backgroundColor: Colors.green,
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                );
-                              }
-                            } catch (e) {
-                              if (mounted) {
-                                messenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error updating setting: $e'),
-                                    backgroundColor: Colors.red,
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                          icon: Icons.person_outline_rounded,
-                          color: Theme.of(context).colorScheme.primary,
-                        );
-                      },
-                    ),
-
+                    // Community feature disabled - hide profile in community setting
+                    // Consumer<UserProfileProvider>(
+                    //   builder: (context, profileProvider, _) {
+                    //     return _buildAnimatedSwitchTile(
+                    //       title: 'Show Profile in Community',
+                    //       subtitle:
+                    //           'Display your name and photo on shared recipes',
+                    //       value: profileProvider.showProfileInCommunity,
+                    //       onChanged: (value) async {
+                    //         final messenger = ScaffoldMessenger.of(context);
+                    //         try {
+                    //           await profileProvider.setShowProfileInCommunity(
+                    //             value,
+                    //           );
+                    //           if (mounted) {
+                    //             messenger.showSnackBar(
+                    //               SnackBar(
+                    //                 content: Text(
+                    //                   value
+                    //                       ? 'Your profile will be shown on community recipes'
+                    //                       : 'Your profile will be hidden on community recipes',
+                    //                 ),
+                    //                 backgroundColor: Colors.green,
+                    //                 behavior: SnackBarBehavior.floating,
+                    //                 shape: RoundedRectangleBorder(
+                    //                   borderRadius: BorderRadius.circular(10),
+                    //                 ),
+                    //               ),
+                    //             );
+                    //           }
+                    //         } catch (e) {
+                    //           if (mounted) {
+                    //             messenger.showSnackBar(
+                    //               SnackBar(
+                    //                 content: Text('Error updating setting: $e'),
+                    //                 backgroundColor: Colors.red,
+                    //                 behavior: SnackBarBehavior.floating,
+                    //               ),
+                    //             );
+                    //           }
+                    //         }
+                    //       },
+                    //       icon: Icons.person_outline_rounded,
+                    //       color: Theme.of(context).colorScheme.primary,
+                    //     );
+                    //   },
+                    // ),
                     SizedBox(height: AppSpacing.md),
                     const Divider(height: 1, thickness: 0.1),
                     SizedBox(height: AppSpacing.md),
@@ -1754,7 +1756,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             profileProvider.profile['photoURL'] as String? ??
             user?.photoURL ??
             ImageUtils.defaultProfileIconUrl;
-        
+
         final displayName =
             profileProvider.profile['displayName'] as String? ??
             user?.displayName ??
@@ -1920,9 +1922,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
           AnimatedCrossFade(
             duration: const Duration(milliseconds: 200),
-            crossFadeState: enabled
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
+            crossFadeState:
+                enabled ? CrossFadeState.showSecond : CrossFadeState.showFirst,
             firstChild: GestureDetector(
               onTap: () {
                 if (!_isEditing) {
@@ -1933,19 +1934,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                 padding: AppSpacing.allResponsive(context),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withValues(
-                      alpha: 0.3,
-                    ),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outline.withValues(alpha: 0.3),
                   ),
                   borderRadius: BorderRadius.circular(
                     AppBreakpoints.isMobile(context) ? 8 : 12,
                   ),
-                  color:
-                      Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest.withValues(
-                        alpha: 0.3,
-                      ),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 ),
                 child: Row(
                   children: [
@@ -1972,10 +1970,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                     Icon(
                       Icons.edit_rounded,
-                      color:
-                          Theme.of(
-                            context,
-                          ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                       size: AppSizing.responsiveIconSize(
                         context,
                         mobile: 16,
@@ -2019,10 +2016,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Icon(
                     Icons.close_rounded,
-                    color:
-                        Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.5),
                     size: 20,
                   ),
                 ),
@@ -2064,7 +2060,8 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     // Use phone number if phone user
     final displayLabel = isPhone ? 'Phone Number:' : 'Email:';
-    final displayValue = isPhone ? (user?.phoneNumber ?? 'Not available') : email;
+    final displayValue =
+        isPhone ? (user?.phoneNumber ?? 'Not available') : email;
     final displayIcon = isPhone ? Icons.phone_rounded : Icons.email_rounded;
 
     return Container(
