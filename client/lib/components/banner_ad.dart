@@ -21,19 +21,29 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
   static const int _maxRetries = 3;
   bool _showCloseButton = false;
   Timer? _closeTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    // Only load ads if not in screenshot mode and tutorial is completed
-    if (!hideAds) {
-      _checkTutorialAndLoadAd();
-    }
-  }
+  bool _hasInitialized = false;
 
   StreamSubscription<GlobalKey>? _tutorialSubscription;
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Only load ads if not in screenshot mode, not premium, and tutorial is completed
+    if (!_hasInitialized && !hideAds) {
+      _hasInitialized = true;
+      final subscriptionProvider = context.read<SubscriptionProvider>();
+      if (!subscriptionProvider.isPremium) {
+        _checkTutorialAndLoadAd();
+      }
+    }
+  }
+
   Future<void> _checkTutorialAndLoadAd() async {
+    // Double-check premium status before loading
+    if (!mounted) return;
+    final subscriptionProvider = context.read<SubscriptionProvider>();
+    if (subscriptionProvider.isPremium) return;
+    
     final tutorialService = TutorialService();
     final isCompleted = await tutorialService.isTutorialCompleted();
 
@@ -66,6 +76,10 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
       debugPrint('Max retry attempts reached for banner ad');
       return;
     }
+    
+    // Skip ad loading for premium users
+    final subscriptionProvider = context.read<SubscriptionProvider>();
+    if (subscriptionProvider.isPremium) return;
 
     _bannerAd = BannerAd(
       adUnitId: AdHelper.bannerAdUnitId,

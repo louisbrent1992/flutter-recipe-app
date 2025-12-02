@@ -29,12 +29,19 @@ class _InlineBannerAdState extends State<InlineBannerAd> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // We load the ad here to ensure we can access MediaQuery for the correct width
-    if (!_isAdLoaded && _bannerAd == null && !hideAds) {
+    // Skip loading entirely if user is premium or ads are hidden
+    final subscriptionProvider = context.read<SubscriptionProvider>();
+    if (!_isAdLoaded && _bannerAd == null && !hideAds && !subscriptionProvider.isPremium) {
       _checkTutorialAndLoadAd();
     }
   }
 
   Future<void> _checkTutorialAndLoadAd() async {
+    // Double-check premium status before loading
+    if (!mounted) return;
+    final subscriptionProvider = context.read<SubscriptionProvider>();
+    if (subscriptionProvider.isPremium) return;
+    
     final tutorialService = TutorialService();
     final isCompleted = await tutorialService.isTutorialCompleted();
 
@@ -54,6 +61,10 @@ class _InlineBannerAdState extends State<InlineBannerAd> {
 
   Future<void> _loadAd() async {
     if (_retryCount >= _maxRetries || !mounted) return;
+    
+    // Skip ad loading for premium users
+    final subscriptionProvider = context.read<SubscriptionProvider>();
+    if (subscriptionProvider.isPremium) return;
 
     // 1. Calculate the available width for the ad
     // This ensures the ad expands to the edges of your content area
