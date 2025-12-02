@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -124,7 +123,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _showForgotPasswordDialog() {
     final resetEmailController = TextEditingController();
-    final theme = Theme.of(context);
 
     showDialog(
       context: context,
@@ -132,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
           (dialogContext) => AlertDialog(
             title: const Text('Reset Password'),
             content: Form(
-              key: formKey,
+              key: _formKey,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -164,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  if (formKey.currentState!.validate()) {
+                  if (_formKey.currentState!.validate()) {
                     final authService = context.read<AuthService>();
                     final success = await authService.sendPasswordResetEmail(
                       resetEmailController.text.trim(),

@@ -163,7 +163,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _registerWithEmailAndPassword() async {
-    if (!_formKey.currentState!.validate()) return;
+    // Manual validation since CupertinoTextField doesn't support validators
+    final emailError = _validateEmail(_emailController.text.trim());
+    if (emailError != null) {
+      _showSnackBar(emailError, isError: true);
+      return;
+    }
+
+    final passwordError = _validatePassword(_passwordController.text);
+    if (passwordError != null) {
+      _showSnackBar(passwordError, isError: true);
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      _showSnackBar('Passwords do not match', isError: true);
+      return;
+    }
+
+    if (_nameController.text.trim().isEmpty) {
+      _showSnackBar('Please enter your name', isError: true);
+      return;
+    }
 
     setState(() => _isLoading = true);
 
