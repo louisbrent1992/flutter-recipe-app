@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/theme.dart';
 import '../components/app_tutorial.dart';
@@ -486,18 +487,24 @@ class FloatingBottomBar extends StatelessWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
+            CupertinoTextField(
               controller: controller,
               keyboardType: TextInputType.number,
               autofocus: true,
-              decoration: InputDecoration(
-                labelText: 'Page number',
-                hintText: '1 - $totalPages',
-                border: const OutlineInputBorder(),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+              placeholder: '1 - $totalPages',
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.3),
                 ),
+              ),
+              style: TextStyle(
+                color: theme.colorScheme.onSurface,
+              ),
+              placeholderStyle: TextStyle(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               onSubmitted: (value) {
                 final page = int.tryParse(value);

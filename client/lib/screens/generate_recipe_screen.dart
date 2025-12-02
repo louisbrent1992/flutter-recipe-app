@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:recipease/components/custom_app_bar.dart';
@@ -420,41 +421,26 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                         ),
                                       ],
                                     ),
-                                    child: TextField(
+                                    child: CupertinoTextField(
                                       controller: _ingredientController,
-                                      decoration: InputDecoration(
-                                        hintText: 'gluten-free, chicken, eggs',
-                                        labelText: 'Enter ingredients',
-                                        hintStyle: TextStyle(
-                                          color: colorScheme.onSurface,
-                                          fontSize:
-                                              AppTypography.responsiveFontSize(
-                                                context,
-                                              ),
-                                        ),
-                                        labelStyle: TextStyle(
-                                          color: colorScheme.onSurface,
-                                          fontSize:
-                                              AppTypography.responsiveFontSize(
-                                                context,
-                                              ),
-                                        ),
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppBreakpoints.isMobile(context)
-                                                ? 12
-                                                : 16,
-                                          ),
-                                          borderSide: BorderSide.none,
-                                        ),
-                                        filled: true,
-                                        fillColor:
+                                      placeholder: 'gluten-free, chicken, eggs',
+                                      placeholderStyle: TextStyle(
+                                        color: colorScheme.onSurface.withValues(alpha: 0.5),
+                                        fontSize:
+                                            AppTypography.responsiveFontSize(
+                                              context,
+                                            ),
+                                      ),
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: AppSpacing.lg,
+                                        horizontal: AppSpacing.md,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
                                             theme.brightness == Brightness.dark
                                                 ? colorScheme
                                                     .surfaceContainerHighest
-                                                    .withAlpha(
-                                                      64,
-                                                    ) // Using surfaceContainerHighest as fallback
+                                                    .withAlpha(64)
                                                 : Theme.of(context)
                                                     .colorScheme
                                                     .surface
@@ -464,7 +450,20 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                                               .colorScheme
                                                               .alphaVeryHigh,
                                                     ),
-                                        prefixIcon: Icon(
+                                        borderRadius: BorderRadius.circular(
+                                          AppBreakpoints.isMobile(context)
+                                              ? 12
+                                              : 16,
+                                        ),
+                                        border: Border.all(
+                                          color: colorScheme.outline
+                                              .withAlpha(26),
+                                          width: 1.0,
+                                        ),
+                                      ),
+                                      prefix: Padding(
+                                        padding: const EdgeInsets.only(left: 12),
+                                        child: Icon(
                                           Icons.restaurant_rounded,
                                           color: colorScheme.primary,
                                           size: AppSizing.responsiveIconSize(
@@ -474,8 +473,12 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                             desktop: 24,
                                           ),
                                         ),
-                                        suffixIcon: IconButton(
-                                          icon: Icon(
+                                      ),
+                                      suffix: Padding(
+                                        padding: const EdgeInsets.only(right: 8),
+                                        child: GestureDetector(
+                                          onTap: _addIngredient,
+                                          child: Icon(
                                             Icons.add_circle_rounded,
                                             size: AppSizing.responsiveIconSize(
                                               context,
@@ -484,37 +487,6 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                                               desktop: 24,
                                             ),
                                             color: colorScheme.primary,
-                                          ),
-                                          onPressed: _addIngredient,
-                                        ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                          vertical: AppSpacing.lg,
-                                          horizontal: AppSpacing.md,
-                                        ),
-                                        floatingLabelBehavior:
-                                            FloatingLabelBehavior.never,
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppBreakpoints.isMobile(context)
-                                                ? 12
-                                                : 16,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: colorScheme.outline
-                                                .withAlpha(26), // 0.1 alpha
-                                            width: 1.0,
-                                          ),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            AppBreakpoints.isMobile(context)
-                                                ? 12
-                                                : 16,
-                                          ),
-                                          borderSide: BorderSide(
-                                            color: colorScheme.primary
-                                                .withAlpha(128), // 0.5 alpha
-                                            width: 2.0,
                                           ),
                                         ),
                                       ),

@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -174,7 +175,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       if (mounted) {
         _showSnackBar('Registration successful! Please sign in to continue.');
-        Navigator.pushReplacementNamed(context, '/login');
+        // Clear stack when going to login to ensure fresh start
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } on FirebaseAuthException catch (e) {
       String message;
@@ -215,7 +217,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           await context.read<AuthService>().signInWithGoogle();
       if (mounted) {
         _showSnackBar('Successfully signed up with Google!');
-        Navigator.pushNamed(context, '/home', arguments: userData);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/home',
+          (route) => false,
+          arguments: userData,
+        );
       }
     } on FirebaseAuthException catch (e) {
       String message;
@@ -257,7 +264,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           await context.read<AuthService>().signInWithApple();
       if (mounted) {
         _showSnackBar('Successfully signed up with Apple!');
-        Navigator.pushNamed(context, '/home', arguments: userData);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/home',
+          (route) => false,
+          arguments: userData,
+        );
       }
     } on SignInWithAppleAuthorizationException catch (e) {
       if (!mounted) return;
@@ -320,6 +332,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Center(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(
@@ -359,53 +372,112 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ? 20
                             : 16,
                   ),
-                  TextFormField(
+                  CupertinoTextField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Full Name',
-                      border: OutlineInputBorder(),
+                    placeholder: 'Full Name',
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your name';
-                      }
-                      return null;
-                    },
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    placeholderStyle: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      border: const OutlineInputBorder(),
-                      errorText: _emailError,
-                      errorMaxLines: 1,
-                      isDense: true,
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: _validateEmail,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CupertinoTextField(
+                        controller: _emailController,
+                        placeholder: 'Email',
+                        keyboardType: TextInputType.emailAddress,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
                         ),
-                        onPressed: () {
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color:
+                                _emailError != null
+                                    ? Theme.of(context).colorScheme.error
+                                    : Theme.of(context).colorScheme.outline,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        placeholderStyle: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      if (_emailError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4, left: 12),
+                          child: Text(
+                            _emailError!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  CupertinoTextField(
+                    controller: _passwordController,
+                    placeholder: 'Password',
+                    obscureText: _obscurePassword,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    placeholderStyle: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                    suffix: Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () {
                           setState(() {
                             _obscurePassword = !_obscurePassword;
                           });
                         },
+                        child: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
                       ),
                     ),
-                    obscureText: _obscurePassword,
-                    validator: _validatePassword,
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 4.0, left: 4.0),
@@ -444,44 +516,68 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  CupertinoTextField(
                     controller: _confirmPasswordController,
-                    decoration: InputDecoration(
-                      labelText: 'Confirm Password',
-                      border: const OutlineInputBorder(),
-                      errorMaxLines: 1,
-                      isDense: true,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureConfirmPassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () {
+                    placeholder: 'Confirm Password',
+                    obscureText: _obscureConfirmPassword,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    placeholderStyle: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                    suffix: Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () {
                           setState(() {
                             _obscureConfirmPassword = !_obscureConfirmPassword;
                           });
                         },
+                        child: Icon(
+                          _obscureConfirmPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
                       ),
                     ),
-                    obscureText: _obscureConfirmPassword,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please confirm your password';
-                      }
-                      if (value != _passwordController.text) {
-                        return 'Passwords do not match';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  CupertinoTextField(
                     controller: _inviteCodeController,
-                    decoration: const InputDecoration(
-                      labelText: 'Invite Code (optional)',
-                      hintText: 'Enter a friend\'s code',
-                      border: OutlineInputBorder(),
+                    placeholder: 'Invite Code (optional)',
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    placeholderStyle: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                   const SizedBox(height: 4),

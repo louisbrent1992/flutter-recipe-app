@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/theme.dart';
 
@@ -15,15 +16,30 @@ class RecipeTags extends StatelessWidget {
 
   Future<void> _showAddTagDialog(BuildContext context) async {
     final TextEditingController controller = TextEditingController();
+    final theme = Theme.of(context);
 
     return showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
             title: const Text('Add Tag'),
-            content: TextField(
+            content: CupertinoTextField(
               controller: controller,
-              decoration: const InputDecoration(hintText: 'Enter new tag'),
+              placeholder: 'Enter new tag',
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                ),
+              ),
+              style: TextStyle(
+                color: theme.colorScheme.onSurface,
+              ),
+              placeholderStyle: TextStyle(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
             ),
             actions: [
               TextButton(

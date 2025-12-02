@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../theme/theme.dart';
 
@@ -30,22 +31,36 @@ class EditableRecipeField extends StatefulWidget {
 class _EditableRecipeFieldState extends State<EditableRecipeField> {
   Future<void> _showEditDialog(BuildContext context) async {
     print(widget.controller.value);
+    final theme = Theme.of(context);
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Edit ${widget.label}'),
-          content: TextFormField(
+          content: CupertinoTextField(
             controller: widget.controller,
-            decoration: InputDecoration(hintText: widget.hintText),
+            placeholder: widget.hintText,
             maxLines: widget.isMultiline ? null : 1,
-
             keyboardType:
                 widget.isMultiline
                     ? TextInputType.multiline
                     : TextInputType.text,
             autofocus: true,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.3),
+              ),
+            ),
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+            ),
+            placeholderStyle: TextStyle(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
           ),
           actions: [
             TextButton(
