@@ -39,7 +39,7 @@ android {
         applicationId = "com.recipease.kitchen"
         minSdk = flutter.minSdkVersion
         targetSdk = 35
-        versionCode = 64
+        versionCode = 65
         versionName = flutter.versionName
     }
 

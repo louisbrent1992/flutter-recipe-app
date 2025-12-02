@@ -7,6 +7,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import '../services/api_client.dart';
 import '../services/collection_service.dart';
 import '../services/credits_service.dart';
@@ -385,6 +386,155 @@ class AuthService with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  // Sign in with Facebook
+  Future<User?> signInWithFacebook() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final LoginResult result = await FacebookAuth.instance.login();
+
+      if (result.status == LoginStatus.success) {
+        final AccessToken accessToken = result.accessToken!;
+        final credential = FacebookAuthProvider.credential(accessToken.tokenString);
+        final userCredential = await _auth.signInWithCredential(credential);
+        
+        if (userCredential.user != null) {
+            // Get user data from Facebook
+            final userData = await FacebookAuth.instance.getUserData();
+            
+            await _createOrUpdateUserProfile(
+                userCredential.user!,
+                displayName: userData['name'],
+            );
+            
+            await userCredential.user!.getIdToken(true);
+            await Future.delayed(const Duration(milliseconds: 500));
+        }
+        _user = userCredential.user;
+        return _user;
+      } else if (result.status == LoginStatus.cancelled) {
+          _error = 'Facebook sign in cancelled';
+          return null;
+      } else {
+          _error = 'Facebook sign in failed: ${result.message}';
+          return null;
+      }
+    } catch (e) {
+        _error = e.toString();
+        return null;
+    } finally {
+        _isLoading = false;
+        notifyListeners();
+    }
+  }
+
+  // Sign in with Yahoo
+  Future<User?> signInWithYahoo() async {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+      try {
+          // Yahoo uses OAuthProvider
+          final provider = OAuthProvider('yahoo.com');
+          provider.setCustomParameters({
+            'prompt': 'login',
+          });
+          
+          // For mobile, this typically opens a webview flow
+          final userCredential = await _auth.signInWithProvider(provider);
+          
+          if (userCredential.user != null) {
+            await _createOrUpdateUserProfile(userCredential.user!);
+             await userCredential.user!.getIdToken(true);
+             await Future.delayed(const Duration(milliseconds: 500));
+          }
+        _user = userCredential.user;
+        return _user;
+      } catch (e) {
+          _error = e.toString();
+          return null;
+      } finally {
+          _isLoading = false;
+          notifyListeners();
+      }
+  }
+
+  // Verify Phone Number - Step 1
+  Future<void> verifyPhoneNumber({
+      required String phoneNumber,
+      required Function(String verificationId) onCodeSent,
+      required Function(FirebaseAuthException e) onVerificationFailed,
+      required Function(PhoneAuthCredential credential) onVerificationCompleted,
+      required Function(String verificationId) onCodeAutoRetrievalTimeout,
+  }) async {
+       _isLoading = true;
+      _error = null;
+      notifyListeners();
+      try {
+          await _auth.verifyPhoneNumber(
+            phoneNumber: phoneNumber,
+            verificationCompleted: (credential) async {
+                // Android only: auto-sign in
+                await _auth.signInWithCredential(credential);
+                 if (_auth.currentUser != null) {
+                    await _createOrUpdateUserProfile(_auth.currentUser!);
+                 }
+                 onVerificationCompleted(credential);
+                 _isLoading = false;
+                 notifyListeners();
+            },
+            verificationFailed: (e) {
+                _error = e.message;
+                _isLoading = false;
+                notifyListeners();
+                onVerificationFailed(e);
+            },
+            codeSent: (verificationId, resendToken) {
+                _isLoading = false; // User needs to enter code now
+                notifyListeners();
+                onCodeSent(verificationId);
+            },
+            codeAutoRetrievalTimeout: (verificationId) {
+                onCodeAutoRetrievalTimeout(verificationId);
+            },
+          );
+      } catch (e) {
+          _error = e.toString();
+          _isLoading = false;
+          notifyListeners();
+      }
+  }
+  
+  // Sign in with Phone Credential (SMS Code) - Step 2
+  Future<User?> signInWithPhoneCredential(String verificationId, String smsCode) async {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+      try {
+          final credential = PhoneAuthProvider.credential(
+            verificationId: verificationId,
+            smsCode: smsCode,
+          );
+          final userCredential = await _auth.signInWithCredential(credential);
+          
+           if (userCredential.user != null) {
+            await _createOrUpdateUserProfile(userCredential.user!);
+             await userCredential.user!.getIdToken(true);
+             await Future.delayed(const Duration(milliseconds: 500));
+        }
+        _user = userCredential.user;
+        return _user;
+      } catch (e) {
+          _error = e.toString();
+          return null;
+      } finally {
+          _isLoading = false;
+          notifyListeners();
+      }
   }
 
   // Sign in with Apple

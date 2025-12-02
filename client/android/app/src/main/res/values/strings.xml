@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RecipEase</string>
+    <string name="facebook_app_id">659611293605896</string>
+    <string name="fb_login_protocol_scheme">fb659611293605896</string>
+    <string name="facebook_client_token">bb459249353e76867be620194dde32e8</string>
+</resources>

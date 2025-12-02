@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,7 +14,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
@@ -24,6 +24,59 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  /// Converts Firebase Auth error codes to user-friendly messages
+  String _getPhoneAuthErrorMessage(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'invalid-phone-number':
+        return 'Please enter a valid phone number with country code (e.g., +1 for US).';
+      case 'too-many-requests':
+        return 'Too many attempts. Please try again later.';
+      case 'quota-exceeded':
+        return 'SMS quota exceeded. Please try again later.';
+      case 'user-disabled':
+        return 'This account has been disabled.';
+      case 'operation-not-allowed':
+        return 'Phone sign-in is not enabled. Please contact support.';
+      case 'invalid-verification-code':
+        return 'The verification code is incorrect. Please try again.';
+      case 'invalid-verification-id':
+        return 'Verification session expired. Please request a new code.';
+      case 'session-expired':
+        return 'The verification code has expired. Please request a new code.';
+      case 'credential-already-in-use':
+        return 'This phone number is already linked to another account.';
+      case 'network-request-failed':
+        return 'Network error. Please check your connection and try again.';
+      case 'app-not-authorized':
+        return 'This app is not authorized for phone authentication.';
+      case 'captcha-check-failed':
+        return 'Security verification failed. Please try again.';
+      case 'missing-phone-number':
+        return 'Please enter your phone number.';
+      default:
+        // Check if the message contains common error patterns
+        final message = e.message?.toLowerCase() ?? '';
+        if (message.contains('invalid format') || message.contains('e.164')) {
+          return 'Please enter a valid phone number with country code (e.g., +1 555 555 5555).';
+        }
+        if (message.contains('too_short')) {
+          return 'Phone number is too short. Please include area code (e.g., +1 555 555 5555).';
+        }
+        if (message.contains('region') ||
+            message.contains('sms unable to be sent')) {
+          return 'SMS verification is not available for your region. Please try another sign-in method.';
+        }
+        if (message.contains('blocked') ||
+            message.contains('unusual activity')) {
+          return 'This device has been blocked due to unusual activity. Try again later.';
+        }
+        if (message.contains('network')) {
+          return 'Network error. Please check your connection and try again.';
+        }
+        return 'Unable to verify phone number. Please try again.';
+    }
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
@@ -40,15 +93,26 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signInWithEmailAndPassword() async {
-    if (!_formKey.currentState!.validate()) return;
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || !email.contains('@')) {
+      _showSnackBar('Please enter a valid email', isError: true);
+      return;
+    }
+
+    if (password.isEmpty) {
+      _showSnackBar('Please enter your password', isError: true);
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
       final authService = context.read<AuthService>();
       final user = await authService.signInWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
+        email,
+        password,
       );
 
       if (mounted && user != null) {
@@ -121,6 +185,267 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _signInWithFacebook() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = context.read<AuthService>();
+      final user = await authService.signInWithFacebook();
+      if (mounted && user != null) {
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      } else if (mounted && authService.error != null) {
+        _showSnackBar(authService.error!, isError: true);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Failed to sign in with Facebook.', isError: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _signInWithYahoo() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = context.read<AuthService>();
+      final user = await authService.signInWithYahoo();
+      if (mounted && user != null) {
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      } else if (mounted && authService.error != null) {
+        _showSnackBar(authService.error!, isError: true);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Failed to sign in with Yahoo.', isError: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showPhoneSignInDialog() {
+    final phoneController = TextEditingController();
+    final codeController = TextEditingController();
+    String? verificationId;
+    bool codeSent = false;
+    bool isLoading = false;
+    String? errorText;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (dialogContext) => StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                title: Text(
+                  codeSent ? 'Enter Verification Code' : 'Enter Phone Number',
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (errorText != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Text(
+                          errorText!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                    if (!codeSent) ...[
+                      CupertinoTextField(
+                        controller: phoneController,
+                        placeholder: '+1 555 555 5555',
+                        placeholderStyle: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.5),
+                        ),
+                        keyboardType: TextInputType.phone,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Include country code (e.g., +1 for US)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ] else
+                      CupertinoTextField(
+                        controller: codeController,
+                        placeholder: 'SMS Code',
+                        placeholderStyle: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.5),
+                        ),
+                        keyboardType: TextInputType.number,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    if (isLoading)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 16),
+                        child: CircularProgressIndicator(),
+                      ),
+                  ],
+                ),
+                actions: [
+                  if (!isLoading)
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                  if (!isLoading)
+                    ElevatedButton(
+                      onPressed: () async {
+                        final authService = context.read<AuthService>();
+                        setDialogState(() {
+                          isLoading = true;
+                          errorText = null;
+                        });
+
+                        if (!codeSent) {
+                          // Send Code
+                          var phone = phoneController.text.trim();
+                          if (phone.isEmpty) {
+                            setDialogState(() {
+                              isLoading = false;
+                              errorText = "Please enter a phone number";
+                            });
+                            return;
+                          }
+
+                          // Auto-add + if missing and looks like it has country code
+                          if (!phone.startsWith('+')) {
+                            phone = '+$phone';
+                          }
+                          // Remove any spaces, dashes, or parentheses for E.164 format
+                          phone = phone.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+
+                          await authService.verifyPhoneNumber(
+                            phoneNumber: phone,
+                            onCodeSent: (verId) {
+                              if (context.mounted) {
+                                setDialogState(() {
+                                  verificationId = verId;
+                                  codeSent = true;
+                                  isLoading = false;
+                                });
+                              }
+                            },
+                            onVerificationFailed: (e) {
+                              if (context.mounted) {
+                                setDialogState(() {
+                                  isLoading = false;
+                                  errorText = _getPhoneAuthErrorMessage(e);
+                                });
+                              }
+                            },
+                            onVerificationCompleted: (credential) {
+                              // Auto verification (Android)
+                              if (context.mounted) {
+                                Navigator.pop(context); // Close dialog
+                                Navigator.pushNamedAndRemoveUntil(
+                                  context,
+                                  '/home',
+                                  (route) => false,
+                                );
+                              }
+                            },
+                            onCodeAutoRetrievalTimeout: (verId) {
+                              verificationId = verId;
+                            },
+                          );
+                        } else {
+                          // Verify Code
+                          final code = codeController.text.trim();
+                          if (code.isEmpty) {
+                            setDialogState(() {
+                              isLoading = false;
+                              errorText = "Please enter the code";
+                            });
+                            return;
+                          }
+
+                          if (verificationId != null) {
+                            final user = await authService
+                                .signInWithPhoneCredential(
+                                  verificationId!,
+                                  code,
+                                );
+                            if (user != null && context.mounted) {
+                              Navigator.pop(context);
+                              Navigator.pushNamedAndRemoveUntil(
+                                context,
+                                '/home',
+                                (route) => false,
+                              );
+                            } else if (context.mounted) {
+                              String friendlyError =
+                                  'The verification code is incorrect. Please try again.';
+                              final error =
+                                  authService.error?.toLowerCase() ?? '';
+                              if (error.contains('expired') ||
+                                  error.contains('session')) {
+                                friendlyError =
+                                    'The verification code has expired. Please request a new code.';
+                              } else if (error.contains('invalid')) {
+                                friendlyError =
+                                    'The verification code is incorrect. Please try again.';
+                              }
+                              setDialogState(() {
+                                isLoading = false;
+                                errorText = friendlyError;
+                              });
+                            }
+                          }
+                        }
+                      },
+                      child: Text(codeSent ? 'Verify' : 'Send Code'),
+                    ),
+                ],
+              );
+            },
+          ),
+    );
+  }
+
   void _showForgotPasswordDialog() {
     final resetEmailController = TextEditingController();
 
@@ -129,31 +454,35 @@ class _LoginScreenState extends State<LoginScreen> {
       builder:
           (dialogContext) => AlertDialog(
             title: const Text('Reset Password'),
-            content: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Enter your email to receive a reset link.'),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: resetEmailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null ||
-                          value.isEmpty ||
-                          !value.contains('@')) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Enter your email to receive a reset link.'),
+                const SizedBox(height: 16),
+                CupertinoTextField(
+                  controller: resetEmailController,
+                  placeholder: 'Email',
+                  placeholderStyle: TextStyle(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
-                ],
-              ),
+                  keyboardType: TextInputType.emailAddress,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
             ),
             actions: [
               TextButton(
@@ -162,22 +491,26 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    final authService = context.read<AuthService>();
-                    final success = await authService.sendPasswordResetEmail(
-                      resetEmailController.text.trim(),
+                  final email = resetEmailController.text.trim();
+                  if (email.isEmpty || !email.contains('@')) {
+                    // Show error somehow or just return
+                    return;
+                  }
+
+                  final authService = context.read<AuthService>();
+                  final success = await authService.sendPasswordResetEmail(
+                    email,
+                  );
+                  if (dialogContext.mounted) {
+                    Navigator.pop(dialogContext);
+                  }
+                  if (mounted) {
+                    _showSnackBar(
+                      success
+                          ? 'Reset email sent!'
+                          : authService.error ?? 'Failed to send email.',
+                      isError: !success,
                     );
-                    if (dialogContext.mounted) {
-                      Navigator.pop(dialogContext);
-                    }
-                    if (mounted) {
-                      _showSnackBar(
-                        success
-                            ? 'Reset email sent!'
-                            : authService.error ?? 'Failed to send email.',
-                        isError: !success,
-                      );
-                    }
                   }
                 },
                 child: const Text('Send'),
@@ -199,135 +532,167 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Welcome Back!',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                      textAlign: TextAlign.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Welcome Back!',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  CupertinoTextField(
+                    controller: _emailController,
+                    placeholder: 'Email',
+                    placeholderStyle: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
-                    const SizedBox(height: 32),
-
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(),
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline,
                       ),
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
-                        }
-                        if (!value.contains('@')) {
-                          return 'Please enter a valid email';
-                        }
-                        return null;
-                      },
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
-                          onPressed: () {
-                            setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            );
-                          },
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  CupertinoTextField(
+                    controller: _passwordController,
+                    placeholder: 'Password',
+                    placeholderStyle: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                    obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.done,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    suffix: Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                        child: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _signInWithEmailAndPassword(),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
-                        }
-                        return null;
-                      },
                     ),
-
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: _showForgotPasswordDialog,
-                        child: const Text('Forgot Password?'),
+                    onSubmitted: (_) => _signInWithEmailAndPassword(),
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _showForgotPasswordDialog,
+                      child: const Text('Forgot Password?'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _signInWithEmailAndPassword,
+                    child:
+                        _isLoading
+                            ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Text('Sign In'),
+                  ),
+                  const SizedBox(height: 24),
+                  const Row(
+                    children: [
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text('OR'),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    ElevatedButton(
-                      onPressed:
-                          _isLoading ? null : _signInWithEmailAndPassword,
-                      child:
-                          _isLoading
-                              ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                              : const Text('Sign In'),
-                    ),
-                    const SizedBox(height: 24),
-
-                    const Row(
-                      children: [
-                        Expanded(child: Divider()),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Text('OR'),
-                        ),
-                        Expanded(child: Divider()),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    OutlinedButton.icon(
-                      onPressed: _isLoading ? null : _signInWithGoogle,
-                      icon: Image.network(
-                        'https://www.google.com/favicon.ico',
-                        height: 20,
-                        width: 20,
-                        errorBuilder:
-                            (_, __, ___) =>
-                                const Icon(Icons.g_mobiledata, size: 20),
-                      ),
-                      label: const Text('Sign in with Google'),
-                    ),
-
-                    if (isIOS) ...[
-                      const SizedBox(height: 12),
-                      OutlinedButton.icon(
-                        onPressed: _isLoading ? null : _signInWithApple,
-                        icon: const Icon(Icons.apple, size: 24),
-                        label: const Text('Sign in with Apple'),
-                      ),
+                      Expanded(child: Divider()),
                     ],
-                    const SizedBox(height: 32),
-
-                    TextButton(
-                      onPressed:
-                          () => Navigator.pushNamed(context, '/register'),
-                      child: const Text('Don\'t have an account? Sign up'),
+                  ),
+                  const SizedBox(height: 24),
+                  OutlinedButton.icon(
+                    onPressed: _isLoading ? null : _signInWithGoogle,
+                    icon: Image.network(
+                      'https://www.google.com/favicon.ico',
+                      height: 20,
+                      width: 20,
+                      errorBuilder:
+                          (_, __, ___) =>
+                              const Icon(Icons.g_mobiledata, size: 20),
+                    ),
+                    label: const Text('Sign in with Google'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _isLoading ? null : _signInWithFacebook,
+                    icon: const Icon(
+                      Icons.facebook,
+                      size: 24,
+                      color: Color(0xFF1877F2),
+                    ),
+                    label: const Text('Sign in with Facebook'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _isLoading ? null : _signInWithYahoo,
+                    icon: const Icon(
+                      Icons.email,
+                      size: 24,
+                      color: Colors.purple,
+                    ), // Yahoo purple generic icon
+                    label: const Text('Sign in with Yahoo'),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _isLoading ? null : _showPhoneSignInDialog,
+                    icon: const Icon(Icons.phone, size: 24),
+                    label: const Text('Sign in with Phone'),
+                  ),
+                  if (isIOS) ...[
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _isLoading ? null : _signInWithApple,
+                      icon: const Icon(Icons.apple, size: 24),
+                      label: const Text('Sign in with Apple'),
                     ),
                   ],
-                ),
+                  const SizedBox(height: 32),
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, '/register'),
+                    child: const Text('Don\'t have an account? Sign up'),
+                  ),
+                ],
               ),
             ),
           ),

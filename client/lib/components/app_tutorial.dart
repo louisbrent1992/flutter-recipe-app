@@ -62,7 +62,8 @@ class _AppTutorialState extends State<AppTutorial> {
         }
       },
       enableAutoScroll: true,
-      scrollDuration: const Duration(milliseconds: 300),
+      scrollDuration: const Duration(milliseconds: 500), // Slower, smoother scroll
+      blurValue: 0, // Disable blur for better performance
     );
   }
 
@@ -155,9 +156,12 @@ class TutorialShowcase extends StatelessWidget {
         vertical: 16,
       ),
       tooltipBorderRadius: BorderRadius.circular(16),
-      // Animation settings - minimal for smooth experience
-      movingAnimationDuration: const Duration(milliseconds: 200),
-      disableMovingAnimation: false,
+      // Animation settings - stable to prevent stuttering
+      movingAnimationDuration: const Duration(milliseconds: 300),
+      disableMovingAnimation: true, // Disable moving animation to prevent vertical jitter
+      scaleAnimationDuration: const Duration(milliseconds: 300),
+      scaleAnimationCurve: Curves.easeOutQuart,
+      disableScaleAnimation: true, // Keep target size stable
       child: child,
     );
   }

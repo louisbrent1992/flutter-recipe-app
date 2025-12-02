@@ -60,6 +60,13 @@ class _SettingsScreenState extends State<SettingsScreen>
     return providers.contains('google.com') || providers.contains('apple.com');
   }
 
+  // Helper method to check if user signed in with Phone
+  bool _isPhoneUser(User? user) {
+    if (user == null) return false;
+    final providers = user.providerData.map((info) => info.providerId).toList();
+    return providers.contains('phone');
+  }
+
   // Get the provider name for display
   String? _getProviderName(User? user) {
     if (user == null) return null;
@@ -806,20 +813,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       appBar: CustomAppBar(
         title: 'Settings',
         elevation: AppElevation.appBar,
-        actions: [
-          if (_isEditing) ...[
-            IconButton(
-              icon: const Icon(Icons.cancel_rounded),
-              onPressed: _toggleEditing,
-              tooltip: 'Cancel editing',
-            ),
-            IconButton(
-              icon: const Icon(Icons.save_rounded),
-              onPressed: _updateProfile,
-              tooltip: 'Save changes',
-            ),
-          ],
-        ],
         floatingButtons: [
           // Context menu
           PopupMenuButton<String>(
@@ -1806,6 +1799,11 @@ class _SettingsScreenState extends State<SettingsScreen>
             profileProvider.profile['photoURL'] as String? ??
             user?.photoURL ??
             ImageUtils.defaultProfileIconUrl;
+        
+        final displayName =
+            profileProvider.profile['displayName'] as String? ??
+            user?.displayName ??
+            'Recipe Enthusiast';
 
         return Center(
           child: Column(
@@ -1895,7 +1893,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
               const SizedBox(height: 16),
               Text(
-                user?.displayName ?? 'Recipe Enthusiast',
+                displayName,
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 4),
@@ -1965,48 +1963,126 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
             ),
           ),
-          AnimatedSize(
+          AnimatedCrossFade(
             duration: const Duration(milliseconds: 200),
-            child: GestureDetector(
+            crossFadeState: enabled
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            firstChild: GestureDetector(
               onTap: () {
                 if (!_isEditing) {
-                  setState(() => _isEditing = true);
-                  _animationController.forward();
+                  _toggleEditing();
                 }
               },
-              child: CupertinoTextField(
-                controller: controller,
-                enabled: true,
-                style: TextStyle(
-                  fontSize: AppTypography.responsiveFontSize(context),
-                  fontWeight: FontWeight.normal,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                placeholder: hint,
-                placeholderStyle: TextStyle(
-                  fontSize: AppTypography.responsiveFontSize(context),
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
-                prefix: Padding(
-                  padding: const EdgeInsets.only(left: 12),
-                  child: Icon(
-                    icon,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
+              child: Container(
                 padding: AppSpacing.allResponsive(context),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: Theme.of(context).colorScheme.outline.withValues(
+                      alpha: 0.3,
+                    ),
                   ),
                   borderRadius: BorderRadius.circular(
                     AppBreakpoints.isMobile(context) ? 8 : 12,
                   ),
+                  color:
+                      Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.3,
+                      ),
                 ),
+                child: Row(
+                  children: [
+                    Icon(
+                      icon,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      size: AppSizing.responsiveIconSize(
+                        context,
+                        mobile: 20,
+                        tablet: 22,
+                        desktop: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        controller.text.isNotEmpty ? controller.text : hint,
+                        style: TextStyle(
+                          fontSize: AppTypography.responsiveFontSize(context),
+                          fontWeight: FontWeight.normal,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.edit_rounded,
+                      color:
+                          Theme.of(
+                            context,
+                          ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      size: AppSizing.responsiveIconSize(
+                        context,
+                        mobile: 16,
+                        tablet: 18,
+                        desktop: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            secondChild: CupertinoTextField(
+              controller: controller,
+              autofocus: true,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _updateProfile(),
+              style: TextStyle(
+                fontSize: AppTypography.responsiveFontSize(context),
+                fontWeight: FontWeight.normal,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              placeholder: hint,
+              placeholderStyle: TextStyle(
+                fontSize: AppTypography.responsiveFontSize(context),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+              prefix: Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Icon(
+                  icon,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+              suffix: GestureDetector(
+                onTap: _toggleEditing,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Icon(
+                    Icons.close_rounded,
+                    color:
+                        Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    size: 20,
+                  ),
+                ),
+              ),
+              suffixMode: OverlayVisibilityMode.always,
+              padding: AppSpacing.allResponsive(context),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 1.5,
+                ),
+                borderRadius: BorderRadius.circular(
+                  AppBreakpoints.isMobile(context) ? 8 : 12,
+                ),
+                color: Theme.of(context).colorScheme.surface,
               ),
             ),
           ),
@@ -2023,12 +2099,18 @@ class _SettingsScreenState extends State<SettingsScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isOAuth = _isOAuthUser(user);
+    final isPhone = _isPhoneUser(user);
     final iconSize = AppSizing.responsiveIconSize(
       context,
       mobile: 20,
       tablet: 22,
       desktop: 24,
     );
+
+    // Use phone number if phone user
+    final displayLabel = isPhone ? 'Phone Number:' : 'Email:';
+    final displayValue = isPhone ? (user?.phoneNumber ?? 'Not available') : email;
+    final displayIcon = isPhone ? Icons.phone_rounded : Icons.email_rounded;
 
     return Container(
       margin: EdgeInsets.only(top: AppSpacing.md),
@@ -2038,7 +2120,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           Padding(
             padding: EdgeInsets.only(bottom: AppSpacing.sm),
             child: Text(
-              'Email:',
+              displayLabel,
               style: TextStyle(
                 fontSize: AppTypography.responsiveFontSize(context),
                 fontWeight: FontWeight.w600,
@@ -2061,7 +2143,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               children: [
                 providerIconWidget ??
                     Icon(
-                      Icons.email_rounded,
+                      displayIcon,
                       color: colorScheme.onSurfaceVariant,
                       size: iconSize,
                     ),
@@ -2071,7 +2153,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        email,
+                        displayValue,
                         style: TextStyle(
                           fontSize: AppTypography.responsiveFontSize(context),
                           fontWeight: FontWeight.normal,

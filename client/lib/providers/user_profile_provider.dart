@@ -64,6 +64,13 @@ class UserProfileProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // Optimistically update local profile state for immediate UI feedback
+      if (displayName != null) _profile['displayName'] = displayName;
+      if (email != null) _profile['email'] = email;
+      if (photoURL != null) _profile['photoURL'] = photoURL;
+      // Don't update 'updatedAt' locally as it's a server timestamp
+      notifyListeners();
+
       // Refresh authentication token before making sensitive changes
       // This prevents requires-recent-login errors
       try {
