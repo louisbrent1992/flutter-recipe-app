@@ -500,7 +500,9 @@ class _SettingsScreenState extends State<SettingsScreen>
     try {
       await auth.signOut();
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/login');
+        // Clear the entire navigation stack to prevent background widgets from keeping
+        // listeners active or throwing errors (like ShowcaseView)
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
       }
     } catch (e) {
       if (mounted) {

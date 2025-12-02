@@ -78,6 +78,28 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
 
   @override
   Widget build(BuildContext context) {
+    // DEBUG: Return static gradient to test if animation causes stuttering after login/logout
+    const bool useStaticBackground = true;
+    
+    if (useStaticBackground) {
+      final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+      final colors = isDarkMode 
+          ? _darkModeGradientColors 
+          : const [Color(0xFFFFF3E0), Color(0xFFFFE0B2)];
+      
+      return IgnorePointer(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: colors,
+            ),
+          ),
+        ),
+      );
+    }
+    
     return Consumer<DynamicUiProvider>(
       builder: (context, dyn, _) {
         final DynamicBackgroundConfig? bg = dyn.config?.globalBackground;

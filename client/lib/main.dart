@@ -680,6 +680,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (_) => CollectionService()),
         ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
       ],
+      // DEBUG: Restored Consumer2 but keeping MaterialApp static properties
       child: Consumer2<AuthService, ThemeProvider>(
         builder: (context, authService, themeProvider, _) {
           return MaterialApp(

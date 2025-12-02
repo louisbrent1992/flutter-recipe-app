@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:recipease/providers/auth_provider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import '../../providers/auth_provider.dart';
 import '../../theme/theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -17,205 +17,107 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-
-  String? _emailError;
-
-  @override
-  void initState() {
-    super.initState();
-    _emailController.addListener(_onEmailChanged);
-  }
-
-  void _onEmailChanged() {
-    final email = _emailController.text;
-    final newError =
-        email.isNotEmpty && !email.contains('@')
-            ? 'Please enter a valid email'
-            : null;
-
-    // Only update if error state actually changed to prevent unnecessary rebuilds
-    if (_emailError != newError) {
-      setState(() {
-        _emailError = newError;
-      });
-    }
-  }
-
-  void _showSnackBar(String message, {bool isError = false}) {
-    if (!mounted) return;
-
-    // Hide any existing snackbars
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-    // Show new snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              isError ? Icons.error_outline : Icons.check_circle_outline,
-              color: Theme.of(context).colorScheme.surface.withValues(
-                alpha: Theme.of(context).colorScheme.alphaVeryHigh,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor:
-            isError ? Theme.of(context).colorScheme.error : lightSuccessColor,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 4),
-        margin: const EdgeInsets.all(8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        action:
-            isError
-                ? SnackBarAction(
-                  label: 'Dismiss',
-                  textColor: Theme.of(context).colorScheme.onError,
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  },
-                )
-                : null,
-      ),
-    );
-  }
-
-  String? _validatePassword(String? value) {
-    // Only check if password is provided - Firebase handles authentication
-    // Strict password validation is only enforced during registration/password change
-    if (value == null || value.isEmpty) {
-      return 'Please enter your password';
-    }
-    return null;
-  }
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailController.removeListener(_onEmailChanged);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError 
+            ? Theme.of(context).colorScheme.error 
+            : lightSuccessColor,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Future<void> _signInWithEmailAndPassword() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final authService = context.read<AuthService>();
-
+    setState(() => _isLoading = true);
+    
     try {
+      final authService = context.read<AuthService>();
       final user = await authService.signInWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
 
       if (mounted && user != null) {
-        _showSnackBar('Successfully signed in!');
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       } else if (mounted && authService.error != null) {
         _showSnackBar(authService.error!, isError: true);
-        // Clear password field on authentication error
         _passwordController.clear();
       }
     } catch (e) {
       if (mounted) {
-        _showSnackBar(
-          'An unexpected error occurred. Please try again.',
-          isError: true,
-        );
+        _showSnackBar('An unexpected error occurred.', isError: true);
         _passwordController.clear();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
 
   Future<void> _signInWithGoogle() async {
-    final authService = context.read<AuthService>();
-
+    setState(() => _isLoading = true);
+    
     try {
+      final authService = context.read<AuthService>();
       final user = await authService.signInWithGoogle();
       if (mounted && user != null) {
-        _showSnackBar('Successfully signed in with Google!');
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       } else if (mounted && authService.error != null) {
         _showSnackBar(authService.error!, isError: true);
       }
     } catch (e) {
       if (mounted) {
-        _showSnackBar(
-          'Failed to sign in with Google. Please try again.',
-          isError: true,
-        );
+        _showSnackBar('Failed to sign in with Google.', isError: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
 
   Future<void> _signInWithApple() async {
-    final authService = context.read<AuthService>();
-
+    setState(() => _isLoading = true);
+    
     try {
+      final authService = context.read<AuthService>();
       final user = await authService.signInWithApple();
       if (mounted && user != null) {
-        _showSnackBar('Successfully signed in with Apple!');
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       } else if (mounted && authService.error != null) {
-        // Check for specific error types
-        if (authService.error!.contains('invalid-credential')) {
-          _showSnackBar(
-            'Apple sign-in configuration error. Please contact support or try another sign-in method.',
-            isError: true,
-          );
-        } else {
-          _showSnackBar(authService.error!, isError: true);
-        }
+        _showSnackBar(authService.error!, isError: true);
       }
     } on SignInWithAppleAuthorizationException catch (e) {
-      if (mounted) {
-        String message;
-        switch (e.code) {
-          case AuthorizationErrorCode.canceled:
-            message =
-                'Sign in was canceled. Please try again when you\'re ready.';
-            break;
-          case AuthorizationErrorCode.failed:
-            message = 'Sign in failed. Please try again.';
-            break;
-          case AuthorizationErrorCode.invalidResponse:
-            message = 'Invalid response from Apple. Please try again.';
-            break;
-          case AuthorizationErrorCode.notHandled:
-            message = 'Sign in could not be completed. Please try again.';
-            break;
-          case AuthorizationErrorCode.unknown:
-          default:
-            message = 'An unexpected error occurred. Please try again.';
-        }
-        _showSnackBar(message, isError: true);
+      if (mounted && e.code != AuthorizationErrorCode.canceled) {
+        _showSnackBar('Apple sign-in failed.', isError: true);
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
-        String message;
-        if (e.code == 'invalid-credential') {
-          message =
-              'Apple sign-in configuration error. Please contact support or try another sign-in method.';
-        } else {
-          message = 'Failed to sign in with Apple: ${e.message}';
-        }
-        _showSnackBar(message, isError: true);
+        _showSnackBar('Apple sign-in failed: ${e.message}', isError: true);
       }
     } catch (e) {
       if (mounted) {
-        _showSnackBar(
-          'Failed to sign in with Apple. Please try again.',
-          isError: true,
-        );
+        _showSnackBar('Failed to sign in with Apple.', isError: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -226,165 +128,95 @@ class _LoginScreenState extends State<LoginScreen> {
 
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(
-              'Reset Password',
-              style: TextStyle(
-                fontSize: AppTypography.responsiveHeadingSize(
-                  context,
-                  mobile: 20.0,
-                  tablet: 22.0,
-                  desktop: 24.0,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Reset Password'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Enter your email to receive a reset link.'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: resetEmailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
                 ),
-              ),
-            ),
-            content: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Enter your email address and we\'ll send you a link to reset your password.',
-                    style: TextStyle(
-                      fontSize: AppTypography.responsiveFontSize(
-                        context,
-                        mobile: 14.0,
-                        tablet: 15.0,
-                        desktop: 16.0,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.responsive(context)),
-                  TextFormField(
-                    controller: resetEmailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-              ),
-            ),
-            contentPadding: AppSpacing.allResponsive(context),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('Cancel'),
-              ),
-              Consumer<AuthService>(
-                builder: (context, authService, child) {
-                  return ElevatedButton(
-                    onPressed:
-                        authService.isLoading
-                            ? null
-                            : () async {
-                              if (formKey.currentState!.validate()) {
-                                final success = await authService
-                                    .sendPasswordResetEmail(
-                                      resetEmailController.text.trim(),
-                                    );
-
-                                if (context.mounted) {
-                                  Navigator.pop(context);
-
-                                  if (success) {
-                                    _showSnackBar(
-                                      'Password reset email sent! Check your inbox.',
-                                    );
-                                  } else {
-                                    _showSnackBar(
-                                      authService.error ??
-                                          'Failed to send reset email.',
-                                      isError: true,
-                                    );
-                                  }
-                                }
-                              }
-                            },
-                    child:
-                        authService.isLoading
-                            ? const SizedBox(
-                              height: 16,
-                              width: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                            : const Text('Send Reset Link'),
-                  );
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty || !value.contains('@')) {
+                    return 'Please enter a valid email';
+                  }
+                  return null;
                 },
               ),
             ],
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                final authService = context.read<AuthService>();
+                final success = await authService.sendPasswordResetEmail(
+                  resetEmailController.text.trim(),
+                );
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
+                }
+                if (mounted) {
+                  _showSnackBar(
+                    success ? 'Reset email sent!' : authService.error ?? 'Failed to send email.',
+                    isError: !success,
+                  );
+                }
+              }
+            },
+            child: const Text('Send'),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final authService = context.watch<AuthService>();
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(
-              AppBreakpoints.isDesktop(context)
-                  ? 32.0
-                  : AppBreakpoints.isTablet(context)
-                  ? 28.0
-                  : 24.0,
-            ),
-            child: Container(
-              constraints: BoxConstraints(
-                maxWidth:
-                    AppBreakpoints.isDesktop(context)
-                        ? 500
-                        : AppBreakpoints.isTablet(context)
-                        ? 450
-                        : double.infinity,
-              ),
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
               child: Form(
                 key: _formKey,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
                       'Welcome Back!',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineLarge?.copyWith(fontSize: 20),
+                      style: Theme.of(context).textTheme.headlineMedium,
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(
-                      height:
-                          AppBreakpoints.isDesktop(context)
-                              ? 24
-                              : AppBreakpoints.isTablet(context)
-                              ? 20
-                              : 16,
-                    ),
+                    const SizedBox(height: 32),
+
                     TextFormField(
                       controller: _emailController,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Email',
-                        border: const OutlineInputBorder(),
-                        errorText: _emailError,
-                        errorMaxLines: 1,
-                        isDense: true,
+                        border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
@@ -396,6 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
+
                     TextFormField(
                       controller: _passwordController,
                       decoration: InputDecoration(
@@ -403,49 +236,45 @@ class _LoginScreenState extends State<LoginScreen> {
                         border: const OutlineInputBorder(),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
+                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
                           ),
                           onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
+                            setState(() => _obscurePassword = !_obscurePassword);
                           },
                         ),
                       ),
                       obscureText: _obscurePassword,
-                      validator: _validatePassword,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => _signInWithEmailAndPassword(),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your password';
+                        }
+                        return null;
+                      },
                     ),
-                    const SizedBox(height: 8),
+
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: _showForgotPasswordDialog,
-                        child: const Text(
-                          'Forgot Password?',
-                          style: TextStyle(fontSize: 14),
-                        ),
+                        child: const Text('Forgot Password?'),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
+
                     ElevatedButton(
-                      onPressed:
-                          authService.isLoading
-                              ? null
-                              : _signInWithEmailAndPassword,
-                      child:
-                          authService.isLoading
-                              ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                              : const Text('Sign In'),
+                      onPressed: _isLoading ? null : _signInWithEmailAndPassword,
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Sign In'),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
+
                     const Row(
                       children: [
                         Expanded(child: Divider()),
@@ -456,79 +285,31 @@ class _LoginScreenState extends State<LoginScreen> {
                         Expanded(child: Divider()),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
+
                     OutlinedButton.icon(
-                      onPressed:
-                          authService.isLoading ? null : _signInWithGoogle,
+                      onPressed: _isLoading ? null : _signInWithGoogle,
                       icon: Image.network(
                         'https://www.google.com/favicon.ico',
-                        height:
-                            AppBreakpoints.isDesktop(context)
-                                ? 28
-                                : AppBreakpoints.isTablet(context)
-                                ? 26
-                                : 24,
+                        height: 20,
+                        width: 20,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 20),
                       ),
                       label: const Text('Sign in with Google'),
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          vertical:
-                              AppBreakpoints.isDesktop(context)
-                                  ? 16
-                                  : AppBreakpoints.isTablet(context)
-                                  ? 14
-                                  : 12,
-                        ),
-                      ),
                     ),
-                    const SizedBox(height: 12),
-                    // Apple Sign In button - only show on iOS
-                    if (Theme.of(context).platform == TargetPlatform.iOS)
-                      FutureBuilder<bool>(
-                        future: SignInWithApple.isAvailable(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const SizedBox.shrink();
-                          }
 
-                          if (snapshot.data == true) {
-                            return OutlinedButton.icon(
-                              onPressed:
-                                  authService.isLoading
-                                      ? null
-                                      : _signInWithApple,
-                              icon: Icon(
-                                Icons.apple,
-                                size:
-                                    AppBreakpoints.isDesktop(context)
-                                        ? 28
-                                        : AppBreakpoints.isTablet(context)
-                                        ? 26
-                                        : 24,
-                              ),
-                              label: const Text('Sign in with Apple'),
-                              style: OutlinedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(
-                                  vertical:
-                                      AppBreakpoints.isDesktop(context)
-                                          ? 16
-                                          : AppBreakpoints.isTablet(context)
-                                          ? 14
-                                          : 12,
-                                ),
-                              ),
-                            );
-                          }
-
-                          return const SizedBox.shrink();
-                        },
+                    if (isIOS) ...[
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: _isLoading ? null : _signInWithApple,
+                        icon: const Icon(Icons.apple, size: 24),
+                        label: const Text('Sign in with Apple'),
                       ),
-                    const SizedBox(height: 24),
+                    ],
+                    const SizedBox(height: 32),
+
                     TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/register');
-                      },
+                      onPressed: () => Navigator.pushNamed(context, '/register'),
                       child: const Text('Don\'t have an account? Sign up'),
                     ),
                   ],
