@@ -75,6 +75,7 @@ const {
 	searchMultipleImages,
 	validateImageUrl, 
 	isPlaceholderUrl,
+	getDefaultImage,
 	clearCache: clearImageCache,
 	getCacheStats: getImageCacheStats
 } = require("../utils/imageService");
@@ -500,7 +501,7 @@ IMPORTANT: ALL recipe fields must be filled with realistic values. NEVER use "un
 				instructions: Array.isArray(recipeData.instructions)
 					? recipeData.instructions
 					: [],
-				imageUrl: imageUrl || null, // Use null instead of placeholder
+				imageUrl: imageUrl || getDefaultImage(recipeData.cuisineType || cuisineType),
 				cookingTime: cleanValue(recipeData.cookingTime, "30 minutes"),
 				difficulty: cleanValue(recipeData.difficulty, "medium"),
 				servings: cleanValue(recipeData.servings, "4"),
@@ -1049,7 +1050,7 @@ IMPORTANT: For ANY missing information, you MUST provide reasonable estimates ba
 		ingredients: finalIngredients,
 		instructions: finalInstructions,
 		description: parsedRecipe.description || "Imported recipe",
-		imageUrl: imageUrl || null,
+		imageUrl: imageUrl || getDefaultImage("International"),
 		cookingTime: cleanValue(parsedRecipe.cookingTime, "30 minutes"),
 		difficulty: cleanValue(parsedRecipe.difficulty, "medium"),
 		servings: cleanValue(parsedRecipe.servings, "4"),

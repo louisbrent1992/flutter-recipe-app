@@ -178,18 +178,26 @@ async function searchImage(query, start = 1, useCache = true) {
       return null;
     }
 
-    // Try to find the best image from the results (excluding placeholders)
+    // Try to find the best image from the results (excluding placeholders and checking validity)
     for (const item of response.data.items) {
       const imageUrl = item.link;
       if (imageUrl && !isPlaceholderUrl(imageUrl)) {
-        // Store with timestamp for proper cache management
-        if (useCache) {
-          imageCache[cacheKey] = {
-            url: imageUrl,
-            timestamp: Date.now(),
-          };
+        // Validate the image before accepting it
+        // This ensures we don't return broken links (403, 404, etc.)
+        const isValid = await validateImageUrl(imageUrl);
+        
+        if (isValid) {
+          // Store with timestamp for proper cache management
+          if (useCache) {
+            imageCache[cacheKey] = {
+              url: imageUrl,
+              timestamp: Date.now(),
+            };
+          }
+          return imageUrl;
+        } else {
+          console.log(`⚠️ Skipped invalid image from search results: ${imageUrl}`);
         }
-        return imageUrl;
       }
     }
 
