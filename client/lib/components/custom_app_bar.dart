@@ -56,7 +56,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     const useCompactCredits = false;
 
     // Consistent spacing values for all screens
-    final double actionsEndPadding = isTabletOrDesktop ? 8.0 : 4.0;
+    final double actionsEndPadding = 0;
 
     return AppBar(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -109,6 +109,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             child: CreditsPill(
               compact: useCompactCredits,
               onTap: () => Navigator.pushNamed(context, '/subscription'),
+              hasActionsToRight:
+                  (floatingButtons != null && floatingButtons!.isNotEmpty) ||
+                  (actions != null && actions!.isNotEmpty),
             ),
           ),
         if (floatingButtons != null) ...floatingButtons!,
