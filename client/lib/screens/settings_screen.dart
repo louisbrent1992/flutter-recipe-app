@@ -20,8 +20,6 @@ import '../utils/image_utils.dart';
 import '../services/notification_scheduler.dart';
 import '../services/debug_settings.dart';
 import '../services/tutorial_service.dart';
-import '../components/app_tutorial.dart';
-import '../main.dart' show navigatorKey;
 import '../components/inline_banner_ad.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -370,66 +368,23 @@ class _SettingsScreenState extends State<SettingsScreen>
       final tutorialService = TutorialService();
 
       // Reset tutorial completion status with manual flag
+      // HomeScreen will detect this flag and start the tutorial after data loads
       await tutorialService.resetTutorial(isManual: true);
 
       if (mounted) {
-        // Navigate to home screen
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-
-        // Use frame callbacks to wait for widgets to be built instead of arbitrary delays
-        // This ensures smooth transition without stuttering
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          // Wait one more frame to ensure all widgets are fully rendered
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (navigatorKey.currentContext != null) {
-              final homeContext = navigatorKey.currentContext!;
-
-              // Start with home hero section (welcome message)
-              final List<GlobalKey> tutorialTargets = [TutorialKeys.homeHero];
-
-              // Then navigation drawer menu and credit balance
-              tutorialTargets.addAll([
-                TutorialKeys.navDrawerMenu,
-                TutorialKeys.creditBalance,
-              ]);
-
-              // Always include Your Recipes, Community, Discover
-              tutorialTargets.addAll([
-                TutorialKeys.homeYourRecipes,
-                TutorialKeys.homeCommunity,
-                TutorialKeys.homeDiscover,
-              ]);
-
-              // Collections are always shown (even if empty state), so safe to include
-              tutorialTargets.add(TutorialKeys.homeCollections);
-
-              // Add Features section
-              tutorialTargets.add(TutorialKeys.homeFeatures);
-
-              // Add bottom navigation targets
-              tutorialTargets.addAll([
-                TutorialKeys.bottomNavHome,
-                TutorialKeys.bottomNavDiscover,
-                TutorialKeys.bottomNavMyRecipes,
-                TutorialKeys.bottomNavGenerate,
-                TutorialKeys.bottomNavSettings,
-              ]);
-
-              // Start tutorial immediately after widgets are built
-              startTutorial(homeContext, tutorialTargets);
-            }
-          });
-        });
-
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Tutorial started! 👋'),
+            content: Text('Starting tutorial... 👋'),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             duration: Duration(seconds: 2),
           ),
         );
+
+        // Navigate to home screen - it will handle starting the tutorial
+        // after waiting for recipes to load
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       }
     } catch (e) {
       if (mounted) {

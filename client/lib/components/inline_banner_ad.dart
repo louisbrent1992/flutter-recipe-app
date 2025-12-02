@@ -21,6 +21,8 @@ class _InlineBannerAdState extends State<InlineBannerAd> {
   int _retryCount = 0;
   static const int _maxRetries = 3;
   StreamSubscription<GlobalKey>? _tutorialSubscription;
+  bool _showCloseButton = false;
+  Timer? _closeTimer;
 
   // Keep track of the loaded size to update the container height dynamically
   AdSize? _adSize;
@@ -96,6 +98,16 @@ class _InlineBannerAdState extends State<InlineBannerAd> {
             _isAdLoaded = true;
             _retryCount = 0;
             _adSize = adaptiveSize; // Save the size to use in the build method
+            _showCloseButton = false;
+          });
+          // Show close button after 10 seconds
+          _closeTimer?.cancel();
+          _closeTimer = Timer(const Duration(seconds: 10), () {
+            if (mounted) {
+              setState(() {
+                _showCloseButton = true;
+              });
+            }
           });
         },
         onAdFailedToLoad: (ad, error) {
@@ -118,8 +130,13 @@ class _InlineBannerAdState extends State<InlineBannerAd> {
   @override
   void dispose() {
     _tutorialSubscription?.cancel();
+    _closeTimer?.cancel();
     _bannerAd?.dispose();
     super.dispose();
+  }
+
+  void _navigateToSubscription() {
+    Navigator.pushNamed(context, '/subscription');
   }
 
   @override
@@ -143,39 +160,69 @@ class _InlineBannerAdState extends State<InlineBannerAd> {
           height: adHeight + 32, // Height + Margins
           width: double.infinity,
           child: Center(
-            child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 16),
-              // Width matches the ad size (which we calculated to match the content)
-              width: _adSize!.width.toDouble(),
-              height: adHeight,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.outline.withValues(alpha: 0.2),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 16),
+                  // Width matches the ad size (which we calculated to match the content)
                   width: _adSize!.width.toDouble(),
                   height: adHeight,
-                  child: AdWidget(
-                    key: ValueKey('ad_widget_${_bannerAd.hashCode}'),
-                    ad: _bannerAd!,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.outline.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      width: _adSize!.width.toDouble(),
+                      height: adHeight,
+                      child: AdWidget(
+                        key: ValueKey('ad_widget_${_bannerAd.hashCode}'),
+                        ad: _bannerAd!,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                // Close button - appears after delay
+                if (_showCloseButton)
+                  Positioned(
+                    top: 8,
+                    right: -4,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: _navigateToSubscription,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         );

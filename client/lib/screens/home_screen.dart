@@ -51,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen>
   StreamSubscription<void>? _recipesChangedSubscription;
   Future<List<RecipeCollection>>?
   _collectionsFuture; // Cache collections future
+  Future<void>? _dataLoadingFuture; // Track initial data loading status
 
   @override
   void initState() {
@@ -61,43 +62,8 @@ class _HomeScreenState extends State<HomeScreen>
     );
     _animationController.forward();
 
-    // Preload user and random recipes for carousels
-    Future.microtask(() {
-      if (mounted) {
-        final recipeProvider = Provider.of<RecipeProvider>(
-          context,
-          listen: false,
-        );
-        final collectionService = Provider.of<CollectionService>(
-          context,
-          listen: false,
-        );
-
-        // Load first batch of user's own recipes (only once)
-        recipeProvider.loadUserRecipes(limit: 20);
-
-        // Fetch collections once and cache the future
-        _collectionsFuture = collectionService.getCollections(
-          updateSpecialCollections: true,
-        );
-
-        // Fetch session cache for discovery (500 recipes, used everywhere)
-        recipeProvider.fetchSessionDiscoverCache().then((_) {
-          // After cache loads, get first 50 for home screen carousel
-          final discover = recipeProvider.getFilteredDiscoverRecipes(
-            page: 1,
-            limit: 50,
-          );
-          recipeProvider.setGeneratedRecipesFromCache(discover);
-        });
-
-        // Fetch community recipes for carousel
-        recipeProvider.fetchSessionCommunityCache();
-
-        // Ensure first frame shows placeholders even before provider flips loading
-        if (mounted) setState(() => _isBooting = false);
-      }
-    });
+    // Start initial data load
+    _dataLoadingFuture = _loadInitialData();
 
     // Listen for cross-screen recipe updates to trigger UI rebuild
     // Note: Provider already updates data optimistically, no need for network fetch
@@ -115,24 +81,73 @@ class _HomeScreenState extends State<HomeScreen>
     });
 
     // Check if tutorial should be shown and start it
-    // Skip auto-start if this is a manual restart (to prevent double-start)
+    // Handle both auto-start (first time) and manual restart (from settings)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final tutorialService = TutorialService();
-
-      // Don't auto-start if this is a manual restart
-      if (tutorialService.isManualRestart) {
+      final isManualRestart = tutorialService.isManualRestart;
+      
+      // Clear the manual restart flag early
+      if (isManualRestart) {
         tutorialService.clearManualRestartFlag();
-        return;
       }
 
-      final shouldShow = await tutorialService.shouldShowTutorial();
+      final shouldShow = isManualRestart || await tutorialService.shouldShowTutorial();
       if (shouldShow && mounted) {
-        // Wait longer for recipes to load before starting tutorial
-        await Future.delayed(const Duration(milliseconds: 1500));
+        // Wait for data to load before starting tutorial
+        // This ensures "Your Recipes" are shown if user has recipes
+        if (_dataLoadingFuture != null) {
+          await _dataLoadingFuture;
+        }
+        
+        // Add a small buffer for UI rendering/animations to settle
+        await Future.delayed(const Duration(milliseconds: 500));
+        
         if (mounted) {
           _startTutorial();
         }
       }
+    });
+  }
+
+  Future<void> _loadInitialData() async {
+    // Use microtask to ensure context is available but don't block init
+    await Future.microtask(() async {
+      if (!mounted) return;
+      
+      final recipeProvider = Provider.of<RecipeProvider>(
+        context,
+        listen: false,
+      );
+      final collectionService = Provider.of<CollectionService>(
+        context,
+        listen: false,
+      );
+
+      // Load first batch of user's own recipes (only once)
+      await recipeProvider.loadUserRecipes(limit: 20);
+
+      // Fetch collections once and cache the future
+      _collectionsFuture = collectionService.getCollections(
+        updateSpecialCollections: true,
+      );
+      // Wait for collections to ensure they are ready for tutorial
+      await _collectionsFuture;
+
+      // Fetch session cache for discovery (500 recipes, used everywhere)
+      await recipeProvider.fetchSessionDiscoverCache();
+        
+      // After cache loads, get first 50 for home screen carousel
+      final discover = recipeProvider.getFilteredDiscoverRecipes(
+        page: 1,
+        limit: 50,
+      );
+      recipeProvider.setGeneratedRecipesFromCache(discover);
+
+      // Fetch community recipes for carousel
+      await recipeProvider.fetchSessionCommunityCache();
+
+      // Ensure first frame shows placeholders even before provider flips loading
+      if (mounted) setState(() => _isBooting = false);
     });
   }
 
