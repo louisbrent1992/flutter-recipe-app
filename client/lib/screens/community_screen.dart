@@ -355,7 +355,8 @@ class _CommunityScreenState extends State<CommunityScreen>
           ),
         ],
       ),
-      body: Stack(
+      body: SafeArea(
+        child: Stack(
         children: [
           Column(
             children: [
@@ -575,6 +576,7 @@ class _CommunityScreenState extends State<CommunityScreen>
             },
           ),
         ],
+        ),
       ),
     );
   }

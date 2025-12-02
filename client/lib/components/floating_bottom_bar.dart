@@ -96,7 +96,7 @@ class FloatingBottomBar extends StatelessWidget {
                   ? (AppBreakpoints.isDesktop(context)
                       ? 84
                       : AppBreakpoints.isTablet(context)
-                      ? 78
+                      ? 80
                       : 72)
                   : (AppBreakpoints.isDesktop(context)
                       ? 52
@@ -139,7 +139,8 @@ class FloatingBottomBar extends StatelessWidget {
       TutorialShowcase(
         showcaseKey: TutorialKeys.bottomNavHome,
         title: 'Dashboard 🏠',
-        description: 'Your central hub for recipes, features, and daily inspiration.',
+        description:
+            'Your central hub for recipes, features, and daily inspiration.',
         isCircular: true,
         targetPadding: const EdgeInsets.all(12),
         child: _buildMinimalNavIcon(
@@ -178,7 +179,8 @@ class FloatingBottomBar extends StatelessWidget {
       TutorialShowcase(
         showcaseKey: TutorialKeys.bottomNavGenerate,
         title: 'AI Chef ✨',
-        description: 'Create unique recipes instantly based on your ingredients and preferences.',
+        description:
+            'Create unique recipes instantly based on your ingredients and preferences.',
         isCircular: true,
         targetPadding: const EdgeInsets.all(12),
         child: _buildMinimalNavIcon(
@@ -214,7 +216,8 @@ class FloatingBottomBar extends StatelessWidget {
       TutorialShowcase(
         showcaseKey: TutorialKeys.bottomNavHome,
         title: 'Dashboard 🏠',
-        description: 'Your central hub for recipes, features, and daily inspiration.',
+        description:
+            'Your central hub for recipes, features, and daily inspiration.',
         isCircular: true,
         targetPadding: const EdgeInsets.all(12),
         child: _buildMinimalNavIcon(
@@ -253,7 +256,8 @@ class FloatingBottomBar extends StatelessWidget {
       TutorialShowcase(
         showcaseKey: TutorialKeys.bottomNavGenerate,
         title: 'AI Chef ✨',
-        description: 'Create unique recipes instantly based on your ingredients and preferences.',
+        description:
+            'Create unique recipes instantly based on your ingredients and preferences.',
         isCircular: true,
         targetPadding: const EdgeInsets.all(12),
         child: _buildMinimalNavIcon(
@@ -327,15 +331,21 @@ class FloatingBottomBar extends StatelessWidget {
             width: 24,
             height: 24,
             child: IconButton(
-              onPressed: canJumpBack10 && onGoToPage != null
-                  ? () => onGoToPage!((current - 10).clamp(1, total))
-                  : null,
+              onPressed:
+                  canJumpBack10 && onGoToPage != null
+                      ? () => onGoToPage!((current - 10).clamp(1, total))
+                      : null,
               icon: Icon(
                 Icons.keyboard_double_arrow_left,
                 size: 16,
-                color: canJumpBack10
-                    ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8)
-                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                color:
+                    canJumpBack10
+                        ? theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.8,
+                        )
+                        : theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.3,
+                        ),
               ),
               tooltip: 'Back 10 pages',
               padding: EdgeInsets.zero,
@@ -353,9 +363,14 @@ class FloatingBottomBar extends StatelessWidget {
             icon: Icon(
               Icons.chevron_left,
               size: 16,
-              color: canGoPrev
-                  ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8)
-                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+              color:
+                  canGoPrev
+                      ? theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.8,
+                      )
+                      : theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.3,
+                      ),
             ),
             tooltip: 'Previous',
             padding: EdgeInsets.zero,
@@ -367,9 +382,10 @@ class FloatingBottomBar extends StatelessWidget {
 
         // Tappable page indicator - opens "Go to page" dialog
         GestureDetector(
-          onTap: total > 1 && onGoToPage != null && !(isLoading ?? false)
-              ? () => _showGoToPageDialog(context, current, total)
-              : null,
+          onTap:
+              total > 1 && onGoToPage != null && !(isLoading ?? false)
+                  ? () => _showGoToPageDialog(context, current, total)
+                  : null,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
@@ -420,9 +436,14 @@ class FloatingBottomBar extends StatelessWidget {
             icon: Icon(
               Icons.chevron_right,
               size: 16,
-              color: canGoNext
-                  ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8)
-                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+              color:
+                  canGoNext
+                      ? theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.8,
+                      )
+                      : theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.3,
+                      ),
             ),
             tooltip: 'Next',
             padding: EdgeInsets.zero,
@@ -436,15 +457,21 @@ class FloatingBottomBar extends StatelessWidget {
             width: 24,
             height: 24,
             child: IconButton(
-              onPressed: canJumpForward10 && onGoToPage != null
-                  ? () => onGoToPage!((current + 10).clamp(1, total))
-                  : null,
+              onPressed:
+                  canJumpForward10 && onGoToPage != null
+                      ? () => onGoToPage!((current + 10).clamp(1, total))
+                      : null,
               icon: Icon(
                 Icons.keyboard_double_arrow_right,
                 size: 16,
-                color: canJumpForward10
-                    ? theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8)
-                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                color:
+                    canJumpForward10
+                        ? theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.8,
+                        )
+                        : theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.3,
+                        ),
               ),
               tooltip: 'Forward 10 pages',
               padding: EdgeInsets.zero,
@@ -471,75 +498,81 @@ class FloatingBottomBar extends StatelessWidget {
     );
   }
 
-  void _showGoToPageDialog(BuildContext context, int currentPage, int totalPages) {
+  void _showGoToPageDialog(
+    BuildContext context,
+    int currentPage,
+    int totalPages,
+  ) {
     final controller = TextEditingController(text: currentPage.toString());
     final theme = Theme.of(context);
-    
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Go to Page',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CupertinoTextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              placeholder: '1 - $totalPages',
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: theme.colorScheme.outline.withValues(alpha: 0.3),
+      builder:
+          (context) => AlertDialog(
+            title: Text(
+              'Go to Page',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CupertinoTextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  autofocus: true,
+                  placeholder: '1 - $totalPages',
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  style: TextStyle(color: theme.colorScheme.onSurface),
+                  placeholderStyle: TextStyle(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                  onSubmitted: (value) {
+                    final page = int.tryParse(value);
+                    if (page != null && page >= 1 && page <= totalPages) {
+                      Navigator.pop(context);
+                      onGoToPage?.call(page);
+                    }
+                  },
                 ),
-              ),
-              style: TextStyle(
-                color: theme.colorScheme.onSurface,
-              ),
-              placeholderStyle: TextStyle(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-              onSubmitted: (value) {
-                final page = int.tryParse(value);
-                if (page != null && page >= 1 && page <= totalPages) {
-                  Navigator.pop(context);
-                  onGoToPage?.call(page);
-                }
-              },
+                const SizedBox(height: 8),
+                Text(
+                  'Enter a page between 1 and $totalPages',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Enter a page between 1 and $totalPages',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+              FilledButton(
+                onPressed: () {
+                  final page = int.tryParse(controller.text);
+                  if (page != null && page >= 1 && page <= totalPages) {
+                    Navigator.pop(context);
+                    onGoToPage?.call(page);
+                  }
+                },
+                child: const Text('Go'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () {
-              final page = int.tryParse(controller.text);
-              if (page != null && page >= 1 && page <= totalPages) {
-                Navigator.pop(context);
-                onGoToPage?.call(page);
-              }
-            },
-            child: const Text('Go'),
-          ),
-        ],
-      ),
     );
   }
 

@@ -164,38 +164,38 @@ class _InlineBannerAdState extends State<InlineBannerAd> {
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  margin: const EdgeInsets.symmetric(vertical: 16),
-                  // Width matches the ad size (which we calculated to match the content)
+              margin: const EdgeInsets.symmetric(vertical: 16),
+              // Width matches the ad size (which we calculated to match the content)
+              width: _adSize!.width.toDouble(),
+              height: adHeight,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outline.withValues(alpha: 0.2),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
                   width: _adSize!.width.toDouble(),
                   height: adHeight,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.outline.withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                  child: AdWidget(
+                    key: ValueKey('ad_widget_${_bannerAd.hashCode}'),
+                    ad: _bannerAd!,
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: SizedBox(
-                      width: _adSize!.width.toDouble(),
-                      height: adHeight,
-                      child: AdWidget(
-                        key: ValueKey('ad_widget_${_bannerAd.hashCode}'),
-                        ad: _bannerAd!,
-                      ),
-                    ),
-                  ),
+                ),
+              ),
                 ),
                 // Close button - appears after delay
                 if (_showCloseButton)

@@ -634,282 +634,282 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Scrollbar(
                   controller: _scrollController,
                   thumbVisibility: true,
-                  child: SingleChildScrollView(
+        child: SingleChildScrollView(
                     controller: _scrollController,
-                    padding: EdgeInsets.all(
-                      AppBreakpoints.isDesktop(context)
-                          ? 32.0
-                          : AppBreakpoints.isTablet(context)
-                          ? 28.0
-                          : 24.0,
-                    ),
-              child: Container(
-                constraints: BoxConstraints(
-                  maxWidth:
-                      AppBreakpoints.isDesktop(context)
-                          ? 500
-                          : AppBreakpoints.isTablet(context)
-                          ? 450
-                          : double.infinity,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Create Account',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineLarge?.copyWith(fontSize: 20),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(
-                      height:
-                          AppBreakpoints.isDesktop(context)
-                              ? 24
-                              : AppBreakpoints.isTablet(context)
-                              ? 20
-                              : 16,
-                    ),
-                    CupertinoTextField(
-                      controller: _nameController,
-                      placeholder: 'Full Name',
+          padding: EdgeInsets.all(
+            AppBreakpoints.isDesktop(context)
+                ? 32.0
+                : AppBreakpoints.isTablet(context)
+                ? 28.0
+                : 24.0,
+          ),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth:
+                  AppBreakpoints.isDesktop(context)
+                      ? 500
+                      : AppBreakpoints.isTablet(context)
+                      ? 450
+                      : double.infinity,
+            ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Create Account',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.headlineLarge?.copyWith(fontSize: 20),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(
+                    height:
+                        AppBreakpoints.isDesktop(context)
+                            ? 24
+                            : AppBreakpoints.isTablet(context)
+                            ? 20
+                            : 16,
+                  ),
+                  CupertinoTextField(
+                    controller: _nameController,
+                    placeholder: 'Full Name',
                       placeholderStyle: TextStyle(
                         color: colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                       textInputAction: TextInputAction.next,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: colorScheme.outline,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      style: TextStyle(
-                        color: colorScheme.onSurface,
-                      ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
                     ),
-                    const SizedBox(height: 12),
-                    CupertinoTextField(
-                      controller: _emailController,
-                      placeholder: 'Email',
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: colorScheme.outline,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    style: TextStyle(
+                        color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                      CupertinoTextField(
+                        controller: _emailController,
+                        placeholder: 'Email',
                       placeholderStyle: TextStyle(
                         color: colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
-                      keyboardType: TextInputType.emailAddress,
+                        keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: colorScheme.outline,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
                         ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      style: TextStyle(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                          color: colorScheme.outline,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        style: TextStyle(
                         color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    CupertinoTextField(
-                      controller: _passwordController,
-                      placeholder: 'Password',
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  CupertinoTextField(
+                    controller: _passwordController,
+                    placeholder: 'Password',
                       placeholderStyle: TextStyle(
                         color: colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
-                      obscureText: _obscurePassword,
+                    obscureText: _obscurePassword,
                       textInputAction: TextInputAction.next,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
                           color: colorScheme.outline,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
                       ),
-                      style: TextStyle(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    style: TextStyle(
                         color: colorScheme.onSurface,
-                      ),
-                      suffix: Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                          child: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
+                    ),
+                    suffix: Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                        child: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                             color: colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4.0, left: 4.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Password must be at least 8 characters long and contain:',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.secondary,
-                              fontSize: 11,
-                            ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0, left: 4.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Password must be at least 8 characters long and contain:',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.secondary,
+                            fontSize: 11,
                           ),
-                          const SizedBox(height: 2),
-                          _buildRequirementText(
-                            'At least one uppercase letter (A-Z)',
-                            _hasUpperCase,
-                          ),
-                          _buildRequirementText(
-                            'At least one lowercase letter (a-z)',
-                            _hasLowerCase,
-                          ),
-                          _buildRequirementText(
-                            'At least one number (0-9)',
-                            _hasNumber,
-                          ),
-                          _buildRequirementText(
-                            'At least one special character (!@#\$%^&*(),.?":{}|<>)',
-                            _hasSpecialChar,
-                          ),
-                          _buildRequirementText(
-                            'No spaces allowed',
-                            _hasNoSpaces,
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 2),
+                        _buildRequirementText(
+                          'At least one uppercase letter (A-Z)',
+                          _hasUpperCase,
+                        ),
+                        _buildRequirementText(
+                          'At least one lowercase letter (a-z)',
+                          _hasLowerCase,
+                        ),
+                        _buildRequirementText(
+                          'At least one number (0-9)',
+                          _hasNumber,
+                        ),
+                        _buildRequirementText(
+                          'At least one special character (!@#\$%^&*(),.?":{}|<>)',
+                          _hasSpecialChar,
+                        ),
+                        _buildRequirementText(
+                          'No spaces allowed',
+                          _hasNoSpaces,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    CupertinoTextField(
-                      controller: _confirmPasswordController,
-                      placeholder: 'Confirm Password',
+                  ),
+                  const SizedBox(height: 12),
+                  CupertinoTextField(
+                    controller: _confirmPasswordController,
+                    placeholder: 'Confirm Password',
                       placeholderStyle: TextStyle(
                         color: colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
-                      obscureText: _obscureConfirmPassword,
+                    obscureText: _obscureConfirmPassword,
                       textInputAction: TextInputAction.done,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: colorScheme.outline,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      style: TextStyle(
-                        color: colorScheme.onSurface,
-                      ),
-                      suffix: Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _obscureConfirmPassword = !_obscureConfirmPassword;
-                            });
-                          },
-                          child: Icon(
-                            _obscureConfirmPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
-                        ),
-                      ),
-                      onSubmitted: (_) => _registerWithEmailAndPassword(),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
                     ),
-                    const SizedBox(height: 12),
-                    CupertinoTextField(
-                      controller: _inviteCodeController,
-                      placeholder: 'Invite Code (optional)',
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: colorScheme.outline,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    style: TextStyle(
+                        color: colorScheme.onSurface,
+                    ),
+                    suffix: Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
+                        child: Icon(
+                          _obscureConfirmPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
+                      onSubmitted: (_) => _registerWithEmailAndPassword(),
+                  ),
+                  const SizedBox(height: 12),
+                  CupertinoTextField(
+                    controller: _inviteCodeController,
+                    placeholder: 'Invite Code (optional)',
                       placeholderStyle: TextStyle(
                         color: colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
                           color: colorScheme.outline,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
                       ),
-                      style: TextStyle(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    style: TextStyle(
                         color: colorScheme.onSurface,
-                      ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Use an invite code to earn bonus credits for you and your friend.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.secondary,
-                        fontSize: 11,
-                      ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Use an invite code to earn bonus credits for you and your friend.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.secondary,
+                      fontSize: 11,
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed:
-                          _isLoading ? null : _registerWithEmailAndPassword,
-                      child:
-                          _isLoading
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed:
+                        _isLoading ? null : _registerWithEmailAndPassword,
+                    child:
+                        _isLoading
                               ? const SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(strokeWidth: 2),
                               )
-                              : const Text('Sign Up'),
-                    ),
-                    const SizedBox(height: 16),
-                    const Row(
-                      children: [
-                        Expanded(child: Divider()),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Text('OR'),
-                        ),
-                        Expanded(child: Divider()),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    OutlinedButton.icon(
-                      onPressed: _isLoading ? null : _signUpWithGoogle,
-                      icon: Image.network(
-                        'https://www.google.com/favicon.ico',
-                        height:
-                            AppBreakpoints.isDesktop(context)
-                                ? 28
-                                : AppBreakpoints.isTablet(context)
-                                ? 26
-                                : 24,
+                            : const Text('Sign Up'),
+                  ),
+                  const SizedBox(height: 16),
+                  const Row(
+                    children: [
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Text('OR'),
+                      ),
+                      Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: _isLoading ? null : _signUpWithGoogle,
+                    icon: Image.network(
+                      'https://www.google.com/favicon.ico',
+                      height:
+                          AppBreakpoints.isDesktop(context)
+                              ? 28
+                              : AppBreakpoints.isTablet(context)
+                              ? 26
+                              : 24,
                         errorBuilder:
                             (_, __, ___) =>
                                 const Icon(Icons.g_mobiledata, size: 24),
-                      ),
-                      label: const Text('Sign up with Google'),
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          vertical:
-                              AppBreakpoints.isDesktop(context)
-                                  ? 16
-                                  : AppBreakpoints.isTablet(context)
-                                  ? 14
-                                  : 12,
-                        ),
+                    ),
+                    label: const Text('Sign up with Google'),
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        vertical:
+                            AppBreakpoints.isDesktop(context)
+                                ? 16
+                                : AppBreakpoints.isTablet(context)
+                                ? 14
+                                : 12,
                       ),
                     ),
+                  ),
                     const SizedBox(height: 12),
                     OutlinedButton.icon(
                       onPressed: _isLoading ? null : _signUpWithFacebook,
@@ -958,57 +958,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    // Apple Sign In button - only show on iOS
-                    if (Theme.of(context).platform == TargetPlatform.iOS)
-                      FutureBuilder<bool>(
-                        future: SignInWithApple.isAvailable(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const SizedBox.shrink();
-                          }
-
-                          if (snapshot.data == true) {
-                            return OutlinedButton.icon(
-                              onPressed: _isLoading ? null : _signUpWithApple,
-                              icon: Icon(
-                                Icons.apple,
-                                size:
-                                    AppBreakpoints.isDesktop(context)
-                                        ? 28
-                                        : AppBreakpoints.isTablet(context)
-                                        ? 26
-                                        : 24,
-                              ),
-                              label: const Text('Sign up with Apple'),
-                              style: OutlinedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(
-                                  vertical:
-                                      AppBreakpoints.isDesktop(context)
-                                          ? 16
-                                          : AppBreakpoints.isTablet(context)
-                                          ? 14
-                                          : 12,
-                                ),
-                              ),
-                            );
-                          }
-
+                  const SizedBox(height: 12),
+                  // Apple Sign In button - only show on iOS
+                  if (Theme.of(context).platform == TargetPlatform.iOS)
+                    FutureBuilder<bool>(
+                      future: SignInWithApple.isAvailable(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const SizedBox.shrink();
-                        },
-                      ),
-                    const SizedBox(height: 24),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pushReplacementNamed(context, '/login');
+                        }
+
+                        if (snapshot.data == true) {
+                          return OutlinedButton.icon(
+                            onPressed: _isLoading ? null : _signUpWithApple,
+                            icon: Icon(
+                              Icons.apple,
+                              size:
+                                  AppBreakpoints.isDesktop(context)
+                                      ? 28
+                                      : AppBreakpoints.isTablet(context)
+                                      ? 26
+                                      : 24,
+                            ),
+                            label: const Text('Sign up with Apple'),
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                vertical:
+                                    AppBreakpoints.isDesktop(context)
+                                        ? 16
+                                        : AppBreakpoints.isTablet(context)
+                                        ? 14
+                                        : 12,
+                              ),
+                            ),
+                          );
+                        }
+
+                        return const SizedBox.shrink();
                       },
-                      child: const Text('Already have an account? Sign in'),
                     ),
-                  ],
-                ),
+                  const SizedBox(height: 24),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    },
+                    child: const Text('Already have an account? Sign in'),
+                  ),
+                ],
               ),
             ),
+          ),
           ),
         ),
       ),
@@ -1059,9 +1059,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ],
-    ),
-  ),
-);
+        ),
+      ),
+    );
   }
 
   Widget _buildRequirementText(String text, bool isMet) {

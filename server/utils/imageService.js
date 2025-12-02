@@ -187,14 +187,14 @@ async function searchImage(query, start = 1, useCache = true) {
         const isValid = await validateImageUrl(imageUrl);
         
         if (isValid) {
-          // Store with timestamp for proper cache management
-          if (useCache) {
-            imageCache[cacheKey] = {
-              url: imageUrl,
-              timestamp: Date.now(),
-            };
-          }
-          return imageUrl;
+        // Store with timestamp for proper cache management
+        if (useCache) {
+          imageCache[cacheKey] = {
+            url: imageUrl,
+            timestamp: Date.now(),
+          };
+        }
+        return imageUrl;
         } else {
           console.log(`⚠️ Skipped invalid image from search results: ${imageUrl}`);
         }

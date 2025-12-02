@@ -991,7 +991,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
         ],
       ),
-      body: Stack(
+      body: SafeArea(
+        child: Stack(
         children: [
           SingleChildScrollView(
             controller: _scrollController,
@@ -1745,6 +1746,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -1985,31 +1987,31 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
             ),
             secondChild: CupertinoTextField(
-              controller: controller,
+                controller: controller,
               autofocus: true,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _updateProfile(),
-              style: TextStyle(
-                fontSize: AppTypography.responsiveFontSize(context),
-                fontWeight: FontWeight.normal,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              placeholder: hint,
-              placeholderStyle: TextStyle(
-                fontSize: AppTypography.responsiveFontSize(context),
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-              prefix: Padding(
-                padding: const EdgeInsets.only(left: 12),
-                child: Icon(
-                  icon,
+                style: TextStyle(
+                  fontSize: AppTypography.responsiveFontSize(context),
+                  fontWeight: FontWeight.normal,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                placeholder: hint,
+                placeholderStyle: TextStyle(
+                  fontSize: AppTypography.responsiveFontSize(context),
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
-              ),
+                prefix: Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: Icon(
+                    icon,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
               suffix: GestureDetector(
                 onTap: _toggleEditing,
                 child: Padding(
@@ -2024,15 +2026,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ),
               ),
               suffixMode: OverlayVisibilityMode.always,
-              padding: AppSpacing.allResponsive(context),
-              decoration: BoxDecoration(
-                border: Border.all(
+                padding: AppSpacing.allResponsive(context),
+                decoration: BoxDecoration(
+                  border: Border.all(
                   color: Theme.of(context).colorScheme.primary,
                   width: 1.5,
-                ),
-                borderRadius: BorderRadius.circular(
-                  AppBreakpoints.isMobile(context) ? 8 : 12,
-                ),
+                  ),
+                  borderRadius: BorderRadius.circular(
+                    AppBreakpoints.isMobile(context) ? 8 : 12,
+                  ),
                 color: Theme.of(context).colorScheme.surface,
               ),
             ),
