@@ -6,7 +6,7 @@ import 'package:recipease/components/persistent_banner_layout.dart';
 import 'package:recipease/firebase_options.dart';
 import 'package:recipease/screens/my_recipes_screen.dart';
 import 'package:recipease/screens/discover_recipes.dart';
-import 'package:recipease/screens/community_screen.dart';
+// import 'package:recipease/screens/community_screen.dart';
 import 'package:recipease/screens/generate_recipe_screen.dart';
 import 'package:recipease/screens/home_screen.dart';
 import 'package:recipease/screens/recipe_edit_screen.dart';
@@ -811,34 +811,34 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   ),
                 );
               },
-              '/community': (context) {
-                final args = ModalRoute.of(context)?.settings.arguments;
-                String? initialQuery;
-                String? initialDifficulty;
-                String? initialTag;
-                String? displayQuery;
-
-                if (args is Map) {
-                  try {
-                    initialQuery =
-                        (args['query'] as String?) ?? (args['tag'] as String?);
-                    initialDifficulty = args['difficulty'] as String?;
-                    displayQuery = args['displayQuery'] as String?;
-                    initialTag = null;
-                  } catch (_) {
-                    // ignore malformed args
-                  }
-                }
-
-                return PersistentBannerLayout(
-                  child: CommunityScreen(
-                    initialQuery: initialQuery,
-                    initialDifficulty: initialDifficulty,
-                    initialTag: initialTag,
-                    displayQuery: displayQuery,
-                  ),
-                );
-              },
+              // '/community': (context) {
+              //   final args = ModalRoute.of(context)?.settings.arguments;
+              //   String? initialQuery;
+              //   String? initialDifficulty;
+              //   String? initialTag;
+              //   String? displayQuery;
+              //
+              //   if (args is Map) {
+              //     try {
+              //       initialQuery =
+              //           (args['query'] as String?) ?? (args['tag'] as String?);
+              //       initialDifficulty = args['difficulty'] as String?;
+              //       displayQuery = args['displayQuery'] as String?;
+              //       initialTag = null;
+              //     } catch (_) {
+              //       // ignore malformed args
+              //     }
+              //   }
+              //
+              //   return PersistentBannerLayout(
+              //     child: CommunityScreen(
+              //       initialQuery: initialQuery,
+              //       initialDifficulty: initialDifficulty,
+              //       initialTag: initialTag,
+              //       displayQuery: displayQuery,
+              //     ),
+              //   );
+              // },
               '/generate':
                   (context) => const PersistentBannerLayout(
                     child: GenerateRecipeScreen(),

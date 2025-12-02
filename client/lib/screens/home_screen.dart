@@ -18,7 +18,6 @@ import 'package:showcaseview/showcaseview.dart';
 import '../components/app_tutorial.dart';
 import '../services/tutorial_service.dart';
 import '../components/inline_banner_ad.dart';
-import '../utils/image_utils.dart';
 import '../components/offline_banner.dart';
 
 /// Lightweight model representing a quick-access category on the home screen.
@@ -167,8 +166,8 @@ class _HomeScreenState extends State<HomeScreen>
       // Always include "Your Recipes" - TutorialShowcase is always rendered at parent level
         tutorialTargets.add(TutorialKeys.homeYourRecipes);
 
-      // Always include "Community" - TutorialShowcase is always rendered at parent level
-      tutorialTargets.add(TutorialKeys.homeCommunity);
+      // Community tutorial skipped (feature dormant)
+      // tutorialTargets.add(TutorialKeys.homeCommunity);
 
       // Always include "Discover" section
         tutorialTargets.add(TutorialKeys.homeDiscover);
@@ -372,72 +371,7 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                             SizedBox(height: AppSpacing.responsive(context)),
                             // --- Community Recipes carousel ---
-                            // Wrap with TutorialShowcase at this level so GlobalKey is always attached
-                            TutorialShowcase(
-                              showcaseKey: TutorialKeys.homeCommunity,
-                              title: 'Community Recipes 👥',
-                              description:
-                                  'Discover recipes shared by other users. Save your favorites and get inspired by the community!',
-                              child: Consumer<DynamicUiProvider>(
-                                builder: (context, dynamicUi, _) {
-                                  if (!(dynamicUi.config?.isSectionVisible(
-                                        'communityCarousel',
-                                      ) ??
-                                      true)) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return Consumer<RecipeProvider>(
-                                    builder: (context, recipeProvider, _) {
-                                      final community = recipeProvider.communityRecipes
-                                          .take(10)
-                                          .toList();
-                                      // Show loading if still booting or loading
-                                      if (_isBooting || recipeProvider.isLoading) {
-                                        return _buildSectionLoading(
-                                          context,
-                                          title: 'Community',
-                                        height: 180,
-                                      );
-                                    }
-                                      // Show error if failed to load
-                                      if (community.isEmpty &&
-                                        recipeProvider.error != null) {
-                                        final isOffline = recipeProvider.error!.isNetworkError;
-                                      return _buildSectionMessage(
-                                        context,
-                                          title: 'Community',
-                                          message: isOffline
-                                              ? 'Connect to browse community recipes'
-                                              : 'Couldn\'t load community recipes. Tap to retry.',
-                                          leadingIcon: isOffline ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
-                                        onRetry: () {
-                                          _refreshAllSections(context);
-                                        },
-                                      );
-                                    }
-                                      // Show empty state if no community recipes available
-                                      if (community.isEmpty) {
-                                        return _buildSectionMessage(
-                                      context,
-                                          title: 'Community',
-                                          message: 'No community recipes available yet',
-                                          leadingIcon: Icons.people_outline_rounded,
-                                          onRetry: () {
-                                            _refreshAllSections(context);
-                                          },
-                                        );
-                                      }
-                                      return _buildCommunityCarousel(
-                                        context,
-                                        title: 'Community',
-                                        recipes: community,
-                                    );
-                                  },
-                                );
-                              },
-                              ),
-                            ),
-                            SizedBox(height: AppSpacing.responsive(context)),
+                            // (Feature dormant)
                             // --- Discover & Try carousel ---
                             // Wrap with TutorialShowcase at this level so GlobalKey is always attached
                             TutorialShowcase(
@@ -1025,12 +959,12 @@ class _HomeScreenState extends State<HomeScreen>
         '/collections',
         Colors.purple,
       ),
-      _CategoryItem(
-        'Community',
-        Icons.people_rounded,
-        '/community',
-        const Color(0xFF6C5CE7),
-      ),
+      // _CategoryItem(
+      //   'Community',
+      //   Icons.people_rounded,
+      //   '/community',
+      //   const Color(0xFF6C5CE7),
+      // ),
       _CategoryItem(
         'Discover Recipes',
         Icons.explore,
@@ -1127,250 +1061,9 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  /// Builds a community recipe carousel section with user profile pics on cards.
-  /// Note: TutorialShowcase wrapper is applied at the parent level in build()
-  Widget _buildCommunityCarousel(
-    BuildContext context, {
-    required String title,
-    required List<Recipe> recipes,
-  }) {
-    final theme = Theme.of(context);
+  // _buildCommunityCarousel removed
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-          child: GestureDetector(
-            onTap: () {
-              Navigator.pushNamed(context, '/community');
-            },
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: AppTypography.responsiveFontSize(
-                        context,
-                        mobile: 20,
-                        tablet: 22,
-                        desktop: 24,
-                      ),
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ],
-            ),
-          ),
-        ),
-        SizedBox(
-          height: 180,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: recipes.length,
-            separatorBuilder: (_, __) => SizedBox(width: AppSpacing.sm),
-            itemBuilder: (context, index) {
-              final recipe = recipes[index];
-              return _buildCommunityRecipeCard(context, recipe);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Builds a community recipe card with user profile pic in top right corner.
-  Widget _buildCommunityRecipeCard(BuildContext context, Recipe recipe) {
-    final theme = Theme.of(context);
-    final cardWidth =
-        AppBreakpoints.isDesktop(context)
-            ? 220.0
-            : AppBreakpoints.isTablet(context)
-            ? 180.0
-            : 140.0;
-    
-    // Get user photo URL and display name from recipe
-    final photoUrl = recipe.sharedByPhotoUrl;
-    final displayName = recipe.sharedByDisplayName ?? 'User';
-    
-    return GestureDetector(
-      onLongPressStart: (details) {
-        _showRecipeContextMenu(context, recipe, details.globalPosition);
-      },
-      child: InkWell(
-        onTap:
-            () => Navigator.pushNamed(
-              context,
-              '/recipeDetail',
-              arguments: recipe,
-            ),
-        child: Container(
-          width: cardWidth,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(
-              AppBreakpoints.isDesktop(context) ? 16 : 12,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: AppBreakpoints.isDesktop(context) ? 6 : 4,
-                offset: Offset(0, AppBreakpoints.isDesktop(context) ? 3 : 2),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(
-              AppBreakpoints.isDesktop(context) ? 16 : 12,
-            ),
-            child: Stack(
-              children: [
-                // Image
-                Positioned.fill(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final devicePixelRatio =
-                          MediaQuery.of(context).devicePixelRatio;
-                      return Image.network(
-                        recipe.imageUrl,
-                        fit: BoxFit.cover,
-                        cacheWidth:
-                            (constraints.maxWidth * devicePixelRatio).round(),
-                        cacheHeight:
-                            (constraints.maxHeight * devicePixelRatio).round(),
-                        filterQuality: FilterQuality.high,
-                        errorBuilder:
-                            (_, __, ___) => Container(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.secondary.withValues(
-                                alpha:
-                                    Theme.of(context).colorScheme.overlayMedium,
-                              ),
-                              child: Icon(
-                                Icons.restaurant,
-                                size: AppSizing.responsiveIconSize(
-                                  context,
-                                  mobile: 40,
-                                  tablet: 48,
-                                  desktop: 56,
-                                ),
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                      );
-                    },
-                  ),
-                ),
-                // User profile pic in top right corner
-                Positioned(
-                  top: AppBreakpoints.isDesktop(context) ? 10 : 8,
-                  right: AppBreakpoints.isDesktop(context) ? 10 : 8,
-                  child: Tooltip(
-                    message: displayName,
-                    child: Container(
-                      width: AppBreakpoints.isDesktop(context) ? 36 : 28,
-                      height: AppBreakpoints.isDesktop(context) ? 36 : 28,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: ImageUtils.buildProfileImage(
-                          imageUrl: photoUrl,
-                          width: AppBreakpoints.isDesktop(context) ? 36 : 28,
-                          height: AppBreakpoints.isDesktop(context) ? 36 : 28,
-                          fit: BoxFit.cover,
-                          errorWidget: Container(
-                            color: theme.colorScheme.primaryContainer,
-                            child: Icon(
-                              Icons.person,
-                              size: AppBreakpoints.isDesktop(context) ? 20 : 16,
-                              color: theme.colorScheme.onPrimaryContainer,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // Gradient overlay bottom
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: AppBreakpoints.isDesktop(context) ? 80 : 60,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.54),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                // Title
-                Positioned(
-                  left: AppBreakpoints.isDesktop(context) ? 12 : 8,
-                  right: AppBreakpoints.isDesktop(context) ? 12 : 8,
-                  bottom: AppBreakpoints.isDesktop(context) ? 12 : 8,
-                  child: Text(
-                    recipe.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style:
-                        AppBreakpoints.isDesktop(context)
-                            ? theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black.withValues(alpha: 0.5),
-                                  blurRadius: 4,
-                                ),
-                              ],
-                            )
-                            : theme.textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black.withValues(alpha: 0.5),
-                                  blurRadius: 4,
-                                ),
-                              ],
-                            ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  // _buildCommunityRecipeCard removed
 
   /// Builds an individual recipe card used within carousels.
   Widget _buildRecipeCard(BuildContext context, Recipe recipe) {

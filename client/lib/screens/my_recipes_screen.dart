@@ -144,7 +144,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
       appBar: CustomAppBar(
         title: 'Recipes',
         fullTitle: 'My Recipes',
-        floatingButtons: [
+        actions: [
           // Context menu
           PopupMenuButton<String>(
             tooltip: 'More',
@@ -293,7 +293,9 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                             height: MediaQuery.of(context).size.height * 0.7,
                             child: Center(
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 32),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                ),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -302,7 +304,8 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                                           ? Icons.restaurant_menu_rounded
                                           : Icons.search_off_rounded,
                                       size: 64,
-                                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                                      color: colorScheme.onSurfaceVariant
+                                          .withValues(alpha: 0.6),
                                     ),
                                     const SizedBox(height: 20),
                                     Text(
@@ -320,12 +323,13 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                                       allRecipes.isEmpty
                                           ? 'Add your first recipe to get started'
                                           : 'Try adjusting your search or filters',
-                                        style: TextStyle(
+                                      style: TextStyle(
                                         fontSize: 15,
-                                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                                              ),
-                                      textAlign: TextAlign.center,
+                                        color: colorScheme.onSurfaceVariant
+                                            .withValues(alpha: 0.7),
                                       ),
+                                      textAlign: TextAlign.center,
+                                    ),
                                   ],
                                 ),
                               ),
