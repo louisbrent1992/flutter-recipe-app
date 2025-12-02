@@ -174,7 +174,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       if (mounted) {
         _showSnackBar('Registration successful! Please sign in to continue.');
-        Navigator.pushReplacementNamed(context, '/login');
+        // Clear stack when going to login to ensure fresh start
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } on FirebaseAuthException catch (e) {
       String message;
@@ -215,7 +216,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           await context.read<AuthService>().signInWithGoogle();
       if (mounted) {
         _showSnackBar('Successfully signed up with Google!');
-        Navigator.pushNamed(context, '/home', arguments: userData);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/home',
+          (route) => false,
+          arguments: userData,
+        );
       }
     } on FirebaseAuthException catch (e) {
       String message;
@@ -257,7 +263,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           await context.read<AuthService>().signInWithApple();
       if (mounted) {
         _showSnackBar('Successfully signed up with Apple!');
-        Navigator.pushNamed(context, '/home', arguments: userData);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/home',
+          (route) => false,
+          arguments: userData,
+        );
       }
     } on SignInWithAppleAuthorizationException catch (e) {
       if (!mounted) return;
@@ -320,6 +331,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Center(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(

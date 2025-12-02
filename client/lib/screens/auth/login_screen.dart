@@ -32,9 +32,8 @@ class _LoginScreenState extends State<LoginScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError 
-            ? Theme.of(context).colorScheme.error 
-            : lightSuccessColor,
+        backgroundColor:
+            isError ? Theme.of(context).colorScheme.error : lightSuccessColor,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -44,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-    
+
     try {
       final authService = context.read<AuthService>();
       final user = await authService.signInWithEmailAndPassword(
@@ -72,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final authService = context.read<AuthService>();
       final user = await authService.signInWithGoogle();
@@ -94,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _signInWithApple() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final authService = context.read<AuthService>();
       final user = await authService.signInWithApple();
@@ -128,59 +127,64 @@ class _LoginScreenState extends State<LoginScreen> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Reset Password'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Enter your email to receive a reset link.'),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: resetEmailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty || !value.contains('@')) {
-                    return 'Please enter a valid email';
+      builder:
+          (dialogContext) => AlertDialog(
+            title: const Text('Reset Password'),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Enter your email to receive a reset link.'),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: resetEmailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null ||
+                          value.isEmpty ||
+                          !value.contains('@')) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (formKey.currentState!.validate()) {
+                    final authService = context.read<AuthService>();
+                    final success = await authService.sendPasswordResetEmail(
+                      resetEmailController.text.trim(),
+                    );
+                    if (dialogContext.mounted) {
+                      Navigator.pop(dialogContext);
+                    }
+                    if (mounted) {
+                      _showSnackBar(
+                        success
+                            ? 'Reset email sent!'
+                            : authService.error ?? 'Failed to send email.',
+                        isError: !success,
+                      );
+                    }
                   }
-                  return null;
                 },
+                child: const Text('Send'),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (formKey.currentState!.validate()) {
-                final authService = context.read<AuthService>();
-                final success = await authService.sendPasswordResetEmail(
-                  resetEmailController.text.trim(),
-                );
-                if (dialogContext.mounted) {
-                  Navigator.pop(dialogContext);
-                }
-                if (mounted) {
-                  _showSnackBar(
-                    success ? 'Reset email sent!' : authService.error ?? 'Failed to send email.',
-                    isError: !success,
-                  );
-                }
-              }
-            },
-            child: const Text('Send'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -236,10 +240,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         border: const OutlineInputBorder(),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                           ),
                           onPressed: () {
-                            setState(() => _obscurePassword = !_obscurePassword);
+                            setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            );
                           },
                         ),
                       ),
@@ -264,14 +272,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 8),
 
                     ElevatedButton(
-                      onPressed: _isLoading ? null : _signInWithEmailAndPassword,
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Sign In'),
+                      onPressed:
+                          _isLoading ? null : _signInWithEmailAndPassword,
+                      child:
+                          _isLoading
+                              ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Text('Sign In'),
                     ),
                     const SizedBox(height: 24),
 
@@ -293,7 +305,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         'https://www.google.com/favicon.ico',
                         height: 20,
                         width: 20,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 20),
+                        errorBuilder:
+                            (_, __, ___) =>
+                                const Icon(Icons.g_mobiledata, size: 20),
                       ),
                       label: const Text('Sign in with Google'),
                     ),
@@ -309,7 +323,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 32),
 
                     TextButton(
-                      onPressed: () => Navigator.pushNamed(context, '/register'),
+                      onPressed:
+                          () => Navigator.pushNamed(context, '/register'),
                       child: const Text('Don\'t have an account? Sign up'),
                     ),
                   ],
