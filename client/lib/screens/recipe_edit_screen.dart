@@ -450,7 +450,8 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
           ),
         ],
       ),
-      body: Stack(
+      body: SafeArea(
+        child: Stack(
         children: [
           SafeArea(
             child: Scrollbar(
@@ -944,6 +945,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

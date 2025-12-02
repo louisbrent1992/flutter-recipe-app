@@ -181,7 +181,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         pageBuilder: (context, animation, secondary) {
           return Scaffold(
             backgroundColor: Colors.black.withValues(alpha: 0.9),
-            body: Stack(
+            body: SafeArea(
+              child: Stack(
               children: [
                 Center(
                   child: InteractiveViewer(
@@ -212,6 +213,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   ),
                 ),
               ],
+              ),
             ),
           );
         },
@@ -1076,7 +1078,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (widget.recipe.id.isEmpty) {
-      return const Scaffold(body: Center(child: Text('Recipe not found')));
+      return const Scaffold(body: SafeArea(child: Center(child: Text('Recipe not found'))));
     }
 
     final recipe = _currentRecipe;
@@ -1466,7 +1468,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             ),
           ],
         ),
-        body: Stack(
+        body: SafeArea(
+          child: Stack(
           children: [
             CustomScrollView(
               slivers: [
@@ -2223,6 +2226,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               ],
             ),
           ],
+        ),
         ),
       ),
     );

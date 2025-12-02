@@ -175,7 +175,8 @@ class _SplashScreenState extends State<SplashScreen>
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Container(
+      body: SafeArea(
+        child: Container(
         color: Theme.of(context).scaffoldBackgroundColor,
         child: Center(
           child: AnimatedBuilder(
@@ -278,6 +279,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               );
             },
+          ),
           ),
         ),
       ),

@@ -329,7 +329,8 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
           ),
         ],
       ),
-      body: Consumer<RecipeProvider>(
+      body: SafeArea(
+        child: Consumer<RecipeProvider>(
         builder: (context, recipeProvider, _) {
           return Stack(
             fit: StackFit.expand,
@@ -815,6 +816,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
             ],
           );
         },
+        ),
       ),
     );
   }

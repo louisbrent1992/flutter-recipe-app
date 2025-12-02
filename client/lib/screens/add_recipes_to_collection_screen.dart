@@ -194,8 +194,8 @@ class _AddRecipesToCollectionScreenState
             ),
         ],
       ),
-      body:
-          _isLoading
+      body: SafeArea(
+        child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicatorWithHint(
                 onRefresh: _loadRecipes,
@@ -348,6 +348,7 @@ class _AddRecipesToCollectionScreenState
                       ],
                     ),
                   ],
+                ),
                 ),
               ),
       floatingActionButton:

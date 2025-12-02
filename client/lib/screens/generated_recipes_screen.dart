@@ -192,7 +192,8 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
         title: 'Generated',
         fullTitle: 'Generated Recipes',
       ),
-      body: Stack(
+      body: SafeArea(
+        child: Stack(
         children: [
           Consumer<RecipeProvider>(
             builder: (context, recipeProvider, _) {
@@ -247,6 +248,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
             },
           ),
         ],
+        ),
       ),
     );
   }

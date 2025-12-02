@@ -530,11 +530,11 @@ class AuthService with ChangeNotifier {
         return _user;
       } catch (e) {
           _error = e.toString();
-          return null;
-      } finally {
-          _isLoading = false;
-          notifyListeners();
-      }
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   // Sign in with Apple

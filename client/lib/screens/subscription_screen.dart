@@ -68,7 +68,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           ],
         ),
       ),
-      body: Stack(
+      body: SafeArea(
+        child: Stack(
         children: [
           Consumer<SubscriptionProvider>(
             builder: (context, subscriptionProvider, _) {
@@ -127,6 +128,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           // Floating navigation bar
           // sconst FloatingBottomBar(),
         ],
+        ),
       ),
     );
   }

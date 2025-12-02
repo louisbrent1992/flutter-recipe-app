@@ -127,7 +127,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-      // Sync chef ranking with Game Center when drawer opens
+    // Sync chef ranking with Game Center when drawer opens
     // Note: User recipes are loaded by HomeScreen, no need to duplicate here
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _syncChefRankingWithGameCenter();
@@ -508,25 +508,25 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                       profileProvider.profile['photoURL'] as String? ??
                       user?.photoURL ??
                       ImageUtils.defaultProfileIconUrl;
-                  
+
                   return ClipOval(
                     child: ImageUtils.isAssetPath(photoURL)
-                        ? Image.asset(
-                            photoURL,
-                            fit: BoxFit.cover,
+                            ? Image.asset(
+                              photoURL,
+                              fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) =>
-                                _buildAvatarPlaceholder(isDark, isMobile),
-                          )
-                        : CachedNetworkImage(
-                            imageUrl: photoURL,
-                            fit: BoxFit.cover,
-                            placeholder:
-                                (context, url) =>
-                                    _buildAvatarPlaceholder(isDark, isMobile),
-                            errorWidget:
-                                (context, url, error) =>
-                                    _buildAvatarPlaceholder(isDark, isMobile),
-                          ),
+                                      _buildAvatarPlaceholder(isDark, isMobile),
+                            )
+                            : CachedNetworkImage(
+                              imageUrl: photoURL,
+                              fit: BoxFit.cover,
+                              placeholder:
+                                  (context, url) =>
+                                      _buildAvatarPlaceholder(isDark, isMobile),
+                              errorWidget:
+                                  (context, url, error) =>
+                                      _buildAvatarPlaceholder(isDark, isMobile),
+                            ),
                   );
                 },
               ),

@@ -499,7 +499,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
             ),
         ],
       ),
-      body: Stack(
+      body: SafeArea(
+        child: Stack(
         children: [
           // Main content
           _isLoading
@@ -624,6 +625,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                 ),
               ),
         ],
+        ),
       ),
     );
   }

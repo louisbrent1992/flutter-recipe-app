@@ -10,6 +10,10 @@ class GameCenterService {
 
   bool _isInitialized = false;
   bool _isAuthenticated = false;
+  
+  // Track last synced values to prevent unnecessary achievement unlocks
+  int? _lastSyncedRecipeCount;
+  int? _lastSyncedStars;
 
   /// Leaderboard IDs - Configure these in App Store Connect
   static const String leaderboardChefStars = 'chef_stars_leaderboard';
@@ -302,6 +306,7 @@ class GameCenterService {
 
   /// Sync chef ranking with Game Center
   /// Call this whenever the chef ranking changes
+  /// Only unlocks achievements when crossing milestones to reduce notifications
   Future<void> syncChefRanking({
     required int stars,
     required int recipeCount,
@@ -312,13 +317,36 @@ class GameCenterService {
       if (!_isAuthenticated) return;
     }
 
-    // Submit to leaderboards
+    // Always submit to leaderboards (silent updates)
     await submitChefStars(stars);
     await submitRecipesSaved(recipeCount);
 
-    // Unlock achievements - now with recipe count requirement
-    await unlockChefAchievement(stars, recipeCount: recipeCount);
-    await unlockRecipeCountAchievement(recipeCount);
+    // Only unlock achievements if we've crossed a milestone
+    final lastCount = _lastSyncedRecipeCount ?? 0;
+    final lastStars = _lastSyncedStars ?? 0;
+    
+    // Check if we crossed any recipe count milestone
+    final milestoneCounts = [1, 50, 100, 300, 500, 1000];
+    bool crossedMilestone = false;
+    for (final milestone in milestoneCounts) {
+      if (recipeCount >= milestone && lastCount < milestone) {
+        crossedMilestone = true;
+        break;
+      }
+    }
+    
+    // Check if stars increased (chef level up)
+    final starsIncreased = stars > lastStars;
+    
+    // Only unlock achievements if we crossed a milestone or leveled up
+    if (crossedMilestone || starsIncreased) {
+      await unlockChefAchievement(stars, recipeCount: recipeCount);
+      await unlockRecipeCountAchievement(recipeCount);
+    }
+    
+    // Update tracked values
+    _lastSyncedRecipeCount = recipeCount;
+    _lastSyncedStars = stars;
   }
 
   /// Get player's Game Center display name
