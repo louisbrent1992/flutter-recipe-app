@@ -19,10 +19,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final TextEditingController _inviteCodeController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _inviteCodeInitialized = false;
+  bool _canScrollDown = false;
 
   // Password requirement states
   bool _hasMinLength = false;
@@ -36,6 +38,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void initState() {
     super.initState();
     _passwordController.addListener(_validatePasswordRequirements);
+    _scrollController.addListener(_checkScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkScroll());
+  }
+
+  void _checkScroll() {
+    if (!_scrollController.hasClients) return;
+    final canScroll = _scrollController.position.extentAfter > 20;
+    if (_canScrollDown != canScroll) {
+      setState(() => _canScrollDown = canScroll);
+    }
   }
 
   @override
@@ -167,6 +179,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_checkScroll);
+    _scrollController.dispose();
     _passwordController.removeListener(_validatePasswordRequirements);
     _nameController.dispose();
     _emailController.dispose();
@@ -609,17 +623,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
-        child: Center(
-          child: Scrollbar(
-            thumbVisibility: true,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(
-                AppBreakpoints.isDesktop(context)
-                    ? 32.0
-                    : AppBreakpoints.isTablet(context)
-                    ? 28.0
-                    : 24.0,
-              ),
+        child: Stack(
+          children: [
+            Center(
+              child: NotificationListener<ScrollMetricsNotification>(
+                onNotification: (notification) {
+                  _checkScroll();
+                  return false;
+                },
+                child: Scrollbar(
+                  controller: _scrollController,
+                  thumbVisibility: true,
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    padding: EdgeInsets.all(
+                      AppBreakpoints.isDesktop(context)
+                          ? 32.0
+                          : AppBreakpoints.isTablet(context)
+                          ? 28.0
+                          : 24.0,
+                    ),
               child: Container(
                 constraints: BoxConstraints(
                   maxWidth:
@@ -989,7 +1012,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
-    );
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: IgnorePointer(
+            ignoring: true,
+            child: AnimatedOpacity(
+              opacity: _canScrollDown ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: Container(
+                padding: const EdgeInsets.only(bottom: 16.0, top: 32.0),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Theme.of(context).colorScheme.surface.withValues(alpha: 0.0),
+                      Theme.of(context).colorScheme.surface,
+                    ],
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'More options below',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.6),
+                          ),
+                    ),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
+);
   }
 
   Widget _buildRequirementText(String text, bool isMet) {
