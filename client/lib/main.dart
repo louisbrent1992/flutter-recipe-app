@@ -777,8 +777,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             routes: {
               '/splash': (context) => const SplashScreen(),
               '/home':
-                  (context) =>
-                      const PersistentBannerLayout(child: HomeScreen()),
+                  (context) => SafeArea(
+                    child: const PersistentBannerLayout(child: HomeScreen()),
+                  ),
               '/login': (context) => const LoginScreen(),
               '/register': (context) => const RegisterScreen(),
               '/discover': (context) {
@@ -802,12 +803,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   }
                 }
 
-                return PersistentBannerLayout(
-                  child: DiscoverRecipesScreen(
-                    initialQuery: initialQuery,
-                    initialDifficulty: initialDifficulty,
-                    initialTag: initialTag,
-                    displayQuery: displayQuery,
+                return SafeArea(
+                  child: PersistentBannerLayout(
+                    child: DiscoverRecipesScreen(
+                      initialQuery: initialQuery,
+                      initialDifficulty: initialDifficulty,
+                      initialTag: initialTag,
+                      displayQuery: displayQuery,
+                    ),
                   ),
                 );
               },
@@ -840,66 +843,97 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               //   );
               // },
               '/generate':
-                  (context) => const PersistentBannerLayout(
-                    child: GenerateRecipeScreen(),
+                  (context) => SafeArea(
+                    child: const PersistentBannerLayout(
+                      child: GenerateRecipeScreen(),
+                    ),
                   ),
               '/import':
-                  (context) => PersistentBannerLayout(
-                    child: ImportRecipeScreen(
-                      sharedUrl:
-                          ModalRoute.of(context)?.settings.arguments as String?,
+                  (context) => SafeArea(
+                    child: PersistentBannerLayout(
+                      child: ImportRecipeScreen(
+                        sharedUrl:
+                            ModalRoute.of(context)?.settings.arguments
+                                as String?,
+                      ),
                     ),
                   ),
               '/recipeEdit':
-                  (context) => PersistentBannerLayout(
-                    child: RecipeEditScreen(
-                      recipe:
-                          ModalRoute.of(context)?.settings.arguments as Recipe?,
+                  (context) => SafeArea(
+                    child: PersistentBannerLayout(
+                      child: RecipeEditScreen(
+                        recipe:
+                            ModalRoute.of(context)?.settings.arguments
+                                as Recipe?,
+                      ),
                     ),
                   ),
               '/myRecipes':
-                  (context) =>
-                      const PersistentBannerLayout(child: MyRecipesScreen()),
+                  (context) => SafeArea(
+                    child: const PersistentBannerLayout(
+                      child: MyRecipesScreen(),
+                    ),
+                  ),
               '/recipeDetail':
-                  (context) => PersistentBannerLayout(
-                    child: RecipeDetailScreen(
-                      recipe:
-                          ModalRoute.of(context)!.settings.arguments as Recipe,
+                  (context) => SafeArea(
+                    child: PersistentBannerLayout(
+                      child: RecipeDetailScreen(
+                        recipe:
+                            ModalRoute.of(context)!.settings.arguments
+                                as Recipe,
+                      ),
                     ),
                   ),
               '/settings':
-                  (context) =>
-                      const PersistentBannerLayout(child: SettingsScreen()),
+                  (context) => SafeArea(
+                    child: const PersistentBannerLayout(
+                      child: SettingsScreen(),
+                    ),
+                  ),
               '/collections':
-                  (context) => const PersistentBannerLayout(
-                    child: RecipeCollectionScreen(),
+                  (context) => SafeArea(
+                    child: const PersistentBannerLayout(
+                      child: RecipeCollectionScreen(),
+                    ),
                   ),
               '/collectionDetail':
-                  (context) => PersistentBannerLayout(
-                    child: CollectionDetailScreen(
-                      collection:
-                          ModalRoute.of(context)!.settings.arguments
-                              as RecipeCollection,
+                  (context) => SafeArea(
+                    child: PersistentBannerLayout(
+                      child: CollectionDetailScreen(
+                        collection:
+                            ModalRoute.of(context)!.settings.arguments
+                                as RecipeCollection,
+                      ),
                     ),
                   ),
               '/addRecipesToCollection':
-                  (context) => PersistentBannerLayout(
-                    child: AddRecipesToCollectionScreen(
-                      collection:
-                          ModalRoute.of(context)!.settings.arguments
-                              as RecipeCollection,
+                  (context) => SafeArea(
+                    child: PersistentBannerLayout(
+                      child: AddRecipesToCollectionScreen(
+                        collection:
+                            ModalRoute.of(context)!.settings.arguments
+                                as RecipeCollection,
+                      ),
                     ),
                   ),
               '/generatedRecipes':
-                  (context) => const PersistentBannerLayout(
-                    child: GeneratedRecipesScreen(),
+                  (context) => SafeArea(
+                    child: const PersistentBannerLayout(
+                      child: GeneratedRecipesScreen(),
+                    ),
                   ),
               '/randomRecipe':
-                  (context) =>
-                      const PersistentBannerLayout(child: RandomRecipeScreen()),
+                  (context) => SafeArea(
+                    child: const PersistentBannerLayout(
+                      child: RandomRecipeScreen(),
+                    ),
+                  ),
               '/subscription':
-                  (context) =>
-                      const PersistentBannerLayout(child: SubscriptionScreen()),
+                  (context) => SafeArea(
+                    child: const PersistentBannerLayout(
+                      child: SubscriptionScreen(),
+                    ),
+                  ),
             },
           );
         },

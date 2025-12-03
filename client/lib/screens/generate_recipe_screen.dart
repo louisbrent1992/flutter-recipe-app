@@ -209,8 +209,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
         title: 'Generate',
         fullTitle: 'Generate Recipe',
       ),
-      body: SafeArea(
-        child: Consumer<RecipeProvider>(
+      body: Consumer<RecipeProvider>(
           builder: (context, recipeProvider, _) {
             return Stack(
               fit: StackFit.expand,
@@ -994,8 +993,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
             );
           },
         ),
-      ),
-    );
+      );
   }
 }
 

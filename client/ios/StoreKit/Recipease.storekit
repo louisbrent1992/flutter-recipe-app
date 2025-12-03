@@ -152,7 +152,11 @@
       "referenceName": "Premium - Unlimited",
       "displayName": "Premium - Unlimited",
       "price": 19.99,
-      "subscription": { "group": "premium", "duration": "P1M" },
+      "subscription": {
+        "group": "premium",
+        "duration": "P1M",
+        "introductoryOffer": { "mode": "freeTrial", "duration": "P7D" }
+      },
       "localizations": [
         {
           "locale": "en_US",
@@ -167,7 +171,11 @@
       "referenceName": "Premium - Unlimited (Yearly)",
       "displayName": "Premium - Unlimited (Yearly)",
       "price": 79.99,
-      "subscription": { "group": "premium", "duration": "P1Y" },
+      "subscription": {
+        "group": "premium",
+        "duration": "P1Y",
+        "introductoryOffer": { "mode": "freeTrial", "duration": "P7D" }
+      },
       "localizations": [
         {
           "locale": "en_US",

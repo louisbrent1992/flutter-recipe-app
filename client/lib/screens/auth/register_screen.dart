@@ -620,10 +620,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
+    return SafeArea(
+      child: Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      body: SafeArea(
-        child: Stack(
+      body: Stack(
           children: [
             Center(
               child: NotificationListener<ScrollMetricsNotification>(

@@ -499,8 +499,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
             ),
         ],
       ),
-      body: SafeArea(
-        child: Stack(
+      body: Stack(
         children: [
           // Main content
           _isLoading
@@ -626,8 +625,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
               ),
         ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildCollectionHeader(ColorScheme colorScheme) {

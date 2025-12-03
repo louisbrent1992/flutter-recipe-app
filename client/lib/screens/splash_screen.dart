@@ -101,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen>
       Navigator.pushReplacementNamed(context, '/import', arguments: pendingUrl);
       return;
     }
-    
+
     if (pendingNotification != null) {
       // If we have a notification, navigate to the notification route
       try {
@@ -111,7 +111,9 @@ class _SplashScreenState extends State<SplashScreen>
 
         if (route != null && route.isNotEmpty) {
           // Special handling for recipeDetail - need to fetch recipe first
-          if (route == '/recipeDetail' && args != null && args['recipeId'] != null) {
+          if (route == '/recipeDetail' &&
+              args != null &&
+              args['recipeId'] != null) {
             final recipeId = args['recipeId'] as String;
             try {
               final response = await RecipeService.getRecipeById(recipeId);
@@ -173,113 +175,115 @@ class _SplashScreenState extends State<SplashScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        child: Center(
-          child: AnimatedBuilder(
-            animation: _animationController,
-            builder: (context, child) {
-              return FadeTransition(
-                opacity: _fadeAnimation,
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Logo
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: colorScheme.primary.withValues(alpha: 0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Container(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: Center(
+            child: AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                return FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Logo
+                        Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: colorScheme.primary.withValues(
+                                  alpha: 0.3,
+                                ),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: Image.asset(
+                              'assets/icons/logo.png',
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                // Fallback if logo not found
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary,
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  child: Icon(
+                                    Icons.restaurant_menu,
+                                    size: 60,
+                                    color: colorScheme.onPrimary,
+                                  ),
+                                );
+                              },
                             ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: Image.asset(
-                            'assets/icons/logo.png',
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              // Fallback if logo not found
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primary,
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                child: Icon(
-                                  Icons.restaurant_menu,
-                                  size: 60,
-                                  color: colorScheme.onPrimary,
-                                ),
-                              );
-                            },
                           ),
                         ),
-                      ),
 
-                      const SizedBox(height: 32),
+                        const SizedBox(height: 32),
 
-                      // App name
-                      Text(
-                        'RecipEase',
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Tagline
-                      Text(
-                        'Your Personal Cooking Assistant',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurface.withValues(alpha: 0.7),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-
-                      const SizedBox(height: 48),
-
-                      // Loading indicator
-                      SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            colorScheme.primary,
+                        // App name
+                        Text(
+                          'RecipEase',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                            letterSpacing: 1.2,
                           ),
                         ),
-                      ),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 8),
 
-                      // Loading text
-                      Text(
-                        _isInitializationComplete
-                            ? 'Almost ready...'
-                            : 'Loading...',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        // Tagline
+                        Text(
+                          'Your Personal Cooking Assistant',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.7),
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                      ),
-                    ],
+
+                        const SizedBox(height: 48),
+
+                        // Loading indicator
+                        SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.primary,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Loading text
+                        Text(
+                          _isInitializationComplete
+                              ? 'Almost ready...'
+                              : 'Loading...',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
-          ),
+                );
+              },
+            ),
           ),
         ),
       ),

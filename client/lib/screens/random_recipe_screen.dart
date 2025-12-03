@@ -143,8 +143,7 @@ class _RandomRecipeScreenState extends State<RandomRecipeScreen> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: SafeArea(
-        child: Center(
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -165,7 +164,6 @@ class _RandomRecipeScreenState extends State<RandomRecipeScreen> {
               ),
             ),
           ],
-        ),
         ),
       ),
     );

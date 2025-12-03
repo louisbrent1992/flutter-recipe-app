@@ -68,8 +68,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           ],
         ),
       ),
-      body: SafeArea(
-        child: Stack(
+      body: Stack(
         children: [
           Consumer<SubscriptionProvider>(
             builder: (context, subscriptionProvider, _) {
@@ -129,8 +128,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           // sconst FloatingBottomBar(),
         ],
         ),
-      ),
-    );
+      );
   }
 
   void _startTrialTicker() {

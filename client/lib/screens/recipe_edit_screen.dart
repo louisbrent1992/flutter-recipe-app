@@ -450,11 +450,9 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Stack(
+      body: Stack(
         children: [
-          SafeArea(
-            child: Scrollbar(
+          Scrollbar(
               controller: _scrollController,
               child: SingleChildScrollView(
                 controller: _scrollController,
@@ -942,11 +940,9 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                   ),
                 ),
               ),
-            ),
           ),
         ],
         ),
-      ),
-    );
+      );
   }
 }

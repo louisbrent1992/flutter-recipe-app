@@ -181,8 +181,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         pageBuilder: (context, animation, secondary) {
           return Scaffold(
             backgroundColor: Colors.black.withValues(alpha: 0.9),
-            body: SafeArea(
-              child: Stack(
+            body: Stack(
               children: [
                 Center(
                   child: InteractiveViewer(
@@ -213,7 +212,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   ),
                 ),
               ],
-              ),
             ),
           );
         },
@@ -780,7 +778,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         return formatCommunityUserName(recipe.sharedByDisplayName);
       }
 
-      final names = users.take(2).map((u) => formatCommunityUserName(u.displayName)).toList();
+      final names =
+          users
+              .take(2)
+              .map((u) => formatCommunityUserName(u.displayName))
+              .toList();
 
       if (sharedByCount <= 1) {
         return names.first;
@@ -1078,7 +1080,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (widget.recipe.id.isEmpty) {
-      return const Scaffold(body: SafeArea(child: Center(child: Text('Recipe not found'))));
+      return const Scaffold(body: Center(child: Text('Recipe not found')));
     }
 
     final recipe = _currentRecipe;
@@ -1468,8 +1470,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             ),
           ],
         ),
-        body: SafeArea(
-          child: Stack(
+        body: Stack(
           children: [
             CustomScrollView(
               slivers: [
@@ -2227,7 +2228,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             ),
           ],
         ),
-        ),
       ),
     );
   }
@@ -2628,9 +2628,7 @@ class _ImageReplaceSheetContentState extends State<_ImageReplaceSheetContent> {
                   color: theme.colorScheme.outline.withValues(alpha: 0.3),
                 ),
               ),
-              style: TextStyle(
-                color: theme.colorScheme.onSurface,
-              ),
+              style: TextStyle(color: theme.colorScheme.onSurface),
               placeholderStyle: TextStyle(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),

@@ -296,7 +296,7 @@ class ProductConfigurations {
       id: ProductIds.unlimitedPremium,
       title: 'Premium - Unlimited',
       description:
-          'Unlimited imports and generations. No ads. Fair-use policy applies.',
+          'Unlimited imports and generations. No ads. Fair-use policy applies. 7-day free trial!',
       productType: ProductType.unlimitedPremium,
       purchaseType: PurchaseType.subscription,
       includesAdFree: true,
@@ -309,7 +309,7 @@ class ProductConfigurations {
       id: ProductIds.unlimitedPremiumYearly,
       title: 'Premium - Unlimited (Yearly)',
       description:
-          'SAVE 67%! Unlimited imports and generations. No ads. Fair-use policy applies.',
+          'SAVE 67%! Unlimited imports and generations. No ads. Fair-use policy applies. 7-day free trial!',
       productType: ProductType.unlimitedPremiumYearly,
       purchaseType: PurchaseType.subscription,
       includesAdFree: true,
