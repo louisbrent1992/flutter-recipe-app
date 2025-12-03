@@ -319,7 +319,8 @@ class _CommunityScreenState extends State<CommunityScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return SafeArea(
+      child: Scaffold(
       appBar: CustomAppBar(
         title: 'Community',
         fullTitle: 'Community Recipes',
@@ -355,8 +356,7 @@ class _CommunityScreenState extends State<CommunityScreen>
           ),
         ],
       ),
-      body: SafeArea(
-        child: Stack(
+      body: Stack(
         children: [
           Column(
             children: [

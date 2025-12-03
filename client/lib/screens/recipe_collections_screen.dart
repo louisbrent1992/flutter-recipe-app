@@ -398,8 +398,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return SafeArea(
-      child: Scaffold(
+    return Scaffold(
         appBar: CustomAppBar(
           title: 'Collections',
           fullTitle: 'My Collections',
@@ -523,8 +522,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                 ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildHeader(ColorScheme colorScheme) {
@@ -938,8 +936,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder:
-          (context) => SafeArea(
-            child: Column(
+          (context) => Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Handle bar
@@ -1013,8 +1010,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                 const SizedBox(height: 8),
               ],
             ),
-          ),
-    );
+        );
   }
 
   Future<void> _editCollection(RecipeCollection collection) async {

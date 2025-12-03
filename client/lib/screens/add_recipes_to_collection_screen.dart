@@ -48,7 +48,7 @@ class _AddRecipesToCollectionScreenState
 
   Future<void> _loadRecipes() async {
     if (!mounted) return;
-    
+
     setState(() => _isLoading = true);
 
     try {
@@ -137,10 +137,7 @@ class _AddRecipesToCollectionScreenState
     try {
       // Add each selected recipe to the collection
       for (final recipe in _selectedRecipes) {
-        await collectionService.addRecipeToCollection(
-          _collection.id,
-          recipe,
-        );
+        await collectionService.addRecipeToCollection(_collection.id, recipe);
       }
 
       if (mounted) {
@@ -194,8 +191,8 @@ class _AddRecipesToCollectionScreenState
             ),
         ],
       ),
-      body: SafeArea(
-        child: _isLoading
+      body:
+          _isLoading
               ? const Center(child: CircularProgressIndicator())
               : RefreshIndicatorWithHint(
                 onRefresh: _loadRecipes,
@@ -210,23 +207,33 @@ class _AddRecipesToCollectionScreenState
                             controller: _searchController,
                             onChanged: _filterRecipes,
                             placeholder: 'Search recipes...',
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                             decoration: BoxDecoration(
                               color: colorScheme.surface,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: colorScheme.outline.withValues(alpha: 0.2),
+                                color: colorScheme.outline.withValues(
+                                  alpha: 0.2,
+                                ),
                               ),
                             ),
-                            style: TextStyle(
-                              color: colorScheme.onSurface,
-                            ),
+                            style: TextStyle(color: colorScheme.onSurface),
                             placeholderStyle: TextStyle(
-                              color: colorScheme.onSurface.withValues(alpha: 0.5),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.5,
+                              ),
                             ),
                             prefix: Padding(
                               padding: const EdgeInsets.only(left: 12),
-                              child: Icon(Icons.search, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                              child: Icon(
+                                Icons.search,
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
+                              ),
                             ),
                             suffix:
                                 _searchQuery.isNotEmpty
@@ -237,7 +244,11 @@ class _AddRecipesToCollectionScreenState
                                           _searchController.clear();
                                           _filterRecipes('');
                                         },
-                                        child: Icon(Icons.clear, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                                        child: Icon(
+                                          Icons.clear,
+                                          color: colorScheme.onSurface
+                                              .withValues(alpha: 0.6),
+                                        ),
                                       ),
                                     )
                                     : null,
@@ -348,7 +359,6 @@ class _AddRecipesToCollectionScreenState
                       ],
                     ),
                   ],
-                ),
                 ),
               ),
       floatingActionButton:

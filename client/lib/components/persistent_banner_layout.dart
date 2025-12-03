@@ -30,7 +30,9 @@ class PersistentBannerLayout extends StatelessWidget {
             routeName != '/subscription')
           const BannerAdWidget(),
         // Global floating bottom navigation (avoid duplicating on Home which already includes it)
-        if (routeName != '/discover' && routeName != '/myRecipes' && routeName != '/community')
+        if (routeName != '/discover' &&
+            routeName != '/myRecipes' &&
+            routeName != '/community')
           const FloatingBottomBar(),
       ],
     );

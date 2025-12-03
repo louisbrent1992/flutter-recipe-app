@@ -372,8 +372,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
+    return Scaffold(
         appBar: CustomAppBar(
           title: 'Discover',
           fullTitle: 'Discover Recipes',
@@ -810,7 +809,6 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
