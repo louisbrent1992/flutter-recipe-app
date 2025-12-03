@@ -1260,7 +1260,13 @@ class RecipeProvider extends ChangeNotifier {
   }
 
   // Fetch session-level community cache (200 recipes, reused for filtering)
+  // DISABLED: Community recipes feature is disabled
+  @pragma('vm:prefer-inline')
   Future<void> fetchSessionCommunityCache({bool forceRefresh = false}) async {
+    // Community recipes fetching is disabled - no API calls will be made
+    return;
+    
+    /* DISABLED CODE - Community recipes feature disabled
     // Check if cache is still valid
     final hasValidCache =
         _sessionCommunityCache.isNotEmpty &&
@@ -1362,9 +1368,12 @@ class RecipeProvider extends ChangeNotifier {
         _setLoading(false);
       }
     }
+    */
   }
 
   // Fetch community recipes (with filtering)
+  // DISABLED: Community recipes feature is disabled
+  @pragma('vm:prefer-inline')
   Future<void> fetchCommunityRecipes({
     String? query,
     String? difficulty,
@@ -1373,6 +1382,10 @@ class RecipeProvider extends ChangeNotifier {
     int limit = 12,
     bool forceRefresh = false,
   }) async {
+    // Community recipes fetching is disabled - no API calls will be made
+    return;
+    
+    /* DISABLED CODE - Community recipes feature disabled
     // Ensure session cache is populated
     await fetchSessionCommunityCache(forceRefresh: forceRefresh);
 
@@ -1386,6 +1399,7 @@ class RecipeProvider extends ChangeNotifier {
     );
 
     setCommunityRecipesFromCache(filtered);
+    */
   }
 
   // Get filtered and paginated community recipes from session cache

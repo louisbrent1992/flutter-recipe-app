@@ -143,8 +143,8 @@ class _HomeScreenState extends State<HomeScreen>
       );
       recipeProvider.setGeneratedRecipesFromCache(discover);
 
-      // Fetch community recipes for carousel
-      await recipeProvider.fetchSessionCommunityCache();
+      // Fetch community recipes for carousel - DISABLED
+      // await recipeProvider.fetchSessionCommunityCache();
 
       // Ensure first frame shows placeholders even before provider flips loading
       if (mounted) setState(() => _isBooting = false);
