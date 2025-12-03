@@ -1,6 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
 import 'package:provider/provider.dart';
 import 'package:recipease/components/persistent_banner_layout.dart';
 import 'package:recipease/firebase_options.dart';
@@ -664,6 +666,104 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  // Routes map for both routes parameter and onGenerateRoute
+  static final Map<String, Widget Function(dynamic)> _routes = {
+    '/splash': (args) => const SplashScreen(),
+    '/home':
+        (args) =>
+            SafeArea(child: const PersistentBannerLayout(child: HomeScreen())),
+    '/login': (args) => const LoginScreen(),
+    '/register': (args) => const RegisterScreen(),
+    '/discover': (args) {
+      String? initialQuery;
+      String? initialDifficulty;
+      String? initialTag;
+      String? displayQuery;
+
+      if (args is Map) {
+        try {
+          initialQuery = (args['query'] as String?) ?? (args['tag'] as String?);
+          initialDifficulty = args['difficulty'] as String?;
+          displayQuery = args['displayQuery'] as String?;
+          initialTag = null;
+        } catch (_) {
+          // ignore malformed args
+        }
+      }
+
+      return SafeArea(
+        child: PersistentBannerLayout(
+          child: DiscoverRecipesScreen(
+            initialQuery: initialQuery,
+            initialDifficulty: initialDifficulty,
+            initialTag: initialTag,
+            displayQuery: displayQuery,
+          ),
+        ),
+      );
+    },
+    '/generate':
+        (args) => SafeArea(
+          child: const PersistentBannerLayout(child: GenerateRecipeScreen()),
+        ),
+    '/import':
+        (args) => SafeArea(
+          child: PersistentBannerLayout(
+            child: ImportRecipeScreen(sharedUrl: args as String?),
+          ),
+        ),
+    '/recipeEdit':
+        (args) => SafeArea(
+          child: PersistentBannerLayout(
+            child: RecipeEditScreen(recipe: args as Recipe?),
+          ),
+        ),
+    '/myRecipes':
+        (args) => SafeArea(
+          child: const PersistentBannerLayout(child: MyRecipesScreen()),
+        ),
+    '/recipeDetail':
+        (args) => SafeArea(
+          child: PersistentBannerLayout(
+            child: RecipeDetailScreen(recipe: args as Recipe),
+          ),
+        ),
+    '/settings':
+        (args) => SafeArea(
+          child: const PersistentBannerLayout(child: SettingsScreen()),
+        ),
+    '/collections':
+        (args) => SafeArea(
+          child: const PersistentBannerLayout(child: RecipeCollectionScreen()),
+        ),
+    '/collectionDetail':
+        (args) => SafeArea(
+          child: PersistentBannerLayout(
+            child: CollectionDetailScreen(collection: args as RecipeCollection),
+          ),
+        ),
+    '/addRecipesToCollection':
+        (args) => SafeArea(
+          child: PersistentBannerLayout(
+            child: AddRecipesToCollectionScreen(
+              collection: args as RecipeCollection,
+            ),
+          ),
+        ),
+    '/generatedRecipes':
+        (args) => SafeArea(
+          child: const PersistentBannerLayout(child: GeneratedRecipesScreen()),
+        ),
+    '/randomRecipe':
+        (args) => SafeArea(
+          child: const PersistentBannerLayout(child: RandomRecipeScreen()),
+        ),
+    '/subscription':
+        (args) => SafeArea(
+          child: const PersistentBannerLayout(child: SubscriptionScreen()),
+        ),
+  };
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -714,6 +814,29 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             ],
             // Performance and accessibility configurations
             scrollBehavior: AppScrollBehavior(),
+            // Enable iOS-style swipe back gesture
+            onGenerateRoute: (settings) {
+              // Get the route builder from routes map
+              final routeBuilder = _MyAppState._routes[settings.name];
+              if (routeBuilder == null) return null;
+
+              // Build the widget
+              final widget = routeBuilder(settings.arguments);
+
+              // Use CupertinoPageRoute on iOS for native swipe-back gesture
+              // Use MaterialPageRoute on other platforms
+              if (Platform.isIOS) {
+                return CupertinoPageRoute(
+                  settings: settings,
+                  builder: (_) => widget,
+                );
+              } else {
+                return MaterialPageRoute(
+                  settings: settings,
+                  builder: (_) => widget,
+                );
+              }
+            },
             // Error handling and debugging
             builder: (context, child) {
               // Add error boundary for better error handling
@@ -774,167 +897,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               );
             },
             home: const SplashScreen(),
-            routes: {
-              '/splash': (context) => const SplashScreen(),
-              '/home':
-                  (context) => SafeArea(
-                    child: const PersistentBannerLayout(child: HomeScreen()),
-                  ),
-              '/login': (context) => const LoginScreen(),
-              '/register': (context) => const RegisterScreen(),
-              '/discover': (context) {
-                final args = ModalRoute.of(context)?.settings.arguments;
-                String? initialQuery;
-                String? initialDifficulty;
-                String? initialTag;
-                String? displayQuery;
-
-                if (args is Map) {
-                  try {
-                    // Prioritize 'query' over 'tag' for backward compatibility
-                    initialQuery =
-                        (args['query'] as String?) ?? (args['tag'] as String?);
-                    initialDifficulty = args['difficulty'] as String?;
-                    displayQuery = args['displayQuery'] as String?;
-                    // Don't use initialTag anymore - query is used instead
-                    initialTag = null;
-                  } catch (_) {
-                    // ignore malformed args
-                  }
-                }
-
-                return SafeArea(
-                  child: PersistentBannerLayout(
-                    child: DiscoverRecipesScreen(
-                      initialQuery: initialQuery,
-                      initialDifficulty: initialDifficulty,
-                      initialTag: initialTag,
-                      displayQuery: displayQuery,
-                    ),
-                  ),
-                );
-              },
-              // '/community': (context) {
-              //   final args = ModalRoute.of(context)?.settings.arguments;
-              //   String? initialQuery;
-              //   String? initialDifficulty;
-              //   String? initialTag;
-              //   String? displayQuery;
-              //
-              //   if (args is Map) {
-              //     try {
-              //       initialQuery =
-              //           (args['query'] as String?) ?? (args['tag'] as String?);
-              //       initialDifficulty = args['difficulty'] as String?;
-              //       displayQuery = args['displayQuery'] as String?;
-              //       initialTag = null;
-              //     } catch (_) {
-              //       // ignore malformed args
-              //     }
-              //   }
-              //
-              //   return PersistentBannerLayout(
-              //     child: CommunityScreen(
-              //       initialQuery: initialQuery,
-              //       initialDifficulty: initialDifficulty,
-              //       initialTag: initialTag,
-              //       displayQuery: displayQuery,
-              //     ),
-              //   );
-              // },
-              '/generate':
-                  (context) => SafeArea(
-                    child: const PersistentBannerLayout(
-                      child: GenerateRecipeScreen(),
-                    ),
-                  ),
-              '/import':
-                  (context) => SafeArea(
-                    child: PersistentBannerLayout(
-                      child: ImportRecipeScreen(
-                        sharedUrl:
-                            ModalRoute.of(context)?.settings.arguments
-                                as String?,
-                      ),
-                    ),
-                  ),
-              '/recipeEdit':
-                  (context) => SafeArea(
-                    child: PersistentBannerLayout(
-                      child: RecipeEditScreen(
-                        recipe:
-                            ModalRoute.of(context)?.settings.arguments
-                                as Recipe?,
-                      ),
-                    ),
-                  ),
-              '/myRecipes':
-                  (context) => SafeArea(
-                    child: const PersistentBannerLayout(
-                      child: MyRecipesScreen(),
-                    ),
-                  ),
-              '/recipeDetail':
-                  (context) => SafeArea(
-                    child: PersistentBannerLayout(
-                      child: RecipeDetailScreen(
-                        recipe:
-                            ModalRoute.of(context)!.settings.arguments
-                                as Recipe,
-                      ),
-                    ),
-                  ),
-              '/settings':
-                  (context) => SafeArea(
-                    child: const PersistentBannerLayout(
-                      child: SettingsScreen(),
-                    ),
-                  ),
-              '/collections':
-                  (context) => SafeArea(
-                    child: const PersistentBannerLayout(
-                      child: RecipeCollectionScreen(),
-                    ),
-                  ),
-              '/collectionDetail':
-                  (context) => SafeArea(
-                    child: PersistentBannerLayout(
-                      child: CollectionDetailScreen(
-                        collection:
-                            ModalRoute.of(context)!.settings.arguments
-                                as RecipeCollection,
-                      ),
-                    ),
-                  ),
-              '/addRecipesToCollection':
-                  (context) => SafeArea(
-                    child: PersistentBannerLayout(
-                      child: AddRecipesToCollectionScreen(
-                        collection:
-                            ModalRoute.of(context)!.settings.arguments
-                                as RecipeCollection,
-                      ),
-                    ),
-                  ),
-              '/generatedRecipes':
-                  (context) => SafeArea(
-                    child: const PersistentBannerLayout(
-                      child: GeneratedRecipesScreen(),
-                    ),
-                  ),
-              '/randomRecipe':
-                  (context) => SafeArea(
-                    child: const PersistentBannerLayout(
-                      child: RandomRecipeScreen(),
-                    ),
-                  ),
-              '/subscription':
-                  (context) => SafeArea(
-                    child: const PersistentBannerLayout(
-                      child: SubscriptionScreen(),
-                    ),
-                  ),
-            },
+            // Routes are handled by onGenerateRoute for iOS swipe-back gesture
+            routes: const {},
           );
         },
       ),
