@@ -175,15 +175,16 @@ class _SplashScreenState extends State<SplashScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: Container(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          child: Center(
-            child: AnimatedBuilder(
-              animation: _animationController,
-              builder: (context, child) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      resizeToAvoidBottomInset: false,
+      body: Container(
+        color: Colors.transparent,
+        child: Center(
+          child: AnimatedBuilder(
+            animation: _animationController,
+            builder: (context, child) {
                 return FadeTransition(
                   opacity: _fadeAnimation,
                   child: ScaleTransition(
@@ -282,8 +283,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
                 );
-              },
-            ),
+            },
           ),
         ),
       ),

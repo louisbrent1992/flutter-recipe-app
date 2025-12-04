@@ -143,9 +143,8 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBody: true,
-      resizeToAvoidBottomInset: false,
+      backgroundColor: Colors.transparent, // Transparent background
+      extendBody: true, // Extend body behind bottom elements
       appBar: CustomAppBar(
         title: 'Recipes',
         fullTitle: 'My Recipes',
@@ -349,8 +348,8 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                         left: AppSpacing.responsive(context),
                         right: AppSpacing.responsive(context),
                         top: AppSpacing.responsive(context),
-                        // 100-120 is usually safe (Bar height ~80 + Margin ~20 + Safe Area ~34)
-                        bottom: AppSpacing.responsive(context) + 120 + bottomPadding,
+                        // Bottom padding handled by GridView for scrolling behind bar
+                        bottom: 0,
                       ),
                       child: Column(
                         children: [
@@ -365,17 +364,18 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                                       filteredRecipes.isEmpty
                                           ? ListView(
                                             padding: EdgeInsets.only(
-                                              bottom: 100,
-                                            ), // Extra padding for scroll
+                                              bottom: 120 + bottomPadding,
+                                            ),
                                           )
                                           : GridView.builder(
                                             key: const PageStorageKey(
                                               'my_recipes_grid',
                                             ),
                                             controller: _scrollController,
+                                            // Add padding for bottom bar and safe area
                                             padding: EdgeInsets.only(
-                                              bottom: 100,
-                                            ), // Extra padding for scroll
+                                              bottom: 120 + bottomPadding,
+                                            ),
                                             itemBuilder: (context, index) {
                                               final recipe =
                                                   filteredRecipes[index];
