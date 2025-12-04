@@ -142,16 +142,15 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                   controller: nameController,
                   placeholder: 'Enter collection name',
                   autofocus: true,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      color: theme.colorScheme.outline,
-                    ),
+                    border: Border.all(color: theme.colorScheme.outline),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurface,
-                  ),
+                  style: TextStyle(color: theme.colorScheme.onSurface),
                   placeholderStyle: TextStyle(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
@@ -409,9 +408,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBody: true,
-      resizeToAvoidBottomInset: false,
+      backgroundColor: Colors.transparent, // Transparent background
+      extendBody: true, // Extend body behind bottom elements
       appBar: CustomAppBar(
         title: _collection.name,
         actions: [
@@ -525,8 +523,9 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                         padding: EdgeInsets.only(
                           left: AppSpacing.responsive(context),
                           right: AppSpacing.responsive(context),
-                          top: AppSpacing.responsive(context) * 0.5,
-                          bottom: AppSpacing.responsive(context) + 120 + bottomPadding, // Extra space for floating bar + safe area
+                          top: AppSpacing.responsive(context),
+                          // Bottom padding handled by SliverGrid for scrolling behind bar
+                          bottom: 0,
                         ),
                         child: _buildSearchField(colorScheme),
                       ),
@@ -580,8 +579,12 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                           ),
                         )
                         : SliverPadding(
-                          padding: EdgeInsets.all(
-                            AppSpacing.responsive(context),
+                          padding: EdgeInsets.only(
+                            left: AppSpacing.responsive(context),
+                            right: AppSpacing.responsive(context),
+                            top: AppSpacing.responsive(context),
+                            // Add padding for bottom bar and safe area
+                            bottom: 120 + bottomPadding,
                           ),
                           sliver: SliverGrid(
                             gridDelegate:
@@ -785,19 +788,18 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                 ? 14
                 : 12,
           ),
-          border: Border.all(
-            color: colorScheme.outline.withValues(alpha: 0.2),
-          ),
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
         ),
-        style: TextStyle(
-          color: colorScheme.onSurface,
-        ),
+        style: TextStyle(color: colorScheme.onSurface),
         placeholderStyle: TextStyle(
           color: colorScheme.onSurface.withValues(alpha: 0.5),
         ),
         prefix: Padding(
           padding: const EdgeInsets.only(left: 12),
-          child: Icon(Icons.search, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+          child: Icon(
+            Icons.search,
+            color: colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
         ),
         suffix:
             _searchQuery.isNotEmpty
@@ -808,7 +810,10 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                       _searchController.clear();
                       _filterRecipes('');
                     },
-                    child: Icon(Icons.clear, color: colorScheme.onSurface.withValues(alpha: 0.6)),
+                    child: Icon(
+                      Icons.clear,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
                   ),
                 )
                 : null,

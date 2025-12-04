@@ -190,9 +190,8 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBody: true,
-      resizeToAvoidBottomInset: false,
+      backgroundColor: Colors.transparent, // Transparent background
+      extendBody: true, // Extend body behind bottom elements
       appBar: const CustomAppBar(
         title: 'Generated',
         fullTitle: 'Generated Recipes',
@@ -203,11 +202,13 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
             builder: (context, recipeProvider, _) {
               // Only show loading spinner if we have no recipes to display
               // This prevents flash during background save/delete operations
-              if (recipeProvider.isLoading && recipeProvider.aiGeneratedRecipes.isEmpty) {
+              if (recipeProvider.isLoading &&
+                  recipeProvider.aiGeneratedRecipes.isEmpty) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (recipeProvider.error != null && recipeProvider.aiGeneratedRecipes.isEmpty) {
+              if (recipeProvider.error != null &&
+                  recipeProvider.aiGeneratedRecipes.isEmpty) {
                 return ErrorDisplay(
                   message: recipeProvider.error!.userFriendlyMessage,
                   isNetworkError: recipeProvider.error!.isNetworkError,
@@ -229,7 +230,10 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
                   left: AppSpacing.responsive(context),
                   right: AppSpacing.responsive(context),
                   top: AppSpacing.responsive(context),
-                  bottom: AppSpacing.responsive(context) + 120 + bottomPadding, // Extra space for floating bar + safe area
+                  bottom:
+                      AppSpacing.responsive(context) +
+                      120 +
+                      bottomPadding, // Extra space for floating bar + safe area
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -240,7 +244,8 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
                         recipe: recipe,
                         showSaveButton: !(_savedRecipes[recipe.id] ?? false),
                         showRemoveButton: _savedRecipes[recipe.id] ?? false,
-                        showRefreshButton: false, // Hide refresh button for generated recipes
+                        showRefreshButton:
+                            false, // Hide refresh button for generated recipes
                         onSave: () => _handleRecipeAction(recipe),
                         onRemove: () => _handleRecipeAction(recipe),
                       ),

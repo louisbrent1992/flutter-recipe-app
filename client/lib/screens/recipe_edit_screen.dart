@@ -435,9 +435,8 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBody: true,
-      resizeToAvoidBottomInset: false,
+      backgroundColor: Colors.transparent, // Transparent background
+      extendBody: true, // Extend body behind bottom elements
       appBar: CustomAppBar(
         title:
             (widget.recipe?.toEdit == true || currentRecipe.toEdit == true)
@@ -458,23 +457,27 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
       body: Stack(
         children: [
           Scrollbar(
+            controller: _scrollController,
+            child: SingleChildScrollView(
               controller: _scrollController,
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                child: Center(
-                  child: Container(
-                    constraints: BoxConstraints(
-                      maxWidth: AppBreakpoints.isDesktop(context)
-                          ? 800
-                          : AppBreakpoints.isTablet(context)
-                              ? 700
-                              : double.infinity,
-                    ),
+              child: Center(
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth:
+                        AppBreakpoints.isDesktop(context)
+                            ? 800
+                            : AppBreakpoints.isTablet(context)
+                            ? 700
+                            : double.infinity,
+                  ),
                   padding: EdgeInsets.only(
                     left: AppSpacing.responsive(context),
                     right: AppSpacing.responsive(context),
                     top: AppSpacing.responsive(context),
-                    bottom: AppSpacing.responsive(context) + 120 + bottomPadding, // Extra space for floating bar + safe area
+                    bottom:
+                        AppSpacing.responsive(context) +
+                        120 +
+                        bottomPadding, // Extra space for floating bar + safe area
                   ),
                   child: Consumer<RecipeProvider>(
                     builder: (context, recipeProvider, _) {
@@ -514,9 +517,10 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                   children: [
                                     SizedBox(
                                       width: double.infinity,
-                                      height: AppBreakpoints.isDesktop(context)
-                                          ? 350
-                                          : AppBreakpoints.isTablet(context)
+                                      height:
+                                          AppBreakpoints.isDesktop(context)
+                                              ? 350
+                                              : AppBreakpoints.isTablet(context)
                                               ? 300
                                               : 250,
                                       child: ClipRRect(
@@ -524,8 +528,8 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                           AppBreakpoints.isDesktop(context)
                                               ? 16
                                               : AppBreakpoints.isTablet(context)
-                                                  ? 14
-                                                  : 12,
+                                              ? 14
+                                              : 12,
                                         ),
                                         child:
                                             _isUploading
@@ -540,22 +544,25 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                                   imageUrl:
                                                       currentRecipe.imageUrl,
                                                   width: double.infinity,
-                                                  height: AppBreakpoints
-                                                          .isDesktop(context)
-                                                      ? 350
-                                                      : AppBreakpoints.isTablet(
-                                                              context,
-                                                            )
+                                                  height:
+                                                      AppBreakpoints.isDesktop(
+                                                            context,
+                                                          )
+                                                          ? 350
+                                                          : AppBreakpoints.isTablet(
+                                                            context,
+                                                          )
                                                           ? 300
                                                           : 250,
                                                   fit: BoxFit.cover,
                                                   errorWidget: Container(
                                                     width: double.infinity,
-                                                    height: AppBreakpoints
-                                                            .isDesktop(context)
-                                                        ? 350
-                                                        : AppBreakpoints
-                                                                .isTablet(
+                                                    height:
+                                                        AppBreakpoints.isDesktop(
+                                                              context,
+                                                            )
+                                                            ? 350
+                                                            : AppBreakpoints.isTablet(
                                                               context,
                                                             )
                                                             ? 300
@@ -568,23 +575,22 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                                                       children: [
                                                         Icon(
                                                           Icons.restaurant,
-                                                          size: AppSizing
-                                                              .responsiveIconSize(
-                                                            context,
-                                                            mobile: 64,
-                                                            tablet: 80,
-                                                            desktop: 96,
-                                                          ),
+                                                          size:
+                                                              AppSizing.responsiveIconSize(
+                                                                context,
+                                                                mobile: 64,
+                                                                tablet: 80,
+                                                                desktop: 96,
+                                                              ),
                                                           color: Colors.grey,
                                                         ),
                                                         SizedBox(
-                                                          height: AppBreakpoints
-                                                                  .isDesktop(
-                                                                context,
-                                                              )
-                                                              ? 12
-                                                              : AppBreakpoints
-                                                                      .isTablet(
+                                                          height:
+                                                              AppBreakpoints.isDesktop(
+                                                                    context,
+                                                                  )
+                                                                  ? 12
+                                                                  : AppBreakpoints.isTablet(
                                                                     context,
                                                                   )
                                                                   ? 10
@@ -942,9 +948,9 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                       );
                     },
                   ),
-                  ),
                 ),
               ),
+            ),
           ),
         ],
       ),

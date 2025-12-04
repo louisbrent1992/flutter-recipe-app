@@ -259,9 +259,8 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBody: true,
-      resizeToAvoidBottomInset: false,
+      backgroundColor: Colors.transparent, // Transparent background
+      extendBody: true, // Extend body behind bottom elements
       appBar: CustomAppBar(
         title: 'Import',
         fullTitle: 'Import Recipe',
@@ -390,7 +389,8 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                           top: AppSpacing.responsive(context),
                           bottom:
                               AppSpacing.responsive(context) +
-                              120 + bottomPadding, // Extra space for floating bar + safe area
+                              120 +
+                              bottomPadding, // Extra space for floating bar + safe area
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.start,
@@ -403,8 +403,11 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                 // Show spacing only when ads are hidden (premium users or debug mode)
                                 Consumer<SubscriptionProvider>(
                                   builder: (context, subscriptionProvider, _) {
-                                    if (hideAds || subscriptionProvider.isPremium) {
-                                      return SizedBox(height: size.height * 0.08);
+                                    if (hideAds ||
+                                        subscriptionProvider.isPremium) {
+                                      return SizedBox(
+                                        height: size.height * 0.08,
+                                      );
                                     }
                                     return const SizedBox.shrink();
                                   },
@@ -619,8 +622,9 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                       placeholder:
                                           'Paste recipe URL here\nSupported: AllRecipes, Instagram, TikTok, YouTube, Food Network, BBC Food, and more',
                                       placeholderStyle: TextStyle(
-                                        color: colorScheme.onSurface
-                                            .withValues(alpha: 0.5),
+                                        color: colorScheme.onSurface.withValues(
+                                          alpha: 0.5,
+                                        ),
                                         fontSize:
                                             AppTypography.responsiveFontSize(
                                               context,
@@ -652,13 +656,16 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                               : 16,
                                         ),
                                         border: Border.all(
-                                          color: colorScheme.outline
-                                              .withAlpha(26),
+                                          color: colorScheme.outline.withAlpha(
+                                            26,
+                                          ),
                                           width: 1.0,
                                         ),
                                       ),
                                       prefix: Padding(
-                                        padding: const EdgeInsets.only(left: 12),
+                                        padding: const EdgeInsets.only(
+                                          left: 12,
+                                        ),
                                         child: Icon(
                                           Icons.link_rounded,
                                           color: colorScheme.primary,
@@ -673,11 +680,16 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                       suffix:
                                           _urlController.text.isNotEmpty
                                               ? Padding(
-                                                padding: const EdgeInsets.only(right: 8),
+                                                padding: const EdgeInsets.only(
+                                                  right: 8,
+                                                ),
                                                 child: GestureDetector(
-                                                  onTap: () => setState(
-                                                    () => _urlController.clear(),
-                                                  ),
+                                                  onTap:
+                                                      () => setState(
+                                                        () =>
+                                                            _urlController
+                                                                .clear(),
+                                                      ),
                                                   child: Icon(
                                                     Icons.clear,
                                                     size:
@@ -687,7 +699,8 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                                           tablet: 22,
                                                           desktop: 24,
                                                         ),
-                                                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                                                    color: colorScheme.onSurface
+                                                        .withValues(alpha: 0.6),
                                                   ),
                                                 ),
                                               )

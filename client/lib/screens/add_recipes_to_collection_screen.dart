@@ -173,9 +173,8 @@ class _AddRecipesToCollectionScreenState
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBody: true,
-      resizeToAvoidBottomInset: false,
+      backgroundColor: Colors.transparent, // Transparent background
+      extendBody: true, // Extend body behind bottom elements
       appBar: CustomAppBar(
         title: 'Add',
         fullTitle: 'Add to Collection',
@@ -290,7 +289,9 @@ class _AddRecipesToCollectionScreenState
                                   )
                                   : ListView.builder(
                                     itemCount: _filteredRecipes.length,
-                                    padding: EdgeInsets.only(bottom: 120 + bottomPadding),
+                                    padding: EdgeInsets.only(
+                                      bottom: 120 + bottomPadding,
+                                    ),
                                     itemBuilder: (context, index) {
                                       final recipe = _filteredRecipes[index];
                                       final isSelected = _selectedRecipes.any(

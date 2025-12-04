@@ -64,10 +64,6 @@ final kWebRecaptchaSiteKey = '6Lemcn0dAAAAABLkf6aiiHvpGD6x-zF3nOSDU2M8';
 // Debug flag to disable ads for screenshots - set to false to show ads in testing
 const bool hideAds = false;
 
-// Alternative: Environment-based approach
-// const bool HIDE_ADS_FOR_SCREENSHOTS = bool.fromEnvironment('HIDE_ADS', defaultValue: false);
-// Then run with: flutter run --dart-define=HIDE_ADS=true
-
 // Push notifications: background message handler
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -77,11 +73,6 @@ final FlutterLocalNotificationsPlugin _localNotifications =
     FlutterLocalNotificationsPlugin();
 
 /// Initializes the app.
-///
-/// Ensures Flutter is bound to the widgets layer, initializes Firebase, and
-/// loads the app's preferences from local storage. Then, runs the app with
-/// the loaded preferences.
-///
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -100,30 +91,25 @@ void main() async {
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Initialize timezone database for scheduled notifications (optional)
+  // Initialize timezone database
   tz.initializeTimeZones();
   try {
     final tzInfo = await FlutterTimezone.getLocalTimezone();
-    // FlutterTimezone 5.x returns TimezoneInfo with 'identifier' property (IANA timezone)
     final String timezoneName = tzInfo.identifier;
     tz.setLocalLocation(tz.getLocation(timezoneName));
-  } catch (_) {
-    // Fallback: keep default tz.local
-  }
+  } catch (_) {}
 
   // Set background handler early
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // Initialize Firebase App Check with proper configuration
+  // Initialize Firebase App Check
   if (kDebugMode) {
-    // Use debug provider for development
     await FirebaseAppCheck.instance.activate(
       androidProvider: AndroidProvider.debug,
       appleProvider: AppleProvider.debug,
     );
     print('Firebase App Check initialized in debug mode');
   } else {
-    // Use device check provider for production
     await FirebaseAppCheck.instance.activate(
       androidProvider: AndroidProvider.playIntegrity,
       appleProvider: AppleProvider.deviceCheck,
@@ -134,7 +120,7 @@ void main() async {
   await Hive.initFlutter();
   await Hive.openBox('preferences');
 
-  // Initialize Local Storage Service for offline support
+  // Initialize Services
   try {
     final localStorageService = LocalStorageService();
     await localStorageService.initialize();
@@ -142,13 +128,9 @@ void main() async {
     debugPrint('LocalStorageService initialization failed: $e');
   }
 
-  // Initialize Debug Settings (only in debug mode)
   await DebugSettings().init();
-
-  // Initialize Tutorial Service
   await TutorialService().init();
 
-  // Initialize Game Center (iOS only, fails silently on other platforms)
   try {
     final gameCenterService = GameCenterService();
     await gameCenterService.initialize();
@@ -159,9 +141,7 @@ void main() async {
   runApp(MyApp(Key('key')));
 }
 
-/// Platform-aware scroll behavior:
-/// - iOS/macOS: Bouncing
-/// - Android/Windows/Linux/Web: Clamping (no over-stretch)
+/// Platform-aware scroll behavior
 class AppScrollBehavior extends MaterialScrollBehavior {
   @override
   ScrollPhysics getScrollPhysics(BuildContext context) {
@@ -174,7 +154,6 @@ class AppScrollBehavior extends MaterialScrollBehavior {
     Widget child,
     ScrollableDetails details,
   ) {
-    // Disable glow/stretch indicators to avoid over-drag visuals on Android
     return child;
   }
 }
@@ -185,7 +164,6 @@ class MyApp extends StatefulWidget {
   @override
   State<MyApp> createState() => _MyAppState();
 
-  // Public accessor for RouteObserver (used by DynamicGlobalBackground)
   static RouteObserver<PageRoute> get routeObserver =>
       _MyAppState.routeObserver;
 }
@@ -203,15 +181,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   final PermissionService _permissionService = PermissionService();
   String? _lastHandledShareUrl;
   DateTime? _lastHandledAt;
-  static String? _pendingSharedUrl; // Static for cross-widget access
-  static String?
-  _processedInitialUrl; // Track the initial URL to prevent duplicates
-  static String?
-  _pendingNotificationPayload; // Track notification from cold start
-  NotificationResponse?
-  _lastNotificationResponse; // Track last notification response
+  static String? _pendingSharedUrl;
+  static String? _processedInitialUrl;
+  static String? _pendingNotificationPayload;
+  NotificationResponse? _lastNotificationResponse;
 
-  // RouteObserver for detecting route transitions (used to pause dynamic background animation)
   static final RouteObserver<PageRoute> routeObserver =
       RouteObserver<PageRoute>();
   static const AndroidNotificationChannel _androidChannel =
@@ -229,28 +203,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _initReceiveSharing();
     _initDeepLinkHandling();
     _initPushNotifications();
-
-    // Request necessary permissions when app starts
     _requestInitialPermissions();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-
-    // Check for notification responses when app becomes active/resumed
-    // This is especially important for iOS where the callback may not fire
     if (state == AppLifecycleState.resumed ||
         state == AppLifecycleState.inactive) {
-      // Add a small delay to ensure notification system has processed the tap
       Future.delayed(const Duration(milliseconds: 300), () {
         _checkForPendingNotificationResponse();
       });
     }
   }
 
-  // Check for pending notification response when app resumes
-  // This is a workaround for iOS where foreground notification taps may not trigger the callback
   Future<void> _checkForPendingNotificationResponse() async {
     try {
       final details =
@@ -262,7 +228,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         final response = details.notificationResponse!;
         final payload = response.payload;
 
-        // Only handle if we haven't already processed this
         if (_lastNotificationResponse?.payload != payload &&
             payload != null &&
             payload.isNotEmpty) {
@@ -275,24 +240,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
   }
 
-  // Request initial permissions needed for the app
   Future<void> _requestInitialPermissions() async {
-    // Request notification permission
     await _permissionService.requestNotificationPermission();
-
-    // Request exact alarm permission for scheduled notifications (Android 12+)
     await _permissionService.requestScheduleExactAlarmPermission();
-
-    // We don't request camera and photos permissions on startup
-    // as it's better to request them when they're needed
   }
 
-  // Initialize deep link handling for ShareMedia URL scheme
   void _initDeepLinkHandling() {
     try {
-      // Simple URL scheme handling using platform channels
-      // This will be called when the app receives a URL scheme
-      // Defer Firebase operations until after initialization is complete
       _handleInitialUrlScheme();
     } catch (e) {
       debugPrint('Error initializing deep link handling: $e');
@@ -301,18 +255,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   Future<void> _initPushNotifications() async {
     try {
-      // Ask FCM permissions (iOS) in addition to OS-level permission
       final messaging = FirebaseMessaging.instance;
       await messaging.setAutoInitEnabled(true);
       await messaging.requestPermission(alert: true, badge: true, sound: true);
 
-      // Obtain token (use this to target notifications from server)
       final token = await messaging.getToken();
       if (kDebugMode) {
         debugPrint('FCM token: ${token ?? 'null'}');
       }
 
-      // Local notifications init
       const androidInit = AndroidInitializationSettings(
         '@mipmap/launcher_icon',
       );
@@ -325,9 +276,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       await _localNotifications.initialize(
         const InitializationSettings(android: androidInit, iOS: iosInit),
         onDidReceiveNotificationResponse: (resp) {
-          // Store the response to prevent duplicate processing
           _lastNotificationResponse = resp;
-
           final payload = resp.payload;
           if (payload != null && payload.isNotEmpty) {
             _handleNotificationNavigation(payload);
@@ -335,42 +284,33 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         },
       );
 
-      // Android channel
       await _localNotifications
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
           >()
           ?.createNotificationChannel(_androidChannel);
 
-      // iOS: explicitly request notification permissions for local notifications
       await _localNotifications
           .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin
           >()
           ?.requestPermissions(alert: true, badge: true, sound: true);
 
-      // Initialize scheduler with plugin
       NotificationScheduler.init(_localNotifications);
 
-      // iOS: show alert in foreground
       await messaging.setForegroundNotificationPresentationOptions(
         alert: true,
         badge: true,
         sound: true,
       );
 
-      // Foreground messages → show local notification
       FirebaseMessaging.onMessage.listen((message) {
         final notif = message.notification;
         if (notif != null) {
-          // Build args from message data
           final Map<String, dynamic> args = {};
-
-          // Handle recipe milestone notifications
           if (message.data['recipeId'] != null) {
             args['recipeId'] = message.data['recipeId'];
           }
-          // Handle query-based notifications (discover, etc.)
           if (message.data['query'] != null || message.data['tag'] != null) {
             args['query'] =
                 (message.data['query'] as String?) ??
@@ -401,7 +341,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         }
       });
 
-      // App opened from notification (background)
       FirebaseMessaging.onMessageOpenedApp.listen((message) {
         final payload = jsonEncode({
           'route': message.data['route'] ?? '/home',
@@ -410,12 +349,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         _handleNotificationNavigation(payload);
       });
 
-      // App launched from terminated via notification
       final initialMsg = await messaging.getInitialMessage();
       if (initialMsg != null) {
-        // Store payload for splash screen to handle
-        // This prevents race condition where splash screen navigates to /home
-        // after notification navigation has already pushed a route
         final payload = jsonEncode({
           'route': initialMsg.data['route'] ?? '/home',
           'args': initialMsg.data['args'] ?? {},
@@ -423,7 +358,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         _pendingNotificationPayload = payload;
       }
 
-      // After init, (re)schedule local notifications based on user prefs
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         try {
           final notif = Provider.of<NotificationProvider>(
@@ -445,7 +379,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
   }
 
-  // Handle notification navigation with proper error handling
   void _handleNotificationNavigation(String payload) {
     try {
       final obj = jsonDecode(payload) as Map<String, dynamic>;
@@ -458,28 +391,23 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
       _waitForNavigatorAndNavigateToRoute(route, args);
     } catch (e) {
-      // Backward-compat: treat payload as a simple route string
       _waitForNavigatorAndNavigateToRoute(payload, null);
     }
   }
 
-  // Wait for navigator to be ready and then navigate
   void _waitForNavigatorAndNavigateToRoute(
     String route,
     Map<String, dynamic>? args,
   ) {
-    // Check if navigator is ready
     if (navigatorKey.currentState != null) {
       _performNavigation(route, args);
       return;
     }
 
-    // If not ready, wait for the next frame and try again
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (navigatorKey.currentState != null) {
         _performNavigation(route, args);
       } else {
-        // If still not ready after a frame, wait a bit longer
         Future.delayed(const Duration(milliseconds: 500), () {
           if (navigatorKey.currentState != null) {
             _performNavigation(route, args);
@@ -489,7 +417,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     });
   }
 
-  // Perform the actual navigation
   void _performNavigation(String route, Map<String, dynamic>? args) async {
     try {
       final navigatorState = navigatorKey.currentState;
@@ -497,7 +424,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         return;
       }
 
-      // Handle recipe detail navigation - need to fetch recipe first
       if (route == '/recipeDetail' &&
           args != null &&
           args['recipeId'] != null) {
@@ -510,7 +436,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             debugPrint(
               'Failed to fetch recipe for notification: ${response.message}',
             );
-            // Fallback to home if recipe not found
             navigatorState.pushNamed('/home');
           }
         } catch (e) {
@@ -520,7 +445,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         return;
       }
 
-      // For routes that expect Map<String, String>, convert args
       Map<String, String>? stringArgs;
       if (args != null && args.isNotEmpty) {
         stringArgs = args.map(
@@ -534,34 +458,22 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
   }
 
-  // Handle initial URL scheme (for cold starts from share extension)
-  void _handleInitialUrlScheme() {
-    // This method will be enhanced with platform-specific URL handling
-    // For now, we rely on the existing receive_sharing_intent mechanism
-  }
+  void _handleInitialUrlScheme() {}
 
-  // Initialize share_handler to receive shared content
   Future<void> _initReceiveSharing() async {
     final handler = ShareHandlerPlatform.instance;
-
-    // Get initial shared media when app launched from share
     final SharedMedia? initialMedia = await handler.getInitialSharedMedia();
     if (initialMedia != null) {
       final maybeUrl = _extractUrlFromSharedMedia(initialMedia);
       if (maybeUrl != null) {
-        // Store the URL for SplashScreen to use
         _pendingSharedUrl = maybeUrl;
-        _processedInitialUrl =
-            maybeUrl; // Track this URL to prevent stream duplicates
-        // Note: We don't navigate here anymore. SplashScreen will handle it.
+        _processedInitialUrl = maybeUrl;
       }
     }
 
-    // Listen for media while app is in memory
     _mediaStreamSub = handler.sharedMediaStream.listen((SharedMedia media) {
       final maybeUrl = _extractUrlFromSharedMedia(media);
       if (maybeUrl != null) {
-        // Skip if this is the same URL we already handled in cold start
         if (_processedInitialUrl == maybeUrl) {
           return;
         }
@@ -572,14 +484,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     });
   }
 
-  // Extract a usable URL from SharedMedia
   String? _extractUrlFromSharedMedia(SharedMedia media) {
-    // Check content (text) first
     if (media.content != null && media.content!.isNotEmpty) {
       if (_looksLikeUrl(media.content!)) return media.content!;
     }
-
-    // Check attachments
     if (media.attachments != null) {
       for (final attachment in media.attachments!) {
         if (attachment != null && _looksLikeUrl(attachment.path)) {
@@ -587,7 +495,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         }
       }
     }
-
     return null;
   }
 
@@ -598,18 +505,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         v.startsWith('www.');
   }
 
-  // Import recipe directly from shared media
   void _importRecipeFromSharedMedia(String url) {
-    // Do not import in the background here.
-    // Only navigate to the import screen, which shows the "Importing" dialog
-    // and handles the import UX consistently.
     _navigateToImportScreen(url);
   }
 
-  // Handle shared URL once, de-duping initial and stream deliveries
   void _handleSharedUrl(String url) {
     final now = DateTime.now();
-    // De-dupe: if the same URL was handled within the last 2 seconds, skip
     if (_lastHandledShareUrl == url && _lastHandledAt != null) {
       final diff = now.difference(_lastHandledAt!);
       if (diff.inSeconds < 30) {
@@ -621,26 +522,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _importRecipeFromSharedMedia(url);
   }
 
-  // Navigate to the import screen with the shared URL (kept for manual import)
   void _navigateToImportScreen(String url) {
-    // Wait for the navigator to be ready before attempting navigation
     _waitForNavigatorAndNavigate(url);
   }
 
-  // Wait for navigator to be ready and then navigate
   void _waitForNavigatorAndNavigate(String url) {
-    // Check if navigator is ready
     if (navigatorKey.currentState != null) {
       navigatorKey.currentState!.pushNamed('/import', arguments: url);
       return;
     }
 
-    // If not ready, wait for the next frame and try again
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (navigatorKey.currentState != null) {
         navigatorKey.currentState!.pushNamed('/import', arguments: url);
       } else {
-        // If still not ready after a frame, wait a bit longer
         Future.delayed(const Duration(milliseconds: 500), () {
           if (navigatorKey.currentState != null) {
             navigatorKey.currentState!.pushNamed('/import', arguments: url);
@@ -650,17 +545,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     });
   }
 
-  // Internal static method to get and clear pending shared URL
   static String? _getPendingSharedUrl() {
     final url = _pendingSharedUrl;
-    _pendingSharedUrl = null; // Clear after reading
+    _pendingSharedUrl = null;
     return url;
   }
 
-  // Internal static method to get and clear pending notification payload
   static String? _getPendingNotificationPayload() {
     final payload = _pendingNotificationPayload;
-    _pendingNotificationPayload = null; // Clear after reading
+    _pendingNotificationPayload = null;
     return payload;
   }
 
@@ -674,7 +567,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  // Routes map for both routes parameter and onGenerateRoute
   static final Map<String, Widget Function(dynamic)> _routes = {
     '/splash': (args) => const SplashScreen(),
     '/home': (args) => const PersistentBannerLayout(child: HomeScreen()),
@@ -692,9 +584,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           initialDifficulty = args['difficulty'] as String?;
           displayQuery = args['displayQuery'] as String?;
           initialTag = null;
-        } catch (_) {
-          // ignore malformed args
-        }
+        } catch (_) {}
       }
 
       return PersistentBannerLayout(
@@ -760,64 +650,51 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (_) => CollectionService()),
         ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
       ],
-      // DEBUG: Restored Consumer2 but keeping MaterialApp static properties
       child: Consumer2<AuthService, ThemeProvider>(
         builder: (context, authService, themeProvider, _) {
           return MaterialApp(
             navigatorKey: navigatorKey,
-            navigatorObservers: [
-              MyApp.routeObserver,
-            ], // Add RouteObserver for transition detection
+            navigatorObservers: [MyApp.routeObserver],
             title: 'Recipease',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode:
                 themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-            debugShowCheckedModeBanner: false, // Cleaner debug experience
-            showSemanticsDebugger: false, // Disable semantics debugger
-            showPerformanceOverlay:
-                false, // Disable performance overlay by default
-            checkerboardRasterCacheImages:
-                false, // Disable raster cache checkerboard
-            checkerboardOffscreenLayers:
-                false, // Disable offscreen layers checkerboard
-            // Enhanced user experience configurations
+            debugShowCheckedModeBanner: false,
+            showSemanticsDebugger: false,
+            showPerformanceOverlay: false,
+            checkerboardRasterCacheImages: false,
+            checkerboardOffscreenLayers: false,
             supportedLocales: const [
               Locale('en', 'US'),
               Locale('en', 'GB'),
               Locale('es', 'ES'),
               Locale('fr', 'FR'),
             ],
-            // Localization delegates for future internationalization
-            localizationsDelegates: const [
-              // Add when implementing internationalization
-              // GlobalMaterialLocalizations.delegate,
-              // GlobalWidgetsLocalizations.delegate,
-              // GlobalCupertinoLocalizations.delegate,
-            ],
-            // Performance and accessibility configurations
+            localizationsDelegates: const [],
             scrollBehavior: AppScrollBehavior(),
-            // Enable iOS-style swipe back gesture
             onGenerateRoute: (settings) {
-              // Get the route builder from routes map
               final routeBuilder = _MyAppState._routes[settings.name];
               if (routeBuilder == null) return null;
 
-              // Build the widget
               final widget = routeBuilder(settings.arguments);
 
-              // Use CupertinoPageRoute on iOS for native swipe-back gesture
-              // Use MaterialPageRoute on other platforms
-              // Background is now persistent outside Navigator, but we need opaque background during transitions
               if (Platform.isIOS) {
                 return CupertinoPageRoute(
                   settings: settings,
                   builder: (context) {
-                    // Wrap in opaque container during transitions to prevent trailing screen bug
-                    final theme = Theme.of(context);
-                    return Container(
-                      color: theme.scaffoldBackgroundColor,
-                      child: widget,
+                    // FIX: Wrap the route content in the DynamicGlobalBackground.
+                    // This creates an "opaque" layer for the transition animation (fixing the trail bug)
+                    // while showing the correct background instead of a solid color.
+                    return Stack(
+                      children: [
+                        const Positioned.fill(
+                          child: RepaintBoundary(
+                            child: DynamicGlobalBackground(),
+                          ),
+                        ),
+                        widget,
+                      ],
                     );
                   },
                 );
@@ -828,9 +705,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 );
               }
             },
-            // Error handling and debugging
             builder: (context, child) {
-              // Add error boundary for better error handling
               ErrorWidget.builder = (FlutterErrorDetails errorDetails) {
                 return Scaffold(
                   body: Center(
@@ -860,7 +735,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 );
               };
 
-              // Global dynamic background wrapper - background stays persistent outside Navigator
               return AppTutorial(
                 child: Consumer<DynamicUiProvider>(
                   builder: (context, dyn, _) {
@@ -868,15 +742,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
                     return Stack(
                       children: [
-                        // 1. The Persistent Background (stays still during route transitions)
+                        // The Persistent Background (stays still during route transitions)
+                        // This remains here so non-iOS platforms or initial load shows it correctly
                         if (hasBg)
                           const Positioned.fill(
                             child: RepaintBoundary(
                               child: DynamicGlobalBackground(),
                             ),
                           ),
-                        // 2. The App Content (Navigator slides over the background)
-                        // Wrap in transparent Scaffold to ensure overlays like Snackbars work
+                        // The App Content
                         Scaffold(
                           backgroundColor: Colors.transparent,
                           body: child ?? const SizedBox.shrink(),
@@ -888,7 +762,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               );
             },
             home: const SplashScreen(),
-            // Routes are handled by onGenerateRoute for iOS swipe-back gesture
             routes: const {},
           );
         },

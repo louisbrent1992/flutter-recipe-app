@@ -105,16 +105,15 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                   placeholder: 'Enter category name',
                   autofocus: true,
                   textCapitalization: TextCapitalization.words,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      color: theme.colorScheme.outline,
-                    ),
+                    border: Border.all(color: theme.colorScheme.outline),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurface,
-                  ),
+                  style: TextStyle(color: theme.colorScheme.onSurface),
                   placeholderStyle: TextStyle(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
@@ -401,131 +400,126 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-        backgroundColor: Colors.transparent,
-        extendBody: true,
-        resizeToAvoidBottomInset: false,
-        appBar: CustomAppBar(
-          title: 'Collections',
-          fullTitle: 'My Collections',
-          floatingButtons: [
-            // Context menu
-            PopupMenuButton<String>(
-              tooltip: 'More',
-              icon: Icon(
-                Icons.more_vert,
-                size: AppSizing.responsiveIconSize(
-                  context,
-                  mobile: 24,
-                  tablet: 28,
-                  desktop: 30,
+      backgroundColor: Colors.transparent, // Transparent background
+      extendBody: true, // Extend body behind bottom elements
+      appBar: CustomAppBar(
+        title: 'Collections',
+        fullTitle: 'My Collections',
+        floatingButtons: [
+          // Context menu
+          PopupMenuButton<String>(
+            tooltip: 'More',
+            icon: Icon(
+              Icons.more_vert,
+              size: AppSizing.responsiveIconSize(
+                context,
+                mobile: 24,
+                tablet: 28,
+                desktop: 30,
+              ),
+            ),
+            color: Theme.of(context).colorScheme.surface.withValues(
+              alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withValues(
+                  alpha: Theme.of(context).colorScheme.overlayLight,
                 ),
+                width: 1,
               ),
-              color: Theme.of(context).colorScheme.surface.withValues(
-                alpha: Theme.of(context).colorScheme.alphaVeryHigh,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: Theme.of(context).colorScheme.outline.withValues(
-                    alpha: Theme.of(context).colorScheme.overlayLight,
+            ),
+            onSelected: (value) async {
+              switch (value) {
+                case 'add_collection':
+                  _showAddCategoryDialog();
+                  break;
+                case 'refresh':
+                  await _loadCollections(forceRefresh: true);
+                  break;
+              }
+            },
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem<String>(
+                    value: 'add_collection',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.add_rounded,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('Add Collection'),
+                      ],
+                    ),
                   ),
-                  width: 1,
-                ),
-              ),
-              onSelected: (value) async {
-                switch (value) {
-                  case 'add_collection':
-                    _showAddCategoryDialog();
-                    break;
-                  case 'refresh':
-                    await _loadCollections(forceRefresh: true);
-                    break;
-                }
-              },
-              itemBuilder:
-                  (context) => [
-                    PopupMenuItem<String>(
-                      value: 'add_collection',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.add_rounded,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text('Add Collection'),
-                        ],
-                      ),
+                  PopupMenuItem<String>(
+                    value: 'refresh',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.refresh,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('Refresh'),
+                      ],
                     ),
-                    PopupMenuItem<String>(
-                      value: 'refresh',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.refresh,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text('Refresh'),
-                        ],
-                      ),
+                  ),
+                ],
+          ),
+        ],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Main content
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicatorWithHint(
+                onRefresh: () => _loadCollections(forceRefresh: true),
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      left: AppSpacing.responsive(context),
+                      right: AppSpacing.responsive(context),
+                      top: AppSpacing.responsive(context),
+                      bottom:
+                          AppSpacing.responsive(context) +
+                          120 +
+                          bottomPadding, // Extra space for floating bar + safe area
                     ),
-                  ],
-            ),
-          ],
-        ),
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Background aligned to global scaffold background
-            Positioned.fill(
-              child: Container(
-                color: Theme.of(context).scaffoldBackgroundColor,
-              ),
-            ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Inline banner ad between app bar and title banner
+                        const InlineBannerAd(),
 
-            // Main content
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : RefreshIndicatorWithHint(
-                  onRefresh: () => _loadCollections(forceRefresh: true),
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        left: AppSpacing.responsive(context),
-                        right: AppSpacing.responsive(context),
-                        top: AppSpacing.responsive(context),
-                        bottom: AppSpacing.responsive(context) + 120 + bottomPadding, // Extra space for floating bar + safe area
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Inline banner ad between app bar and title banner
-                          const InlineBannerAd(),
+                        // Header section
+                        _buildHeader(colorScheme),
 
-                          // Header section
-                          _buildHeader(colorScheme),
+                        SizedBox(
+                          height:
+                              AppBreakpoints.isDesktop(context)
+                                  ? 32
+                                  : AppBreakpoints.isTablet(context)
+                                  ? 28
+                                  : 24,
+                        ),
 
-                          SizedBox(
-                            height:
-                                AppBreakpoints.isDesktop(context)
-                                    ? 32
-                                    : AppBreakpoints.isTablet(context)
-                                    ? 28
-                                    : 24,
-                          ),
-
-                          // Grid of categories
-                          _buildCategoriesGrid(colorScheme),
-                        ],
-                      ),
+                        // Grid of categories
+                        _buildCategoriesGrid(colorScheme),
+                      ],
                     ),
                   ),
                 ),
-          ],
+              ),
+        ],
       ),
     );
   }
@@ -942,80 +936,80 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
       ),
       builder:
           (context) => Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Handle bar
-                Container(
-                  margin: const EdgeInsets.only(top: 12, bottom: 8),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                // Collection name header
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: collection.color.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          collection.icon,
-                          color: collection.color,
-                          size: 20,
-                        ),
+              ),
+              // Collection name header
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: collection.color.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          collection.name,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
+                      child: Icon(
+                        collection.icon,
+                        color: collection.color,
+                        size: 20,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        collection.name,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
                 ),
-                const Divider(),
-                // Edit option
-                ListTile(
-                  leading: Icon(
-                    Icons.edit_outlined,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  title: const Text('Edit Collection'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _editCollection(collection);
-                  },
+              ),
+              const Divider(),
+              // Edit option
+              ListTile(
+                leading: Icon(
+                  Icons.edit_outlined,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-                // Delete option
-                ListTile(
-                  leading: const Icon(Icons.delete_outline, color: Colors.red),
-                  title: const Text(
-                    'Delete Collection',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _deleteCategory(collection.id, collection.name);
-                  },
+                title: const Text('Edit Collection'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _editCollection(collection);
+                },
+              ),
+              // Delete option
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text(
+                  'Delete Collection',
+                  style: TextStyle(color: Colors.red),
                 ),
-                const SizedBox(height: 8),
-              ],
-            ),
-        );
+                onTap: () {
+                  Navigator.pop(context);
+                  _deleteCategory(collection.id, collection.name);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+    );
   }
 
   Future<void> _editCollection(RecipeCollection collection) async {
@@ -1036,16 +1030,15 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                   controller: nameController,
                   placeholder: 'Enter collection name',
                   autofocus: true,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      color: theme.colorScheme.outline,
-                    ),
+                    border: Border.all(color: theme.colorScheme.outline),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurface,
-                  ),
+                  style: TextStyle(color: theme.colorScheme.onSurface),
                   placeholderStyle: TextStyle(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
