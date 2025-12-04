@@ -432,7 +432,12 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      resizeToAvoidBottomInset: false,
       appBar: CustomAppBar(
         title:
             (widget.recipe?.toEdit == true || currentRecipe.toEdit == true)
@@ -469,7 +474,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                     left: AppSpacing.responsive(context),
                     right: AppSpacing.responsive(context),
                     top: AppSpacing.responsive(context),
-                    bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
+                    bottom: AppSpacing.responsive(context) + 120 + bottomPadding, // Extra space for floating bar + safe area
                   ),
                   child: Consumer<RecipeProvider>(
                     builder: (context, recipeProvider, _) {

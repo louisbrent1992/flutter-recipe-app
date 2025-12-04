@@ -1084,6 +1084,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
 
     final recipe = _currentRecipe;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
@@ -1092,6 +1093,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         }
       },
       child: Scaffold(
+        backgroundColor: Colors.transparent, // Transparent background
+        extendBody: true, // Extend body
         appBar: CustomAppBar(
           title: 'Details',
           fullTitle: 'Recipe Details',
@@ -1597,9 +1600,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       left: AppSpacing.responsive(context),
                       right: AppSpacing.responsive(context),
                       top: AppSpacing.responsive(context),
-                      bottom:
-                          AppSpacing.responsive(context) +
-                          60, // Extra space for floating bar
+                      // Add bottom safe area padding + extra spacing
+                      bottom: AppSpacing.responsive(context) + bottomPadding + 60,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

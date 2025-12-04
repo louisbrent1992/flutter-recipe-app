@@ -84,6 +84,9 @@ class FloatingBottomBar extends StatelessWidget {
     final shouldShowPagination =
         showPagination && totalPages != null && totalPages! > 1;
 
+    // Get the safe area padding to lift the bar above the home indicator
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Positioned(
       bottom: 0,
       left: 0,
@@ -103,8 +106,12 @@ class FloatingBottomBar extends StatelessWidget {
                       : AppBreakpoints.isTablet(context)
                       ? 48
                       : 40),
-          margin: EdgeInsets.all(
-            AppSpacing.responsive(context, mobile: 16, tablet: 20, desktop: 24),
+          margin: EdgeInsets.only(
+            left: AppSpacing.responsive(context, mobile: 16, tablet: 20, desktop: 24),
+            right: AppSpacing.responsive(context, mobile: 16, tablet: 20, desktop: 24),
+            top: AppSpacing.responsive(context, mobile: 16, tablet: 20, desktop: 24),
+            // Add bottomPadding to the base spacing so it clears the home indicator
+            bottom: AppSpacing.responsive(context, mobile: 16, tablet: 20, desktop: 24) + bottomPadding,
           ),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface.withValues(

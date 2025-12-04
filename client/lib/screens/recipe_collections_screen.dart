@@ -398,7 +398,12 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBody: true,
+        resizeToAvoidBottomInset: false,
         appBar: CustomAppBar(
           title: 'Collections',
           fullTitle: 'My Collections',
@@ -493,7 +498,7 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                         left: AppSpacing.responsive(context),
                         right: AppSpacing.responsive(context),
                         top: AppSpacing.responsive(context),
-                        bottom: AppSpacing.responsive(context) + 30, // Extra space for floating bar
+                        bottom: AppSpacing.responsive(context) + 120 + bottomPadding, // Extra space for floating bar + safe area
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

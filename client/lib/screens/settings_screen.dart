@@ -765,9 +765,11 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: Colors.transparent, // Let global background show through
+      backgroundColor: Colors.transparent, // Transparent for global background
+      extendBody: true, // Extend body to edges
       appBar: CustomAppBar(
         title: 'Settings',
         elevation: AppElevation.appBar,
@@ -1010,9 +1012,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                     left: AppSpacing.responsive(context),
                     right: AppSpacing.responsive(context),
                     top: AppSpacing.responsive(context),
-                    bottom:
-                        AppSpacing.responsive(context) +
-                        30, // Extra space for floating bar
+                    // Add padding for bottom bar + safe area
+                    bottom: AppSpacing.responsive(context) + 120 + bottomPadding,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

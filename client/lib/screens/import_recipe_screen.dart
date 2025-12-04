@@ -256,7 +256,12 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
     final colorScheme = theme.colorScheme;
     final size = MediaQuery.of(context).size;
 
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      resizeToAvoidBottomInset: false,
       appBar: CustomAppBar(
         title: 'Import',
         fullTitle: 'Import Recipe',
@@ -385,7 +390,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                           top: AppSpacing.responsive(context),
                           bottom:
                               AppSpacing.responsive(context) +
-                              30, // Extra space for floating bar
+                              120 + bottomPadding, // Extra space for floating bar + safe area
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.start,

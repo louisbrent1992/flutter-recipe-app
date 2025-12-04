@@ -204,8 +204,12 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
     final colorScheme = theme.colorScheme;
     final size = MediaQuery.of(context).size;
 
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
       backgroundColor: Colors.transparent, // Let global background show through
+      extendBody: true,
+      resizeToAvoidBottomInset: false,
       appBar: const CustomAppBar(
         title: 'Generate',
         fullTitle: 'Generate Recipe',
@@ -258,7 +262,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
                             top: AppSpacing.responsive(context),
                             bottom:
                                 AppSpacing.responsive(context) +
-                                30, // Extra space for floating bar
+                                120 + bottomPadding, // Extra space for floating bar + safe area
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,

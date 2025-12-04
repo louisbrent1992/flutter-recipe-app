@@ -53,8 +53,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
       backgroundColor: Colors.transparent, // Let global background show through
+      extendBody: true,
+      resizeToAvoidBottomInset: false,
       appBar: CustomAppBar(
         title: 'Shop',
         bottom: TabBar(
@@ -110,13 +114,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       controller: _tabController,
                       children: [
                         // Subscriptions Tab
-                        _buildSubscriptionsTab(context, subscriptionProvider),
+                        _buildSubscriptionsTab(context, subscriptionProvider, bottomPadding),
 
                         // Bundles Tab
-                        _buildBundlesTab(context, subscriptionProvider),
+                        _buildBundlesTab(context, subscriptionProvider, bottomPadding),
 
                         // Credits Tab
-                        _buildCreditsTab(context, subscriptionProvider),
+                        _buildCreditsTab(context, subscriptionProvider, bottomPadding),
                       ],
                     ),
                   ),
@@ -327,6 +331,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
   Widget _buildSubscriptionsTab(
     BuildContext context,
     SubscriptionProvider provider,
+    double bottomPadding,
   ) {
     final subscriptions = provider.subscriptions;
 
@@ -351,7 +356,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             top: AppSpacing.responsive(context),
             bottom:
                 AppSpacing.responsive(context) +
-                30, // Extra space for floating bar
+                120 + bottomPadding, // Extra space for floating bar + safe area
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -448,7 +453,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     );
   }
 
-  Widget _buildBundlesTab(BuildContext context, SubscriptionProvider provider) {
+  Widget _buildBundlesTab(BuildContext context, SubscriptionProvider provider, double bottomPadding) {
     final bundles = provider.nonConsumables;
 
     if (bundles.isEmpty) {
@@ -472,7 +477,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             top: AppSpacing.responsive(context),
             bottom:
                 AppSpacing.responsive(context) +
-                30, // Extra space for floating bar
+                120 + bottomPadding, // Extra space for floating bar + safe area
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -534,7 +539,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     );
   }
 
-  Widget _buildCreditsTab(BuildContext context, SubscriptionProvider provider) {
+  Widget _buildCreditsTab(BuildContext context, SubscriptionProvider provider, double bottomPadding) {
     final credits = provider.consumables;
 
     if (credits.isEmpty) {
@@ -558,7 +563,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             top: AppSpacing.responsive(context),
             bottom:
                 AppSpacing.responsive(context) +
-                30, // Extra space for floating bar
+                120 + bottomPadding, // Extra space for floating bar + safe area
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

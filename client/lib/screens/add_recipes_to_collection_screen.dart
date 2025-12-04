@@ -170,8 +170,12 @@ class _AddRecipesToCollectionScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      resizeToAvoidBottomInset: false,
       appBar: CustomAppBar(
         title: 'Add',
         fullTitle: 'Add to Collection',
@@ -286,7 +290,7 @@ class _AddRecipesToCollectionScreenState
                                   )
                                   : ListView.builder(
                                     itemCount: _filteredRecipes.length,
-                                    padding: const EdgeInsets.only(bottom: 80),
+                                    padding: EdgeInsets.only(bottom: 120 + bottomPadding),
                                     itemBuilder: (context, index) {
                                       final recipe = _filteredRecipes[index];
                                       final isSelected = _selectedRecipes.any(

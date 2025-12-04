@@ -372,7 +372,12 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Calculate bottom padding for safe area
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
+        backgroundColor: Colors.transparent, // Transparent background
+        extendBody: true, // Extend body behind bottom elements
         appBar: CustomAppBar(
           title: 'Discover',
           fullTitle: 'Discover Recipes',
@@ -624,9 +629,8 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                           left: AppSpacing.responsive(context),
                           right: AppSpacing.responsive(context),
                           top: AppSpacing.responsive(context),
-                          bottom:
-                              AppSpacing.responsive(context) +
-                              30, // Extra space for floating bar
+                          // Bottom padding handled by GridView for scrolling behind bar
+                          bottom: 0,
                         ),
                         child: Column(
                           children: [
@@ -643,7 +647,10 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
                                         'discover_grid',
                                       ),
                                       controller: _scrollController,
-                                      padding: EdgeInsets.only(bottom: 100),
+                                      // Add padding for bottom bar and safe area
+                                      padding: EdgeInsets.only(
+                                        bottom: 120 + bottomPadding,
+                                      ),
                                       itemBuilder: (context, index) {
                                         final recipe = displayRecipes[index];
                                         // Use a stable key so Flutter does not reuse state across pages

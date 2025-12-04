@@ -677,9 +677,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   // Routes map for both routes parameter and onGenerateRoute
   static final Map<String, Widget Function(dynamic)> _routes = {
     '/splash': (args) => const SplashScreen(),
-    '/home':
-        (args) =>
-            SafeArea(child: const PersistentBannerLayout(child: HomeScreen())),
+    '/home': (args) => const PersistentBannerLayout(child: HomeScreen()),
     '/login': (args) => const LoginScreen(),
     '/register': (args) => const RegisterScreen(),
     '/discover': (args) {
@@ -699,77 +697,51 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         }
       }
 
-      return SafeArea(
-        child: PersistentBannerLayout(
-          child: DiscoverRecipesScreen(
-            initialQuery: initialQuery,
-            initialDifficulty: initialDifficulty,
-            initialTag: initialTag,
-            displayQuery: displayQuery,
-          ),
+      return PersistentBannerLayout(
+        child: DiscoverRecipesScreen(
+          initialQuery: initialQuery,
+          initialDifficulty: initialDifficulty,
+          initialTag: initialTag,
+          displayQuery: displayQuery,
         ),
       );
     },
     '/generate':
-        (args) => SafeArea(
-          child: const PersistentBannerLayout(child: GenerateRecipeScreen()),
-        ),
+        (args) => const PersistentBannerLayout(child: GenerateRecipeScreen()),
     '/import':
-        (args) => SafeArea(
-          child: PersistentBannerLayout(
-            child: ImportRecipeScreen(sharedUrl: args as String?),
-          ),
+        (args) => PersistentBannerLayout(
+          child: ImportRecipeScreen(sharedUrl: args as String?),
         ),
     '/recipeEdit':
-        (args) => SafeArea(
-          child: PersistentBannerLayout(
-            child: RecipeEditScreen(recipe: args as Recipe?),
-          ),
+        (args) => PersistentBannerLayout(
+          child: RecipeEditScreen(recipe: args as Recipe?),
         ),
     '/myRecipes':
-        (args) => SafeArea(
-          child: const PersistentBannerLayout(child: MyRecipesScreen()),
-        ),
+        (args) => const PersistentBannerLayout(child: MyRecipesScreen()),
     '/recipeDetail':
-        (args) => SafeArea(
-          child: PersistentBannerLayout(
-            child: RecipeDetailScreen(recipe: args as Recipe),
-          ),
+        (args) => PersistentBannerLayout(
+          child: RecipeDetailScreen(recipe: args as Recipe),
         ),
     '/settings':
-        (args) => SafeArea(
-          child: const PersistentBannerLayout(child: SettingsScreen()),
-        ),
+        (args) => const PersistentBannerLayout(child: SettingsScreen()),
     '/collections':
-        (args) => SafeArea(
-          child: const PersistentBannerLayout(child: RecipeCollectionScreen()),
-        ),
+        (args) => const PersistentBannerLayout(child: RecipeCollectionScreen()),
     '/collectionDetail':
-        (args) => SafeArea(
-          child: PersistentBannerLayout(
-            child: CollectionDetailScreen(collection: args as RecipeCollection),
-          ),
+        (args) => PersistentBannerLayout(
+          child: CollectionDetailScreen(collection: args as RecipeCollection),
         ),
     '/addRecipesToCollection':
-        (args) => SafeArea(
-          child: PersistentBannerLayout(
-            child: AddRecipesToCollectionScreen(
-              collection: args as RecipeCollection,
-            ),
+        (args) => PersistentBannerLayout(
+          child: AddRecipesToCollectionScreen(
+            collection: args as RecipeCollection,
           ),
         ),
     '/generatedRecipes':
-        (args) => SafeArea(
-          child: const PersistentBannerLayout(child: GeneratedRecipesScreen()),
-        ),
+        (args) => const PersistentBannerLayout(child: GeneratedRecipesScreen()),
     '/randomRecipe':
-        (args) => SafeArea(
-          child: const PersistentBannerLayout(child: RandomRecipeScreen()),
-        ),
+        (args) => const PersistentBannerLayout(child: RandomRecipeScreen()),
     '/subscription':
-        (args) => SafeArea(
-          child: const PersistentBannerLayout(child: SubscriptionScreen()),
-        ),
+        (args) => const PersistentBannerLayout(child: SubscriptionScreen()),
   };
 
   @override
@@ -836,11 +808,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
               // Use CupertinoPageRoute on iOS for native swipe-back gesture
               // Use MaterialPageRoute on other platforms
-              // Background is now persistent outside Navigator, so routes can be transparent
+              // Background is now persistent outside Navigator, but we need opaque background during transitions
               if (Platform.isIOS) {
                 return CupertinoPageRoute(
                   settings: settings,
-                  builder: (_) => widget,
+                  builder: (context) {
+                    // Wrap in opaque container during transitions to prevent trailing screen bug
+                    final theme = Theme.of(context);
+                    return Container(
+                      color: theme.scaffoldBackgroundColor,
+                      child: widget,
+                    );
+                  },
                 );
               } else {
                 return MaterialPageRoute(

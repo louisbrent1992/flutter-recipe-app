@@ -140,7 +140,12 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      resizeToAvoidBottomInset: false,
       appBar: CustomAppBar(
         title: 'Recipes',
         fullTitle: 'My Recipes',
@@ -344,9 +349,8 @@ class _MyRecipesScreenState extends State<MyRecipesScreen>
                         left: AppSpacing.responsive(context),
                         right: AppSpacing.responsive(context),
                         top: AppSpacing.responsive(context),
-                        bottom:
-                            AppSpacing.responsive(context) +
-                            30, // Extra space for floating bar
+                        // 100-120 is usually safe (Bar height ~80 + Margin ~20 + Safe Area ~34)
+                        bottom: AppSpacing.responsive(context) + 120 + bottomPadding,
                       ),
                       child: Column(
                         children: [

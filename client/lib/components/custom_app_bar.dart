@@ -59,7 +59,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final double actionsEndPadding = 0;
 
     return AppBar(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      // Transparent by default to show global background
+      backgroundColor: backgroundColor ?? Colors.transparent,
       // Use NavigationToolbar.kMiddleSpacing (16.0) for consistent title spacing
       titleSpacing: NavigationToolbar.kMiddleSpacing,
       title:
@@ -94,6 +95,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
       foregroundColor: Theme.of(context).colorScheme.onSurface,
       elevation: elevation,
+      scrolledUnderElevation: 0, // Prevent color change on scroll
       flexibleSpace: flexibleSpace,
 
       bottom: bottom,
