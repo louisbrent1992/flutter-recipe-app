@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/dynamic_ui.dart';
 import '../providers/dynamic_ui_provider.dart';
+import '../main.dart' show MyApp;
 
 class DynamicGlobalBackground extends StatefulWidget {
   const DynamicGlobalBackground({super.key});
@@ -12,12 +13,13 @@ class DynamicGlobalBackground extends StatefulWidget {
 }
 
 class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver, RouteAware {
   late final AnimationController _controller;
   late final Animation<double> _scaleAnim;
   late final Animation<Alignment> _beginAlign;
   late final Animation<Alignment> _endAlign;
   bool _wasAnimatingBeforeKeyboard = false;
+  bool _wasAnimatingBeforeTransition = false;
   
   // Dark blue gradient colors for dark mode animation
   static const List<Color> _darkModeGradientColors = [
@@ -48,10 +50,57 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Subscribe to route changes to pause animation during transitions
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      MyApp.routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
   void dispose() {
+    MyApp.routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     super.dispose();
+  }
+  
+  // Pause animation when route is being pushed
+  @override
+  void didPush() {
+    if (_controller.isAnimating) {
+      _wasAnimatingBeforeTransition = true;
+      _controller.stop();
+    }
+  }
+  
+  // Resume animation when route transition completes
+  @override
+  void didPopNext() {
+    if (_wasAnimatingBeforeTransition && !_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+      _wasAnimatingBeforeTransition = false;
+    }
+  }
+  
+  // Also pause when popping (swiping back)
+  @override
+  void didPop() {
+    if (_controller.isAnimating) {
+      _wasAnimatingBeforeTransition = true;
+      _controller.stop();
+    }
+  }
+  
+  // Resume when next route is pushed (transition complete)
+  @override
+  void didPushNext() {
+    if (_wasAnimatingBeforeTransition && !_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+      _wasAnimatingBeforeTransition = false;
+    }
   }
 
   @override

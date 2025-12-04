@@ -205,6 +205,7 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
+      backgroundColor: Colors.transparent, // Let global background show through
       appBar: const CustomAppBar(
         title: 'Generate',
         fullTitle: 'Generate Recipe',
@@ -992,8 +993,8 @@ class GenerateRecipeScreenState extends State<GenerateRecipeScreen>
               ],
             );
           },
-        ),
-      );
+      ),
+    );
   }
 }
 

@@ -247,7 +247,7 @@ class GeneratedRecipesScreenState extends State<GeneratedRecipesScreen> {
             },
           ),
         ],
-        ),
-      );
+      ),
+    );
   }
 }

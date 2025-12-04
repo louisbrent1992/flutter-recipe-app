@@ -815,8 +815,8 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
             ],
           );
         },
-        ),
-      );
+      ),
+    );
   }
 }
 

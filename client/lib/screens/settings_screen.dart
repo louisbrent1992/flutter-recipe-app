@@ -767,6 +767,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      backgroundColor: Colors.transparent, // Let global background show through
       appBar: CustomAppBar(
         title: 'Settings',
         elevation: AppElevation.appBar,
@@ -1765,8 +1766,8 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
             ),
           ],
-        ),
-      );
+      ),
+    );
   }
 
   Widget _buildProfileHeader(ColorScheme colorScheme) {

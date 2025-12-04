@@ -65,7 +65,6 @@ class _HomeScreenState extends State<HomeScreen>
     _dataLoadingFuture = _loadInitialData();
 
     // Listen for cross-screen recipe updates to trigger UI rebuild
-    // Note: Provider already updates data optimistically, no need for network fetch
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final recipeProvider = Provider.of<RecipeProvider>(
         context,
@@ -80,7 +79,6 @@ class _HomeScreenState extends State<HomeScreen>
     });
 
     // Check if tutorial should be shown and start it
-    // Handle both auto-start (first time) and manual restart (from settings)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final tutorialService = TutorialService();
       final isManualRestart = tutorialService.isManualRestart;
@@ -94,7 +92,6 @@ class _HomeScreenState extends State<HomeScreen>
           isManualRestart || await tutorialService.shouldShowTutorial();
       if (shouldShow && mounted) {
         // Wait for data to load before starting tutorial
-        // This ensures "Your Recipes" are shown if user has recipes
         if (_dataLoadingFuture != null) {
           await _dataLoadingFuture;
         }
@@ -114,24 +111,25 @@ class _HomeScreenState extends State<HomeScreen>
     await Future.microtask(() async {
       if (!mounted) return;
 
-      final recipeProvider = Provider.of<RecipeProvider>(
-        context,
-        listen: false,
-      );
-      final collectionService = Provider.of<CollectionService>(
-        context,
-        listen: false,
-      );
+      final recipeProvider = context.read<RecipeProvider>();
+      final collectionService = context.read<CollectionService>();
 
       // Load first batch of user's own recipes (only once)
       await recipeProvider.loadUserRecipes(limit: 20);
 
       // Fetch collections once and cache the future
-      _collectionsFuture = collectionService.getCollections(
-        updateSpecialCollections: true,
-      );
-      // Wait for collections to ensure they are ready for tutorial
-      await _collectionsFuture;
+      // We set state here to update the _collectionsFuture variable so the UI sees it
+      if (mounted) {
+        setState(() {
+          _collectionsFuture = collectionService.getCollections(
+            updateSpecialCollections: true,
+          );
+        });
+      }
+
+      if (_collectionsFuture != null) {
+        await _collectionsFuture;
+      }
 
       // Fetch session cache for discovery (500 recipes, used everywhere)
       await recipeProvider.fetchSessionDiscoverCache();
@@ -143,9 +141,6 @@ class _HomeScreenState extends State<HomeScreen>
       );
       recipeProvider.setGeneratedRecipesFromCache(discover);
 
-      // Fetch community recipes for carousel - DISABLED
-      // await recipeProvider.fetchSessionCommunityCache();
-
       // Ensure first frame shows placeholders even before provider flips loading
       if (mounted) setState(() => _isBooting = false);
     });
@@ -153,31 +148,18 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _startTutorial() {
     try {
-      // Start with home hero section (welcome message)
       final List<GlobalKey> tutorialTargets = [TutorialKeys.homeHero];
 
-      // Then navigation drawer menu and credit balance
       tutorialTargets.addAll([
         TutorialKeys.navDrawerMenu,
         TutorialKeys.creditBalance,
       ]);
 
-      // Always include "Your Recipes" - TutorialShowcase is always rendered at parent level
       tutorialTargets.add(TutorialKeys.homeYourRecipes);
-
-      // Community tutorial skipped (feature dormant)
-      // tutorialTargets.add(TutorialKeys.homeCommunity);
-
-      // Always include "Discover" section
       tutorialTargets.add(TutorialKeys.homeDiscover);
-
-      // Collections are always shown (even if empty state), so safe to include
       tutorialTargets.add(TutorialKeys.homeCollections);
-
-      // Add Features section
       tutorialTargets.add(TutorialKeys.homeFeatures);
 
-      // Add bottom navigation targets
       tutorialTargets.addAll([
         TutorialKeys.bottomNavHome,
         TutorialKeys.bottomNavDiscover,
@@ -192,29 +174,20 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  // Refresh only user data (recipes and collections)
   void _refreshUserData(BuildContext context) {
     final recipeProvider = context.read<RecipeProvider>();
     final collectionService = context.read<CollectionService>();
 
-    // Trigger parallel refreshes (no await needed for button callbacks)
     recipeProvider.loadUserRecipes(limit: 20, forceRefresh: true);
 
-    // Update cached collections future
-    _collectionsFuture = collectionService.getCollections(forceRefresh: true);
-
-    // Ensure widgets depending on FutureBuilder rebuild
-    if (mounted) setState(() {});
+    setState(() {
+      _collectionsFuture = collectionService.getCollections(forceRefresh: true);
+    });
   }
 
-  // Refresh all home sections at once
   void _refreshAllSections(BuildContext context) {
     final recipeProvider = context.read<RecipeProvider>();
-
-    // Refresh user data
     _refreshUserData(context);
-
-    // Refresh discover recipes (random) - only on manual refresh
     recipeProvider.searchExternalRecipes(
       query: '',
       limit: 50,
@@ -233,50 +206,50 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Access the user data from the provider
-    Provider.of<CollectionService>(context, listen: false);
-
-    // Check if userData is null and navigate to login if necessary
+    // Check if user is null and navigate to login if necessary
     if (context.read<AuthService>().user == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacementNamed(context, '/login');
       });
-      return Container(); // Return an empty container while redirecting
+      return Container();
     }
 
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor:
+          Colors.transparent, // Fix 1: Transparent for global background
+      extendBody:
+          true, // Fix 2: Allows body to extend behind bottom UI elements
+      resizeToAvoidBottomInset:
+          false, // Fix 3: Prevents UI jumpting on keyboard open
       appBar: CustomAppBar(
         title: 'RecipEase',
         useLogo: true,
         leading: _buildModernMenuButton(context),
       ),
       drawer: const NavDrawer(),
-      body: Stack(
-        children: [
-          // Show offline banner at top when offline
-          const Positioned(top: 0, left: 0, right: 0, child: OfflineBanner()),
-          Consumer<UserProfileProvider>(
-            builder: (context, profile, _) {
-              return Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                ),
-                child: Center(
+      body: SafeArea(
+        bottom: false, // Fix 4: Allow content to flow to the very bottom
+        child: Stack(
+          children: [
+            // Show offline banner at top when offline
+            const Positioned(top: 0, left: 0, right: 0, child: OfflineBanner()),
+            Consumer<UserProfileProvider>(
+              builder: (context, profile, _) {
+                return Center(
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
                       maxWidth: () {
                         final width = MediaQuery.of(context).size.width;
-                        // iPad 13 inch is ~1024px, so handle tablets and small desktops similarly
                         if (AppBreakpoints.isTablet(context) ||
                             (AppBreakpoints.isDesktop(context) &&
                                 width < 1400)) {
-                          return 1000.0; // Natural max width for iPad and small desktops
+                          return 1000.0;
                         }
                         if (AppBreakpoints.isDesktop(context)) {
-                          return 1200.0; // Larger desktop max width
+                          return 1200.0;
                         }
-                        return double.infinity; // Mobile: full width
+                        return double.infinity;
                       }(),
                     ),
                     child: Scrollbar(
@@ -287,23 +260,18 @@ class _HomeScreenState extends State<HomeScreen>
                           left: AppSpacing.responsive(context),
                           right: AppSpacing.responsive(context),
                           top: AppSpacing.responsive(context),
-                          bottom:
-                              AppSpacing.responsive(context) +
-                              60, // Extra space for floating bar
+                          // Fix 5: Ensure enough padding so content isn't hidden behind bottom bar
+                          bottom: AppSpacing.responsive(context) + 120,
                         ),
                         children: [
-                          // Inline banner ad between app bar and seasonal banner
                           const InlineBannerAd(),
-
-                          // Dynamic UI banners (home_top)
                           Consumer<DynamicUiProvider>(
                             builder: (context, dyn, _) {
                               final banners = dyn.bannersForPlacement(
                                 'home_top',
                               );
-                              if (banners.isEmpty) {
+                              if (banners.isEmpty)
                                 return const SizedBox.shrink();
-                              }
                               return Column(
                                 children:
                                     banners
@@ -313,8 +281,8 @@ class _HomeScreenState extends State<HomeScreen>
                             },
                           ),
                           _buildHeroSection(context),
+
                           // --- Your Recipes carousel ---
-                          // Wrap with TutorialShowcase at this level so GlobalKey is always attached
                           TutorialShowcase(
                             showcaseKey: TutorialKeys.homeYourRecipes,
                             title: 'Your Digital Cookbook 📚',
@@ -331,16 +299,13 @@ class _HomeScreenState extends State<HomeScreen>
                                 return Consumer<RecipeProvider>(
                                   builder: (context, recipeProvider, _) {
                                     final saved = recipeProvider.userRecipes;
-                                    // Show loading if still booting or loading
                                     if (_isBooting ||
                                         recipeProvider.isLoading) {
                                       return _buildSectionLoading(
                                         context,
                                         title: 'Your Recipes',
-                                        height: 180,
                                       );
                                     }
-                                    // Show empty state if no recipes (no network error - recipes are stored locally)
                                     if (saved.isEmpty) {
                                       return _buildSectionMessage(
                                         context,
@@ -349,7 +314,6 @@ class _HomeScreenState extends State<HomeScreen>
                                             'No recipes yet. Add your first recipe to get started!',
                                         leadingIcon:
                                             Icons.restaurant_menu_rounded,
-                                        onRetry: null,
                                         secondaryActionLabel: 'Add a Recipe',
                                         secondaryAction: () {
                                           Navigator.pushNamed(
@@ -369,11 +333,10 @@ class _HomeScreenState extends State<HomeScreen>
                               },
                             ),
                           ),
+
                           SizedBox(height: AppSpacing.responsive(context)),
-                          // --- Community Recipes carousel ---
-                          // (Feature dormant)
+
                           // --- Discover & Try carousel ---
-                          // Wrap with TutorialShowcase at this level so GlobalKey is always attached
                           TutorialShowcase(
                             showcaseKey: TutorialKeys.homeDiscover,
                             title: 'Explore & Inspire 🔍',
@@ -398,16 +361,14 @@ class _HomeScreenState extends State<HomeScreen>
                                             )
                                             .take(10)
                                             .toList();
-                                    // Show loading if still booting or loading
+
                                     if (_isBooting ||
                                         recipeProvider.isLoading) {
                                       return _buildSectionLoading(
                                         context,
                                         title: 'Discover & Try',
-                                        height: 180,
                                       );
                                     }
-                                    // Show error if failed to load
                                     if (random.isEmpty &&
                                         recipeProvider.error != null) {
                                       final isOffline =
@@ -423,21 +384,18 @@ class _HomeScreenState extends State<HomeScreen>
                                             isOffline
                                                 ? Icons.wifi_off_rounded
                                                 : Icons.error_outline_rounded,
-                                        onRetry: () {
-                                          _refreshAllSections(context);
-                                        },
+                                        onRetry:
+                                            () => _refreshAllSections(context),
                                       );
                                     }
-                                    // Show empty state if no discover recipes available
                                     if (random.isEmpty) {
                                       return _buildSectionMessage(
                                         context,
                                         title: 'Discover & Try',
                                         message: 'No recipes to discover yet',
                                         leadingIcon: Icons.explore_outlined,
-                                        onRetry: () {
-                                          _refreshAllSections(context);
-                                        },
+                                        onRetry:
+                                            () => _refreshAllSections(context),
                                       );
                                     }
                                     return _buildRecipeCarousel(
@@ -450,7 +408,9 @@ class _HomeScreenState extends State<HomeScreen>
                               },
                             ),
                           ),
+
                           SizedBox(height: AppSpacing.responsive(context)),
+
                           // --- Collections carousel ---
                           Consumer<DynamicUiProvider>(
                             builder: (context, dynamicUi, _) {
@@ -460,19 +420,18 @@ class _HomeScreenState extends State<HomeScreen>
                                   true)) {
                                 return const SizedBox.shrink();
                               }
-                              // Ensure collections future is initialized
+
+                              // Logic Fix: Ensure we don't return a widget if future is null,
+                              // though _loadInitialData handles this now.
                               if (_collectionsFuture == null) {
-                                final collectionService =
-                                    Provider.of<CollectionService>(
-                                      context,
-                                      listen: false,
-                                    );
-                                _collectionsFuture = collectionService
+                                // Fallback if init didn't fire for some reason
+                                _collectionsFuture = context
+                                    .read<CollectionService>()
                                     .getCollections(
                                       updateSpecialCollections: true,
                                     );
                               }
-                              // Use cached collections future to avoid duplicate API calls
+
                               final collections = _collectionsFuture!.then(
                                 (value) => value.take(10).toList(),
                               );
@@ -484,7 +443,9 @@ class _HomeScreenState extends State<HomeScreen>
                               );
                             },
                           ),
+
                           SizedBox(height: AppSpacing.responsive(context)),
+
                           // Category scroller with features
                           Consumer<DynamicUiProvider>(
                             builder: (context, dynamicUi, _) {
@@ -504,11 +465,11 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-        ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -542,16 +503,11 @@ class _HomeScreenState extends State<HomeScreen>
 
                     return Consumer<DynamicUiProvider>(
                       builder: (context, dynamicUi, _) {
-                        // Check if dynamic UI config provides a custom hero image
                         final customHero = dynamicUi.config?.heroImageUrl;
-
-                        // Determine image source: use custom if provided, otherwise default local asset
                         final heroImage =
                             (customHero != null && customHero.isNotEmpty)
                                 ? customHero
                                 : _localHeroImageAsset;
-
-                        // Check if it's a local asset (starts with 'assets/') or network URL
                         final isLocalAsset = heroImage.startsWith('assets/');
 
                         if (isLocalAsset) {
@@ -562,7 +518,6 @@ class _HomeScreenState extends State<HomeScreen>
                           );
                         }
 
-                        // Network image with fallback to default local asset
                         return Image.network(
                           heroImage,
                           fit: BoxFit.cover,
@@ -573,7 +528,6 @@ class _HomeScreenState extends State<HomeScreen>
                                   .round(),
                           filterQuality: FilterQuality.high,
                           errorBuilder: (context, error, stackTrace) {
-                            // Fallback to local asset on network error
                             return Image.asset(
                               _localHeroImageAsset,
                               fit: BoxFit.cover,
@@ -586,7 +540,7 @@ class _HomeScreenState extends State<HomeScreen>
                   },
                 ),
               ),
-              // Gradient overlay - reduced opacity for clearer background image
+              // Gradient overlay
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
@@ -620,16 +574,12 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Consumer<DynamicUiProvider>(
                     builder: (context, dynamicUi, _) {
                       final config = dynamicUi.config;
-                      // Get dynamic welcome message or use default
                       final welcomeText =
                           config?.formatWelcomeMessage(username) ?? 'Welcome,';
-                      // Split welcome text to handle username placement
                       final welcomeParts = welcomeText.split('{username}');
                       final hasUsernamePlaceholder = welcomeText.contains(
                         '{username}',
                       );
-
-                      // Get dynamic subtitle or use default
                       final subtitle =
                           config?.heroSubtitle ??
                           'What would you like to cook today?';
@@ -638,7 +588,6 @@ class _HomeScreenState extends State<HomeScreen>
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Welcome message - handle {username} placeholder
                           if (hasUsernamePlaceholder &&
                               welcomeParts.length == 2)
                             RichText(
@@ -742,7 +691,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  /// Horizontal list of quick-access category cards.
   Widget _buildCategoryScroller(BuildContext context, {required String title}) {
     final categories = _quickCategories();
     final theme = Theme.of(context);
@@ -757,10 +705,8 @@ class _HomeScreenState extends State<HomeScreen>
         children: [
           Padding(
             padding: EdgeInsets.all(AppSpacing.sm),
-
             child: GestureDetector(
               onTap: () {
-                // Navigate based on the title
                 if (title.contains('Your Recipes')) {
                   Navigator.pushNamed(context, '/myRecipes');
                 } else {
@@ -825,7 +771,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  /// Builds a single category card.
   Widget _buildCategoryCard(BuildContext context, _CategoryItem cat) {
     final theme = Theme.of(context);
     final cardHeight =
@@ -938,7 +883,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  /// Helper to define quick categories with consistent data.
   List<_CategoryItem> _quickCategories() {
     return [
       _CategoryItem(
@@ -965,12 +909,6 @@ class _HomeScreenState extends State<HomeScreen>
         '/collections',
         Colors.purple,
       ),
-      // _CategoryItem(
-      //   'Community',
-      //   Icons.people_rounded,
-      //   '/community',
-      //   const Color(0xFF6C5CE7),
-      // ),
       _CategoryItem(
         'Discover Recipes',
         Icons.explore,
@@ -980,7 +918,6 @@ class _HomeScreenState extends State<HomeScreen>
     ];
   }
 
-  /// Helper to get category descriptions for the cards.
   String _getCategoryDescription(String title) {
     switch (title) {
       case 'My Recipes':
@@ -989,7 +926,6 @@ class _HomeScreenState extends State<HomeScreen>
         return 'Organized recipe lists for meal planning and themes';
       case 'Discover Recipes':
         return 'Explore trending recipes and new cooking inspiration';
-
       case 'Import Recipe':
         return 'Add recipes from websites, blogs, and social media';
       case 'Generate Recipes':
@@ -999,8 +935,6 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  /// Builds a recipe carousel section with a horizontal list of recipe cards.
-  /// Note: TutorialShowcase wrappers are applied at parent level in build()
   Widget _buildRecipeCarousel(
     BuildContext context, {
     required String title,
@@ -1016,13 +950,11 @@ class _HomeScreenState extends State<HomeScreen>
           padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
           child: GestureDetector(
             onTap: () {
-              // Navigate based on the title
               if (isYourRecipes) {
                 Navigator.pushNamed(context, '/myRecipes');
               } else if (title.contains('Discover')) {
                 Navigator.pushNamed(context, '/discover');
               } else {
-                // Default to my recipes for other cases
                 Navigator.pushNamed(context, '/myRecipes');
               }
             },
@@ -1067,11 +999,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // _buildCommunityCarousel removed
-
-  // _buildCommunityRecipeCard removed
-
-  /// Builds an individual recipe card used within carousels.
   Widget _buildRecipeCard(BuildContext context, Recipe recipe) {
     final theme = Theme.of(context);
     final cardWidth =
@@ -1111,7 +1038,6 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             child: Stack(
               children: [
-                // Image
                 Positioned.fill(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
@@ -1148,7 +1074,6 @@ class _HomeScreenState extends State<HomeScreen>
                     },
                   ),
                 ),
-                // Gradient overlay bottom
                 Positioned(
                   left: 0,
                   right: 0,
@@ -1169,7 +1094,6 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                 ),
-                // Title
                 Positioned(
                   left: AppBreakpoints.isDesktop(context) ? 12 : 8,
                   right: AppBreakpoints.isDesktop(context) ? 12 : 8,
@@ -1198,7 +1122,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  /// Show context menu for recipe actions
   void _showRecipeContextMenu(
     BuildContext context,
     Recipe recipe,
@@ -1248,7 +1171,6 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           onTap: () {
             Future.delayed(const Duration(milliseconds: 100), () {
-              // Share recipe functionality
               final String shareText = '''
 ${recipe.title}
 
@@ -1278,7 +1200,6 @@ Shared from Recipe App
     );
   }
 
-  /// Builds a collection carousel section with a horizontal list of collection cards.
   Widget _buildCollectionCarousel(
     BuildContext context, {
     required String title,
@@ -1406,7 +1327,6 @@ Shared from Recipe App
     );
   }
 
-  /// Builds a standardized loading placeholder for a section with a title
   Widget _buildSectionLoading(
     BuildContext context, {
     required String title,
@@ -1472,7 +1392,6 @@ Shared from Recipe App
     );
   }
 
-  /// Builds a standardized message placeholder for a section with retry
   Widget _buildSectionMessage(
     BuildContext context, {
     required String title,
@@ -1585,22 +1504,15 @@ Shared from Recipe App
     );
   }
 
-  // Helper method to get a contrasting icon color for better visibility
   Color _getIconColor(Color collectionColor) {
-    // Calculate brightness of the collection color
     final brightness = collectionColor.computeLuminance();
-
-    // If the color is light (brightness > 0.5), use a darker, more saturated version
-    // If the color is dark (brightness <= 0.5), use a lighter version
     if (brightness > 0.5) {
-      // For light colors, use a darker, more saturated version
       final hsl = HSLColor.fromColor(collectionColor);
       return hsl
           .withLightness((hsl.lightness * 0.4).clamp(0.0, 1.0))
           .withSaturation((hsl.saturation * 1.3).clamp(0.0, 1.0))
           .toColor();
     } else {
-      // For dark colors, use a lighter, more vibrant version
       final hsl = HSLColor.fromColor(collectionColor);
       return hsl
           .withLightness((hsl.lightness * 1.8).clamp(0.0, 1.0))
@@ -1609,7 +1521,6 @@ Shared from Recipe App
     }
   }
 
-  /// Builds an individual collection card used within the collection carousel.
   Widget _buildCollectionCard(
     BuildContext context,
     RecipeCollection collection,
@@ -1647,7 +1558,6 @@ Shared from Recipe App
             borderRadius: BorderRadius.circular(borderRadius),
             child: Stack(
               children: [
-                // Background with recipe images or gradient
                 Positioned.fill(
                   child:
                       hasRecipes && recipesWithImages.isNotEmpty
@@ -1657,8 +1567,6 @@ Shared from Recipe App
                           )
                           : _buildGradientBackground(collection.color),
                 ),
-
-                // Gradient overlay for text readability
                 Positioned.fill(
                   child: Container(
                     decoration: BoxDecoration(
@@ -1674,8 +1582,6 @@ Shared from Recipe App
                     ),
                   ),
                 ),
-
-                // Collection icon (top-right corner)
                 Positioned(
                   top: AppBreakpoints.isDesktop(context) ? 16 : 12,
                   right: AppBreakpoints.isDesktop(context) ? 16 : 12,
@@ -1708,8 +1614,6 @@ Shared from Recipe App
                     ),
                   ),
                 ),
-
-                // Collection info (bottom)
                 Positioned(
                   left: AppBreakpoints.isDesktop(context) ? 20 : 16,
                   right: AppBreakpoints.isDesktop(context) ? 20 : 16,
@@ -1718,7 +1622,6 @@ Shared from Recipe App
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Collection name
                       Text(
                         collection.name,
                         maxLines: 2,
@@ -1761,7 +1664,6 @@ Shared from Recipe App
                       SizedBox(
                         height: AppBreakpoints.isDesktop(context) ? 6 : 4,
                       ),
-                      // Recipe count with icon
                       Row(
                         children: [
                           Icon(
@@ -1807,22 +1709,19 @@ Shared from Recipe App
     );
   }
 
-  /// Builds a background with recipe images in a grid/collage style
   Widget _buildRecipeImagesBackground(
     List<Recipe> recipes,
     Color fallbackColor,
   ) {
-    final imagesToShow = recipes.take(4).toList(); // Show up to 4 images
+    final imagesToShow = recipes.take(4).toList();
 
     if (imagesToShow.length == 1) {
-      // Single image fills the entire background
       return Image.network(
         imagesToShow[0].imageUrl,
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) => _buildGradientBackground(fallbackColor),
       );
     } else if (imagesToShow.length == 2) {
-      // Two images side by side
       return Row(
         children:
             imagesToShow
@@ -1842,10 +1741,8 @@ Shared from Recipe App
                 .toList(),
       );
     } else if (imagesToShow.length >= 3) {
-      // Grid layout for 3+ images
       return Column(
         children: [
-          // Top row - single large image
           Expanded(
             flex: 2,
             child: Image.network(
@@ -1857,7 +1754,6 @@ Shared from Recipe App
                       Container(color: fallbackColor.withValues(alpha: 0.3)),
             ),
           ),
-          // Bottom row - smaller images
           Expanded(
             flex: 1,
             child: Row(
@@ -1888,7 +1784,6 @@ Shared from Recipe App
     return _buildGradientBackground(fallbackColor);
   }
 
-  /// Builds a gradient background when no images are available
   Widget _buildGradientBackground(Color color) {
     return Container(
       decoration: BoxDecoration(
@@ -1905,7 +1800,6 @@ Shared from Recipe App
     );
   }
 
-  /// Builds a modern, theme-aligned menu button with refined styling.
   Widget _buildModernMenuButton(BuildContext context) {
     return TutorialShowcase(
       showcaseKey: TutorialKeys.navDrawerMenu,

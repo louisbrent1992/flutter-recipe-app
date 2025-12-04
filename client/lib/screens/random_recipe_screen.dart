@@ -164,7 +164,7 @@ class _RandomRecipeScreenState extends State<RandomRecipeScreen> {
               ),
             ),
           ],
-        ),
+      ),
       ),
     );
   }

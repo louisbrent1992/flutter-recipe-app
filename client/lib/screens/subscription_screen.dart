@@ -54,6 +54,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      backgroundColor: Colors.transparent, // Let global background show through
       appBar: CustomAppBar(
         title: 'Shop',
         bottom: TabBar(
@@ -127,8 +128,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           // Floating navigation bar
           // sconst FloatingBottomBar(),
         ],
-        ),
-      );
+      ),
+    );
   }
 
   void _startTrialTicker() {

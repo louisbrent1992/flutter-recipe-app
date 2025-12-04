@@ -942,7 +942,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
               ),
           ),
         ],
-        ),
-      );
+      ),
+    );
   }
 }

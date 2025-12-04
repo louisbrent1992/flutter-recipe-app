@@ -808,7 +808,7 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
               },
             ),
           ],
-        ),
-      );
+      ),
+    );
   }
 }

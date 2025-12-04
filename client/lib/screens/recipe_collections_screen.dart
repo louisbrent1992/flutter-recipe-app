@@ -521,8 +521,8 @@ class _RecipeCollectionsScreenState extends State<RecipeCollectionScreen>
                   ),
                 ),
           ],
-        ),
-      );
+      ),
+    );
   }
 
   Widget _buildHeader(ColorScheme colorScheme) {

@@ -184,6 +184,10 @@ class MyApp extends StatefulWidget {
 
   @override
   State<MyApp> createState() => _MyAppState();
+
+  // Public accessor for RouteObserver (used by DynamicGlobalBackground)
+  static RouteObserver<PageRoute> get routeObserver =>
+      _MyAppState.routeObserver;
 }
 
 // Global function to access pending shared URL from anywhere
@@ -206,6 +210,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   _pendingNotificationPayload; // Track notification from cold start
   NotificationResponse?
   _lastNotificationResponse; // Track last notification response
+
+  // RouteObserver for detecting route transitions (used to pause dynamic background animation)
+  static final RouteObserver<PageRoute> routeObserver =
+      RouteObserver<PageRoute>();
   static const AndroidNotificationChannel _androidChannel =
       AndroidNotificationChannel(
         'recipease_general',
@@ -785,6 +793,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         builder: (context, authService, themeProvider, _) {
           return MaterialApp(
             navigatorKey: navigatorKey,
+            navigatorObservers: [
+              MyApp.routeObserver,
+            ], // Add RouteObserver for transition detection
             title: 'Recipease',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
@@ -825,6 +836,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
               // Use CupertinoPageRoute on iOS for native swipe-back gesture
               // Use MaterialPageRoute on other platforms
+              // Background is now persistent outside Navigator, so routes can be transparent
               if (Platform.isIOS) {
                 return CupertinoPageRoute(
                   settings: settings,
@@ -868,30 +880,30 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   ),
                 );
               };
-              // Global dynamic background wrapper
+
+              // Global dynamic background wrapper - background stays persistent outside Navigator
               return AppTutorial(
                 child: Consumer<DynamicUiProvider>(
                   builder: (context, dyn, _) {
                     final hasBg = dyn.config?.globalBackground != null;
-                    final themedChild =
-                        hasBg
-                            ? Theme(
-                              data: Theme.of(context).copyWith(
-                                scaffoldBackgroundColor: Colors.transparent,
-                              ),
-                              child: Stack(
-                                children: [
-                                  const Positioned.fill(
-                                    child: RepaintBoundary(
-                                      child: DynamicGlobalBackground(),
-                                    ),
-                                  ),
-                                  if (child != null) child,
-                                ],
-                              ),
-                            )
-                            : (child ?? const SizedBox.shrink());
-                    return themedChild;
+
+                    return Stack(
+                      children: [
+                        // 1. The Persistent Background (stays still during route transitions)
+                        if (hasBg)
+                          const Positioned.fill(
+                            child: RepaintBoundary(
+                              child: DynamicGlobalBackground(),
+                            ),
+                          ),
+                        // 2. The App Content (Navigator slides over the background)
+                        // Wrap in transparent Scaffold to ensure overlays like Snackbars work
+                        Scaffold(
+                          backgroundColor: Colors.transparent,
+                          body: child ?? const SizedBox.shrink(),
+                        ),
+                      ],
+                    );
                   },
                 ),
               );
