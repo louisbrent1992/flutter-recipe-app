@@ -772,7 +772,7 @@ class StyleableCupertinoPageRoute<T> extends CupertinoPageRoute<T> {
   StyleableCupertinoPageRoute({required super.builder, super.settings});
 
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 100);
+  Duration get transitionDuration => const Duration(milliseconds: 0);
 
   @override
   Widget buildTransitions(
