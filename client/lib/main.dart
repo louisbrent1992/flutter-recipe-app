@@ -108,13 +108,11 @@ void main() async {
       androidProvider: AndroidProvider.debug,
       appleProvider: AppleProvider.debug,
     );
-    print('Firebase App Check initialized in debug mode');
   } else {
     await FirebaseAppCheck.instance.activate(
       androidProvider: AndroidProvider.playIntegrity,
       appleProvider: AppleProvider.deviceCheck,
     );
-    print('Firebase App Check initialized in production mode');
   }
 
   await Hive.initFlutter();
@@ -678,9 +676,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               final widget = routeBuilder(settings.arguments);
 
               if (Platform.isIOS) {
-                // Use Custom Route for "Pop In" push and native swipe back
-                return StyleableCupertinoPageRoute(
+                // Use the FastCupertinoPageRoute discovered by the user for optimal gesture/speed.
+                return FastCupertinoPageRoute(
                   settings: settings,
+                  // IMPORTANT: Keep the Stack wrapper to simulate visual transparency over global background
                   builder:
                       (context) => Stack(
                         children: [
@@ -764,66 +763,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 }
 
-/// A custom CupertinoPageRoute that:
-/// 1. Uses a snappy "Pop In" (Fade/Scale) animation for entry (Push).
-/// 2. Uses the standard iOS slide animation for exit (Pop/Swipe).
-/// 3. Ensures the widget tree remains stable so the native Swipe Back gesture works flawlessly.
-class StyleableCupertinoPageRoute<T> extends CupertinoPageRoute<T> {
-  StyleableCupertinoPageRoute({required super.builder, super.settings});
+/// A custom CupertinoPageRoute that provides fast transitions:
+/// - Overrides transitionDuration to 100ms for a nearly instant push.
+/// - Relies on the base CupertinoRouteTransitionMixin for native swipe-back.
+class FastCupertinoPageRoute<T> extends CupertinoPageRoute<T> {
+  FastCupertinoPageRoute({required super.builder, super.settings});
 
+  // Sets the duration to a short value (100ms) to simulate an instant/pop-in transition
+  // for pushes, while maintaining the native gesture functionality on pop.
   @override
   Duration get transitionDuration => const Duration(milliseconds: 0);
 
-  @override
-  Widget buildTransitions(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) {
-    // Determine the phase of the animation
-    final bool isPush = animation.status == AnimationStatus.forward;
-    final bool isSwipe = popGestureInProgress; // Check if user is swiping back
-
-    // If Pushing AND not Swiping, we apply the custom Pop-In.
-    if (isPush && !isSwipe) {
-      // The popInAnimation controls the fade/scale (0.0 -> 1.0)
-      final Animation<double> popInAnimation = animation;
-
-      // The slideAnimation is frozen at 1.0 (center) to prevent sliding in.
-      final Animation<double> slideAnimation = kAlwaysCompleteAnimation;
-
-      return CupertinoPageTransition(
-        // This is the core Slide Transition component expected by the gesture system.
-        primaryRouteAnimation: slideAnimation,
-        secondaryRouteAnimation: secondaryAnimation,
-        linearTransition: true,
-        // The child is wrapped in the Pop-In effect.
-        child: FadeTransition(
-          opacity: CurvedAnimation(
-            parent: popInAnimation,
-            curve: Curves.easeOut,
-          ),
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.95, end: 1.0).animate(
-              CurvedAnimation(
-                parent: popInAnimation,
-                curve: Curves.easeOutCubic, // Snappier entry curve
-              ),
-            ),
-            child: child,
-          ),
-        ),
-      );
-    }
-
-    // Otherwise (Popping, Swiping, or already settled), use the standard Cupertino transition.
-    // This allows the swipe gesture to work correctly.
-    return super.buildTransitions(
-      context,
-      animation,
-      secondaryAnimation,
-      child,
-    );
-  }
+  // We deliberately do NOT override buildTransitions here, relying on the base
+  // CupertinoRouteTransitionMixin to handle the slide animation and gesture integrity.
 }

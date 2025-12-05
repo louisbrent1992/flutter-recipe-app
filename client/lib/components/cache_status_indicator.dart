@@ -24,22 +24,13 @@ class CacheStatusIndicator extends StatelessWidget {
         final lastSync = snapshot.data;
         final isOffline = connectivity.isOffline;
 
-        // Don't show if online and no cached data
-        if (!isOffline && lastSync == null) {
-          return const SizedBox.shrink();
-        }
-
         // Show offline indicator
         if (isOffline) {
           return _buildOfflineIndicator(context, compact);
         }
 
-        // Show last sync time if available
-        if (lastSync != null) {
-          return _buildSyncIndicator(context, lastSync, compact);
-        }
-
-        return const SizedBox.shrink();
+        // Always show sync indicator (default to showing last sync)
+        return _buildSyncIndicator(context, lastSync, compact);
       },
     );
   }
@@ -48,8 +39,18 @@ class CacheStatusIndicator extends StatelessWidget {
     if (compact) {
       return Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.responsive(context, mobile: 8, tablet: 10, desktop: 12),
-          vertical: AppSpacing.responsive(context, mobile: 4, tablet: 5, desktop: 6),
+          horizontal: AppSpacing.responsive(
+            context,
+            mobile: 8,
+            tablet: 10,
+            desktop: 12,
+          ),
+          vertical: AppSpacing.responsive(
+            context,
+            mobile: 4,
+            tablet: 5,
+            desktop: 6,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -64,7 +65,14 @@ class CacheStatusIndicator extends StatelessWidget {
               ),
               color: Theme.of(context).colorScheme.error,
             ),
-            SizedBox(width: AppSpacing.responsive(context, mobile: 4, tablet: 5, desktop: 6)),
+            SizedBox(
+              width: AppSpacing.responsive(
+                context,
+                mobile: 4,
+                tablet: 5,
+                desktop: 6,
+              ),
+            ),
             Text(
               'Offline',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -80,14 +88,26 @@ class CacheStatusIndicator extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.responsive(context),
-        vertical: AppSpacing.responsive(context, mobile: 6, tablet: 8, desktop: 10),
+        vertical: AppSpacing.responsive(
+          context,
+          mobile: 6,
+          tablet: 8,
+          desktop: 10,
+        ),
       ),
       margin: EdgeInsets.symmetric(
         horizontal: AppSpacing.responsive(context),
-        vertical: AppSpacing.responsive(context, mobile: 4, tablet: 5, desktop: 6),
+        vertical: AppSpacing.responsive(
+          context,
+          mobile: 4,
+          tablet: 5,
+          desktop: 6,
+        ),
       ),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
+        color: Theme.of(
+          context,
+        ).colorScheme.errorContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
@@ -106,7 +126,14 @@ class CacheStatusIndicator extends StatelessWidget {
             ),
             color: Theme.of(context).colorScheme.error,
           ),
-          SizedBox(width: AppSpacing.responsive(context, mobile: 8, tablet: 10, desktop: 12)),
+          SizedBox(
+            width: AppSpacing.responsive(
+              context,
+              mobile: 8,
+              tablet: 10,
+              desktop: 12,
+            ),
+          ),
           Expanded(
             child: Text(
               'Showing cached data. You\'re offline.',
@@ -120,26 +147,45 @@ class CacheStatusIndicator extends StatelessWidget {
     );
   }
 
-  Widget _buildSyncIndicator(BuildContext context, DateTime lastSync, bool compact) {
-    final now = DateTime.now();
-    final difference = now.difference(lastSync);
+  Widget _buildSyncIndicator(
+    BuildContext context,
+    DateTime? lastSync,
+    bool compact,
+  ) {
     String timeText;
 
-    if (difference.inMinutes < 1) {
-      timeText = 'Just now';
-    } else if (difference.inMinutes < 60) {
-      timeText = '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      timeText = '${difference.inHours}h ago';
+    if (lastSync == null) {
+      timeText = 'Never synced';
     } else {
-      timeText = '${difference.inDays}d ago';
+      final now = DateTime.now();
+      final difference = now.difference(lastSync);
+
+      if (difference.inMinutes < 1) {
+        timeText = 'Just now';
+      } else if (difference.inMinutes < 60) {
+        timeText = '${difference.inMinutes}m ago';
+      } else if (difference.inHours < 24) {
+        timeText = '${difference.inHours}h ago';
+      } else {
+        timeText = '${difference.inDays}d ago';
+      }
     }
 
     if (compact) {
       return Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.responsive(context, mobile: 8, tablet: 10, desktop: 12),
-          vertical: AppSpacing.responsive(context, mobile: 4, tablet: 5, desktop: 6),
+          horizontal: AppSpacing.responsive(
+            context,
+            mobile: 8,
+            tablet: 10,
+            desktop: 12,
+          ),
+          vertical: AppSpacing.responsive(
+            context,
+            mobile: 4,
+            tablet: 5,
+            desktop: 6,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -154,11 +200,20 @@ class CacheStatusIndicator extends StatelessWidget {
               ),
               color: Theme.of(context).colorScheme.primary,
             ),
-            SizedBox(width: AppSpacing.responsive(context, mobile: 4, tablet: 5, desktop: 6)),
+            SizedBox(
+              width: AppSpacing.responsive(
+                context,
+                mobile: 4,
+                tablet: 5,
+                desktop: 6,
+              ),
+            ),
             Text(
-              'Synced $timeText',
+              lastSync == null ? timeText : 'Synced $timeText',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -169,14 +224,26 @@ class CacheStatusIndicator extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.responsive(context),
-        vertical: AppSpacing.responsive(context, mobile: 6, tablet: 8, desktop: 10),
+        vertical: AppSpacing.responsive(
+          context,
+          mobile: 6,
+          tablet: 8,
+          desktop: 10,
+        ),
       ),
       margin: EdgeInsets.symmetric(
         horizontal: AppSpacing.responsive(context),
-        vertical: AppSpacing.responsive(context, mobile: 4, tablet: 5, desktop: 6),
+        vertical: AppSpacing.responsive(
+          context,
+          mobile: 4,
+          tablet: 5,
+          desktop: 6,
+        ),
       ),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+        color: Theme.of(
+          context,
+        ).colorScheme.primaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
@@ -195,10 +262,17 @@ class CacheStatusIndicator extends StatelessWidget {
             ),
             color: Theme.of(context).colorScheme.primary,
           ),
-          SizedBox(width: AppSpacing.responsive(context, mobile: 8, tablet: 10, desktop: 12)),
+          SizedBox(
+            width: AppSpacing.responsive(
+              context,
+              mobile: 8,
+              tablet: 10,
+              desktop: 12,
+            ),
+          ),
           Expanded(
             child: Text(
-              'Last synced: $timeText',
+              lastSync == null ? 'Never synced' : 'Last synced: $timeText',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onPrimaryContainer,
               ),
@@ -209,4 +283,3 @@ class CacheStatusIndicator extends StatelessWidget {
     );
   }
 }
-
