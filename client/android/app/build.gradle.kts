@@ -37,7 +37,7 @@ android {
 
     defaultConfig {
         applicationId = "com.recipease.kitchen"
-        minSdk = 24
+        minSdk = 21
         targetSdk = 35
         versionCode = 69
         versionName = flutter.versionName
