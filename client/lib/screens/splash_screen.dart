@@ -5,6 +5,9 @@ import '../providers/auth_provider.dart';
 import '../config/app_config.dart';
 import '../services/recipe_service.dart';
 import '../main.dart';
+import '../providers/recipe_provider.dart';
+import '../services/collection_service.dart';
+import '../providers/dynamic_ui_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -60,6 +63,14 @@ class _SplashScreenState extends State<SplashScreen>
     // Give Firebase Auth time to restore session if user was previously logged in
     await Future.delayed(const Duration(milliseconds: 500));
 
+    // PRELOAD HOME SCREEN DATA (if user is logged in)
+    // Wait for it to complete so home screen appears fully loaded
+    final authService = Provider.of<AuthService>(context, listen: false);
+    Future<void>? preloadFuture;
+    if (authService.user != null) {
+      preloadFuture = _preloadHomeScreenData();
+    }
+
     // Wait for minimum splash duration
     final elapsed = DateTime.now().difference(_startTime!);
     final remainingTime =
@@ -67,6 +78,20 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (remainingTime > 0) {
       await Future.delayed(Duration(milliseconds: remainingTime));
+    }
+
+    // Wait for preload to complete (with timeout to avoid blocking too long)
+    if (preloadFuture != null) {
+      try {
+        await preloadFuture.timeout(
+          const Duration(seconds: 3),
+          onTimeout: () {
+            debugPrint('Preload timeout - proceeding with navigation');
+          },
+        );
+      } catch (e) {
+        debugPrint('Preload error - proceeding with navigation: $e');
+      }
     }
 
     // Mark initialization as complete
@@ -84,6 +109,46 @@ class _SplashScreenState extends State<SplashScreen>
     // Navigate to appropriate screen
     if (mounted) {
       _navigateToNextScreen();
+    }
+  }
+
+  /// Preloads home screen data and dynamic UI during splash screen
+  /// This allows the home screen to appear instantly with data already loaded
+  Future<void> _preloadHomeScreenData() async {
+    try {
+      // Access providers without listening (we're just preloading)
+      final recipeProvider = Provider.of<RecipeProvider>(
+        context,
+        listen: false,
+      );
+      final collectionService = Provider.of<CollectionService>(
+        context,
+        listen: false,
+      );
+      final dynamicUiProvider = Provider.of<DynamicUiProvider>(
+        context,
+        listen: false,
+      );
+
+      // Load all data in parallel and wait for completion
+      await Future.wait([
+        recipeProvider.loadUserRecipes(limit: 20),
+        collectionService.getCollections(updateSpecialCollections: true),
+        recipeProvider.fetchSessionDiscoverCache(),
+        dynamicUiProvider.refresh(), // Preload dynamic UI config
+      ]);
+
+      // After cache loads, preload carousel data
+      if (mounted) {
+        final discover = recipeProvider.getFilteredDiscoverRecipes(
+          page: 1,
+          limit: 50,
+        );
+        recipeProvider.setGeneratedRecipesFromCache(discover);
+      }
+    } catch (e) {
+      debugPrint('Error preloading home screen data: $e');
+      // Don't throw - preload failures shouldn't block navigation
     }
   }
 
@@ -185,104 +250,102 @@ class _SplashScreenState extends State<SplashScreen>
           child: AnimatedBuilder(
             animation: _animationController,
             builder: (context, child) {
-                return FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Logo
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: colorScheme.primary.withValues(
-                                  alpha: 0.3,
+              return FadeTransition(
+                opacity: _fadeAnimation,
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: colorScheme.primary.withValues(alpha: 0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: Image.asset(
+                            'assets/icons/logo.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              // Fallback if logo not found
+                              return Container(
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(24),
                                 ),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(24),
-                            child: Image.asset(
-                              'assets/icons/logo.png',
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                // Fallback if logo not found
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.primary,
-                                    borderRadius: BorderRadius.circular(24),
-                                  ),
-                                  child: Icon(
-                                    Icons.restaurant_menu,
-                                    size: 60,
-                                    color: colorScheme.onPrimary,
-                                  ),
-                                );
-                              },
-                            ),
+                                child: Icon(
+                                  Icons.restaurant_menu,
+                                  size: 60,
+                                  color: colorScheme.onPrimary,
+                                ),
+                              );
+                            },
                           ),
                         ),
+                      ),
 
-                        const SizedBox(height: 32),
+                      const SizedBox(height: 32),
 
-                        // App name
-                        Text(
-                          'RecipEase',
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurface,
-                            letterSpacing: 1.2,
+                      // App name
+                      Text(
+                        'RecipEase',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Tagline
+                      Text(
+                        'Your Personal Cooking Assistant',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurface.withValues(alpha: 0.7),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+
+                      const SizedBox(height: 48),
+
+                      // Loading indicator
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.primary,
                           ),
                         ),
+                      ),
 
-                        const SizedBox(height: 8),
+                      const SizedBox(height: 16),
 
-                        // Tagline
-                        Text(
-                          'Your Personal Cooking Assistant',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.onSurface.withValues(alpha: 0.7),
-                            letterSpacing: 0.5,
-                          ),
+                      // Loading text
+                      Text(
+                        _isInitializationComplete
+                            ? 'Almost ready...'
+                            : 'Loading...',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
-
-                        const SizedBox(height: 48),
-
-                        // Loading indicator
-                        SizedBox(
-                          width: 40,
-                          height: 40,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.primary,
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Loading text
-                        Text(
-                          _isInitializationComplete
-                              ? 'Almost ready...'
-                              : 'Loading...',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                );
+                ),
+              );
             },
           ),
         ),

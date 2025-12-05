@@ -72,9 +72,9 @@ class AppConfig {
   // SPLASH SCREEN CONFIGURATION
   // ============================================================
 
-  static const int splashMinDurationMs = 2000; // 2 seconds minimum
+  static const int splashMinDurationMs = 4000; // 4 seconds minimum
   static const int splashTransitionDelayMs =
-      500; // 0.5 seconds for smooth transition
+      500; // 0.5 second for smooth transition
 
   // ============================================================
   // IMPORT SCREEN CONFIGURATION

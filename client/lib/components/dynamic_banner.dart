@@ -13,22 +13,60 @@ class DynamicBanner extends StatefulWidget {
 }
 
 class _DynamicBannerState extends State<DynamicBanner>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
+    with TickerProviderStateMixin {
+  late final AnimationController _kenBurnsController;
+  late final AnimationController _fadeController;
+  late final Animation<double> _fadeAnimation;
+  bool _imageLoaded = false;
+  bool _hasImage = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _hasImage = widget.banner.imageUrl != null &&
+        widget.banner.imageUrl!.isNotEmpty;
+    
+    // Ken Burns animation controller (only for image banners)
+    _kenBurnsController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 12),
-    )..repeat(reverse: true);
+    );
+    
+    // Fade-in animation controller
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    );
+    
+    // Start fade-in animation
+    _fadeController.forward();
+    
+    // Only start Ken Burns animation after image loads (if applicable)
+    if (!_hasImage) {
+      _kenBurnsController.repeat(reverse: true);
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _kenBurnsController.dispose();
+    _fadeController.dispose();
     super.dispose();
+  }
+  
+  void _onImageLoaded() {
+    if (mounted && !_imageLoaded) {
+      setState(() {
+        _imageLoaded = true;
+      });
+      // Start Ken Burns animation after image is loaded
+      _kenBurnsController.repeat(reverse: true);
+    }
   }
 
   Color? _parseColor(String? hex) {
@@ -121,53 +159,93 @@ class _DynamicBannerState extends State<DynamicBanner>
             ? 170
             : 96;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: AppBreakpoints.isDesktop(context) ? 16 : 12,
-      ),
-      child: SizedBox(
-        width: double.infinity,
-        height: bannerHeight,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(radius),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Animated background (image Ken Burns or animated gradient)
-              AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) {
-                  if (widget.banner.imageUrl != null &&
-                      widget.banner.imageUrl!.isNotEmpty) {
-                    final t = math.sin(2 * math.pi * _controller.value);
-                    final scale = 1.05 + 0.03 * t; // subtle zoom in/out
-                    final dx = 12.0 * t; // small pan
-                    return Transform.translate(
-                      offset: Offset(dx, 0),
-                      child: Transform.scale(
-                        scale: scale,
-                        child: Image.network(
-                          widget.banner.imageUrl!,
-                          fit: BoxFit.cover,
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: AppBreakpoints.isDesktop(context) ? 16 : 12,
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          height: bannerHeight,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(radius),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Animated background (image Ken Burns or animated gradient)
+                AnimatedBuilder(
+                  animation: _kenBurnsController,
+                  builder: (context, _) {
+                    if (_hasImage) {
+                      final t = math.sin(2 * math.pi * _kenBurnsController.value);
+                      final scale = 1.05 + 0.03 * t; // subtle zoom in/out
+                      final dx = 12.0 * t; // small pan
+                      return Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // Placeholder background while image loads
+                          Container(
+                            decoration: BoxDecoration(
+                              color: bg,
+                            ),
+                          ),
+                          // Image with Ken Burns effect
+                          Transform.translate(
+                            offset: _imageLoaded ? Offset(dx, 0) : Offset.zero,
+                            child: Transform.scale(
+                              scale: _imageLoaded ? scale : 1.0,
+                              child: Image.network(
+                                widget.banner.imageUrl!,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) {
+                                    // Image loaded, trigger callback to start animation
+                                    if (!_imageLoaded) {
+                                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                                        _onImageLoaded();
+                                      });
+                                    }
+                                    return child;
+                                  }
+                                  // Show placeholder while loading
+                                  return Container(
+                                    color: bg,
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  // Show gradient background on error
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [bg, fg.withValues(alpha: 0.08)],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
+                    // Animated gradient background
+                    final v = _kenBurnsController.value;
+                    final accent = fg.withValues(alpha: 0.08);
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [bg, accent],
+                          begin: Alignment(-1 + 2 * v, -1),
+                          end: Alignment(1 - 2 * v, 1),
                         ),
                       ),
                     );
-                  }
-
-                  // Animated gradient background
-                  final v = _controller.value;
-                  final accent = fg.withValues(alpha: 0.08);
-                  return Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [bg, accent],
-                        begin: Alignment(-1 + 2 * v, -1),
-                        end: Alignment(1 - 2 * v, 1),
-                      ),
-                    ),
-                  );
-                },
-              ),
+                  },
+                ),
 
               // Foreground content
               Container(
@@ -278,6 +356,7 @@ class _DynamicBannerState extends State<DynamicBanner>
             ],
           ),
         ),
+      ),
       ),
     );
   }

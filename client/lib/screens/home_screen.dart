@@ -61,6 +61,29 @@ class _HomeScreenState extends State<HomeScreen>
     );
     _animationController.forward();
 
+    // Check if data is already preloaded (from splash screen)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final recipeProvider = Provider.of<RecipeProvider>(
+        context,
+        listen: false,
+      );
+      final collectionService = Provider.of<CollectionService>(
+        context,
+        listen: false,
+      );
+
+      // If data is already loaded, skip booting state
+      if (recipeProvider.userRecipes.isNotEmpty ||
+          recipeProvider.generatedRecipes.isNotEmpty ||
+          collectionService.cachedCollections != null) {
+        if (mounted) {
+          setState(() {
+            _isBooting = false;
+          });
+        }
+      }
+    });
+
     // Start initial data load
     _dataLoadingFuture = _loadInitialData();
 
@@ -114,7 +137,27 @@ class _HomeScreenState extends State<HomeScreen>
       final recipeProvider = context.read<RecipeProvider>();
       final collectionService = context.read<CollectionService>();
 
+      // Check if data is already preloaded (from splash screen)
+      final hasPreloadedData =
+          recipeProvider.userRecipes.isNotEmpty ||
+          recipeProvider.generatedRecipes.isNotEmpty ||
+          collectionService.cachedCollections != null;
+
+      // If data is already loaded, skip booting state immediately
+      if (hasPreloadedData && mounted) {
+        setState(() {
+          _isBooting = false;
+          // Set collections future if not already set
+          if (_collectionsFuture == null) {
+            _collectionsFuture = collectionService.getCollections(
+              updateSpecialCollections: true,
+            );
+          }
+        });
+      }
+
       // Load first batch of user's own recipes (only once)
+      // This will be fast if already loaded due to caching
       await recipeProvider.loadUserRecipes(limit: 20);
 
       // Fetch collections once and cache the future
@@ -132,6 +175,7 @@ class _HomeScreenState extends State<HomeScreen>
       }
 
       // Fetch session cache for discovery (500 recipes, used everywhere)
+      // This will be fast if already loaded due to caching
       await recipeProvider.fetchSessionDiscoverCache();
 
       // After cache loads, get first 50 for home screen carousel
@@ -141,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen>
       );
       recipeProvider.setGeneratedRecipesFromCache(discover);
 
-      // Ensure first frame shows placeholders even before provider flips loading
+      // Ensure booting state is cleared
       if (mounted) setState(() => _isBooting = false);
     });
   }
