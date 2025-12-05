@@ -88,31 +88,31 @@ class _OfflineBannerState extends State<OfflineBanner>
         return FadeTransition(
           opacity: _fadeAnimation,
           child: Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.responsive(context),
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.responsive(context),
               vertical: AppSpacing.responsive(
                 context,
                 mobile: 8,
                 tablet: 10,
                 desktop: 12,
               ),
-            ),
-            color: Theme.of(context).colorScheme.error,
-            child: SafeArea(
-              bottom: false,
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.cloud_off_rounded,
-                    color: Theme.of(context).colorScheme.onError,
-                    size: AppSizing.responsiveIconSize(
-                      context,
-                      mobile: 18,
-                      tablet: 20,
-                      desktop: 22,
-                    ),
+          ),
+          color: Theme.of(context).colorScheme.error,
+          child: SafeArea(
+            bottom: false,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.cloud_off_rounded,
+                  color: Theme.of(context).colorScheme.onError,
+                  size: AppSizing.responsiveIconSize(
+                    context,
+                    mobile: 18,
+                    tablet: 20,
+                    desktop: 22,
                   ),
+                ),
                   SizedBox(
                     width: AppSpacing.responsive(
                       context,
@@ -121,16 +121,16 @@ class _OfflineBannerState extends State<OfflineBanner>
                       desktop: 12,
                     ),
                   ),
-                  Expanded(
-                    child: Text(
-                      'You\'re offline. Some features may be limited.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onError,
-                        fontWeight: FontWeight.w500,
-                      ),
+                Expanded(
+                  child: Text(
+                    'You\'re offline. Some features may be limited.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onError,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ],
+                ),
+              ],
               ),
             ),
           ),

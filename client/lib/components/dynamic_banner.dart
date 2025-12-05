@@ -162,25 +162,25 @@ class _DynamicBannerState extends State<DynamicBanner>
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Padding(
-        padding: EdgeInsets.only(
-          bottom: AppBreakpoints.isDesktop(context) ? 16 : 12,
-        ),
-        child: SizedBox(
-          width: double.infinity,
-          height: bannerHeight,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(radius),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Animated background (image Ken Burns or animated gradient)
-                AnimatedBuilder(
+      padding: EdgeInsets.only(
+        bottom: AppBreakpoints.isDesktop(context) ? 16 : 12,
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        height: bannerHeight,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(radius),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Animated background (image Ken Burns or animated gradient)
+              AnimatedBuilder(
                   animation: _kenBurnsController,
-                  builder: (context, _) {
+                builder: (context, _) {
                     if (_hasImage) {
                       final t = math.sin(2 * math.pi * _kenBurnsController.value);
-                      final scale = 1.05 + 0.03 * t; // subtle zoom in/out
-                      final dx = 12.0 * t; // small pan
+                    final scale = 1.05 + 0.03 * t; // subtle zoom in/out
+                    final dx = 12.0 * t; // small pan
                       return Stack(
                         fit: StackFit.expand,
                         children: [
@@ -193,11 +193,11 @@ class _DynamicBannerState extends State<DynamicBanner>
                           // Image with Ken Burns effect
                           Transform.translate(
                             offset: _imageLoaded ? Offset(dx, 0) : Offset.zero,
-                            child: Transform.scale(
+                      child: Transform.scale(
                               scale: _imageLoaded ? scale : 1.0,
-                              child: Image.network(
-                                widget.banner.imageUrl!,
-                                fit: BoxFit.cover,
+                        child: Image.network(
+                          widget.banner.imageUrl!,
+                          fit: BoxFit.cover,
                                 loadingBuilder: (context, child, loadingProgress) {
                                   if (loadingProgress == null) {
                                     // Image loaded, trigger callback to start animation
@@ -229,23 +229,23 @@ class _DynamicBannerState extends State<DynamicBanner>
                             ),
                           ),
                         ],
-                      );
-                    }
-
-                    // Animated gradient background
-                    final v = _kenBurnsController.value;
-                    final accent = fg.withValues(alpha: 0.08);
-                    return Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [bg, accent],
-                          begin: Alignment(-1 + 2 * v, -1),
-                          end: Alignment(1 - 2 * v, 1),
-                        ),
-                      ),
                     );
-                  },
-                ),
+                  }
+
+                  // Animated gradient background
+                    final v = _kenBurnsController.value;
+                  final accent = fg.withValues(alpha: 0.08);
+                  return Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [bg, accent],
+                        begin: Alignment(-1 + 2 * v, -1),
+                        end: Alignment(1 - 2 * v, 1),
+                      ),
+                    ),
+                  );
+                },
+              ),
 
               // Foreground content
               Container(
@@ -355,8 +355,8 @@ class _DynamicBannerState extends State<DynamicBanner>
               ),
             ],
           ),
+          ),
         ),
-      ),
       ),
     );
   }
