@@ -510,11 +510,13 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                       ImageUtils.defaultProfileIconUrl;
 
                   return ClipOval(
-                    child: ImageUtils.isAssetPath(photoURL)
+                    child:
+                        ImageUtils.isAssetPath(photoURL)
                             ? Image.asset(
                               photoURL,
                               fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
+                              errorBuilder:
+                                  (context, error, stackTrace) =>
                                       _buildAvatarPlaceholder(isDark, isMobile),
                             )
                             : CachedNetworkImage(
@@ -665,9 +667,8 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
               builder: (context, collectionService, _) {
                 // Use cached collections if available, otherwise show placeholder
                 final collections = collectionService.cachedCollections;
-                final collectionsCount = collections != null 
-                    ? collections.length.toString() 
-                    : '...';
+                final collectionsCount =
+                    collections != null ? collections.length.toString() : '...';
                 return _buildStatChip(
                   collectionsCount,
                   'Collections',
@@ -1354,7 +1355,6 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
     }
   }
 
-
   Widget _buildNavigationContent(
     BuildContext context,
     ColorScheme colorScheme,
@@ -1777,7 +1777,7 @@ class _NavDrawerState extends State<NavDrawer> with TickerProviderStateMixin {
                 ),
                 SizedBox(height: isMobile ? 4 : 8),
                 Text(
-                  'v1.0.2 • Made with ❤️',
+                  'v1.0.3 • Made with ❤️',
                   style: TextStyle(
                     fontSize: isMobile ? 10 : 12,
                     color: (isDark ? Colors.white : colorScheme.onSurface)
