@@ -168,10 +168,8 @@ class MyApp extends StatefulWidget {
       _MyAppState.routeObserver;
 }
 
-// Global function to access pending shared URL from anywhere
 String? getPendingSharedUrl() => _MyAppState._getPendingSharedUrl();
 
-// Global function to access pending notification payload from anywhere
 String? getPendingNotificationPayload() =>
     _MyAppState._getPendingNotificationPayload();
 
@@ -680,23 +678,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               final widget = routeBuilder(settings.arguments);
 
               if (Platform.isIOS) {
-                return CupertinoPageRoute(
+                // Use Custom Route for "Pop In" push and native swipe back
+                return StyleableCupertinoPageRoute(
                   settings: settings,
-                  builder: (context) {
-                    // FIX: Wrap the route content in the DynamicGlobalBackground.
-                    // This creates an "opaque" layer for the transition animation (fixing the trail bug)
-                    // while showing the correct background instead of a solid color.
-                    return Stack(
-                      children: [
-                        const Positioned.fill(
-                          child: RepaintBoundary(
-                            child: DynamicGlobalBackground(),
+                  builder:
+                      (context) => Stack(
+                        children: [
+                          const Positioned.fill(
+                            child: RepaintBoundary(
+                              child: DynamicGlobalBackground(),
+                            ),
                           ),
-                        ),
-                        widget,
-                      ],
-                    );
-                  },
+                          widget,
+                        ],
+                      ),
                 );
               } else {
                 return MaterialPageRoute(
@@ -742,8 +737,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
                     return Stack(
                       children: [
-                        // The Persistent Background (stays still during route transitions)
-                        // This remains here so non-iOS platforms or initial load shows it correctly
+                        // The Persistent Background
                         if (hasBg)
                           const Positioned.fill(
                             child: RepaintBoundary(
@@ -766,6 +760,70 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           );
         },
       ),
+    );
+  }
+}
+
+/// A custom CupertinoPageRoute that:
+/// 1. Uses a snappy "Pop In" (Fade/Scale) animation for entry (Push).
+/// 2. Uses the standard iOS slide animation for exit (Pop/Swipe).
+/// 3. Ensures the widget tree remains stable so the native Swipe Back gesture works flawlessly.
+class StyleableCupertinoPageRoute<T> extends CupertinoPageRoute<T> {
+  StyleableCupertinoPageRoute({required super.builder, super.settings});
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 100);
+
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    // Determine the phase of the animation
+    final bool isPush = animation.status == AnimationStatus.forward;
+    final bool isSwipe = popGestureInProgress; // Check if user is swiping back
+
+    // If Pushing AND not Swiping, we apply the custom Pop-In.
+    if (isPush && !isSwipe) {
+      // The popInAnimation controls the fade/scale (0.0 -> 1.0)
+      final Animation<double> popInAnimation = animation;
+
+      // The slideAnimation is frozen at 1.0 (center) to prevent sliding in.
+      final Animation<double> slideAnimation = kAlwaysCompleteAnimation;
+
+      return CupertinoPageTransition(
+        // This is the core Slide Transition component expected by the gesture system.
+        primaryRouteAnimation: slideAnimation,
+        secondaryRouteAnimation: secondaryAnimation,
+        linearTransition: true,
+        // The child is wrapped in the Pop-In effect.
+        child: FadeTransition(
+          opacity: CurvedAnimation(
+            parent: popInAnimation,
+            curve: Curves.easeOut,
+          ),
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.95, end: 1.0).animate(
+              CurvedAnimation(
+                parent: popInAnimation,
+                curve: Curves.easeOutCubic, // Snappier entry curve
+              ),
+            ),
+            child: child,
+          ),
+        ),
+      );
+    }
+
+    // Otherwise (Popping, Swiping, or already settled), use the standard Cupertino transition.
+    // This allows the swipe gesture to work correctly.
+    return super.buildTransitions(
+      context,
+      animation,
+      secondaryAnimation,
+      child,
     );
   }
 }
