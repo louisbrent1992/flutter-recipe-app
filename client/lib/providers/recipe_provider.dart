@@ -56,10 +56,13 @@ class RecipeProvider extends ChangeNotifier {
   static const Duration _sessionCacheDuration = Duration(hours: 1);
 
   // Session-level community cache (fetch once, filter client-side)
+  // ignore: prefer_final_fields - Field is reassigned in fetchSessionCommunityCache()
   List<Recipe> _sessionCommunityCache = [];
   List<Recipe> _communityRecipes =
       []; // Dedicated list for displayed community recipes
+  // ignore: unused_field - Used in fetchSessionCommunityCache() method
   DateTime? _communityCacheTime;
+  // ignore: unused_field - Used in fetchSessionCommunityCache() method
   static const int _communityCacheSize = 200;
 
   // Favorites removed: no favorites cache

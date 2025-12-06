@@ -622,7 +622,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return SafeArea(
       child: Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Colors.transparent, // Let global background show through
+      extendBody: true,
       body: Stack(
           children: [
             Center(

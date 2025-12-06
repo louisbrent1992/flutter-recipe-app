@@ -8,6 +8,7 @@ import '../main.dart';
 import '../providers/recipe_provider.dart';
 import '../services/collection_service.dart';
 import '../providers/dynamic_ui_provider.dart';
+import '../providers/user_profile_provider.dart'; // REQUIRED FOR PROFILE/CREDITS LOAD
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -59,17 +60,26 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _initializeApp() async {
     // Wait for Firebase Auth to initialize
-    // This ensures we have the correct auth state before navigation
-    // Give Firebase Auth time to restore session if user was previously logged in
     await Future.delayed(const Duration(milliseconds: 500));
 
-    // PRELOAD HOME SCREEN DATA (if user is logged in)
-    // Wait for it to complete so home screen appears fully loaded
+    if (!mounted) return;
     final authService = Provider.of<AuthService>(context, listen: false);
-    Future<void>? preloadFuture;
+    if (!mounted) return;
+    final userProfileProvider = Provider.of<UserProfileProvider>(
+      context,
+      listen: false,
+    );
+
+    // Collect futures to wait for
+    final List<Future<void>> preloadFutures = [];
+
+    // --- CRITICAL FIX: LOAD PROFILE/CREDITS IF LOGGED IN ---
     if (authService.user != null) {
-      preloadFuture = _preloadHomeScreenData();
+      // Explicitly load profile (contains credits) and add to preload queue
+      preloadFutures.add(userProfileProvider.loadProfile());
+      preloadFutures.add(_preloadHomeScreenData());
     }
+    // -------------------------------------------------------
 
     // Wait for minimum splash duration
     final elapsed = DateTime.now().difference(_startTime!);
@@ -80,17 +90,22 @@ class _SplashScreenState extends State<SplashScreen>
       await Future.delayed(Duration(milliseconds: remainingTime));
     }
 
-    // Wait for preload to complete (with timeout to avoid blocking too long)
-    if (preloadFuture != null) {
+    // Wait for all preload data (profile + recipes) to complete (with timeout)
+    if (preloadFutures.isNotEmpty) {
       try {
-        await preloadFuture.timeout(
+        await Future.wait(preloadFutures).timeout(
           const Duration(seconds: 3),
           onTimeout: () {
-            debugPrint('Preload timeout - proceeding with navigation');
+            debugPrint(
+              'Preload/Profile load timeout - proceeding with navigation',
+            );
+            return <void>[];
           },
         );
       } catch (e) {
-        debugPrint('Preload error - proceeding with navigation: $e');
+        debugPrint(
+          'Preload/Profile load error - proceeding with navigation: $e',
+        );
       }
     }
 
@@ -161,8 +176,31 @@ class _SplashScreenState extends State<SplashScreen>
     // Check if there's a pending notification from cold start
     final pendingNotification = getPendingNotificationPayload();
 
+    final isAuthenticated = authService.user != null;
+
+    if (!isAuthenticated) {
+      // --- CRITICAL FIX: REDIRECT TO LOGIN IF UNAUTHENTICATED ---
+      // If an import was attempted, pass the URL as a redirect argument.
+      if (pendingUrl != null) {
+        // Assuming your /login screen handles a Map argument to set a redirect.
+        // This is a common pattern for deep link authentication.
+        Navigator.pushReplacementNamed(
+          context,
+          '/login',
+          arguments: {'redirectRoute': '/import', 'url': pendingUrl},
+        );
+        return;
+      }
+
+      // Default unauthenticated launch -> Go to Login screen
+      Navigator.pushReplacementNamed(context, '/login');
+      return;
+    }
+
+    // --- User IS AUTHENTICATED from here ---
+
     if (pendingUrl != null) {
-      // If we have a shared URL, navigate directly to import screen
+      // Authenticated + Share link -> Go directly to Import.
       Navigator.pushReplacementNamed(context, '/import', arguments: pendingUrl);
       return;
     }

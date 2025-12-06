@@ -339,26 +339,6 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
             fit: StackFit.expand,
 
             children: [
-              // Offline banner at the top
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: OfflineBanner(),
-              ),
-
-              // Background aligned to global scaffold background with subtle pattern
-              Positioned.fill(
-                child: Container(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  child: CustomPaint(
-                    painter: _BackgroundPatternPainter(
-                      color: colorScheme.primary.withAlpha(8), // 0.03 alpha
-                    ),
-                  ),
-                ),
-              ),
-
               // Main content
               Positioned.fill(
                 child: Center(
@@ -689,7 +669,7 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
                                                         () =>
                                                             _urlController
                                                                 .clear(),
-                                                      ),
+                                                  ),
                                                   child: Icon(
                                                     Icons.clear,
                                                     size:
@@ -836,45 +816,4 @@ class _ImportRecipeScreenState extends State<ImportRecipeScreen>
       ),
     );
   }
-}
-
-// Custom painter to draw a subtle pattern in the background
-class _BackgroundPatternPainter extends CustomPainter {
-  final Color color;
-
-  _BackgroundPatternPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = color
-          ..strokeWidth = 1.0
-          ..style = PaintingStyle.stroke;
-
-    const spacing = 25.0;
-
-    // Draw small circles pattern
-    for (double x = 0; x < size.width; x += spacing) {
-      for (double y = 0; y < size.height; y += spacing) {
-        // Alternate between small circles and dots
-        if ((x ~/ spacing + y ~/ spacing) % 3 == 0) {
-          canvas.drawCircle(Offset(x, y), 2, paint);
-        } else if ((x ~/ spacing + y ~/ spacing) % 3 == 1) {
-          canvas.drawCircle(Offset(x, y), 1, paint);
-        } else {
-          canvas.drawCircle(Offset(x, y), 3, paint..style = PaintingStyle.fill);
-          canvas.drawCircle(
-            Offset(x, y),
-            3,
-            paint..style = PaintingStyle.stroke,
-          );
-        }
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_BackgroundPatternPainter oldDelegate) =>
-      color != oldDelegate.color;
 }

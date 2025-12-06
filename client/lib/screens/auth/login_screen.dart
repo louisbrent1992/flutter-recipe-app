@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/theme.dart';
+import '../../providers/user_profile_provider.dart'; // ADDED IMPORT
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,11 +20,64 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
+  // New state variables to store redirect arguments from SplashScreen
+  String? _redirectRoute;
+  String? _redirectUrl;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Check if arguments were passed (e.g., from SplashScreen for import redirect)
+    final args = ModalRoute.of(context)?.settings.arguments;
+
+    if (args is Map) {
+      _redirectRoute = args['redirectRoute'] as String?;
+      _redirectUrl = args['url'] as String?;
+    }
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // Helper method to handle post-login navigation based on redirect arguments
+  // CHANGED: Made async and added profile load
+  Future<void> _handlePostSignInNavigation() async {
+    if (!mounted) return;
+
+    // --- CRITICAL FIX: AWAIT PROFILE LOAD TO ENSURE CREDITS ARE READY ---
+    // 1. Get the provider for profile data (credits)
+    final userProfileProvider = context.read<UserProfileProvider>();
+
+    // 2. Explicitly await profile load. Use a try-catch, but don't block navigation
+    //    if the server is slow or fails (though successful login usually ensures profile exists).
+    try {
+      await userProfileProvider.loadProfile();
+    } catch (e) {
+      debugPrint(
+        'Warning: Failed to load user profile/credits immediately after login: $e',
+      );
+    }
+
+    if (!mounted) return;
+    // ---------------------------------------------------------------------
+    // 3. Handle redirect navigation
+    if (_redirectRoute == '/import' && _redirectUrl != null) {
+      // Clear navigation history and push to the intended import screen
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        _redirectRoute!,
+        (route) => false,
+        arguments: _redirectUrl,
+      );
+    } else {
+      // Default behavior
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+    }
   }
 
   /// Converts Firebase Auth error codes to user-friendly messages
@@ -116,7 +170,8 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (mounted && user != null) {
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        // AWAIT the new async handler to ensure profile/credits are loaded
+        await _handlePostSignInNavigation();
       } else if (mounted && authService.error != null) {
         _showSnackBar(authService.error!, isError: true);
         _passwordController.clear();
@@ -140,7 +195,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final authService = context.read<AuthService>();
       final user = await authService.signInWithGoogle();
       if (mounted && user != null) {
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        // AWAIT the new async handler
+        await _handlePostSignInNavigation();
       } else if (mounted && authService.error != null) {
         _showSnackBar(authService.error!, isError: true);
       }
@@ -162,7 +218,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final authService = context.read<AuthService>();
       final user = await authService.signInWithApple();
       if (mounted && user != null) {
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        // AWAIT the new async handler
+        await _handlePostSignInNavigation();
       } else if (mounted && authService.error != null) {
         _showSnackBar(authService.error!, isError: true);
       }
@@ -192,7 +249,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final authService = context.read<AuthService>();
       final user = await authService.signInWithFacebook();
       if (mounted && user != null) {
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        // AWAIT the new async handler
+        await _handlePostSignInNavigation();
       } else if (mounted && authService.error != null) {
         _showSnackBar(authService.error!, isError: true);
       }
@@ -214,7 +272,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final authService = context.read<AuthService>();
       final user = await authService.signInWithYahoo();
       if (mounted && user != null) {
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        // AWAIT the new async handler
+        await _handlePostSignInNavigation();
       } else if (mounted && authService.error != null) {
         _showSnackBar(authService.error!, isError: true);
       }
@@ -335,6 +394,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ElevatedButton(
                       onPressed: () async {
                         final authService = context.read<AuthService>();
+
                         setDialogState(() {
                           isLoading = true;
                           errorText = null;
@@ -377,15 +437,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 });
                               }
                             },
-                            onVerificationCompleted: (credential) {
+                            onVerificationCompleted: (credential) async {
                               // Auto verification (Android)
                               if (context.mounted) {
                                 Navigator.pop(context); // Close dialog
-                                Navigator.pushNamedAndRemoveUntil(
-                                  context,
-                                  '/home',
-                                  (route) => false,
-                                );
+                                // AWAIT the new async handler
+                                await _handlePostSignInNavigation();
                               }
                             },
                             onCodeAutoRetrievalTimeout: (verId) {
@@ -411,11 +468,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 );
                             if (user != null && context.mounted) {
                               Navigator.pop(context);
-                              Navigator.pushNamedAndRemoveUntil(
-                                context,
-                                '/home',
-                                (route) => false,
-                              );
+                              // AWAIT the new async handler
+                              await _handlePostSignInNavigation();
                             } else if (context.mounted) {
                               String friendlyError =
                                   'The verification code is incorrect. Please try again.';
@@ -526,7 +580,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return SafeArea(
       child: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor:
+            Colors.transparent, // Let global background show through
+        extendBody: true,
         body: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),

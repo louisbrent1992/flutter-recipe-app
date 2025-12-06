@@ -61,31 +61,10 @@ class _HomeScreenState extends State<HomeScreen>
     );
     _animationController.forward();
 
-    // Check if data is already preloaded (from splash screen)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final recipeProvider = Provider.of<RecipeProvider>(
-        context,
-        listen: false,
-      );
-      final collectionService = Provider.of<CollectionService>(
-        context,
-        listen: false,
-      );
-
-      // If data is already loaded, skip booting state
-      if (recipeProvider.userRecipes.isNotEmpty ||
-          recipeProvider.generatedRecipes.isNotEmpty ||
-          collectionService.cachedCollections != null) {
-        if (mounted) {
-          setState(() {
-            _isBooting = false;
-          });
-        }
-      }
-    });
-
-    // Start initial data load
-    _dataLoadingFuture = _loadInitialData();
+    // Start initial data load after build phase completes
+    // The Future returned will now complete only when all data is ready.
+    // Create the future synchronously but defer execution to avoid build phase issues
+    _dataLoadingFuture = Future.microtask(() => _loadInitialData());
 
     // Listen for cross-screen recipe updates to trigger UI rebuild
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -101,12 +80,11 @@ class _HomeScreenState extends State<HomeScreen>
       });
     });
 
-    // Check if tutorial should be shown and start it
+    // The tutorial explicitly awaits _dataLoadingFuture before starting.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final tutorialService = TutorialService();
       final isManualRestart = tutorialService.isManualRestart;
 
-      // Clear the manual restart flag early
       if (isManualRestart) {
         tutorialService.clearManualRestartFlag();
       }
@@ -114,12 +92,11 @@ class _HomeScreenState extends State<HomeScreen>
       final shouldShow =
           isManualRestart || await tutorialService.shouldShowTutorial();
       if (shouldShow && mounted) {
-        // Wait for data to load before starting tutorial
+        // AWAIT ALL INITIAL DATA LOADING BEFORE STARTING TUTORIAL
         if (_dataLoadingFuture != null) {
           await _dataLoadingFuture;
         }
 
-        // Add a small buffer for UI rendering/animations to settle
         await Future.delayed(const Duration(milliseconds: 500));
 
         if (mounted) {
@@ -129,65 +106,55 @@ class _HomeScreenState extends State<HomeScreen>
     });
   }
 
+  // REPLACED: Updated to be a linear, reliable loading sequence
   Future<void> _loadInitialData() async {
-    // Use microtask to ensure context is available but don't block init
-    await Future.microtask(() async {
       if (!mounted) return;
 
-      final recipeProvider = context.read<RecipeProvider>();
-      final collectionService = context.read<CollectionService>();
+    final profileProvider = context.read<UserProfileProvider>();
+    final recipeProvider = context.read<RecipeProvider>();
+    final collectionService = context.read<CollectionService>();
 
-      // Check if data is already preloaded (from splash screen)
-      final hasPreloadedData =
-          recipeProvider.userRecipes.isNotEmpty ||
-          recipeProvider.generatedRecipes.isNotEmpty ||
-          collectionService.cachedCollections != null;
+    final List<Future<void>> initialLoads = [];
 
-      // If data is already loaded, skip booting state immediately
-      if (hasPreloadedData && mounted) {
-        setState(() {
-          _isBooting = false;
-          // Set collections future if not already set
-          if (_collectionsFuture == null) {
-            _collectionsFuture = collectionService.getCollections(
-              updateSpecialCollections: true,
-            );
-          }
-        });
-      }
+    // 1. Ensure Profile (Credits) is loaded first (critical for other features)
+    initialLoads.add(profileProvider.loadProfile());
 
-      // Load first batch of user's own recipes (only once)
-      // This will be fast if already loaded due to caching
-      await recipeProvider.loadUserRecipes(limit: 20);
+    // 2. Load Collections/User Recipes/Discover Cache in parallel
+    final collectionsFuture = collectionService.getCollections(updateSpecialCollections: true);
+    initialLoads.add(recipeProvider.loadUserRecipes(limit: 20));
+    initialLoads.add(recipeProvider.fetchSessionDiscoverCache());
+    
+    // Await collections future and add to loads
+    initialLoads.add(collectionsFuture);
 
-      // Fetch collections once and cache the future
-      // We set state here to update the _collectionsFuture variable so the UI sees it
-      if (mounted) {
-        setState(() {
-          _collectionsFuture = collectionService.getCollections(
-            updateSpecialCollections: true,
-          );
-        });
-      }
+    // Await all futures and handle post-processing
+    try {
+      await Future.wait(initialLoads);
 
-      if (_collectionsFuture != null) {
-        await _collectionsFuture;
-      }
-
-      // Fetch session cache for discovery (500 recipes, used everywhere)
-      // This will be fast if already loaded due to caching
-      await recipeProvider.fetchSessionDiscoverCache();
-
-      // After cache loads, get first 50 for home screen carousel
+      // 3. Post-processing: Filter recipes based on the newly loaded cache
       final discover = recipeProvider.getFilteredDiscoverRecipes(
         page: 1,
         limit: 50,
       );
+      // Ensure the provider notifies listeners *after* the data is set
       recipeProvider.setGeneratedRecipesFromCache(discover);
 
-      // Ensure booting state is cleared
-      if (mounted) setState(() => _isBooting = false);
+      // 4. Update the HomeScreen's state flags
+      if (mounted) {
+        setState(() {
+          _collectionsFuture = collectionsFuture; // Cache the resolved future for FutureBuilder
+          _isBooting = false; // CLEAR LOADING FLAG (data is now ready)
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading home screen data: $e');
+      // If load fails, still clear the booting flag to prevent indefinite loading state
+      if (mounted) {
+        setState(() {
+          _isBooting = false;
     });
+      }
+    }
   }
 
   void _startTutorial() {
@@ -225,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen>
     recipeProvider.loadUserRecipes(limit: 20, forceRefresh: true);
 
     setState(() {
-      _collectionsFuture = collectionService.getCollections(forceRefresh: true);
+    _collectionsFuture = collectionService.getCollections(forceRefresh: true);
     });
   }
 
@@ -259,19 +226,19 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
     return Scaffold(
-      key: _scaffoldKey,
+        key: _scaffoldKey,
       backgroundColor:
           Colors.transparent, // Fix 1: Transparent for global background
       extendBody:
           true, // Fix 2: Allows body to extend behind bottom UI elements
       resizeToAvoidBottomInset:
           false, // Fix 3: Prevents UI jumpting on keyboard open
-      appBar: CustomAppBar(
-        title: 'RecipEase',
-        useLogo: true,
-        leading: _buildModernMenuButton(context),
-      ),
-      drawer: const NavDrawer(),
+        appBar: CustomAppBar(
+          title: 'RecipEase',
+          useLogo: true,
+          leading: _buildModernMenuButton(context),
+        ),
+        drawer: const NavDrawer(),
       body: SafeArea(
         bottom: false, // Fix 4: Allow content to flow to the very bottom
         child: Stack(
@@ -281,231 +248,230 @@ class _HomeScreenState extends State<HomeScreen>
             Consumer<UserProfileProvider>(
               builder: (context, profile, _) {
                 return Center(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: () {
-                        final width = MediaQuery.of(context).size.width;
-                        if (AppBreakpoints.isTablet(context) ||
-                            (AppBreakpoints.isDesktop(context) &&
-                                width < 1400)) {
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: () {
+                          final width = MediaQuery.of(context).size.width;
+                          if (AppBreakpoints.isTablet(context) ||
+                              (AppBreakpoints.isDesktop(context) &&
+                                  width < 1400)) {
                           return 1000.0;
-                        }
-                        if (AppBreakpoints.isDesktop(context)) {
+                          }
+                          if (AppBreakpoints.isDesktop(context)) {
                           return 1200.0;
-                        }
+                          }
                         return double.infinity;
-                      }(),
-                    ),
-                    child: Scrollbar(
-                      controller: _scrollController,
-                      child: ListView(
+                        }(),
+                      ),
+                      child: Scrollbar(
                         controller: _scrollController,
-                        padding: EdgeInsets.only(
-                          left: AppSpacing.responsive(context),
-                          right: AppSpacing.responsive(context),
-                          top: AppSpacing.responsive(context),
+                        child: ListView(
+                          controller: _scrollController,
+                          padding: EdgeInsets.only(
+                            left: AppSpacing.responsive(context),
+                            right: AppSpacing.responsive(context),
+                            top: AppSpacing.responsive(context),
                           // Fix 5: Ensure enough padding so content isn't hidden behind bottom bar
                           bottom: AppSpacing.responsive(context) + 120,
-                        ),
-                        children: [
-                          const InlineBannerAd(),
-                          Consumer<DynamicUiProvider>(
-                            builder: (context, dyn, _) {
-                              final banners = dyn.bannersForPlacement(
-                                'home_top',
-                              );
-                              if (banners.isEmpty)
-                                return const SizedBox.shrink();
-                              return Column(
-                                children:
-                                    banners
-                                        .map((b) => DynamicBanner(banner: b))
-                                        .toList(),
-                              );
-                            },
                           ),
-                          _buildHeroSection(context),
-
-                          // --- Your Recipes carousel ---
-                          TutorialShowcase(
-                            showcaseKey: TutorialKeys.homeYourRecipes,
-                            title: 'Your Digital Cookbook 📚',
-                            description:
-                                'All your saved, created, and imported recipes in one place. Available offline!',
-                            child: Consumer<DynamicUiProvider>(
-                              builder: (context, dynamicUi, _) {
-                                if (!(dynamicUi.config?.isSectionVisible(
-                                      'yourRecipesCarousel',
-                                    ) ??
-                                    true)) {
+                          children: [
+                            const InlineBannerAd(),
+                            Consumer<DynamicUiProvider>(
+                              builder: (context, dyn, _) {
+                                final banners = dyn.bannersForPlacement(
+                                  'home_top',
+                                );
+                                if (banners.isEmpty) {
                                   return const SizedBox.shrink();
                                 }
-                                return Consumer<RecipeProvider>(
-                                  builder: (context, recipeProvider, _) {
-                                    final saved = recipeProvider.userRecipes;
-                                    if (_isBooting ||
-                                        recipeProvider.isLoading) {
-                                      return _buildSectionLoading(
-                                        context,
-                                        title: 'Your Recipes',
-                                      );
-                                    }
-                                    if (saved.isEmpty) {
-                                      return _buildSectionMessage(
-                                        context,
-                                        title: 'Your Recipes',
-                                        message:
-                                            'No recipes yet. Add your first recipe to get started!',
-                                        leadingIcon:
-                                            Icons.restaurant_menu_rounded,
-                                        secondaryActionLabel: 'Add a Recipe',
-                                        secondaryAction: () {
-                                          Navigator.pushNamed(
-                                            context,
-                                            '/import',
-                                          );
-                                        },
-                                      );
-                                    }
-                                    return _buildRecipeCarousel(
-                                      context,
-                                      title: 'Your Recipes',
-                                      recipes: saved.take(10).toList(),
-                                    );
-                                  },
+                                return Column(
+                                  children:
+                                      banners
+                                          .map((b) => DynamicBanner(banner: b))
+                                          .toList(),
                                 );
                               },
                             ),
-                          ),
+                            _buildHeroSection(context),
 
-                          SizedBox(height: AppSpacing.responsive(context)),
+                            // --- Your Recipes carousel ---
+                            TutorialShowcase(
+                              showcaseKey: TutorialKeys.homeYourRecipes,
+                              title: 'Your Digital Cookbook 📚',
+                              description:
+                                  'All your saved, created, and imported recipes in one place. Available offline!',
+                              child: Consumer<DynamicUiProvider>(
+                                builder: (context, dynamicUi, _) {
+                                  if (!(dynamicUi.config?.isSectionVisible(
+                                        'yourRecipesCarousel',
+                                      ) ??
+                                      true)) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Consumer<RecipeProvider>(
+                                    builder: (context, recipeProvider, _) {
+                                      final saved = recipeProvider.userRecipes;
+                                      if (_isBooting ||
+                                          recipeProvider.isLoading) {
+                                        return _buildSectionLoading(
+                                          context,
+                                          title: 'Your Recipes',
+                                        );
+                                      }
+                                      if (saved.isEmpty) {
+                                        return _buildSectionMessage(
+                                          context,
+                                          title: 'Your Recipes',
+                                          message:
+                                              'No recipes yet. Add your first recipe to get started!',
+                                          leadingIcon:
+                                              Icons.restaurant_menu_rounded,
+                                          secondaryActionLabel: 'Add a Recipe',
+                                          secondaryAction: () {
+                                            Navigator.pushNamed(
+                                              context,
+                                              '/import',
+                                            );
+                                          },
+                                        );
+                                      }
+                                      return _buildRecipeCarousel(
+                                        context,
+                                        title: 'Your Recipes',
+                                        recipes: saved.take(10).toList(),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
 
-                          // --- Discover & Try carousel ---
-                          TutorialShowcase(
-                            showcaseKey: TutorialKeys.homeDiscover,
-                            title: 'Explore & Inspire 🔍',
-                            description:
-                                'Discover new recipes to try! Browse trending dishes and find your next favorite meal.',
-                            child: Consumer<DynamicUiProvider>(
-                              builder: (context, dynamicUi, _) {
-                                if (!(dynamicUi.config?.isSectionVisible(
-                                      'discoverCarousel',
-                                    ) ??
-                                    true)) {
-                                  return const SizedBox.shrink();
-                                }
-                                return Consumer<RecipeProvider>(
-                                  builder: (context, recipeProvider, _) {
-                                    final random =
-                                        recipeProvider.generatedRecipes
-                                            .where(
-                                              (r) =>
-                                                  !recipeProvider.userRecipes
+                            SizedBox(height: AppSpacing.responsive(context)),
+
+                            // --- Discover & Try carousel ---
+                            TutorialShowcase(
+                              showcaseKey: TutorialKeys.homeDiscover,
+                              title: 'Explore & Inspire 🔍',
+                              description:
+                                  'Discover new recipes to try! Browse trending dishes and find your next favorite meal.',
+                              child: Consumer<DynamicUiProvider>(
+                                builder: (context, dynamicUi, _) {
+                                  if (!(dynamicUi.config?.isSectionVisible(
+                                        'discoverCarousel',
+                                      ) ??
+                                      true)) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Consumer<RecipeProvider>(
+                                    builder: (context, recipeProvider, _) {
+                                      final random =
+                                          recipeProvider.generatedRecipes
+                                              .where(
+                                                (r) =>
+                                                    !recipeProvider.userRecipes
                                                       .any((u) => u.id == r.id),
-                                            )
-                                            .take(10)
-                                            .toList();
+                                              )
+                                              .take(10)
+                                              .toList();
 
-                                    if (_isBooting ||
-                                        recipeProvider.isLoading) {
-                                      return _buildSectionLoading(
-                                        context,
-                                        title: 'Discover & Try',
-                                      );
-                                    }
-                                    if (random.isEmpty &&
-                                        recipeProvider.error != null) {
-                                      final isOffline =
+                                      if (_isBooting ||
+                                          recipeProvider.isLoading) {
+                                        return _buildSectionLoading(
+                                          context,
+                                          title: 'Discover & Try',
+                                        );
+                                      }
+                                      if (random.isEmpty &&
+                                          recipeProvider.error != null) {
+                                        final isOffline =
                                           recipeProvider.error!.isNetworkError;
-                                      return _buildSectionMessage(
-                                        context,
-                                        title: 'Discover & Try',
-                                        message:
-                                            isOffline
-                                                ? 'Connect to discover new recipes'
-                                                : 'Couldn\'t load recipes. Tap to retry.',
-                                        leadingIcon:
-                                            isOffline
-                                                ? Icons.wifi_off_rounded
-                                                : Icons.error_outline_rounded,
+                                        return _buildSectionMessage(
+                                          context,
+                                          title: 'Discover & Try',
+                                          message:
+                                              isOffline
+                                                  ? 'Connect to discover new recipes'
+                                                  : 'Couldn\'t load recipes. Tap to retry.',
+                                          leadingIcon:
+                                              isOffline
+                                                  ? Icons.wifi_off_rounded
+                                                  : Icons.error_outline_rounded,
                                         onRetry:
                                             () => _refreshAllSections(context),
-                                      );
-                                    }
-                                    if (random.isEmpty) {
-                                      return _buildSectionMessage(
-                                        context,
-                                        title: 'Discover & Try',
-                                        message: 'No recipes to discover yet',
-                                        leadingIcon: Icons.explore_outlined,
+                                        );
+                                      }
+                                      if (random.isEmpty) {
+                                        return _buildSectionMessage(
+                                          context,
+                                          title: 'Discover & Try',
+                                          message: 'No recipes to discover yet',
+                                          leadingIcon: Icons.explore_outlined,
                                         onRetry:
                                             () => _refreshAllSections(context),
+                                        );
+                                      }
+                                      return _buildRecipeCarousel(
+                                        context,
+                                        title: 'Discover & Try',
+                                        recipes: random,
                                       );
-                                    }
-                                    return _buildRecipeCarousel(
-                                      context,
-                                      title: 'Discover & Try',
-                                      recipes: random,
-                                    );
-                                  },
-                                );
-                              },
+                                    },
+                                  );
+                                },
+                              ),
                             ),
-                          ),
 
-                          SizedBox(height: AppSpacing.responsive(context)),
+                            SizedBox(height: AppSpacing.responsive(context)),
 
-                          // --- Collections carousel ---
-                          Consumer<DynamicUiProvider>(
-                            builder: (context, dynamicUi, _) {
-                              if (!(dynamicUi.config?.isSectionVisible(
-                                    'collectionsCarousel',
-                                  ) ??
-                                  true)) {
-                                return const SizedBox.shrink();
-                              }
+                            // --- Collections carousel ---
+                            Consumer<DynamicUiProvider>(
+                              builder: (context, dynamicUi, _) {
+                                if (!(dynamicUi.config?.isSectionVisible(
+                                      'collectionsCarousel',
+                                    ) ??
+                                    true)) {
+                                  return const SizedBox.shrink();
+                                }
 
                               // Logic Fix: Ensure we don't return a widget if future is null,
                               // though _loadInitialData handles this now.
-                              if (_collectionsFuture == null) {
-                                // Fallback if init didn't fire for some reason
-                                _collectionsFuture = context
-                                    .read<CollectionService>()
-                                    .getCollections(
-                                      updateSpecialCollections: true,
-                                    );
-                              }
+                              // Fallback if init didn't fire for some reason
+                              _collectionsFuture ??= context
+                                  .read<CollectionService>()
+                                      .getCollections(
+                                        updateSpecialCollections: true,
+                                      );
 
-                              final collections = _collectionsFuture!.then(
-                                (value) => value.take(10).toList(),
-                              );
+                                final collections = _collectionsFuture!.then(
+                                  (value) => value.take(10).toList(),
+                                );
 
-                              return _buildCollectionCarousel(
-                                context,
-                                title: 'Collections',
-                                collections: collections,
-                              );
-                            },
-                          ),
+                                return _buildCollectionCarousel(
+                                  context,
+                                  title: 'Collections',
+                                  collections: collections,
+                                );
+                              },
+                            ),
 
-                          SizedBox(height: AppSpacing.responsive(context)),
+                            SizedBox(height: AppSpacing.responsive(context)),
 
-                          // Category scroller with features
-                          Consumer<DynamicUiProvider>(
-                            builder: (context, dynamicUi, _) {
-                              if (!(dynamicUi.config?.isSectionVisible(
-                                    'featuresSection',
-                                  ) ??
-                                  true)) {
-                                return const SizedBox.shrink();
-                              }
-                              return _buildCategoryScroller(
-                                context,
-                                title: 'Features',
-                              );
-                            },
-                          ),
-                        ],
+                            // Category scroller with features
+                            Consumer<DynamicUiProvider>(
+                              builder: (context, dynamicUi, _) {
+                                if (!(dynamicUi.config?.isSectionVisible(
+                                      'featuresSection',
+                                    ) ??
+                                    true)) {
+                                  return const SizedBox.shrink();
+                                }
+                                return _buildCategoryScroller(
+                                  context,
+                                  title: 'Features',
+                                );
+                              },
+                            ),
+                          ],
                       ),
                     ),
                   ),
