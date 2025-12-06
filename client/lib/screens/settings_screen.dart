@@ -7,6 +7,8 @@ import '../providers/user_profile_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/notification_provider.dart';
 import '../providers/subscription_provider.dart';
+import 'package:recipease/providers/recipe_provider.dart';
+import 'package:recipease/services/collection_service.dart';
 import '../theme/theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -811,18 +813,82 @@ class _SettingsScreenState extends State<SettingsScreen>
                   break;
                 case 'refresh':
                   final scaffoldMessenger = ScaffoldMessenger.of(context);
-                  await _loadProfile();
-                  if (mounted) {
-                    scaffoldMessenger.showSnackBar(
-                      SnackBar(
-                        content: const Text('Profile refreshed'),
-                        backgroundColor: Colors.green,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                  try {
+                    // Show loading indicator
+                    if (mounted) {
+                      scaffoldMessenger.showSnackBar(
+                        SnackBar(
+                          content: const Row(
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Text('Refreshing all data...'),
+                            ],
+                          ),
+                          backgroundColor: Colors.blue,
+                          behavior: SnackBarBehavior.floating,
+                          duration: const Duration(seconds: 2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
+                      );
+                    }
+
+                    // Refresh all data in parallel
+                    await Future.wait([
+                      // Refresh profile
+                      _loadProfile(),
+                      // Refresh subscription and credits
+                      context.read<SubscriptionProvider>().refreshData(),
+                      // Refresh recipes
+                      context.read<RecipeProvider>().loadUserRecipes(
+                        forceRefresh: true,
                       ),
-                    );
+                      // Refresh collections
+                      context.read<CollectionService>().getCollections(
+                        forceRefresh: true,
+                      ),
+                    ]);
+
+                    if (mounted) {
+                      scaffoldMessenger.hideCurrentSnackBar();
+                      scaffoldMessenger.showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                            'All data refreshed successfully',
+                          ),
+                          backgroundColor: Colors.green,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      scaffoldMessenger.hideCurrentSnackBar();
+                      scaffoldMessenger.showSnackBar(
+                        SnackBar(
+                          content: Text('Error refreshing: ${e.toString()}'),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      );
+                    }
                   }
                   break;
                 case 'my_recipes':
@@ -995,756 +1061,756 @@ class _SettingsScreenState extends State<SettingsScreen>
         ],
       ),
       body: Stack(
-          children: [
-            SingleChildScrollView(
-              controller: _scrollController,
-              child: Center(
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth:
-                        AppBreakpoints.isDesktop(context)
-                            ? 800
-                            : AppBreakpoints.isTablet(context)
-                            ? 700
-                            : double.infinity,
-                  ),
-                  padding: EdgeInsets.only(
-                    left: AppSpacing.responsive(context),
-                    right: AppSpacing.responsive(context),
-                    top: AppSpacing.responsive(context),
+        children: [
+          SingleChildScrollView(
+            controller: _scrollController,
+            child: Center(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth:
+                      AppBreakpoints.isDesktop(context)
+                          ? 800
+                          : AppBreakpoints.isTablet(context)
+                          ? 700
+                          : double.infinity,
+                ),
+                padding: EdgeInsets.only(
+                  left: AppSpacing.responsive(context),
+                  right: AppSpacing.responsive(context),
+                  top: AppSpacing.responsive(context),
                   // Add padding for bottom bar + safe area
                   bottom: AppSpacing.responsive(context) + 120 + bottomPadding,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Inline banner ad between app bar and profile pic
-                      const InlineBannerAd(),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Inline banner ad between app bar and profile pic
+                    const InlineBannerAd(),
 
-                      // Profile Header
-                      _buildProfileHeader(colorScheme),
+                    // Profile Header
+                    _buildProfileHeader(colorScheme),
 
-                      SizedBox(height: AppSpacing.xxl),
+                    SizedBox(height: AppSpacing.xxl),
 
-                      // Profile Fields
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        padding: EdgeInsets.all(_isEditing ? AppSpacing.md : 0),
-                        decoration: BoxDecoration(
-                          color:
-                              _isEditing
-                                  ? colorScheme.primaryContainer.withValues(
-                                    alpha: 0.3,
-                                  )
-                                  : Colors.transparent,
-                          borderRadius: BorderRadius.circular(
-                            AppBreakpoints.isMobile(context) ? 12 : 16,
-                          ),
+                    // Profile Fields
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      padding: EdgeInsets.all(_isEditing ? AppSpacing.md : 0),
+                      decoration: BoxDecoration(
+                        color:
+                            _isEditing
+                                ? colorScheme.primaryContainer.withValues(
+                                  alpha: 0.3,
+                                )
+                                : Colors.transparent,
+                        borderRadius: BorderRadius.circular(
+                          AppBreakpoints.isMobile(context) ? 12 : 16,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (_isEditing)
-                              Padding(
-                                padding: EdgeInsets.only(bottom: AppSpacing.md),
-                                child: Text(
-                                  'Edit Profile',
-                                  style: TextStyle(
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_isEditing)
+                            Padding(
+                              padding: EdgeInsets.only(bottom: AppSpacing.md),
+                              child: Text(
+                                'Edit Profile',
+                                style: TextStyle(
                                   fontSize: AppTypography.responsiveHeadingSize(
-                                          context,
-                                          mobile: 20.0,
-                                          tablet: 24.0,
-                                          desktop: 28.0,
-                                        ),
-                                    color: colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
+                                    context,
+                                    mobile: 20.0,
+                                    tablet: 24.0,
+                                    desktop: 28.0,
                                   ),
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-
-                            _buildAnimatedTextField(
-                              controller: _nameController,
-                              enabled: _isEditing,
-                              label: 'Name:',
-                              hint: user?.displayName ?? 'Your name',
-                              icon: Icons.person_rounded,
                             ),
 
-                            SizedBox(height: AppSpacing.md),
+                          _buildAnimatedTextField(
+                            controller: _nameController,
+                            enabled: _isEditing,
+                            label: 'Name:',
+                            hint: user?.displayName ?? 'Your name',
+                            icon: Icons.person_rounded,
+                          ),
 
-                            // Email field - read-only for all users
-                            _buildReadOnlyEmailField(
-                              email: user?.email ?? '',
-                              providerName:
-                                  _isOAuthUser(user)
-                                      ? (_getProviderName(user) ?? 'Provider')
-                                      : 'Email',
-                              providerIconWidget:
-                                  _isOAuthUser(user)
-                                      ? _getProviderIconWidget(
-                                        user,
-                                        size: AppSizing.responsiveIconSize(
-                                          context,
-                                          mobile: 20,
-                                          tablet: 22,
-                                          desktop: 24,
-                                        ),
-                                      )
-                                      : null,
+                          SizedBox(height: AppSpacing.md),
+
+                          // Email field - read-only for all users
+                          _buildReadOnlyEmailField(
+                            email: user?.email ?? '',
+                            providerName:
+                                _isOAuthUser(user)
+                                    ? (_getProviderName(user) ?? 'Provider')
+                                    : 'Email',
+                            providerIconWidget:
+                                _isOAuthUser(user)
+                                    ? _getProviderIconWidget(
+                                      user,
+                                      size: AppSizing.responsiveIconSize(
+                                        context,
+                                        mobile: 20,
+                                        tablet: 22,
+                                        desktop: 24,
+                                      ),
+                                    )
+                                    : null,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: AppSpacing.xxl),
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
+
+                    // Appearance Section
+                    _buildSectionHeader(
+                      title: 'Appearance',
+                      icon: Icons.palette_rounded,
+                      colorScheme: colorScheme,
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+
+                    Consumer<ThemeProvider>(
+                      builder: (context, themeProvider, _) {
+                        return _buildAnimatedSwitchTile(
+                          title: 'Dark Mode',
+                          subtitle: 'Switch between light and dark themes',
+                          value: themeProvider.isDarkMode,
+                          onChanged: (value) => themeProvider.toggleTheme(),
+                          icon:
+                              themeProvider.isDarkMode
+                                  ? Icons.dark_mode_rounded
+                                  : Icons.light_mode_rounded,
+                          color:
+                              themeProvider.isDarkMode
+                                  ? Theme.of(context).colorScheme.info
+                                  : Theme.of(context).colorScheme.warning,
+                        );
+                      },
+                    ),
+
+                    // SizedBox(height: AppSpacing.md),
+                    // const Divider(height: 1, thickness: 0.1),
+                    // SizedBox(height: AppSpacing.md),
+
+                    // // Privacy Section
+                    // _buildSectionHeader(
+                    //   title: 'Privacy',
+                    //   icon: Icons.privacy_tip_rounded,
+                    //   colorScheme: colorScheme,
+                    // ),
+
+                    // SizedBox(height: AppSpacing.md),
+
+                    // Community feature disabled - hide profile in community setting
+                    // Consumer<UserProfileProvider>(
+                    //   builder: (context, profileProvider, _) {
+                    //     return _buildAnimatedSwitchTile(
+                    //       title: 'Show Profile in Community',
+                    //       subtitle:
+                    //           'Display your name and photo on shared recipes',
+                    //       value: profileProvider.showProfileInCommunity,
+                    //       onChanged: (value) async {
+                    //         final messenger = ScaffoldMessenger.of(context);
+                    //         try {
+                    //           await profileProvider.setShowProfileInCommunity(
+                    //             value,
+                    //           );
+                    //           if (mounted) {
+                    //             messenger.showSnackBar(
+                    //               SnackBar(
+                    //                 content: Text(
+                    //                   value
+                    //                       ? 'Your profile will be shown on community recipes'
+                    //                       : 'Your profile will be hidden on community recipes',
+                    //                 ),
+                    //                 backgroundColor: Colors.green,
+                    //                 behavior: SnackBarBehavior.floating,
+                    //                 shape: RoundedRectangleBorder(
+                    //                   borderRadius: BorderRadius.circular(10),
+                    //                 ),
+                    //               ),
+                    //             );
+                    //           }
+                    //         } catch (e) {
+                    //           if (mounted) {
+                    //             messenger.showSnackBar(
+                    //               SnackBar(
+                    //                 content: Text('Error updating setting: $e'),
+                    //                 backgroundColor: Colors.red,
+                    //                 behavior: SnackBarBehavior.floating,
+                    //               ),
+                    //             );
+                    //           }
+                    //         }
+                    //       },
+                    //       icon: Icons.person_outline_rounded,
+                    //       color: Theme.of(context).colorScheme.primary,
+                    //     );
+                    //   },
+                    // ),
+                    SizedBox(height: AppSpacing.md),
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
+
+                    // Category Notifications Section
+                    _buildSectionHeader(
+                      title: 'Category Notifications',
+                      icon: Icons.notifications_rounded,
+                      colorScheme: colorScheme,
+                    ),
+
+                    SizedBox(height: AppSpacing.sm),
+
+                    Consumer<NotificationProvider>(
+                      builder: (context, notificationProvider, _) {
+                        return Column(
+                          children: [
+                            _buildAnimatedSwitchTile(
+                              title: 'Daily Inspiration',
+                              subtitle: 'Receive a daily pick at 9:00 AM',
+                              value: notificationProvider.catDailyInspiration,
+                              onChanged:
+                                  (v) => notificationProvider
+                                      .setCatDailyInspiration(v),
+                              icon: Icons.lightbulb_rounded,
+                              color: Colors.orange,
                             ),
-                          ],
-                        ),
-                      ),
 
-                      SizedBox(height: AppSpacing.xxl),
-                      const Divider(height: 1, thickness: 0.1),
-                      SizedBox(height: AppSpacing.md),
+                            SizedBox(height: AppSpacing.sm),
 
-                      // Appearance Section
-                      _buildSectionHeader(
-                        title: 'Appearance',
-                        icon: Icons.palette_rounded,
-                        colorScheme: colorScheme,
-                      ),
-
-                      SizedBox(height: AppSpacing.md),
-
-                      Consumer<ThemeProvider>(
-                        builder: (context, themeProvider, _) {
-                          return _buildAnimatedSwitchTile(
-                            title: 'Dark Mode',
-                            subtitle: 'Switch between light and dark themes',
-                            value: themeProvider.isDarkMode,
-                            onChanged: (value) => themeProvider.toggleTheme(),
-                            icon:
-                                themeProvider.isDarkMode
-                                    ? Icons.dark_mode_rounded
-                                    : Icons.light_mode_rounded,
-                            color:
-                                themeProvider.isDarkMode
-                                    ? Theme.of(context).colorScheme.info
-                                    : Theme.of(context).colorScheme.warning,
-                          );
-                        },
-                      ),
-
-                      // SizedBox(height: AppSpacing.md),
-                      // const Divider(height: 1, thickness: 0.1),
-                      // SizedBox(height: AppSpacing.md),
-
-                      // // Privacy Section
-                      // _buildSectionHeader(
-                      //   title: 'Privacy',
-                      //   icon: Icons.privacy_tip_rounded,
-                      //   colorScheme: colorScheme,
-                      // ),
-
-                      // SizedBox(height: AppSpacing.md),
-
-                      // Community feature disabled - hide profile in community setting
-                      // Consumer<UserProfileProvider>(
-                      //   builder: (context, profileProvider, _) {
-                      //     return _buildAnimatedSwitchTile(
-                      //       title: 'Show Profile in Community',
-                      //       subtitle:
-                      //           'Display your name and photo on shared recipes',
-                      //       value: profileProvider.showProfileInCommunity,
-                      //       onChanged: (value) async {
-                      //         final messenger = ScaffoldMessenger.of(context);
-                      //         try {
-                      //           await profileProvider.setShowProfileInCommunity(
-                      //             value,
-                      //           );
-                      //           if (mounted) {
-                      //             messenger.showSnackBar(
-                      //               SnackBar(
-                      //                 content: Text(
-                      //                   value
-                      //                       ? 'Your profile will be shown on community recipes'
-                      //                       : 'Your profile will be hidden on community recipes',
-                      //                 ),
-                      //                 backgroundColor: Colors.green,
-                      //                 behavior: SnackBarBehavior.floating,
-                      //                 shape: RoundedRectangleBorder(
-                      //                   borderRadius: BorderRadius.circular(10),
-                      //                 ),
-                      //               ),
-                      //             );
-                      //           }
-                      //         } catch (e) {
-                      //           if (mounted) {
-                      //             messenger.showSnackBar(
-                      //               SnackBar(
-                      //                 content: Text('Error updating setting: $e'),
-                      //                 backgroundColor: Colors.red,
-                      //                 behavior: SnackBarBehavior.floating,
-                      //               ),
-                      //             );
-                      //           }
-                      //         }
-                      //       },
-                      //       icon: Icons.person_outline_rounded,
-                      //       color: Theme.of(context).colorScheme.primary,
-                      //     );
-                      //   },
-                      // ),
-                      SizedBox(height: AppSpacing.md),
-                      const Divider(height: 1, thickness: 0.1),
-                      SizedBox(height: AppSpacing.md),
-
-                      // Category Notifications Section
-                      _buildSectionHeader(
-                        title: 'Category Notifications',
-                        icon: Icons.notifications_rounded,
-                        colorScheme: colorScheme,
-                      ),
-
-                      SizedBox(height: AppSpacing.sm),
-
-                      Consumer<NotificationProvider>(
-                        builder: (context, notificationProvider, _) {
-                          return Column(
-                            children: [
-                              _buildAnimatedSwitchTile(
-                                title: 'Daily Inspiration',
-                                subtitle: 'Receive a daily pick at 9:00 AM',
-                                value: notificationProvider.catDailyInspiration,
-                                onChanged:
-                                    (v) => notificationProvider
-                                        .setCatDailyInspiration(v),
-                                icon: Icons.lightbulb_rounded,
-                                color: Colors.orange,
-                              ),
-
-                              SizedBox(height: AppSpacing.sm),
-
-                              _buildAnimatedSwitchTile(
-                                title: 'Meal Prep Sunday',
-                                subtitle: 'Weekly reminder Sundays 5:00 PM',
-                                value: notificationProvider.catMealPrep,
-                                onChanged:
+                            _buildAnimatedSwitchTile(
+                              title: 'Meal Prep Sunday',
+                              subtitle: 'Weekly reminder Sundays 5:00 PM',
+                              value: notificationProvider.catMealPrep,
+                              onChanged:
                                   (v) => notificationProvider.setCatMealPrep(v),
-                                icon: Icons.calendar_month_rounded,
-                                color: Colors.teal,
-                              ),
+                              icon: Icons.calendar_month_rounded,
+                              color: Colors.teal,
+                            ),
 
-                              SizedBox(height: AppSpacing.sm),
+                            SizedBox(height: AppSpacing.sm),
 
-                              _buildAnimatedSwitchTile(
-                                title: 'Seasonal Collections',
+                            _buildAnimatedSwitchTile(
+                              title: 'Seasonal Collections',
                               subtitle: 'Weekly Friday highlights at 12:00 PM',
-                                value: notificationProvider.catSeasonal,
-                                onChanged:
+                              value: notificationProvider.catSeasonal,
+                              onChanged:
                                   (v) => notificationProvider.setCatSeasonal(v),
-                                icon: Icons.snowing,
-                                color: Colors.redAccent,
-                              ),
+                              icon: Icons.snowing,
+                              color: Colors.redAccent,
+                            ),
 
-                              SizedBox(height: AppSpacing.sm),
+                            SizedBox(height: AppSpacing.sm),
 
-                              _buildAnimatedSwitchTile(
-                                title: 'Quick Meals',
-                                subtitle: 'Weekly Tuesdays at 6:00 PM',
-                                value: notificationProvider.catQuickMeals,
-                                onChanged:
+                            _buildAnimatedSwitchTile(
+                              title: 'Quick Meals',
+                              subtitle: 'Weekly Tuesdays at 6:00 PM',
+                              value: notificationProvider.catQuickMeals,
+                              onChanged:
                                   (v) =>
                                       notificationProvider.setCatQuickMeals(v),
-                                icon: Icons.flash_on_rounded,
-                                color: Colors.amber,
-                              ),
+                              icon: Icons.flash_on_rounded,
+                              color: Colors.amber,
+                            ),
 
-                              SizedBox(height: AppSpacing.sm),
+                            SizedBox(height: AppSpacing.sm),
 
-                              _buildAnimatedSwitchTile(
-                                title: 'Budget-Friendly',
-                                subtitle: 'Weekly Wednesdays at 6:00 PM',
-                                value: notificationProvider.catBudget,
-                                onChanged:
-                                    (v) => notificationProvider.setCatBudget(v),
-                                icon: Icons.attach_money_rounded,
-                                color: Colors.green,
-                              ),
+                            _buildAnimatedSwitchTile(
+                              title: 'Budget-Friendly',
+                              subtitle: 'Weekly Wednesdays at 6:00 PM',
+                              value: notificationProvider.catBudget,
+                              onChanged:
+                                  (v) => notificationProvider.setCatBudget(v),
+                              icon: Icons.attach_money_rounded,
+                              color: Colors.green,
+                            ),
 
-                              SizedBox(height: AppSpacing.sm),
+                            SizedBox(height: AppSpacing.sm),
 
-                              _buildAnimatedSwitchTile(
-                                title: 'Keto Spotlight',
-                                subtitle: 'Weekly Mondays at 12:00 PM',
-                                value: notificationProvider.catKeto,
-                                onChanged:
-                                    (v) => notificationProvider.setCatKeto(v),
-                                icon: Icons.restaurant_rounded,
-                                color: Colors.blue,
-                              ),
-                            ],
-                          );
-                        },
-                      ),
+                            _buildAnimatedSwitchTile(
+                              title: 'Keto Spotlight',
+                              subtitle: 'Weekly Mondays at 12:00 PM',
+                              value: notificationProvider.catKeto,
+                              onChanged:
+                                  (v) => notificationProvider.setCatKeto(v),
+                              icon: Icons.restaurant_rounded,
+                              color: Colors.blue,
+                            ),
+                          ],
+                        );
+                      },
+                    ),
 
-                      SizedBox(height: AppSpacing.xxl),
-                      const Divider(height: 1, thickness: 0.1),
-                      SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.xxl),
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
 
-                      // Premium Features Section
-                      _buildSectionHeader(
-                        title: 'Premium Features',
-                        icon: Icons.star_rounded,
-                        colorScheme: colorScheme,
-                      ),
-                      SizedBox(height: AppSpacing.md),
-                      Consumer<SubscriptionProvider>(
-                        builder: (context, subscriptionProvider, _) {
-                          return _buildAnimatedListTile(
-                            title:
-                                subscriptionProvider.isPremium
-                                    ? 'Premium Active'
-                                    : 'Upgrade to Premium',
-                            subtitle:
-                                subscriptionProvider.isPremium
-                                    ? 'Enjoy all premium features'
-                                    : 'Remove ads and unlock premium features',
-                            icon:
-                                subscriptionProvider.isPremium
-                                    ? Icons.star_rounded
-                                    : Icons.star_outline_rounded,
-                            color:
-                                subscriptionProvider.isPremium
-                                    ? Theme.of(context).colorScheme.warning
-                                    : colorScheme.primary,
-                            onTap:
+                    // Premium Features Section
+                    _buildSectionHeader(
+                      title: 'Premium Features',
+                      icon: Icons.star_rounded,
+                      colorScheme: colorScheme,
+                    ),
+                    SizedBox(height: AppSpacing.md),
+                    Consumer<SubscriptionProvider>(
+                      builder: (context, subscriptionProvider, _) {
+                        return _buildAnimatedListTile(
+                          title:
+                              subscriptionProvider.isPremium
+                                  ? 'Premium Active'
+                                  : 'Upgrade to Premium',
+                          subtitle:
+                              subscriptionProvider.isPremium
+                                  ? 'Enjoy all premium features'
+                                  : 'Remove ads and unlock premium features',
+                          icon:
+                              subscriptionProvider.isPremium
+                                  ? Icons.star_rounded
+                                  : Icons.star_outline_rounded,
+                          color:
+                              subscriptionProvider.isPremium
+                                  ? Theme.of(context).colorScheme.warning
+                                  : colorScheme.primary,
+                          onTap:
                               () =>
                                   Navigator.pushNamed(context, '/subscription'),
-                          );
-                        },
-                      ),
+                        );
+                      },
+                    ),
 
-                      SizedBox(height: AppSpacing.xxl),
-                      const Divider(height: 1, thickness: 0.1),
-                      SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.xxl),
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
 
-                      // Features Section
-                      _buildSectionHeader(
-                        title: 'Features',
-                        icon: Icons.restaurant_menu_rounded,
-                        colorScheme: colorScheme,
-                      ),
+                    // Features Section
+                    _buildSectionHeader(
+                      title: 'Features',
+                      icon: Icons.restaurant_menu_rounded,
+                      colorScheme: colorScheme,
+                    ),
 
-                      SizedBox(height: AppSpacing.md),
-                      _buildAnimatedListTile(
-                        title: 'Import Recipes',
-                        subtitle: 'Paste a link to import a recipe',
-                        icon: Icons.link_rounded,
-                        color: Theme.of(context).colorScheme.info,
-                        onTap: () => Navigator.pushNamed(context, '/import'),
-                      ),
+                    SizedBox(height: AppSpacing.md),
+                    _buildAnimatedListTile(
+                      title: 'Import Recipes',
+                      subtitle: 'Paste a link to import a recipe',
+                      icon: Icons.link_rounded,
+                      color: Theme.of(context).colorScheme.info,
+                      onTap: () => Navigator.pushNamed(context, '/import'),
+                    ),
 
-                      SizedBox(height: AppSpacing.md),
-                      _buildAnimatedListTile(
-                        title: 'Generate Recipes',
-                        subtitle: 'Create recipes from your ingredients',
-                        icon: Icons.auto_awesome_rounded,
-                        color: Theme.of(context).colorScheme.primary,
-                        onTap: () => Navigator.pushNamed(context, '/generate'),
-                      ),
+                    SizedBox(height: AppSpacing.md),
+                    _buildAnimatedListTile(
+                      title: 'Generate Recipes',
+                      subtitle: 'Create recipes from your ingredients',
+                      icon: Icons.auto_awesome_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                      onTap: () => Navigator.pushNamed(context, '/generate'),
+                    ),
 
-                      SizedBox(height: AppSpacing.md),
-                      _buildAnimatedListTile(
-                        title: 'My Recipes',
-                        subtitle: 'Explore your recipes',
-                        icon: Icons.restaurant_menu_rounded,
-                        color: Theme.of(context).colorScheme.warning,
-                        onTap: () => Navigator.pushNamed(context, '/myRecipes'),
-                      ),
+                    SizedBox(height: AppSpacing.md),
+                    _buildAnimatedListTile(
+                      title: 'My Recipes',
+                      subtitle: 'Explore your recipes',
+                      icon: Icons.restaurant_menu_rounded,
+                      color: Theme.of(context).colorScheme.warning,
+                      onTap: () => Navigator.pushNamed(context, '/myRecipes'),
+                    ),
 
-                      SizedBox(height: AppSpacing.md),
-                      _buildAnimatedListTile(
-                        title: 'Discover Recipes',
-                        subtitle: 'Find new recipe ideas',
-                        icon: Icons.explore,
-                        color: Colors.blue,
-                        onTap: () => Navigator.pushNamed(context, '/discover'),
-                      ),
+                    SizedBox(height: AppSpacing.md),
+                    _buildAnimatedListTile(
+                      title: 'Discover Recipes',
+                      subtitle: 'Find new recipe ideas',
+                      icon: Icons.explore,
+                      color: Colors.blue,
+                      onTap: () => Navigator.pushNamed(context, '/discover'),
+                    ),
 
-                      SizedBox(height: AppSpacing.md),
-                      _buildAnimatedListTile(
-                        title: 'App Tutorial',
-                        subtitle: 'Learn how to use RecipEase',
-                        icon: Icons.help_outline_rounded,
-                        color: Theme.of(context).colorScheme.primary,
-                        onTap: _restartTutorial,
-                      ),
+                    SizedBox(height: AppSpacing.md),
+                    _buildAnimatedListTile(
+                      title: 'App Tutorial',
+                      subtitle: 'Learn how to use RecipEase',
+                      icon: Icons.help_outline_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                      onTap: _restartTutorial,
+                    ),
 
-                      SizedBox(height: AppSpacing.xxl),
-                      const Divider(height: 1, thickness: 0.1),
-                      SizedBox(height: AppSpacing.md),
-                      // Contact Section
-                      _buildSectionHeader(
-                        title: 'Contact Us',
-                        icon: Icons.contact_support_rounded,
-                        colorScheme: colorScheme,
-                      ),
-                      SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.xxl),
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
+                    // Contact Section
+                    _buildSectionHeader(
+                      title: 'Contact Us',
+                      icon: Icons.contact_support_rounded,
+                      colorScheme: colorScheme,
+                    ),
+                    SizedBox(height: AppSpacing.md),
 
-                      // Support Inquiries
-                      _buildAnimatedListTile(
-                        title: 'Customer Support',
-                        subtitle: 'Get help with app issues',
-                        icon: Icons.support_agent_rounded,
-                        color: colorScheme.primary,
-                        onTap: () async {
-                          final Uri emailLaunchUri = Uri(
-                            scheme: 'mailto',
-                            path: 'support@recipease.kitchen',
-                            query: encodeQueryParameters({
-                              'subject': 'Customer Support - RecipEase',
-                              'body':
-                                  'Hi RecipEase Support Team,\n\nI need help with...\n\nThank you!\n',
-                            }),
-                          );
-                          if (await canLaunchUrl(emailLaunchUri)) {
-                            await launchUrl(emailLaunchUri);
-                          } else {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                    // Support Inquiries
+                    _buildAnimatedListTile(
+                      title: 'Customer Support',
+                      subtitle: 'Get help with app issues',
+                      icon: Icons.support_agent_rounded,
+                      color: colorScheme.primary,
+                      onTap: () async {
+                        final Uri emailLaunchUri = Uri(
+                          scheme: 'mailto',
+                          path: 'support@recipease.kitchen',
+                          query: encodeQueryParameters({
+                            'subject': 'Customer Support - RecipEase',
+                            'body':
+                                'Hi RecipEase Support Team,\n\nI need help with...\n\nThank you!\n',
+                          }),
+                        );
+                        if (await canLaunchUrl(emailLaunchUri)) {
+                          await launchUrl(emailLaunchUri);
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
                                 content: Text('Could not launch email client'),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                            }
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
                           }
-                        },
-                      ),
+                        }
+                      },
+                    ),
 
-                      SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
 
-                      // General Inquiries
-                      _buildAnimatedListTile(
-                        title: 'General Inquiries',
-                        subtitle: 'Questions about RecipEase',
-                        icon: Icons.help_outline_rounded,
-                        color: Colors.blue,
-                        onTap: () async {
-                          final Uri emailLaunchUri = Uri(
-                            scheme: 'mailto',
-                            path: 'hello@recipease.kitchen',
-                            query: encodeQueryParameters({
-                              'subject': 'General Inquiry - RecipEase',
-                              'body':
-                                  'Hello RecipEase Team,\n\nI would like to know...\n\nThank you!\n',
-                            }),
-                          );
-                          if (await canLaunchUrl(emailLaunchUri)) {
-                            await launchUrl(emailLaunchUri);
-                          } else {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                    // General Inquiries
+                    _buildAnimatedListTile(
+                      title: 'General Inquiries',
+                      subtitle: 'Questions about RecipEase',
+                      icon: Icons.help_outline_rounded,
+                      color: Colors.blue,
+                      onTap: () async {
+                        final Uri emailLaunchUri = Uri(
+                          scheme: 'mailto',
+                          path: 'hello@recipease.kitchen',
+                          query: encodeQueryParameters({
+                            'subject': 'General Inquiry - RecipEase',
+                            'body':
+                                'Hello RecipEase Team,\n\nI would like to know...\n\nThank you!\n',
+                          }),
+                        );
+                        if (await canLaunchUrl(emailLaunchUri)) {
+                          await launchUrl(emailLaunchUri);
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
                                 content: Text('Could not launch email client'),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                            }
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
                           }
-                        },
-                      ),
+                        }
+                      },
+                    ),
 
-                      SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
 
-                      // Billing Support
-                      _buildAnimatedListTile(
-                        title: 'Billing Support',
-                        subtitle: 'Payments and invoices',
-                        icon: Icons.payment_rounded,
-                        color: Theme.of(context).colorScheme.success,
-                        onTap: () async {
-                          final Uri emailLaunchUri = Uri(
-                            scheme: 'mailto',
-                            path: 'billing@adventhubsolutions.com',
-                            query: encodeQueryParameters({
-                              'subject': 'Billing Inquiry - RecipEase',
-                              'body':
-                                  'Hello Billing Team,\n\nI have a question about...\n\nThank you!\n',
-                            }),
-                          );
-                          if (await canLaunchUrl(emailLaunchUri)) {
-                            await launchUrl(emailLaunchUri);
-                          } else {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                    // Billing Support
+                    _buildAnimatedListTile(
+                      title: 'Billing Support',
+                      subtitle: 'Payments and invoices',
+                      icon: Icons.payment_rounded,
+                      color: Theme.of(context).colorScheme.success,
+                      onTap: () async {
+                        final Uri emailLaunchUri = Uri(
+                          scheme: 'mailto',
+                          path: 'billing@adventhubsolutions.com',
+                          query: encodeQueryParameters({
+                            'subject': 'Billing Inquiry - RecipEase',
+                            'body':
+                                'Hello Billing Team,\n\nI have a question about...\n\nThank you!\n',
+                          }),
+                        );
+                        if (await canLaunchUrl(emailLaunchUri)) {
+                          await launchUrl(emailLaunchUri);
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
                                 content: Text('Could not launch email client'),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                            }
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
                           }
-                        },
-                      ),
+                        }
+                      },
+                    ),
 
-                      SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
 
-                      // Business Inquiries
-                      _buildAnimatedListTile(
-                        title: 'Business Inquiries',
-                        subtitle: 'Partnerships and collaborations',
-                        icon: Icons.business_rounded,
-                        color: Colors.purple,
-                        onTap: () async {
-                          final Uri emailLaunchUri = Uri(
-                            scheme: 'mailto',
-                            path: 'partnerships@adventhubsolutions.com',
-                            query: encodeQueryParameters({
-                              'subject': 'Business Inquiry - RecipEase',
-                              'body':
-                                  'Hello Business Team,\n\nI am interested in...\n\nThank you!\n',
-                            }),
-                          );
-                          if (await canLaunchUrl(emailLaunchUri)) {
-                            await launchUrl(emailLaunchUri);
-                          } else {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                    // Business Inquiries
+                    _buildAnimatedListTile(
+                      title: 'Business Inquiries',
+                      subtitle: 'Partnerships and collaborations',
+                      icon: Icons.business_rounded,
+                      color: Colors.purple,
+                      onTap: () async {
+                        final Uri emailLaunchUri = Uri(
+                          scheme: 'mailto',
+                          path: 'partnerships@adventhubsolutions.com',
+                          query: encodeQueryParameters({
+                            'subject': 'Business Inquiry - RecipEase',
+                            'body':
+                                'Hello Business Team,\n\nI am interested in...\n\nThank you!\n',
+                          }),
+                        );
+                        if (await canLaunchUrl(emailLaunchUri)) {
+                          await launchUrl(emailLaunchUri);
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
                                 content: Text('Could not launch email client'),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                            }
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
                           }
-                        },
-                      ),
-                      SizedBox(height: AppSpacing.xxl),
+                        }
+                      },
+                    ),
+                    SizedBox(height: AppSpacing.xxl),
 
-                      const Divider(height: 1, thickness: 0.1),
-                      SizedBox(height: AppSpacing.md),
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
 
-                      // Storage & Cache Section
-                      _buildSectionHeader(
-                        title: 'Storage & Cache',
-                        icon: Icons.storage_rounded,
-                        colorScheme: colorScheme,
-                      ),
+                    // Storage & Cache Section
+                    _buildSectionHeader(
+                      title: 'Storage & Cache',
+                      icon: Icons.storage_rounded,
+                      colorScheme: colorScheme,
+                    ),
 
-                      SizedBox(height: AppSpacing.md),
+                    SizedBox(height: AppSpacing.md),
 
-                      _buildAnimatedListTile(
-                        title: 'Clear App Cache',
+                    _buildAnimatedListTile(
+                      title: 'Clear App Cache',
                       subtitle: 'Free up storage and fix image display issues',
-                        icon: Icons.cleaning_services_rounded,
-                        color: Colors.orange,
-                        onTap: _clearAllCache,
-                      ),
+                      icon: Icons.cleaning_services_rounded,
+                      color: Colors.orange,
+                      onTap: _clearAllCache,
+                    ),
 
+                    SizedBox(height: AppSpacing.xxl),
+
+                    const Divider(height: 1, thickness: 0.1),
+                    SizedBox(height: AppSpacing.md),
+
+                    // Links Section
+                    _buildSectionHeader(
+                      title: 'Account Management',
+                      icon: Icons.person_rounded,
+                      colorScheme: colorScheme,
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+
+                    _buildAnimatedListTile(
+                      title: 'Sign Out',
+                      icon: Icons.logout_rounded,
+                      color: Colors.grey.shade600,
+                      onTap: _signOut,
+                    ),
+
+                    SizedBox(height: AppSpacing.md),
+
+                    _buildAnimatedListTile(
+                      title: 'Delete Account',
+                      subtitle: 'Permanently delete your account and all data',
+                      icon: Icons.delete_forever_rounded,
+                      color: Colors.red,
+                      onTap: _showDeleteAccountDialog,
+                    ),
+
+                    // Debug Section (only in debug mode)
+                    if (kDebugMode) ...[
                       SizedBox(height: AppSpacing.xxl),
-
                       const Divider(height: 1, thickness: 0.1),
                       SizedBox(height: AppSpacing.md),
 
-                      // Links Section
-                      _buildSectionHeader(
-                        title: 'Account Management',
-                        icon: Icons.person_rounded,
-                        colorScheme: colorScheme,
+                      // Debug Features Toggle
+                      _buildAnimatedSwitchTile(
+                        title: 'Enable Debug Features',
+                        subtitle: 'Show debug-only features like Refresh Image',
+                        value: _debugFeaturesEnabled,
+                        onChanged: (value) async {
+                          if (!mounted) return;
+                          final messenger = ScaffoldMessenger.of(context);
+                          await _debugSettings.setDebugEnabled(value);
+                          if (!mounted) return;
+                          setState(() {
+                            _debugFeaturesEnabled = value;
+                          });
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                value
+                                    ? 'Debug features enabled'
+                                    : 'Debug features disabled',
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        icon: Icons.developer_mode_rounded,
+                        color: Colors.deepPurple,
                       ),
 
-                      SizedBox(height: AppSpacing.md),
-
-                      _buildAnimatedListTile(
-                        title: 'Sign Out',
-                        icon: Icons.logout_rounded,
-                        color: Colors.grey.shade600,
-                        onTap: _signOut,
-                      ),
-
-                      SizedBox(height: AppSpacing.md),
-
-                      _buildAnimatedListTile(
-                        title: 'Delete Account',
-                      subtitle: 'Permanently delete your account and all data',
-                        icon: Icons.delete_forever_rounded,
-                        color: Colors.red,
-                        onTap: _showDeleteAccountDialog,
-                      ),
-
-                      // Debug Section (only in debug mode)
-                      if (kDebugMode) ...[
-                        SizedBox(height: AppSpacing.xxl),
+                      // Show Developer Tools section only when debug features enabled
+                      if (_debugFeaturesEnabled) ...[
+                        SizedBox(height: AppSpacing.md),
                         const Divider(height: 1, thickness: 0.1),
                         SizedBox(height: AppSpacing.md),
 
-                        // Debug Features Toggle
-                        _buildAnimatedSwitchTile(
-                          title: 'Enable Debug Features',
-                        subtitle: 'Show debug-only features like Refresh Image',
-                          value: _debugFeaturesEnabled,
-                          onChanged: (value) async {
-                            if (!mounted) return;
-                            final messenger = ScaffoldMessenger.of(context);
-                            await _debugSettings.setDebugEnabled(value);
-                            if (!mounted) return;
-                            setState(() {
-                              _debugFeaturesEnabled = value;
-                            });
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  value
-                                      ? 'Debug features enabled'
-                                      : 'Debug features disabled',
-                                ),
-                                behavior: SnackBarBehavior.floating,
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          },
-                          icon: Icons.developer_mode_rounded,
-                          color: Colors.deepPurple,
+                        _buildSectionHeader(
+                          title: 'Developer Tools',
+                          icon: Icons.code_rounded,
+                          colorScheme: colorScheme,
                         ),
 
-                        // Show Developer Tools section only when debug features enabled
-                        if (_debugFeaturesEnabled) ...[
-                          SizedBox(height: AppSpacing.md),
-                          const Divider(height: 1, thickness: 0.1),
-                          SizedBox(height: AppSpacing.md),
+                        SizedBox(height: AppSpacing.md),
 
-                          _buildSectionHeader(
-                            title: 'Developer Tools',
-                            icon: Icons.code_rounded,
-                            colorScheme: colorScheme,
-                          ),
+                        // Bulk Image Refresh
+                        _buildImageRefreshTile(colorScheme),
 
-                          SizedBox(height: AppSpacing.md),
+                        SizedBox(height: AppSpacing.sm),
 
-                          // Bulk Image Refresh
-                          _buildImageRefreshTile(colorScheme),
-
-                          SizedBox(height: AppSpacing.sm),
-
-                          // Clear Image Cache
-                          _buildAnimatedListTile(
-                            title: 'Clear Image Cache',
-                            subtitle:
-                                'Remove cached image resolutions to force fresh fetch',
-                            icon: Icons.delete_sweep_rounded,
-                            color: colorScheme.error,
-                            onTap: () async {
+                        // Clear Image Cache
+                        _buildAnimatedListTile(
+                          title: 'Clear Image Cache',
+                          subtitle:
+                              'Remove cached image resolutions to force fresh fetch',
+                          icon: Icons.delete_sweep_rounded,
+                          color: colorScheme.error,
+                          onTap: () async {
                             final removed = await ImageResolverCache.clearAll();
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Cleared $removed cached images',
-                                    ),
-                                    behavior: SnackBarBehavior.floating,
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Cleared $removed cached images',
                                   ),
-                                );
-                              }
-                            },
-                          ),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          },
+                        ),
 
-                          SizedBox(height: AppSpacing.md),
-                          const Divider(height: 1, thickness: 0.1),
-                          SizedBox(height: AppSpacing.sm),
+                        SizedBox(height: AppSpacing.md),
+                        const Divider(height: 1, thickness: 0.1),
+                        SizedBox(height: AppSpacing.sm),
 
-                          // Notification Tests Section Header
-                          Text(
-                            'Test Notifications',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.labelLarge?.copyWith(
+                        // Notification Tests Section Header
+                        Text(
+                          'Test Notifications',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.labelLarge?.copyWith(
                             color: colorScheme.onSurface.withValues(alpha: 0.6),
-                              fontWeight: FontWeight.w600,
-                            ),
+                            fontWeight: FontWeight.w600,
                           ),
+                        ),
 
-                          SizedBox(height: AppSpacing.sm),
+                        SizedBox(height: AppSpacing.sm),
 
-                          _buildAnimatedListTile(
-                            title: 'Test Daily Inspiration',
-                            subtitle:
-                                'Trigger the daily inspiration notification',
-                            icon: Icons.notifications_active_rounded,
-                            color: colorScheme.primary,
-                            onTap:
-                                () => _triggerTestNotification(
-                                  AppNotificationCategory.dailyInspiration,
-                                ),
-                          ),
+                        _buildAnimatedListTile(
+                          title: 'Test Daily Inspiration',
+                          subtitle:
+                              'Trigger the daily inspiration notification',
+                          icon: Icons.notifications_active_rounded,
+                          color: colorScheme.primary,
+                          onTap:
+                              () => _triggerTestNotification(
+                                AppNotificationCategory.dailyInspiration,
+                              ),
+                        ),
 
-                          SizedBox(height: AppSpacing.sm),
+                        SizedBox(height: AppSpacing.sm),
 
-                          _buildAnimatedListTile(
-                            title: 'Test Meal Prep',
-                            subtitle: 'Trigger the meal prep notification',
-                            icon: Icons.lunch_dining_rounded,
-                            color: colorScheme.primary,
-                            onTap:
-                                () => _triggerTestNotification(
-                                  AppNotificationCategory.mealPrep,
-                                ),
-                          ),
+                        _buildAnimatedListTile(
+                          title: 'Test Meal Prep',
+                          subtitle: 'Trigger the meal prep notification',
+                          icon: Icons.lunch_dining_rounded,
+                          color: colorScheme.primary,
+                          onTap:
+                              () => _triggerTestNotification(
+                                AppNotificationCategory.mealPrep,
+                              ),
+                        ),
 
-                          SizedBox(height: AppSpacing.sm),
+                        SizedBox(height: AppSpacing.sm),
 
-                          _buildAnimatedListTile(
-                            title: 'Test Seasonal',
-                            subtitle: 'Trigger the seasonal notification',
-                            icon: Icons.celebration_rounded,
-                            color: colorScheme.primary,
-                            onTap:
-                                () => _triggerTestNotification(
-                                  AppNotificationCategory.seasonal,
-                                ),
-                          ),
+                        _buildAnimatedListTile(
+                          title: 'Test Seasonal',
+                          subtitle: 'Trigger the seasonal notification',
+                          icon: Icons.celebration_rounded,
+                          color: colorScheme.primary,
+                          onTap:
+                              () => _triggerTestNotification(
+                                AppNotificationCategory.seasonal,
+                              ),
+                        ),
 
-                          SizedBox(height: AppSpacing.sm),
+                        SizedBox(height: AppSpacing.sm),
 
-                          _buildAnimatedListTile(
-                            title: 'Test Quick Meals',
-                            subtitle: 'Trigger the quick meals notification',
-                            icon: Icons.timer_rounded,
-                            color: colorScheme.primary,
-                            onTap:
-                                () => _triggerTestNotification(
-                                  AppNotificationCategory.quickMeals,
-                                ),
-                          ),
+                        _buildAnimatedListTile(
+                          title: 'Test Quick Meals',
+                          subtitle: 'Trigger the quick meals notification',
+                          icon: Icons.timer_rounded,
+                          color: colorScheme.primary,
+                          onTap:
+                              () => _triggerTestNotification(
+                                AppNotificationCategory.quickMeals,
+                              ),
+                        ),
 
-                          SizedBox(height: AppSpacing.sm),
+                        SizedBox(height: AppSpacing.sm),
 
-                          _buildAnimatedListTile(
-                            title: 'Test Budget',
-                            subtitle: 'Trigger the budget notification',
-                            icon: Icons.savings_rounded,
-                            color: colorScheme.primary,
-                            onTap:
-                                () => _triggerTestNotification(
-                                  AppNotificationCategory.budget,
-                                ),
-                          ),
+                        _buildAnimatedListTile(
+                          title: 'Test Budget',
+                          subtitle: 'Trigger the budget notification',
+                          icon: Icons.savings_rounded,
+                          color: colorScheme.primary,
+                          onTap:
+                              () => _triggerTestNotification(
+                                AppNotificationCategory.budget,
+                              ),
+                        ),
 
-                          SizedBox(height: AppSpacing.sm),
+                        SizedBox(height: AppSpacing.sm),
 
-                          _buildAnimatedListTile(
-                            title: 'Test Keto',
-                            subtitle: 'Trigger the keto notification',
-                            icon: Icons.local_dining_rounded,
-                            color: colorScheme.primary,
-                            onTap:
-                                () => _triggerTestNotification(
-                                  AppNotificationCategory.keto,
-                                ),
-                          ),
-                        ],
+                        _buildAnimatedListTile(
+                          title: 'Test Keto',
+                          subtitle: 'Trigger the keto notification',
+                          icon: Icons.local_dining_rounded,
+                          color: colorScheme.primary,
+                          onTap:
+                              () => _triggerTestNotification(
+                                AppNotificationCategory.keto,
+                              ),
+                        ),
                       ],
                     ],
-                  ),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
+        ],
       ),
     );
   }

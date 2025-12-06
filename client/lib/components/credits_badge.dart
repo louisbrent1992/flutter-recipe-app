@@ -37,14 +37,14 @@ class CreditsHeader extends StatelessWidget {
                 icon: Icons.share,
                 label: 'Imports',
                 count: credits['recipeImports'] ?? 0,
-                unlimited: provider.unlimitedUsage,
+                unlimited: provider.unlimitedUsage || provider.trialActive,
               ),
               _creditBadge(
                 context,
                 icon: Icons.auto_awesome_rounded,
                 label: 'Generations',
                 count: credits['recipeGenerations'] ?? 0,
-                unlimited: provider.unlimitedUsage,
+                unlimited: provider.unlimitedUsage || provider.trialActive,
               ),
               if (provider.isPremium)
                 Container(
@@ -143,9 +143,13 @@ class CreditsPill extends StatelessWidget {
           final isDesktop = AppBreakpoints.isDesktop(context);
           final isTablet = AppBreakpoints.isTablet(context);
 
-          // Show labels on tablet/desktop, or on mobile only if unlimited
+          // Show labels on tablet/desktop, or on mobile only if unlimited or trial
           final showLabels =
-              !compact && (isDesktop || isTablet || provider.unlimitedUsage);
+              !compact &&
+              (isDesktop ||
+                  isTablet ||
+                  provider.unlimitedUsage ||
+                  provider.trialActive);
 
           // Universal padding/margin for consistent spacing across all screens
           return Padding(
@@ -262,28 +266,28 @@ class CreditsPill extends StatelessWidget {
                       ],
                     ] else if (provider.trialActive) ...[
                       Icon(
-                        Icons.rocket_launch,
+                        Icons.all_inclusive,
                         size:
                             compact
-                                ? 14
+                                ? 16
                                 : isDesktop
-                                ? 22
+                                ? 24
                                 : isTablet
-                                ? 20
-                                : 16,
+                                ? 22
+                                : 18,
                         color: Colors.blue,
                       ),
                       if (showLabels) ...[
                         SizedBox(
                           width:
                               isDesktop
-                                  ? 6
+                                  ? 8
                                   : isTablet
-                                  ? 5
-                                  : 4,
+                                  ? 7
+                                  : 6,
                         ),
                         Text(
-                          'Trial',
+                          'Unlimited',
                           style: theme.textTheme.labelSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Colors.blue,
@@ -296,16 +300,6 @@ class CreditsPill extends StatelessWidget {
                           ),
                         ),
                       ],
-                      SizedBox(
-                        width:
-                            compact
-                                ? 6
-                                : isDesktop
-                                ? 10
-                                : isTablet
-                                ? 9
-                                : 8,
-                      ),
                     ] else if (provider.isPremium) ...[
                       Icon(
                         Icons.star,
@@ -414,7 +408,7 @@ class CreditsPill extends StatelessWidget {
                                 : 8,
                       ),
                     ],
-                    if (!provider.unlimitedUsage) ...[
+                    if (!provider.unlimitedUsage && !provider.trialActive) ...[
                       Icon(
                         Icons.share,
                         size:
