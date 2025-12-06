@@ -205,14 +205,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed ||
-        state == AppLifecycleState.inactive) {
-      Future.delayed(const Duration(milliseconds: 300), () {
-        _checkForPendingNotificationResponse();
-      });
-    }
+
+    // Removed: Future.delayed logic that caused artificial lag
+    // When flutter_local_notifications is configured correctly (via AppDelegate fix),
+    // the plugin's onDidReceiveNotificationResponse callback handles notifications instantly.
+    // getNotificationAppLaunchDetails() is only intended for Cold Starts (app terminated),
+    // not Resumes.
   }
 
+  // Note: This method is kept for potential cold start handling.
+  // With the AppDelegate fix, onDidReceiveNotificationResponse handles most cases.
+  // getNotificationAppLaunchDetails() is only intended for Cold Starts (app terminated).
+  // ignore: unused_element
+  @pragma('vm:entry-point')
   Future<void> _checkForPendingNotificationResponse() async {
     try {
       final details =

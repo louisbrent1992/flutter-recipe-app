@@ -376,445 +376,438 @@ class _DiscoverRecipesScreenState extends State<DiscoverRecipesScreen>
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-        backgroundColor: Colors.transparent, // Transparent background
-        extendBody: true, // Extend body behind bottom elements
-        appBar: CustomAppBar(
-          title: 'Discover',
-          fullTitle: 'Discover Recipes',
-          actions: [
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert_rounded),
-              tooltip: 'More options',
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              itemBuilder:
-                  (context) => [
-                    PopupMenuItem<String>(
-                      value: 'refresh',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.refresh_rounded,
-                            size: 20,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                          const SizedBox(width: 12),
-                          const Text('Refresh Results'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'randomize',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.shuffle_rounded,
-                            size: 20,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                          const SizedBox(width: 12),
-                          const Text('Randomize Results'),
-                        ],
-                      ),
-                    ),
-                  ],
-              onSelected: (value) {
-                switch (value) {
-                  case 'refresh':
-                    _refreshResults();
-                    break;
-                  case 'randomize':
-                    _randomizeResults();
-                    break;
-                }
-              },
+      backgroundColor: Colors.transparent, // Transparent background
+      extendBody: true, // Extend body behind bottom elements
+      appBar: CustomAppBar(
+        title: 'Discover',
+        fullTitle: 'Discover Recipes',
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            tooltip: 'More options',
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
-        ),
-        body: Stack(
-          children: [
-            Column(
-              children: [
-                // Show offline banner at top when offline
-                const OfflineBanner(),
-                // Compact filter bar
-                CompactFilterBar(
-                  searchController: _searchController,
-                  searchQuery: _searchQuery,
-                  selectedDifficulty: _selectedDifficulty,
-                  selectedTag: _selectedTag,
-                  difficulties: _difficulties,
-                  availableTags: _availableTags,
-                  onSearchChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                      _currentPage = 1;
-                    });
-                    // Debounce server fetches until typing pauses
-                    _searchDebounce?.cancel();
-                    _searchDebounce = Timer(
-                      const Duration(milliseconds: 1000),
-                      () {
-                        if (!mounted) return;
-                        if (_searchQuery == value) {
-                          _loadRecipes();
-                        }
-                      },
-                    );
-                  },
-                  onDifficultySelected: (difficulty) {
-                    setState(() {
-                      _selectedDifficulty = difficulty;
-                      _currentPage = 1;
-                    });
-                    _loadRecipes();
-                  },
-                  onTagSelected: (tag) {
-                    setState(() {
-                      // Set selected tag (like difficulty selection)
-                      _selectedTag = tag;
-                      _currentPage = 1;
-                    });
-                    _loadRecipes();
-                  },
-                  onResetFilters: _resetFilters,
-                  showResetButton:
-                      _selectedDifficulty != 'All' ||
-                      _selectedTag != 'All' ||
-                      _searchQuery.isNotEmpty,
-                ),
-
-                // Inline banner ad under search bar
-                const InlineBannerAd(),
-
-                // Cache status indicator
-                const CacheStatusIndicator(
-                  dataType: 'discover_cache',
-                  compact: true,
-                ),
-
-                // Main content area
-                Expanded(
-                  child: Consumer<RecipeProvider>(
-                    builder: (context, recipeProvider, _) {
-                      // Server now handles filtering (excludes current user's recipes)
-                      // and deduplication, so we can use recipes directly
-                      final displayRecipes = recipeProvider.generatedRecipes;
-
-                      // Show errors only if we have no recipes AND there's an error
-                      // This prevents showing error screen when we have cached recipes
-                      // (errors from home screen refresh shouldn't affect discover screen)
-                      if (recipeProvider.error != null &&
-                          displayRecipes.isEmpty &&
-                          !recipeProvider.isLoading) {
-                        final isOffline = recipeProvider.error!.isNetworkError;
-                        return ErrorDisplay(
-                          message: recipeProvider.error!.userFriendlyMessage,
-                          title:
-                              isOffline
-                                  ? 'You\'re Offline'
-                                  : 'Couldn\'t Load Recipes',
-                          subtitle:
-                              isOffline
-                                  ? 'Connect to the internet to discover new recipes'
-                                  : 'Something went wrong. Please try again.',
-                          isNetworkError: isOffline,
-                          isAuthError: recipeProvider.error!.isAuthError,
-                          isFormatError: recipeProvider.error!.isFormatError,
-                          customIcon:
-                              isOffline
-                                  ? Icons.wifi_off_rounded
-                                  : Icons.cloud_off_rounded,
-                          onRetry: () {
-                            recipeProvider.clearError();
-                            _loadRecipes();
-                          },
-                        );
-                      }
-
-                      // Friendly empty state: show when not loading and no results
-                      if (!recipeProvider.isLoading && displayRecipes.isEmpty) {
-                        return RefreshIndicatorWithHint(
-                          onRefresh: () async {
-                            await _loadRecipes(forceRefresh: true);
-                          },
-                          child: SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.7,
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.search_off,
-                                      size: AppSizing.responsiveIconSize(
-                                        context,
-                                        mobile: 64,
-                                        tablet: 80,
-                                        desktop: 96,
-                                      ),
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary
-                                          .withValues(alpha: 0.5),
-                                    ),
-                                    SizedBox(
-                                      height: AppSpacing.responsive(
-                                        context,
-                                        mobile: 16,
-                                        tablet: 20,
-                                        desktop: 24,
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: AppSpacing.responsive(
-                                          context,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'No recipes found',
-                                        textAlign: TextAlign.center,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleLarge?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withValues(alpha: 0.7),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      height: AppSpacing.responsive(
-                                        context,
-                                        mobile: 8,
-                                        tablet: 10,
-                                        desktop: 12,
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: AppSpacing.responsive(
-                                          context,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'Try adjusting your filters or search terms',
-                                        textAlign: TextAlign.center,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodyMedium?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withValues(alpha: 0.6),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }
-
-                      // If we have recipes, show them (even if there's an error from another screen)
-                      // This ensures cached recipes are always displayed
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          left: AppSpacing.responsive(context),
-                          right: AppSpacing.responsive(context),
-                          top: AppSpacing.responsive(context),
-                          // Bottom padding handled by GridView for scrolling behind bar
-                          bottom: 0,
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem<String>(
+                    value: 'refresh',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.refresh_rounded,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        child: Column(
-                          children: [
-                            // Recipe grid with loading overlay and pull-to-refresh
-                            Expanded(
-                              child: Stack(
+                        const SizedBox(width: 12),
+                        const Text('Refresh Results'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'randomize',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.shuffle_rounded,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('Randomize Results'),
+                      ],
+                    ),
+                  ),
+                ],
+            onSelected: (value) {
+              switch (value) {
+                case 'refresh':
+                  _refreshResults();
+                  break;
+                case 'randomize':
+                  _randomizeResults();
+                  break;
+              }
+            },
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // Show offline banner at top when offline
+              const OfflineBanner(),
+              // Compact filter bar
+              CompactFilterBar(
+                searchController: _searchController,
+                searchQuery: _searchQuery,
+                selectedDifficulty: _selectedDifficulty,
+                selectedTag: _selectedTag,
+                difficulties: _difficulties,
+                availableTags: _availableTags,
+                onSearchChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                    _currentPage = 1;
+                  });
+                  // Debounce server fetches until typing pauses
+                  _searchDebounce?.cancel();
+                  _searchDebounce = Timer(
+                    const Duration(milliseconds: 1000),
+                    () {
+                      if (!mounted) return;
+                      if (_searchQuery == value) {
+                        _loadRecipes();
+                      }
+                    },
+                  );
+                },
+                onDifficultySelected: (difficulty) {
+                  setState(() {
+                    _selectedDifficulty = difficulty;
+                    _currentPage = 1;
+                  });
+                  _loadRecipes();
+                },
+                onTagSelected: (tag) {
+                  setState(() {
+                    // Set selected tag (like difficulty selection)
+                    _selectedTag = tag;
+                    _currentPage = 1;
+                  });
+                  _loadRecipes();
+                },
+                onResetFilters: _resetFilters,
+                showResetButton:
+                    _selectedDifficulty != 'All' ||
+                    _selectedTag != 'All' ||
+                    _searchQuery.isNotEmpty,
+              ),
+
+              // Inline banner ad under search bar
+              const InlineBannerAd(),
+
+              // Cache status indicator
+              const CacheStatusIndicator(
+                dataType: 'discover_cache',
+                compact: true,
+              ),
+
+              // Main content area
+              Expanded(
+                child: Consumer<RecipeProvider>(
+                  builder: (context, recipeProvider, _) {
+                    // Server now handles filtering (excludes current user's recipes)
+                    // and deduplication, so we can use recipes directly
+                    final displayRecipes = recipeProvider.generatedRecipes;
+
+                    // Show errors only if we have no recipes AND there's an error
+                    // This prevents showing error screen when we have cached recipes
+                    // (errors from home screen refresh shouldn't affect discover screen)
+                    if (recipeProvider.error != null &&
+                        displayRecipes.isEmpty &&
+                        !recipeProvider.isLoading) {
+                      final isOffline = recipeProvider.error!.isNetworkError;
+                      return ErrorDisplay(
+                        message: recipeProvider.error!.userFriendlyMessage,
+                        title:
+                            isOffline
+                                ? 'You\'re Offline'
+                                : 'Couldn\'t Load Recipes',
+                        subtitle:
+                            isOffline
+                                ? 'Connect to the internet to discover new recipes'
+                                : 'Something went wrong. Please try again.',
+                        isNetworkError: isOffline,
+                        isAuthError: recipeProvider.error!.isAuthError,
+                        isFormatError: recipeProvider.error!.isFormatError,
+                        customIcon:
+                            isOffline
+                                ? Icons.wifi_off_rounded
+                                : Icons.cloud_off_rounded,
+                        onRetry: () {
+                          recipeProvider.clearError();
+                          _loadRecipes();
+                        },
+                      );
+                    }
+
+                    // Friendly empty state: show when not loading and no results
+                    if (!recipeProvider.isLoading && displayRecipes.isEmpty) {
+                      return RefreshIndicatorWithHint(
+                        onRefresh: () async {
+                          await _loadRecipes(forceRefresh: true);
+                        },
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.7,
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  RefreshIndicatorWithHint(
-                                    onRefresh: () async {
-                                      await _loadRecipes(forceRefresh: true);
-                                    },
-                                    child: GridView.builder(
-                                      key: const PageStorageKey(
-                                        'discover_grid',
-                                      ),
-                                      controller: _scrollController,
-                                      // Add padding for bottom bar and safe area
-                                      padding: EdgeInsets.only(
-                                        bottom: 120 + bottomPadding,
-                                      ),
-                                      itemBuilder: (context, index) {
-                                        final recipe = displayRecipes[index];
-                                        // Use a stable key so Flutter does not reuse state across pages
-                                        final String identity =
-                                            recipe.id.isNotEmpty
-                                                ? recipe.id
-                                                : '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
-                                        return RecipeCard(
-                                          key: ValueKey(
-                                            'discover-card-$identity',
-                                          ),
-                                          recipe: recipe,
-                                          showSaveButton:
-                                              true, // All displayed recipes are unsaved
-                                          showRemoveButton:
-                                              false, // Saved recipes are filtered out
-                                          showRefreshButton: false,
-                                          onSave:
-                                              () => _handleRecipeAction(recipe),
-                                        );
-                                      },
-                                      itemCount: displayRecipes.length,
-                                      gridDelegate:
-                                          SliverGridDelegateWithFixedCrossAxisCount(
-                                            crossAxisCount:
-                                                AppSizing.responsiveGridCount(
-                                                  context,
-                                                ),
-                                            childAspectRatio:
-                                                AppSizing.responsiveAspectRatio(
-                                                  context,
-                                                ),
-                                            crossAxisSpacing:
-                                                AppSpacing.responsive(context),
-                                            mainAxisSpacing:
-                                                AppSpacing.responsive(context),
-                                          ),
+                                  Icon(
+                                    Icons.search_off,
+                                    size: AppSizing.responsiveIconSize(
+                                      context,
+                                      mobile: 64,
+                                      tablet: 80,
+                                      desktop: 96,
+                                    ),
+                                    color: Theme.of(context).colorScheme.primary
+                                        .withValues(alpha: 0.5),
+                                  ),
+                                  SizedBox(
+                                    height: AppSpacing.responsive(
+                                      context,
+                                      mobile: 16,
+                                      tablet: 20,
+                                      desktop: 24,
                                     ),
                                   ),
-
-                                  // Loading overlay only on the recipe grid
-                                  if (recipeProvider.isLoading)
-                                    Container(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .surface
-                                          .withValues(alpha: 0.8),
-                                      child: Center(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            SizedBox(
-                                              width:
-                                                  AppBreakpoints.isDesktop(
-                                                        context,
-                                                      )
-                                                      ? 48
-                                                      : AppBreakpoints.isTablet(
-                                                        context,
-                                                      )
-                                                      ? 44
-                                                      : 40,
-                                              height:
-                                                  AppBreakpoints.isDesktop(
-                                                        context,
-                                                      )
-                                                      ? 48
-                                                      : AppBreakpoints.isTablet(
-                                                        context,
-                                                      )
-                                                      ? 44
-                                                      : 40,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth:
-                                                    AppBreakpoints.isDesktop(
-                                                          context,
-                                                        )
-                                                        ? 4
-                                                        : 3,
-                                                color:
-                                                    Theme.of(
-                                                      context,
-                                                    ).colorScheme.primary,
-                                              ),
-                                            ),
-                                            SizedBox(
-                                              height: AppSpacing.responsive(
-                                                context,
-                                                mobile: 16,
-                                                tablet: 20,
-                                                desktop: 24,
-                                              ),
-                                            ),
-                                            Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal:
-                                                    AppSpacing.responsive(
-                                                      context,
-                                                    ),
-                                              ),
-                                              child: Text(
-                                                'Fetching delicious recipes for you...',
-                                                style:
-                                                    AppBreakpoints.isDesktop(
-                                                          context,
-                                                        )
-                                                        ? Theme.of(context)
-                                                            .textTheme
-                                                            .bodyLarge
-                                                            ?.copyWith(
-                                                              color:
-                                                                  Theme.of(
-                                                                        context,
-                                                                      )
-                                                                      .colorScheme
-                                                                      .onSurface,
-                                                            )
-                                                        : Theme.of(context)
-                                                            .textTheme
-                                                            .bodyMedium
-                                                            ?.copyWith(
-                                                              color:
-                                                                  Theme.of(
-                                                                        context,
-                                                                      )
-                                                                      .colorScheme
-                                                                      .onSurface,
-                                                            ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.responsive(
+                                        context,
                                       ),
                                     ),
+                                    child: Text(
+                                      'No recipes found',
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleLarge?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.7),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: AppSpacing.responsive(
+                                      context,
+                                      mobile: 8,
+                                      tablet: 10,
+                                      desktop: 12,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.responsive(
+                                        context,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Try adjusting your filters or search terms',
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.6),
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
-
-                            // Pagination bar - always visible
-                          ],
+                          ),
                         ),
                       );
-                    },
-                  ),
+                    }
+
+                    // If we have recipes, show them (even if there's an error from another screen)
+                    // This ensures cached recipes are always displayed
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        left: AppSpacing.responsive(context),
+                        right: AppSpacing.responsive(context),
+                        top: AppSpacing.responsive(context),
+                        // Bottom padding handled by GridView for scrolling behind bar
+                        bottom: 0,
+                      ),
+                      child: Column(
+                        children: [
+                          // Recipe grid with loading overlay and pull-to-refresh
+                          Expanded(
+                            child: Stack(
+                              children: [
+                                RefreshIndicatorWithHint(
+                                  onRefresh: () async {
+                                    await _loadRecipes(forceRefresh: true);
+                                  },
+                                  child: GridView.builder(
+                                    key: const PageStorageKey('discover_grid'),
+                                    controller: _scrollController,
+                                    // Add padding for bottom bar and safe area
+                                    padding: EdgeInsets.only(
+                                      bottom: 120 + bottomPadding,
+                                    ),
+                                    itemBuilder: (context, index) {
+                                      final recipe = displayRecipes[index];
+                                      // Use a stable key so Flutter does not reuse state across pages
+                                      final String identity =
+                                          recipe.id.isNotEmpty
+                                              ? recipe.id
+                                              : '${recipe.title.toLowerCase()}|${recipe.description.toLowerCase()}';
+                                      return RecipeCard(
+                                        key: ValueKey(
+                                          'discover-card-$identity',
+                                        ),
+                                        recipe: recipe,
+                                        showSaveButton:
+                                            true, // All displayed recipes are unsaved
+                                        showRemoveButton:
+                                            false, // Saved recipes are filtered out
+                                        showRefreshButton: false,
+                                        onSave:
+                                            () => _handleRecipeAction(recipe),
+                                      );
+                                    },
+                                    itemCount: displayRecipes.length,
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount:
+                                              AppSizing.responsiveGridCount(
+                                                context,
+                                              ),
+                                          childAspectRatio:
+                                              AppSizing.responsiveAspectRatio(
+                                                context,
+                                              ),
+                                          crossAxisSpacing:
+                                              AppSpacing.responsive(context),
+                                          mainAxisSpacing:
+                                              AppSpacing.responsive(context),
+                                        ),
+                                  ),
+                                ),
+
+                                // Loading overlay only on the recipe grid
+                                if (recipeProvider.isLoading)
+                                  Container(
+                                    color: Theme.of(context).colorScheme.surface
+                                        .withValues(alpha: 0.8),
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width:
+                                                AppBreakpoints.isDesktop(
+                                                      context,
+                                                    )
+                                                    ? 48
+                                                    : AppBreakpoints.isTablet(
+                                                      context,
+                                                    )
+                                                    ? 44
+                                                    : 40,
+                                            height:
+                                                AppBreakpoints.isDesktop(
+                                                      context,
+                                                    )
+                                                    ? 48
+                                                    : AppBreakpoints.isTablet(
+                                                      context,
+                                                    )
+                                                    ? 44
+                                                    : 40,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth:
+                                                  AppBreakpoints.isDesktop(
+                                                        context,
+                                                      )
+                                                      ? 4
+                                                      : 3,
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).colorScheme.primary,
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: AppSpacing.responsive(
+                                              context,
+                                              mobile: 16,
+                                              tablet: 20,
+                                              desktop: 24,
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: AppSpacing.responsive(
+                                                context,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              'Fetching delicious recipes for you...',
+                                              style:
+                                                  AppBreakpoints.isDesktop(
+                                                        context,
+                                                      )
+                                                      ? Theme.of(context)
+                                                          .textTheme
+                                                          .bodyLarge
+                                                          ?.copyWith(
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .onSurface,
+                                                          )
+                                                      : Theme.of(context)
+                                                          .textTheme
+                                                          .bodyMedium
+                                                          ?.copyWith(
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .onSurface,
+                                                          ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                          // Pagination bar - always visible
+                        ],
+                      ),
+                    );
+                  },
                 ),
-              ],
-            ),
-            Consumer<RecipeProvider>(
-              builder: (context, recipeProvider, _) {
-                return FloatingBottomBar(
-                  showPagination: true,
-                  currentPage: _currentPage,
-                  totalPages: recipeProvider.totalPages,
-                  hasNextPage: recipeProvider.hasNextPage,
-                  hasPreviousPage: recipeProvider.hasPrevPage,
-                  isLoading: recipeProvider.isLoading,
-                  onPreviousPage: _goToPreviousPage,
-                  onNextPage: _goToNextPage,
-                  onGoToPage: _goToPage,
-                );
-              },
-            ),
-          ],
+              ),
+            ],
+          ),
+          Consumer<RecipeProvider>(
+            builder: (context, recipeProvider, _) {
+              return FloatingBottomBar(
+                showPagination: true,
+                currentPage: _currentPage,
+                totalPages: recipeProvider.totalPages,
+                hasNextPage: recipeProvider.hasNextPage,
+                hasPreviousPage: recipeProvider.hasPrevPage,
+                isLoading: recipeProvider.isLoading,
+                onPreviousPage: _goToPreviousPage,
+                onNextPage: _goToNextPage,
+                onGoToPage: _goToPage,
+              );
+            },
+          ),
+        ],
       ),
     );
   }

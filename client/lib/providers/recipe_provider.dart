@@ -267,12 +267,12 @@ class RecipeProvider extends ChangeNotifier {
           hasLocalData = true;
           // Show cached data immediately (even on refresh)
           _userRecipes = localRecipes;
-          
+
           // Load saved pagination metadata for accurate page counts
           final paginationMeta = await localStorage.loadUserRecipesPagination();
           final savedTotalRecipes = paginationMeta['totalRecipes'] ?? 0;
           final savedTotalPages = paginationMeta['totalPages'] ?? 1;
-          
+
           // Use saved pagination if available, otherwise calculate from local data
           if (savedTotalRecipes > 0 && savedTotalPages > 1) {
             _totalRecipes = savedTotalRecipes;
@@ -651,7 +651,7 @@ class RecipeProvider extends ChangeNotifier {
 
           // Force refresh collections to update recently added (only if requested)
           if (refreshCollections) {
-          await collectionService.getCollections(forceRefresh: true);
+            await collectionService.getCollections(forceRefresh: true);
           }
 
           // Sync with Game Center for achievements
@@ -816,13 +816,17 @@ class RecipeProvider extends ChangeNotifier {
         } else {
           // Server failed - but we already removed locally
           // In a production app, you might want to restore the recipe
-          debugPrint('⚠️ Server delete failed, but recipe removed locally: ${response.message}');
+          debugPrint(
+            '⚠️ Server delete failed, but recipe removed locally: ${response.message}',
+          );
           return true; // Return true since local delete succeeded
         }
       }
     } catch (e) {
       // Network error - but we already removed locally
-      debugPrint('⚠️ Network error during delete, but recipe removed locally: $e');
+      debugPrint(
+        '⚠️ Network error during delete, but recipe removed locally: $e',
+      );
       return true; // Return true since local delete succeeded
     }
     return true;
@@ -1183,7 +1187,7 @@ class RecipeProvider extends ChangeNotifier {
   /// This populates the in-memory cache without triggering a network fetch
   void setDiscoverCacheFromList(List<Recipe> recipes) {
     if (recipes.isEmpty) return;
-    
+
     _sessionDiscoverCache = List<Recipe>.from(recipes);
     _sessionDiscoverCacheOriginalOrder = List<Recipe>.from(recipes);
     _sessionCacheTime = DateTime.now();
@@ -1205,13 +1209,15 @@ class RecipeProvider extends ChangeNotifier {
   /// This updates the in-memory state without making a server request
   void updateRecipeImageLocally(String recipeId, String newImageUrl) {
     if (recipeId.isEmpty) return;
-    
+
     // Update in user recipes list
     final userIndex = _userRecipes.indexWhere((r) => r.id == recipeId);
     if (userIndex != -1) {
-      _userRecipes[userIndex] = _userRecipes[userIndex].copyWith(imageUrl: newImageUrl);
+      _userRecipes[userIndex] = _userRecipes[userIndex].copyWith(
+        imageUrl: newImageUrl,
+      );
     }
-    
+
     // Update in user recipes cache
     _userRecipesCache.forEach((key, recipes) {
       final index = recipes.indexWhere((r) => r.id == recipeId);
@@ -1221,19 +1227,25 @@ class RecipeProvider extends ChangeNotifier {
         _userRecipesCache[key] = List<Recipe>.unmodifiable(updatedList);
       }
     });
-    
+
     // Update in session community cache if present
-    final communityIndex = _sessionCommunityCache.indexWhere((r) => r.id == recipeId);
+    final communityIndex = _sessionCommunityCache.indexWhere(
+      (r) => r.id == recipeId,
+    );
     if (communityIndex != -1) {
-      _sessionCommunityCache[communityIndex] = _sessionCommunityCache[communityIndex].copyWith(imageUrl: newImageUrl);
+      _sessionCommunityCache[communityIndex] =
+          _sessionCommunityCache[communityIndex].copyWith(
+            imageUrl: newImageUrl,
+          );
     }
-    
+
     // Update in displayed community recipes
     final displayIndex = _communityRecipes.indexWhere((r) => r.id == recipeId);
     if (displayIndex != -1) {
-      _communityRecipes[displayIndex] = _communityRecipes[displayIndex].copyWith(imageUrl: newImageUrl);
+      _communityRecipes[displayIndex] = _communityRecipes[displayIndex]
+          .copyWith(imageUrl: newImageUrl);
     }
-    
+
     notifyListeners();
   }
 
@@ -1268,7 +1280,7 @@ class RecipeProvider extends ChangeNotifier {
   Future<void> fetchSessionCommunityCache({bool forceRefresh = false}) async {
     // Community recipes fetching is disabled - no API calls will be made
     return;
-    
+
     /* DISABLED CODE - Community recipes feature disabled
     // Check if cache is still valid
     final hasValidCache =
@@ -1387,7 +1399,7 @@ class RecipeProvider extends ChangeNotifier {
   }) async {
     // Community recipes fetching is disabled - no API calls will be made
     return;
-    
+
     /* DISABLED CODE - Community recipes feature disabled
     // Ensure session cache is populated
     await fetchSessionCommunityCache(forceRefresh: forceRefresh);

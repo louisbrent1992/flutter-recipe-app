@@ -10,7 +10,8 @@
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"fix-tiktok-images": "node scripts/fix-tiktok-images.js",
 		"find-tiktok-images": "node scripts/find-tiktok-images.js",
-		"add-isdiscoverable": "node scripts/add-isdiscoverable.js"
+		"add-isdiscoverable": "node scripts/add-isdiscoverable.js",
+		"send-notification": "node scripts/send-test-notification.js"
 	},
 	"keywords": [
 		"recipease",

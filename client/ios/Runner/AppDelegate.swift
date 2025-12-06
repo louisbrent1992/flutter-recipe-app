@@ -30,10 +30,8 @@ import UserNotifications
   ) {
     // Let Flutter handle the notification through Firebase Messaging
     // This ensures the notification data is properly processed
+    // Super will call completionHandler() internally when it's done
     super.application(application, didReceiveRemoteNotification: userInfo, fetchCompletionHandler: completionHandler)
-    
-    // Call completion handler
-    completionHandler(.newData)
   }
   
   // MARK: - UNUserNotificationCenterDelegate
@@ -53,10 +51,8 @@ import UserNotifications
     print("🔔 [iOS] Notification payload: \(userInfo)")
     
     // Call super to let Flutter plugins handle it (flutter_local_notifications)
-    // This ensures the onDidReceiveNotificationResponse callback fires in Flutter
+    // Super WILL call completionHandler() internally when it's done
     super.userNotificationCenter(center, didReceive: response, withCompletionHandler: completionHandler)
-    
-    completionHandler()
   }
   
   // Handle notifications when app is in foreground
