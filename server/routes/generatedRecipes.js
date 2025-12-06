@@ -1163,12 +1163,77 @@ router.post("/import", async (req, res) => {
 			);
 			pageContent = socialData.description;
 		} else {
-			console.log("🌐 Processing web URL with textfrom.website");
+			console.log("🌐 Processing web URL with direct fetch");
 			const webFetchStart = Date.now();
-			const textUrl = `https://textfrom.website/${url}`;
-			const { data } = await axios.get(textUrl);
-			pageContent = data;
-			logPerformance("textfrom.website API call", webFetchStart);
+			
+			try {
+				const response = await axios.get(url, {
+					timeout: 15000, // 15 seconds
+					maxRedirects: 5,
+					headers: {
+						'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+						'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+						'Accept-Language': 'en-US,en;q=0.9',
+						'Accept-Encoding': 'gzip, deflate, br',
+						'Connection': 'keep-alive',
+						'Upgrade-Insecure-Requests': '1',
+						'Sec-Fetch-Dest': 'document',
+						'Sec-Fetch-Mode': 'navigate',
+						'Sec-Fetch-Site': 'none',
+						'Sec-Fetch-User': '?1',
+						'Cache-Control': 'max-age=0',
+					},
+					validateStatus: (status) => status < 500,
+				});
+				
+				if (response.status >= 400) {
+					throw new Error(`Website returned status ${response.status}. The site may be blocking automated requests.`);
+				}
+				
+				const htmlContent = response.data;
+				if (!htmlContent || typeof htmlContent !== 'string') {
+					throw new Error("No HTML content received from website");
+				}
+				
+				// Extract text content from HTML
+				pageContent = htmlContent
+					.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+					.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+					.replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '')
+					.replace(/<!--[\s\S]*?-->/g, '') // Remove comments
+					.replace(/<[^>]+>/g, ' ') // Remove HTML tags
+					.replace(/&nbsp;/g, ' ') // Replace &nbsp;
+					.replace(/&[a-z]+;/gi, ' ') // Replace other HTML entities
+					.replace(/\s+/g, ' ') // Normalize whitespace
+					.trim();
+				
+				if (!pageContent || pageContent.length < 100) {
+					throw new Error("Insufficient content extracted from website");
+				}
+				
+				logPerformance("Direct fetch successful", webFetchStart);
+				console.log("✅ Direct fetch extraction successful");
+			} catch (error) {
+				logPerformance("Direct fetch FAILED", webFetchStart);
+				console.error("❌ Error fetching from URL:", error.message);
+				
+				// Provide specific error messages
+				let errorMessage = "Unable to fetch content from URL.";
+				
+				if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+					errorMessage = "The website took too long to respond. It may be blocking automated requests or experiencing issues. Please try another recipe link or try again later.";
+				} else if (error.response && error.response.status === 403) {
+					errorMessage = "This website is blocking automated requests. Please try a different recipe link from another source.";
+				} else if (error.response && error.response.status === 404) {
+					errorMessage = "The recipe page was not found. Please check the URL and try again.";
+				} else if (error.message.includes('blocking')) {
+					errorMessage = "This website is blocking automated requests. Please try a different recipe link.";
+				} else {
+					errorMessage = "Unable to fetch content from this URL. The website may be blocking automated requests or the URL may be invalid. Please try another recipe link.";
+				}
+				
+				throw new Error(errorMessage);
+			}
 		}
 		
 		logPerformance("Content Fetching (Step 1)", fetchStartTime);
